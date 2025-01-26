@@ -13,7 +13,7 @@ yarn-error.log
 android/
 
 # iOS
-ios/
+ios/build/
 
 # Bundler / Ruby (CocoaPods, etc.)
 vendor/
