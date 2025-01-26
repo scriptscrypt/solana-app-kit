@@ -10,10 +10,16 @@ yarn-error.log
 *.log
 
 # Android
-android/
+android/.gradle/
+android/build/
+android/app/build/
 
 # iOS
+ios/Pods/
 ios/build/
+*.xcworkspace
+*.xcuserdata
+xcuserdata/
 
 # Bundler / Ruby (CocoaPods, etc.)
 vendor/
