@@ -1,0 +1,41 @@
+# macOS system files
+.DS_Store
+
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log
+yarn-error.log
+*.log
+
+# Android
+android/
+
+# iOS
+ios/
+
+# Bundler / Ruby (CocoaPods, etc.)
+vendor/
+
+# Additional coverage / test output
+coverage/
+
+# Misc. ephemeral or config files
+*.swp
+*.swo
+.env
+.env.*.local
+
+
+# Build artifacts
+*.xcarchive
+*.ipa
+*.apk
+*.aab
+
+# Fastlane build artifacts
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
