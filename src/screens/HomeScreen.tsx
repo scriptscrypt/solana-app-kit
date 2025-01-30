@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
 import Tweet from '../components/tweet/tweet';
 import UserListing from '../components/userListing/userListing';
 import SuggestionsCard from '../components/suggestionsCard/sugegstionsCard';
@@ -13,7 +13,7 @@ type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.text}>Home Screen</Text>
             {/* <SuggestionsCard/> */}
 {/* <UserListing/> */}
@@ -24,6 +24,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  container: {flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff'},
   text: {fontSize: 20},
 });
