@@ -1,25 +1,16 @@
 import React, {useEffect, useRef} from 'react';
 import {View, TouchableOpacity, Animated, Text, Dimensions} from 'react-native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from '../../navigation/RootNavigator';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
-
 import Icons from '../../assets/svgs/index';
 import styles from './LoginScreen.styles';
 import COLORS from '../../assets/colors';
-
-type LoginOptionsScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'LoginOptions'
->;
-
-interface LoginOptionsScreenProps {
-  navigation: LoginOptionsScreenNavigationProp;
-}
+import {useAppNavigation} from '../../hooks/useAppNavigation';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-export default function LoginScreen({navigation}: LoginOptionsScreenProps) {
+export default function LoginScreen() {
+  const navigation = useAppNavigation();
+
   const solanaDotOpacity = useRef(new Animated.Value(0)).current;
   const splashTextOpacity = useRef(new Animated.Value(0)).current;
   const smileScale = useRef(new Animated.Value(0.5)).current;
@@ -28,24 +19,24 @@ export default function LoginScreen({navigation}: LoginOptionsScreenProps) {
     Animated.sequence([
       Animated.timing(solanaDotOpacity, {
         toValue: 1,
-        duration: 800,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.timing(splashTextOpacity, {
         toValue: 1,
-        duration: 800,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.spring(smileScale, {
-        toValue: 1,
-        friction: 5,
+        toValue: 0.8,
+        friction: 2,
         useNativeDriver: true,
       }),
     ]).start();
   }, [solanaDotOpacity, splashTextOpacity, smileScale]);
 
   const handleLogin = () => {
-    navigation.navigate('MainTabs');
+    navigation.navigate('MainTabs' as never);
   };
 
   return (
@@ -98,7 +89,7 @@ export default function LoginScreen({navigation}: LoginOptionsScreenProps) {
         </TouchableOpacity>
       </View>
       <Text style={styles.agreementText}>
-        by continuing, you agree to t&c and privacy policy
+        by continuing, you agree to t&amp;c and privacy policy
       </Text>
     </View>
   );
