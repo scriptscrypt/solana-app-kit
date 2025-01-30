@@ -67,12 +67,7 @@ export default function IntroScreen({navigation}: IntroScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.svgContainer}>
-        <Animated.View
-          style={[
-            {
-              opacity: solanaDotOpacity,
-            },
-          ]}>
+        <Animated.View style={{opacity: solanaDotOpacity}}>
           <Icons.SolanaDot />
         </Animated.View>
 
@@ -101,7 +96,7 @@ export default function IntroScreen({navigation}: IntroScreenProps) {
         activeOpacity={0.8}
         style={styles.bottomRectContainer}
         onPress={() => {
-          navigation.navigate('MainTabs');
+          navigation.navigate('LoginOptions');
         }}>
         <Animated.View style={{transform: [{scale: buttonScale}]}}>
           <Icons.GettingStartedButton />
