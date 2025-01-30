@@ -10,7 +10,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../navigation/RootNavigator';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 
-import Icons from '../../assests/svgs/index';
+import Icons from '../../assets/svgs/index';
 import styles from './LoginScreen.styles';
 
 type LoginOptionsScreenNavigationProp = StackNavigationProp<
