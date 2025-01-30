@@ -1,14 +1,14 @@
-import React from "react";
+import React from 'react';
 import {
   Image,
   Text,
   View,
-  useWindowDimensions,
   TouchableOpacity,
-} from "react-native";
-import { styles } from "./tweet.style";
+  useWindowDimensions,
+} from 'react-native';
+import {createTweetStyles} from './tweet.style';
 
-interface TweetData {
+interface SingleTweet {
   username: string;
   handle: string;
   time: string;
@@ -16,109 +16,75 @@ interface TweetData {
   quoteCount: number;
   retweetCount: number;
   reactionCount: number;
-  avatar: any; 
+  avatar: any;
 }
 
+interface TweetProps {
+  data: SingleTweet[];
+  onPress?: () => void;
+}
+
+// Example local helper for formatting counts (could also go in a utility file)
 const formatCount = (count: number): string => {
-  if (count >= 1000000) {
-    return (count / 1000000).toFixed(1) + "m";
+  if (count >= 1_000_000) {
+    return (count / 1_000_000).toFixed(1) + 'm';
   } else if (count >= 1000) {
-    return (count / 1000).toFixed(1) + "k";
-  } else {
-    return count.toString();
+    return (count / 1000).toFixed(1) + 'k';
   }
+  return count.toString();
 };
 
-const tweetsData: TweetData[] = [
-  {
-    username: "SEND",
-    handle: "@sendcoin",
-    time: "3s",
-    tweetContent: "SEND is the new meta coin $SEND",
-    quoteCount: 297,
-    retweetCount: 5600,
-    reactionCount: 13600,
-    avatar: require("../../assets/pngs/Smiley.png"),
-  },
-  {
-    username: "CryptoFan",
-    handle: "@cryptofan",
-    time: "10m",
-    tweetContent: "Crypto is the future $BTC",
-    quoteCount: 120,
-    retweetCount: 2000,
-    reactionCount: 5000,
-    avatar: require("../../assets/pngs/Smiley.png"),
-  },
-  {
-    username: "TechGuru",
-    handle: "@techguru",
-    time: "1h",
-    tweetContent: "AI is revolutionizing the world $AI",
-    quoteCount: 450,
-    retweetCount: 9000,
-    reactionCount: 23000,
-    avatar: require("../../assets/pngs/Smiley.png"),
-  },
-];
-
 const reactionIcons = [
-  require("../../assets/pngs/React idle.png"),
-  require("../../assets/pngs/Recast idle.png"),
-  require("../../assets/pngs/Comment idle.png"),
-  require("../../assets/pngs/share idle.png"),
-  require("../../assets/pngs/Bookmark idle.png"),
+  require('../../assets/images/React idle.png'),
+  require('../../assets/images/Recast idle.png'),
+  require('../../assets/images/Comment idle.png'),
+  require('../../assets/images/share idle.png'),
+  require('../../assets/images/Bookmark idle.png'),
 ];
 
-const Tweet: React.FC = () => {
-  const { width } = useWindowDimensions();
+const Tweet: React.FC<TweetProps> = ({data, onPress}) => {
+  const {width} = useWindowDimensions();
   const isSmallScreen = width < 400;
-
-  const fontSize = isSmallScreen ? 14 : 15;
-  const avatarSize = 19.43;
+  const styles = createTweetStyles(isSmallScreen);
 
   const handleBuyButtonClick = () => {
-    console.log("Buy button clicked!");
+    console.log('Buy button clicked!');
+    if (onPress) {
+      onPress();
+    }
   };
 
   return (
     <>
-      {tweetsData.map((tweet, index) => (
-        <View
-          key={index}
-          style={[styles.container, { paddingHorizontal: isSmallScreen ? 8 : 12 }]}
-        >
+      {data.map((tweet, index) => (
+        <View key={index} style={styles.container}>
           {/* Avatar Section */}
           <View style={styles.avatarContainer}>
-            <Image
-              source={tweet.avatar}
-              style={styles.avatar}
-            />
+            <Image source={tweet.avatar} style={styles.avatar} />
           </View>
 
           {/* Tweet Content */}
           <View style={styles.infoContainer}>
             {/* Header (Username, Tag, Timestamp) */}
             <View style={styles.header}>
-              <Text
-                style={[styles.username, { fontSize: isSmallScreen ? 14 : 15 }]}
-              >
-                {tweet.username}
-              </Text>
-              <Image source={require("../../assets/pngs/Vector.png")} />
-              <Text style={[styles.handle, { fontSize: isSmallScreen ? 12 : 14 }]}>
+              <Text style={styles.username}>{tweet.username}</Text>
+              <Image source={require('../../assets/images/Vector.png')} />
+              <Text style={styles.handle}>
                 {tweet.handle} • {tweet.time}
               </Text>
               <Image
-                source={require("../../assets/pngs/ph_dots-three-bold.png")}
+                source={require('../../assets/images/ph_dots-three-bold.png')}
                 style={styles.menuIcon}
               />
             </View>
 
             {/* Tweet Text */}
-            <Text style={[styles.tweetText, { fontSize }]}>
-              {tweet.tweetContent.split("$SEND")[0]}
-              <Text style={{ color: "#32D4DE" }}>$SEND</Text>
+            <Text style={styles.tweetText}>
+              {/** Everything before "$SEND" in normal text */}
+              {tweet.tweetContent.split('$SEND')[0]}
+              {tweet.tweetContent.includes('$SEND') && (
+                <Text style={styles.sendText}>$SEND</Text>
+              )}
             </Text>
 
             {/* Reaction & Buy Button */}
@@ -132,60 +98,45 @@ const Tweet: React.FC = () => {
                 style={styles.buyButton}
                 accessible={true}
                 accessibilityLabel="Buy Button"
-                onPress={handleBuyButtonClick}
-              >
+                onPress={handleBuyButtonClick}>
                 <Text style={styles.buyButtonText}>buy</Text>
               </TouchableOpacity>
             </View>
 
             {/* Metrics */}
             <View style={styles.metricsContainer}>
-              <View style={{ flexDirection: "row", position: "relative" }}>
+              <View style={styles.threadAvatars}>
+                {/* Top-most avatar */}
+                <Image source={tweet.avatar} style={styles.threadAvatar1} />
+                {/* Middle avatar */}
                 <Image
-                  source={tweet.avatar}
-                  style={{
-                    width: avatarSize,
-                    height: avatarSize,
-                    borderRadius: avatarSize / 2,
-                    position: "absolute",
-                    zIndex: 3,
-                    left: -10,
-                  }}
+                  source={require('../../assets/images/Thread Avatars (1).png')}
+                  style={styles.threadAvatar2}
                 />
+                {/* Bottom avatar */}
                 <Image
-                  source={require("../../assets/pngs/Thread Avatars (1).png")}
-                  style={{
-                    width: avatarSize,
-                    height: avatarSize,
-                    borderRadius: avatarSize / 2,
-                    position: "absolute",
-                    left: -17,
-                    zIndex: 2,
-                  }}
-                />
-                <Image
-                  source={require("../../assets/pngs/Thread Avatars.png")}
-                  style={{
-                    width: avatarSize,
-                    height: avatarSize,
-                    borderRadius: avatarSize / 2,
-                    position: "absolute",
-                    left: -24,
-                    zIndex: 1,
-                  }}
+                  source={require('../../assets/images/Thread Avatars.png')}
+                  style={styles.threadAvatar3}
                 />
               </View>
-              <View
-                style={{ display: "flex", flexDirection: "row", paddingLeft: 12 }}
-              >
-                <Text style={{ fontSize: 12, fontWeight: "500" }}>
+
+              <View style={styles.metricsInfo}>
+                <Text style={styles.reactionsText}>
                   +{formatCount(tweet.reactionCount)}
                 </Text>
                 <Text style={styles.metricsText}>
-                  • <Text style={{ color: "black" }}>{formatCount(tweet.retweetCount)} </Text> Retweet
+                  •{' '}
+                  <Text style={styles.metricsCount}>
+                    {formatCount(tweet.retweetCount)}
+                  </Text>{' '}
+                  Retweet
                 </Text>
                 <Text style={styles.metricsText}>
-                  • <Text style={{ color: "black" }}>{formatCount(tweet.quoteCount)} </Text> Quote
+                  •{' '}
+                  <Text style={styles.metricsCount}>
+                    {formatCount(tweet.quoteCount)}
+                  </Text>{' '}
+                  Quote
                 </Text>
               </View>
             </View>
