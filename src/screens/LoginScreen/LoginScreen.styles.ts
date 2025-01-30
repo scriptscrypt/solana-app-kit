@@ -1,11 +1,18 @@
 import {StyleSheet, Dimensions} from 'react-native';
+import COLORS from '../../assets/colors';
+
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-export default StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.white,
+  },
+  gradient: {
+    position: 'absolute',
+    bottom: 0,
   },
   svgContainer: {
     justifyContent: 'center',
@@ -22,7 +29,7 @@ export default StyleSheet.create({
     left: SCREEN_WIDTH * 0.6,
     paddingVertical: 10,
     paddingHorizontal: 30,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: {width: 0, height: 10},
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -30,7 +37,7 @@ export default StyleSheet.create({
   },
   bottomButtonsContainer: {
     position: 'absolute',
-    bottom: 60, // or whatever spacing you want
+    bottom: 60,
     width: '100%',
     alignItems: 'center',
   },
@@ -38,15 +45,29 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '80%', // 80% width
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFF',
+    width: '90%',
+    height: 45,
+    borderRadius: 10,
+    backgroundColor: COLORS.white,
     marginVertical: 8,
   },
   buttonText: {
     marginLeft: 10,
-    fontSize: 16,
-    color: '#000',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 19.6,
+    letterSpacing: -0.01,
+    textAlign: 'center',
+    color: COLORS.black,
+  },
+  agreementText: {
+    position: 'absolute',
+    textAlign: 'center',
+    color: COLORS.textLight,
+    fontSize: 14,
+    bottom: 30,
   },
 });
+
+export default styles;
