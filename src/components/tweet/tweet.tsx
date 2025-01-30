@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {createTweetStyles} from './tweet.style';
+import Icons from '../../assets/svgs';
 
 interface SingleTweet {
   username: string;
@@ -35,11 +36,11 @@ const formatCount = (count: number): string => {
 };
 
 const reactionIcons = [
-  require('../../assets/images/React idle.png'),
-  require('../../assets/images/Recast idle.png'),
-  require('../../assets/images/Comment idle.png'),
-  require('../../assets/images/share idle.png'),
-  require('../../assets/images/Bookmark idle.png'),
+  Icons.ReactionIdle,
+  Icons.RetweetIdle,
+  Icons.CommentIdle,
+  Icons.ShareIdle,
+  Icons.BookmarkIdle,
 ];
 
 const Tweet: React.FC<TweetProps> = ({data, onPress}) => {
@@ -58,40 +59,31 @@ const Tweet: React.FC<TweetProps> = ({data, onPress}) => {
     <>
       {data.map((tweet, index) => (
         <View key={index} style={styles.container}>
-          {/* Avatar Section */}
           <View style={styles.avatarContainer}>
             <Image source={tweet.avatar} style={styles.avatar} />
           </View>
 
-          {/* Tweet Content */}
           <View style={styles.infoContainer}>
-            {/* Header (Username, Tag, Timestamp) */}
             <View style={styles.header}>
               <Text style={styles.username}>{tweet.username}</Text>
-              <Image source={require('../../assets/images/Vector.png')} />
+              <Icons.BlueCheck />
               <Text style={styles.handle}>
                 {tweet.handle} • {tweet.time}
               </Text>
-              <Image
-                source={require('../../assets/images/ph_dots-three-bold.png')}
-                style={styles.menuIcon}
-              />
+              <Icons.DotsThree style={styles.menuIcon} />
             </View>
 
-            {/* Tweet Text */}
             <Text style={styles.tweetText}>
-              {/** Everything before "$SEND" in normal text */}
               {tweet.tweetContent.split('$SEND')[0]}
               {tweet.tweetContent.includes('$SEND') && (
                 <Text style={styles.sendText}>$SEND</Text>
               )}
             </Text>
 
-            {/* Reaction & Buy Button */}
             <View style={styles.reactionContainer}>
               <View style={styles.reactionIcons}>
-                {reactionIcons.map((icon, iconIndex) => (
-                  <Image key={iconIndex} source={icon} />
+                {reactionIcons.map((Icon, iconIndex) => (
+                  <Icon key={iconIndex} />
                 ))}
               </View>
               <TouchableOpacity
@@ -103,17 +95,13 @@ const Tweet: React.FC<TweetProps> = ({data, onPress}) => {
               </TouchableOpacity>
             </View>
 
-            {/* Metrics */}
             <View style={styles.metricsContainer}>
               <View style={styles.threadAvatars}>
-                {/* Top-most avatar */}
                 <Image source={tweet.avatar} style={styles.threadAvatar1} />
-                {/* Middle avatar */}
                 <Image
                   source={require('../../assets/images/Thread Avatars (1).png')}
                   style={styles.threadAvatar2}
                 />
-                {/* Bottom avatar */}
                 <Image
                   source={require('../../assets/images/Thread Avatars.png')}
                   style={styles.threadAvatar3}
