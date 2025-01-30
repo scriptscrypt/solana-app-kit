@@ -20,10 +20,15 @@ const styles = StyleSheet.create({
   },
   smileFaceContainer: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.30,
+    top: SCREEN_HEIGHT * 0.3,
     left: SCREEN_WIDTH * 0.6,
     paddingVertical: 10.14,
     paddingHorizontal: 30.43,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 1,
   },
   bottomRectContainer: {
     position: 'absolute',
