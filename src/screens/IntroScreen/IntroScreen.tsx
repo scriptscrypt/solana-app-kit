@@ -1,20 +1,12 @@
 import React, {useEffect, useRef} from 'react';
 import {View, TouchableOpacity, Animated, Easing} from 'react-native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RootStackParamList} from '../../navigation/RootNavigator';
 import Icons from '../../assets/svgs/index';
 import styles from './IntroScreen.styles';
+import {useAppNavigation} from '../../hooks/useAppNavigation';
 
-type IntroScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'Intro'
->;
+export default function IntroScreen() {
+  const navigation = useAppNavigation();
 
-interface IntroScreenProps {
-  navigation: IntroScreenNavigationProp;
-}
-
-export default function IntroScreen({navigation}: IntroScreenProps) {
   const solanaDotOpacity = useRef(new Animated.Value(0)).current;
   const splashTextOpacity = useRef(new Animated.Value(0)).current;
   const smileScale = useRef(new Animated.Value(0.5)).current;
@@ -24,18 +16,17 @@ export default function IntroScreen({navigation}: IntroScreenProps) {
     Animated.sequence([
       Animated.timing(solanaDotOpacity, {
         toValue: 1,
-        duration: 800,
+        duration: 500,
         useNativeDriver: true,
       }),
       Animated.timing(splashTextOpacity, {
         toValue: 1,
-        duration: 800,
+        duration: 500,
         useNativeDriver: true,
       }),
-      // Scale up Smile Face
       Animated.spring(smileScale, {
-        toValue: 1,
-        friction: 5,
+        toValue: 0.8,
+        friction: 2,
         useNativeDriver: true,
       }),
     ]).start();
