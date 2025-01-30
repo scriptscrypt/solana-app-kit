@@ -8,6 +8,7 @@ const COLORS = {
   greyMid: '#B7B7B7',
   greyDark: '#999999',
   greyBorder: '#EDEFF3',
+  greyBorderdark : "#E5E5E5",
 
   // Branding & special use
   brandPrimary: '#32D4DE', // e.g. for $SEND text
@@ -18,6 +19,7 @@ const COLORS = {
   textDark: '#1E1E1E',
   textHint: '#ADADAD',
   textLight: '#858585',
+  cyan : "#32D4DE"
 
 };
 

@@ -5,6 +5,7 @@ import SmileFace from './smile-face.svg';
 import Google from './google.svg';
 import Apple from './apple.svg';
 import Device from './device.svg';
+import infoIcon from "./Union.svg"
 
 export default {
   SolanaDot,
@@ -13,5 +14,6 @@ export default {
   SmileFace,
   Google,
   Apple,
-  Device
+  Device,
+  infoIcon
 };

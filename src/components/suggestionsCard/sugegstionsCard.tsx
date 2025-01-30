@@ -6,12 +6,12 @@ const SuggestionsCard = () => {
   return (
     <View style={styles.container}>
       <Image
-        source={require("../../assets/pngs/suggestionCardBg.png")}
+        source={require("../../assets/images/suggestionCardBg.png")}
         style={styles.image}
       />
       <View style={styles.imgBox}>
         <Image
-          source={require("../../assets/pngs/image 24.png")}
+          source={require("../../assets/images/image 24.png")}
           style={styles.profImg}
         />
       </View>
