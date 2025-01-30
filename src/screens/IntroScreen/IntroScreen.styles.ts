@@ -1,13 +1,14 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import {StyleSheet, Dimensions} from 'react-native';
+import COLORS from '../../assets/colors';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.white,
   },
   svgContainer: {
     justifyContent: 'center',
@@ -22,9 +23,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: SCREEN_HEIGHT * 0.3,
     left: SCREEN_WIDTH * 0.6,
-    paddingVertical: 10.14,
-    paddingHorizontal: 30.43,
-    shadowColor: '#000',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    shadowColor: COLORS.black,
     shadowOffset: {width: 0, height: 10},
     shadowOpacity: 0.2,
     shadowRadius: 10,

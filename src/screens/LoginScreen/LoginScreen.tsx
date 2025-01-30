@@ -1,17 +1,12 @@
 import React, {useEffect, useRef} from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Animated,
-  Text,
-  Dimensions,
-} from 'react-native';
+import {View, TouchableOpacity, Animated, Text, Dimensions} from 'react-native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../navigation/RootNavigator';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 
 import Icons from '../../assets/svgs/index';
 import styles from './LoginScreen.styles';
+import COLORS from '../../assets/colors';
 
 type LoginOptionsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -24,9 +19,7 @@ interface LoginOptionsScreenProps {
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-export default function LoginScreen({
-  navigation,
-}: LoginOptionsScreenProps) {
+export default function LoginScreen({navigation}: LoginOptionsScreenProps) {
   const solanaDotOpacity = useRef(new Animated.Value(0)).current;
   const splashTextOpacity = useRef(new Animated.Value(0)).current;
   const smileScale = useRef(new Animated.Value(0.5)).current;
@@ -43,7 +36,6 @@ export default function LoginScreen({
         duration: 800,
         useNativeDriver: true,
       }),
-      // Scale up Smile Face
       Animated.spring(smileScale, {
         toValue: 1,
         friction: 5,
@@ -52,39 +44,29 @@ export default function LoginScreen({
     ]).start();
   }, [solanaDotOpacity, splashTextOpacity, smileScale]);
 
+  const handleLogin = () => {
+    navigation.navigate('MainTabs');
+  };
+
   return (
     <View style={styles.container}>
-      {/* Gradient Background (top: white, bottom: rgba(153,153,153,1)) */}
       <Svg
-        height={SCREEN_HEIGHT}
+        height={SCREEN_HEIGHT / 3}
         width={SCREEN_WIDTH}
-        style={{position: 'absolute', top: 0, left: 0}}>
+        style={styles.gradient}>
         <Defs>
-          <LinearGradient
-            id="verticalGradient"
-            x1="0"
-            y1="0"
-            x2="0"
-            y2={SCREEN_HEIGHT}>
-            <Stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
-            <Stop offset="1" stopColor="rgba(153,153,153,1)" stopOpacity="1" />
+          <LinearGradient id="grad" x1="0" y1="1" x2="0" y2="0">
+            <Stop offset="0" stopColor={COLORS.greyDark} stopOpacity="1" />
+            <Stop offset="1" stopColor="white" stopOpacity="1" />
           </LinearGradient>
         </Defs>
-        <Rect
-          x="0"
-          y="0"
-          width="100%"
-          height="100%"
-          fill="url(#verticalGradient)"
-        />
+        <Rect x="0" y="" width="100%" height="100%" fill="url(#grad)" />
       </Svg>
 
-      {/* Main SVG/Icons Container */}
       <View style={styles.svgContainer}>
         <Animated.View style={{opacity: solanaDotOpacity}}>
           <Icons.SolanaDot />
         </Animated.View>
-
         <Animated.View
           style={[styles.splashTextContainer, {opacity: splashTextOpacity}]}>
           <Icons.SplashText />
@@ -99,29 +81,25 @@ export default function LoginScreen({
         </Animated.View>
       </View>
 
-      {/* Bottom Buttons Container: Google, Apple, and Email */}
       <View style={styles.bottomButtonsContainer}>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => console.log('Login with Google')}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Icons.Google width={24} height={24} />
-          <Text style={styles.buttonText}>Login with Google</Text>
+          <Text style={styles.buttonText}>Continue with Google</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => console.log('Login with Apple')}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Icons.Apple width={24} height={24} />
-          <Text style={styles.buttonText}>Login with Apple</Text>
+          <Text style={styles.buttonText}>Continue with Apple</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => console.log('Login with Email')}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <Icons.Device width={24} height={24} />
-          <Text style={styles.buttonText}>Login with Email</Text>
+          <Text style={styles.buttonText}>Continue with Email</Text>
         </TouchableOpacity>
       </View>
+      <Text style={styles.agreementText}>
+        by continuing, you agree to t&c and privacy policy
+      </Text>
     </View>
   );
 }
