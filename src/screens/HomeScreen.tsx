@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, SafeAreaView} from 'react-native';
 import Tweet from '../components/tweet/tweet';
 import UserListing from '../components/userListing/userListing';
 import SuggestionsCard from '../components/suggestionsCard/sugegstionsCard';
@@ -7,12 +7,12 @@ import { tweetsData } from '../mocks/tweets';
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.text}>Home Screen</Text>
-            {/* <SuggestionsCard/> */}
+            <SuggestionsCard/>
             <UserListing/>
             {/* <Tweet data={tweetsData}/> */}
-    </View>
+    </SafeAreaView>
   );
 }
 

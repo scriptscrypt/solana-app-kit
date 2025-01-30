@@ -16,6 +16,7 @@ import ReactionIdle from './reaction-idle.svg';
 import RetweetIdle from './retweet-idle.svg';
 import ShareIdle from './share-idle.svg';
 import Target from './target.svg';
+import ProfilePlusIcon from './profile-plus-icon.svg';
 
 export default {
   SolanaDot,
@@ -36,4 +37,5 @@ export default {
   RetweetIdle,
   ShareIdle,
   Target,
+  ProfilePlusIcon,
 };
