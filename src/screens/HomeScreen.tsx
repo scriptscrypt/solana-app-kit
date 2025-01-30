@@ -10,13 +10,13 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Text style={styles.text}>Home Screen</Text>
             {/* <SuggestionsCard/> */}
-            {/* <UserListing/> */}
+            <UserListing/>
             {/* <Tweet data={tweetsData}/> */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  container: {flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff'},
   text: {fontSize: 20},
 });
