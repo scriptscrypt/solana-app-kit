@@ -2,7 +2,7 @@ import React, {useEffect, useRef} from 'react';
 import {View, TouchableOpacity, Animated, Easing} from 'react-native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '../../navigation/RootNavigator';
-import Icons from '../../assests/svgs/index';
+import Icons from '../../assets/svgs/index';
 import styles from './IntroScreen.styles';
 
 type IntroScreenNavigationProp = StackNavigationProp<
