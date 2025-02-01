@@ -1,10 +1,11 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, SafeAreaView} from 'react-native';
+import OtherProfile from '../components/otherProfile/otherProfile';
 
 export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Notifications Screen</Text>
+      <OtherProfile/>
     </View>
   );
 }
