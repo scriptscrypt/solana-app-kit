@@ -3,7 +3,14 @@ import {createStackNavigator} from '@react-navigation/stack';
 import IntroScreen from '../screens/IntroScreen/IntroScreen';
 import MainTabs from './MainTabs';
 import LoginScreen from '../screens/LoginScreen/LoginScreen';
-import type {RootStackParamList} from '../hooks/useAppNavigation';
+import CoinDetailPage from '../screens/CoinDetailPage/CoinDetailPage';
+
+export type RootStackParamList = {
+  Intro: undefined;
+  MainTabs: undefined;
+  LoginOptions: undefined;
+  CoinDetailPage : undefined;
+};
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -12,7 +19,16 @@ export default function RootNavigator() {
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="Intro" component={IntroScreen} />
       <Stack.Screen name="MainTabs" component={MainTabs} />
-      <Stack.Screen name="LoginOptions" component={LoginScreen} />
+      <Stack.Screen
+        name="LoginOptions"
+        component={LoginScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="CoinDetailPage"
+        component={CoinDetailPage}
+        options={{headerShown: false}}
+      />
     </Stack.Navigator>
   );
 }

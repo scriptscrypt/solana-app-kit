@@ -1,22 +1,11 @@
-import Thread from './Thread';
-import ThreadItem from './ThreadItem';
-import PostHeader from './PostHeader';
-import PostBody from './PostBody';
-import PostFooter from './PostFooter';
-import ThreadComposer from './ThreadComposer';
+// src/components/thread/index.ts
+export {default as Thread} from './Thread';
+export {default as ThreadItem} from './ThreadItem';
+export {default as ThreadAncestors} from './ThreadAncestors';
+export {default as ThreadComposer} from './ThreadComposer';
+export {default as PostHeader} from './PostHeader';
+export {default as PostBody} from './PostBody';
+export {default as PostFooter} from './PostFooter';
 
-import {ThreadPost} from './thread.types';
-import {buildThreadTree, flattenThreadTree, getParentChain} from './thread.utils';
-
-export {
-  Thread,
-  ThreadItem,
-  PostHeader,
-  PostBody,
-  PostFooter,
-  ThreadComposer,
-  ThreadPost,
-  buildThreadTree,
-  flattenThreadTree,
-  getParentChain,
-};
+export * from './thread.styles';
+export * from './thread.theme';

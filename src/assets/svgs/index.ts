@@ -17,6 +17,15 @@ import RetweetIdle from './retweet-idle.svg';
 import ShareIdle from './share-idle.svg';
 import Target from './target.svg';
 import ProfilePlusIcon from './profile-plus-icon.svg';
+import infoIcon from './Union.svg';
+import PinLocation from "./pin-location.svg";
+import SubscriptionTick from "./subscription-tick.svg";
+import SwapIcon from "./Swap.svg";
+import NotifIcon from "./notif-icon.svg";
+import HomeIcon from "./home-icon.svg";
+import FeedIcon from "./feed-icon.svg";
+import ProfileIcon from "./profile-icon.svg";
+import ExploreIcon from "./explore-icon.svg";
 
 export default {
   SolanaDot,
@@ -26,6 +35,7 @@ export default {
   Google,
   Apple,
   Device,
+  infoIcon,
   GridIcon,
   BlinkEye,
   BlueCheck,
@@ -38,4 +48,12 @@ export default {
   ShareIdle,
   Target,
   ProfilePlusIcon,
+  PinLocation,
+  SubscriptionTick,
+  SwapIcon,
+  NotifIcon,
+  HomeIcon,
+  FeedIcon,
+  ProfileIcon,
+  ExploreIcon,
 };

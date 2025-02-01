@@ -1,46 +1,45 @@
 import React from 'react';
-import {View, StyleSheet} from 'react-native';
-import {ThreadPost} from './thread.types';
-import PostHeader from './PostHeader';
-import PostBody from './PostBody';
-import PostFooter from './PostFooter';
+import {View, Text} from 'react-native';
+import {createThreadStyles, getMergedTheme} from './thread.styles';
+import {gatherAncestorChain} from './thread.utils';
+import { ThreadPost } from './thread.types';
 
 interface ThreadAncestorsProps {
-  ancestors: ThreadPost[];
-  onReply?: (parentId: string, content: string) => void;
+  post: ThreadPost;
+  rootPosts: ThreadPost[];
+  themeOverrides?: Partial<Record<string, any>>;
+  styleOverrides?: {[key: string]: object};
+  userStyleSheet?: {[key: string]: object};
 }
 
-export const ThreadAncestors: React.FC<ThreadAncestorsProps> = ({
-  ancestors,
-  onReply,
-}) => {
-  if (!ancestors.length) return null;
+export default function ThreadAncestors({
+  post,
+  rootPosts,
+  themeOverrides,
+  styleOverrides,
+  userStyleSheet,
+}: ThreadAncestorsProps) {
+  if (!post.parentId) return null;
+
+  const mergedTheme = getMergedTheme(themeOverrides);
+  const styles = createThreadStyles(
+    mergedTheme,
+    styleOverrides,
+    userStyleSheet,
+  );
+
+  const chain = gatherAncestorChain(post.id, rootPosts);
+
+  if (chain.length === 0) return null;
+
+  const uniqueHandles = chain.map(p => p.user.handle).filter(Boolean);
 
   return (
-    <View style={styles.container}>
-      {ancestors.map(ancestor => (
-        <View key={ancestor.id} style={styles.ancestorCard}>
-          <PostHeader user={ancestor.user} createdAt={ancestor.createdAt} />
-          <PostBody content={ancestor.content} />
-          {onReply && (
-            <PostFooter onReplyPress={() => onReply(ancestor.id, '...')} />
-          )}
-        </View>
-      ))}
+    <View style={styles.replyingContainer}>
+      <Text style={styles.replyingText}>
+        Replying to{' '}
+        <Text style={styles.replyingHandle}>{uniqueHandles.join(', ')}</Text>
+      </Text>
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 8,
-  },
-  ancestorCard: {
-    marginBottom: 8,
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#EDEDED',
-    backgroundColor: '#FFFFFF',
-  },
-});
+}

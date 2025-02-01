@@ -4,13 +4,8 @@ import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import FeedScreen from '../screens/FeedScreen/FeedScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-
-import HomeIcon from '../assets/svgs/Home idle.svg';
-import SearchIcon from '../assets/svgs/Explore idle.svg';
-import FeedIcon from '../assets/svgs/Frame 22.svg';
-import NotificationIcon from '../assets/svgs/Notif idle.svg';
-import ProfileIcon from '../assets/svgs/Profile idle v2.svg';
+import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
+import Icons from '../assets/svgs';
 
 import type {MainTabParamList} from '../hooks/useAppNavigation';
 
@@ -31,7 +26,7 @@ export default function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <HomeIcon
+            <Icons.HomeIcon
               width={size * 1.4}
               height={size * 1.4}
               stroke={color}
@@ -45,7 +40,7 @@ export default function MainTabs() {
         component={SearchScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <SearchIcon
+            <Icons.ExploreIcon
               width={size * 1.4}
               height={size * 1.4}
               stroke={color}
@@ -59,7 +54,7 @@ export default function MainTabs() {
         component={FeedScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <FeedIcon
+            <Icons.FeedIcon
               width={size * 1.4}
               height={size * 1.4}
               stroke={color}
@@ -73,7 +68,7 @@ export default function MainTabs() {
         component={NotificationsScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <NotificationIcon
+            <Icons.NotifIcon
               width={size * 1.4}
               height={size * 1.4}
               stroke={color}
@@ -87,7 +82,7 @@ export default function MainTabs() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({color, size}) => (
-            <ProfileIcon
+            <Icons.ProfileIcon
               width={size * 1.4}
               height={size * 1.4}
               stroke={color}

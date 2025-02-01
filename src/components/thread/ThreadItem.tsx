@@ -1,107 +1,131 @@
-import React, {useState, useMemo} from 'react';
-import {View, StyleSheet} from 'react-native';
-import {ThreadPost} from './thread.types';
+// src/components/thread/ThreadItem.tsx
+
+import React, {useState} from 'react';
+import {View, Alert, TouchableOpacity} from 'react-native';
+import ThreadAncestors from './ThreadAncestors';
 import PostHeader from './PostHeader';
 import PostBody from './PostBody';
 import PostFooter from './PostFooter';
 import ThreadComposer from './ThreadComposer';
-import ThreadItem from './ThreadItem';
-import {ThreadAncestors} from './ThreadAncestors';
-import {flattenThreadTree, getParentChain} from './thread.utils';
+import {createThreadStyles, getMergedTheme} from './thread.styles';
+import {useAppDispatch} from '../../hooks/useReduxHooks';
+import {deletePost} from '../../state/thread/reducer';
+import {ThreadPost, ThreadUser} from './thread.types';
 
 interface ThreadItemProps {
   post: ThreadPost;
-  onReply: (parentId: string, content: string) => void;
-  level?: number; // indentation level (optional)
-  // NEW:
-  showParentChain?: boolean;
-  // flat array of all posts if we want to show the parent's chain
-  allPosts?: ThreadPost[];
+  currentUser: ThreadUser;
+  rootPosts: ThreadPost[];
+  depth?: number;
+  onPressPost?: (post: ThreadPost) => void;
+
+  themeOverrides?: Partial<Record<string, any>>;
+  styleOverrides?: {[key: string]: object};
+  userStyleSheet?: {[key: string]: object};
 }
 
-const ThreadItemComponent: React.FC<ThreadItemProps> = ({
+export default function ThreadItem({
   post,
-  onReply,
-  level = 0,
-  showParentChain = false,
-  allPosts,
-}) => {
+  currentUser,
+  rootPosts,
+  depth = 0,
+  onPressPost,
+  themeOverrides,
+  styleOverrides,
+  userStyleSheet,
+}: ThreadItemProps) {
   const [showReplyComposer, setShowReplyComposer] = useState(false);
+  const dispatch = useAppDispatch();
 
-  const handleReplyPress = () => {
+  const mergedTheme = getMergedTheme(themeOverrides);
+  const styles = createThreadStyles(
+    mergedTheme,
+    styleOverrides,
+    userStyleSheet,
+  );
+
+  const handleToggleReplyComposer = () => {
     setShowReplyComposer(!showReplyComposer);
   };
 
-  const handleReplySubmit = (content: string) => {
-    onReply(post.id, content);
-    setShowReplyComposer(false);
+  const containerStyle = [
+    styles.threadItemContainer,
+    depth > 0 && styles.threadItemReplyLine,
+  ];
+
+  // If the user is not the owner, block deletion
+  const handleDeletePost = (p: ThreadPost) => {
+    if (p.user.id !== currentUser.id) {
+      Alert.alert('Cannot Delete', 'You are not the owner of this post.');
+      return;
+    }
+    dispatch(deletePost({postId: p.id}));
   };
 
-  // If user wants to show parent chain + we have allPosts, compute once
-  const ancestorChain = useMemo(() => {
-    if (showParentChain && allPosts?.length) {
-      // Flatten if needed. If 'allPosts' are already flat, no need to flatten:
-      // const flat = flattenThreadTree(allPosts); // depends on your usage
-      // For safety, assume 'allPosts' is a tree, so we flatten:
-      const flat = flattenThreadTree(allPosts);
-      return getParentChain(flat, post.id);
-    }
-    return [];
-  }, [showParentChain, allPosts, post.id]);
+  // If developer provided an onPress, we'll wrap the entire post
+  const Wrapper = onPressPost ? TouchableOpacity : View;
 
   return (
-    <View style={[styles.container, {marginLeft: level * 12}]}>
-      {/* If we want the full ancestor chain above this post */}
-      {ancestorChain.length > 0 && (
-        <ThreadAncestors ancestors={ancestorChain} onReply={onReply} />
-      )}
+    <View style={containerStyle}>
+      <ThreadAncestors
+        post={post}
+        rootPosts={rootPosts}
+        themeOverrides={themeOverrides}
+        styleOverrides={styleOverrides}
+        userStyleSheet={userStyleSheet}
+      />
 
-      <View style={styles.postContainer}>
-        <PostHeader user={post.user} createdAt={post.createdAt} />
-        <PostBody content={post.content} />
-        <PostFooter onReplyPress={handleReplyPress} />
-      </View>
+      <Wrapper
+        activeOpacity={0.8}
+        onPress={() => onPressPost && onPressPost(post)}
+        style={{flex: 1}}>
+        <PostHeader
+          post={post}
+          onPressMenu={() => {}}
+          onDeletePost={handleDeletePost}
+          themeOverrides={themeOverrides}
+          styleOverrides={styleOverrides}
+        />
+
+        <PostBody
+          post={post}
+          themeOverrides={themeOverrides}
+          styleOverrides={styleOverrides}
+        />
+
+        <PostFooter
+          post={post}
+          onPressComment={handleToggleReplyComposer}
+          themeOverrides={themeOverrides}
+          styleOverrides={styleOverrides}
+        />
+      </Wrapper>
 
       {showReplyComposer && (
-        <ThreadComposer
-          onSubmit={handleReplySubmit}
-          placeholder={`Reply to ${post.user.username}`}
-        />
-      )}
-
-      {/* Recursively render replies */}
-      {post.replies && post.replies.length > 0 && (
-        <View style={styles.repliesContainer}>
-          {post.replies.map(reply => (
-            <ThreadItemComponent
-              key={reply.id}
-              post={reply}
-              onReply={onReply}
-              level={level + 1}
-              showParentChain={false} // avoid repeating chain for children
-              allPosts={allPosts}
-            />
-          ))}
+        <View style={{marginTop: 8}}>
+          <ThreadComposer
+            currentUser={currentUser}
+            parentId={post.id}
+            onPostCreated={() => setShowReplyComposer(false)}
+            themeOverrides={themeOverrides}
+            styleOverrides={styleOverrides}
+          />
         </View>
       )}
+
+      {post.replies.map(reply => (
+        <ThreadItem
+          key={reply.id}
+          post={reply}
+          currentUser={currentUser}
+          rootPosts={rootPosts}
+          depth={depth + 1}
+          onPressPost={onPressPost}
+          themeOverrides={themeOverrides}
+          styleOverrides={styleOverrides}
+          userStyleSheet={userStyleSheet}
+        />
+      ))}
     </View>
   );
-};
-
-export default ThreadItemComponent;
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 8,
-  },
-  postContainer: {
-    borderWidth: 1,
-    borderColor: '#EDEDED',
-    borderRadius: 8,
-    padding: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  repliesContainer: {
-    marginTop: 8,
-  },
-});
+}
