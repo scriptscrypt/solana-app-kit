@@ -11,9 +11,9 @@ const COLORS = {
   greyBorderdark : "#E5E5E5",
 
   // Branding & special use
-  brandPrimary: '#32D4DE', // e.g. for $SEND text
-  brandPurple: '#B591FF', // e.g. for "buy" button text
-  brandPurpleBg: '#EDECFF', // e.g. for "buy" button background
+  brandPrimary: '#32D4DE',
+  brandPurple: '#B591FF',
+  brandPurpleBg: '#EDECFF',
 
   // Other usage
   textDark: '#1E1E1E',

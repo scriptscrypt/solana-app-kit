@@ -5,10 +5,6 @@ import MainTabs from './MainTabs';
 import LoginScreen from '../screens/LoginScreen/LoginScreen';
 import CoinDetailPage from '../screens/CoinDetailPage/CoinDetailPage';
 
-/**
- * Root stack parameter list.
- * Adjust these if you need to pass params to each screen.
- */
 export type RootStackParamList = {
   Intro: undefined;
   MainTabs: undefined;
