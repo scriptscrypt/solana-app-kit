@@ -7,10 +7,9 @@ export const createTweetStyles = (isSmallScreen: boolean) => {
   return StyleSheet.create({
     container: {
       flexDirection: 'row',
-      paddingVertical: 16,
+      paddingVertical: 20,
       width: '100%',
-      // dynamic padding based on screen size
-      paddingHorizontal: isSmallScreen ? 8 : 12,
+      paddingHorizontal: isSmallScreen ? 2 : 2,
     },
     avatarContainer: {
       width: '15%',
@@ -25,13 +24,15 @@ export const createTweetStyles = (isSmallScreen: boolean) => {
     infoContainer: {
       flex: 1,
       flexDirection: 'column',
+      gap: 10,
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: 8,
       position: 'relative',
       flexWrap: 'wrap',
+      marginBottom: 2,
     },
     username: {
       fontWeight: '600',
@@ -59,11 +60,13 @@ export const createTweetStyles = (isSmallScreen: boolean) => {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 8,
+      paddingVertical: 6,
     },
     reactionIcons: {
       flexDirection: 'row',
-      gap: 6,
+      gap: 16,
+      alignItems: 'center',
+      paddingRight: 8,
     },
     buyButton: {
       backgroundColor: COLORS.brandPurpleBg,
@@ -81,6 +84,7 @@ export const createTweetStyles = (isSmallScreen: boolean) => {
     metricsContainer: {
       flexDirection: 'row',
       alignContent: 'center',
+      marginTop: 2,
     },
     threadAvatars: {
       flexDirection: 'row',

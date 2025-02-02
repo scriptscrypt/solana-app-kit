@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView} from 'react-native';
+import {View, Text, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
 import Tweet from '../components/tweet/tweet';
 import UserListing from '../components/userListing/userListing';
 import SuggestionsCard from '../components/suggestionsCard/sugegstionsCard';
@@ -15,11 +15,13 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.text}>Home Screen</Text>
-            {/* <SuggestionsCard/> */}
-{/* <UserListing/> */}
-{/* <Tweet/> */}
-<TouchableOpacity onPress={() => navigation.navigate('CoinDetailPage')}> <Text>Go To Coin Details</Text></TouchableOpacity>
-    </View>
+      {/* <SuggestionsCard/> */}
+      {/* <UserListing/> */}
+      {/* <Tweet/> */}
+      <TouchableOpacity onPress={() => navigation.navigate('CoinDetailPage')}>
+        <Text>Go To Coin Details</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 }
 
