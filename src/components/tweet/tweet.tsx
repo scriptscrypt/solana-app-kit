@@ -99,11 +99,11 @@ const Tweet: React.FC<TweetProps> = ({data, onPress}) => {
               <View style={styles.threadAvatars}>
                 <Image source={tweet.avatar} style={styles.threadAvatar1} />
                 <Image
-                  source={require('../../assets/images/Thread Avatars (1).png')}
+                  source={require('../../assets/images/thread-avatar-1.png')}
                   style={styles.threadAvatar2}
                 />
                 <Image
-                  source={require('../../assets/images/Thread Avatars.png')}
+                  source={require('../../assets/images/thread-avatar-2.png')}
                   style={styles.threadAvatar3}
                 />
               </View>

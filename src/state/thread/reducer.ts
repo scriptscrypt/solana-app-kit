@@ -1,12 +1,18 @@
-// src/state/thread/reducer.ts
-
+//-----------------------------------------------------------
+// File: src/state/thread/reducer.ts
+//-----------------------------------------------------------
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
-import type {ImageSourcePropType} from 'react-native';
-import { allposts } from '../../mocks/posts';
-import { findPostById, generateId, removePostRecursive } from '../../components/thread/thread.utils';
-import { ThreadPost, ThreadSection, ThreadUser } from '../../components/thread/thread.types';
-
-
+import {allposts} from '../../mocks/posts';
+import {
+  findPostById,
+  generateId,
+  removePostRecursive,
+} from '../../components/thread/thread.utils';
+import type {
+  ThreadPost,
+  ThreadSection,
+  ThreadUser,
+} from '../../components/thread/thread.types';
 
 interface ThreadState {
   allPosts: ThreadPost[];
@@ -38,7 +44,7 @@ export const threadSlice = createSlice({
         retweetCount: 0,
         quoteCount: 0,
       };
-      state.allPosts.push(newPost);
+      state.allPosts.unshift(newPost); // place new post at top
     },
     addReply: (
       state,
@@ -63,31 +69,30 @@ export const threadSlice = createSlice({
 
       const parentPost = findPostById(state.allPosts, parentId);
       if (parentPost) {
-        parentPost.replies.push(newReply);
+        parentPost.replies.unshift(newReply);
         parentPost.quoteCount += 1;
       }
-      state.allPosts.push(newReply);
+      // Also store in flat array to keep allPosts comprehensive
+      state.allPosts.unshift(newReply);
     },
     deletePost: (state, action: PayloadAction<{postId: string}>) => {
       const {postId} = action.payload;
       const postToDelete = findPostById(state.allPosts, postId);
       if (!postToDelete) return;
 
+      // If it's a reply, decrement the parent's reply count
       if (postToDelete.parentId) {
         const parentPost = findPostById(state.allPosts, postToDelete.parentId);
-        if (parentPost) {
+        if (parentPost && parentPost.quoteCount > 0) {
+          parentPost.quoteCount -= 1;
           parentPost.replies = parentPost.replies.filter(r => r.id !== postId);
-          if (parentPost.quoteCount > 0) {
-            parentPost.quoteCount -= 1;
-          }
         }
       }
-
+      // Remove all replies recursively from the flat array
       state.allPosts = removePostRecursive(state.allPosts, postId);
     },
   },
 });
-
 
 export const {addRootPost, addReply, deletePost} = threadSlice.actions;
 export default threadSlice.reducer;

@@ -1,16 +1,15 @@
-// src/components/thread/ThreadItem.tsx
-
 import React, {useState} from 'react';
 import {View, Alert, TouchableOpacity} from 'react-native';
 import ThreadAncestors from './ThreadAncestors';
 import PostHeader from './PostHeader';
 import PostBody from './PostBody';
 import PostFooter from './PostFooter';
+import PostCTA from './PostCTA'; // Import PostCTA
 import ThreadComposer from './ThreadComposer';
 import {createThreadStyles, getMergedTheme} from './thread.styles';
 import {useAppDispatch} from '../../hooks/useReduxHooks';
 import {deletePost} from '../../state/thread/reducer';
-import {ThreadPost, ThreadUser} from './thread.types';
+import {ThreadCTAButton, ThreadPost, ThreadUser} from './thread.types';
 
 interface ThreadItemProps {
   post: ThreadPost;
@@ -18,7 +17,7 @@ interface ThreadItemProps {
   rootPosts: ThreadPost[];
   depth?: number;
   onPressPost?: (post: ThreadPost) => void;
-
+  ctaButtons?: ThreadCTAButton[];
   themeOverrides?: Partial<Record<string, any>>;
   styleOverrides?: {[key: string]: object};
   userStyleSheet?: {[key: string]: object};
@@ -30,6 +29,7 @@ export default function ThreadItem({
   rootPosts,
   depth = 0,
   onPressPost,
+  ctaButtons, // Pass CTA buttons
   themeOverrides,
   styleOverrides,
   userStyleSheet,
@@ -53,7 +53,6 @@ export default function ThreadItem({
     depth > 0 && styles.threadItemReplyLine,
   ];
 
-  // If the user is not the owner, block deletion
   const handleDeletePost = (p: ThreadPost) => {
     if (p.user.id !== currentUser.id) {
       Alert.alert('Cannot Delete', 'You are not the owner of this post.');
@@ -62,7 +61,6 @@ export default function ThreadItem({
     dispatch(deletePost({postId: p.id}));
   };
 
-  // If developer provided an onPress, we'll wrap the entire post
   const Wrapper = onPressPost ? TouchableOpacity : View;
 
   return (
@@ -93,6 +91,15 @@ export default function ThreadItem({
           styleOverrides={styleOverrides}
         />
 
+        {/* Add PostCTA here */}
+        <PostCTA
+          post={post}
+          buttons={ctaButtons}
+          themeOverrides={themeOverrides}
+          styleOverrides={styleOverrides}
+          userStyleSheet={userStyleSheet}
+        />
+
         <PostFooter
           post={post}
           onPressComment={handleToggleReplyComposer}
@@ -121,6 +128,7 @@ export default function ThreadItem({
           rootPosts={rootPosts}
           depth={depth + 1}
           onPressPost={onPressPost}
+          ctaButtons={ctaButtons} // Pass CTA buttons to replies
           themeOverrides={themeOverrides}
           styleOverrides={styleOverrides}
           userStyleSheet={userStyleSheet}
