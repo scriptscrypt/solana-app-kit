@@ -1,10 +1,8 @@
-// src/components/thread/PostBody.tsx
-
 import React from 'react';
 import {View, Text, Image} from 'react-native';
-import {ThreadPost} from '../../state/thread/reducer';
 import {createThreadStyles, getMergedTheme} from './thread.styles';
 import TradeCard from '../TradeCard/TradeCard';
+import { ThreadPost } from './thread.types';
 
 interface PostBodyProps {
   post: ThreadPost;
@@ -24,7 +22,9 @@ export default function PostBody({
     <View style={{marginTop: 8}}>
       {post.sections.map(section => (
         <View key={section.id} style={styles.extraContentContainer}>
-          {renderSection(section, styles)}
+       <View style={{width:"84%"}}>
+       {renderSection(section, styles)}
+        </View>
         </View>
       ))}
     </View>
@@ -73,11 +73,17 @@ function renderSection(
           )}
           {section.tradeData && (
             <TradeCard
-              tokenAvatar={section.tradeData.tokenAvatar}
-              tokenName={section.tradeData.tokenName}
-              tokenPriceUsdLeft={section.tradeData.tokenPriceUsdLeft}
-              tokenPriceSolRight={section.tradeData.tokenPriceSolRight}
-              tokenPriceUsdRight={section.tradeData.tokenPriceUsdRight}
+              token1={{
+                avatar: section.tradeData.token1Avatar,
+                name: section.tradeData.token1Name,
+                priceUsd: section.tradeData.token1PriceUsd,
+              }}
+              token2={{
+                avatar: section.tradeData.token2Avatar,
+                name: section.tradeData.token2Name,
+                priceUsd: section.tradeData.token2PriceUsd,
+                priceSol: section.tradeData.token2PriceSol,
+              }}
             />
           )}
         </>

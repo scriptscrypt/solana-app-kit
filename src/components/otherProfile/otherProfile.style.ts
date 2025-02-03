@@ -7,8 +7,9 @@ export const styles = StyleSheet.create({
         gap: 12,
         height: "auto",
         width: "100%",
+       
         paddingHorizontal: 16,
-        paddingBottom: 12,
+        paddingBottom: 12,  
       },
       bioSection:{
         fontSize: 14,
@@ -84,6 +85,8 @@ export const styles = StyleSheet.create({
       atMention: {
         color: '#2558D4', 
       },
+      profImgContainer:{width: 72, height: 72, borderRadius: 42,alignItems:"center",justifyContent:"center",},
+      profImg:{ width: "100%", height: "100%", resizeMode: "cover" }
     
     
 })

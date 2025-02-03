@@ -11,7 +11,7 @@ const SuggestionsCard = () => {
       />
       <View style={styles.imgBox}>
         <Image
-          source={require('../../assets/images/image 24.png')}
+          source={require('../../assets/images/hands.png')}
           style={styles.profImg}
         />
       </View>
