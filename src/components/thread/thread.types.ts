@@ -1,4 +1,4 @@
-import { ImageSourcePropType } from "react-native";
+import {ImageSourcePropType, StyleProp, TextStyle, ViewStyle} from 'react-native';
 
 export type ThreadSectionType =
   | 'TEXT_ONLY'
@@ -8,11 +8,13 @@ export type ThreadSectionType =
   | 'POLL';
 
 export interface TradeData {
-  tokenAvatar: ImageSourcePropType;
-  tokenName: string;
-  tokenPriceUsdLeft: string;
-  tokenPriceSolRight: string;
-  tokenPriceUsdRight: string;
+  token1Avatar: any;
+  token1Name: string;
+  token1PriceUsd: string;
+  token2Avatar: any;
+  token2Name: string;
+  token2PriceUsd: string;
+  token2PriceSol: string;
 }
 
 export interface PollData {
@@ -55,4 +57,11 @@ export interface PollData {
   question: string;
   options: string[];
   votes: number[];
+}
+
+export interface ThreadCTAButton {
+  label: string;
+  onPress: (post: ThreadPost) => void;
+  buttonStyle?: StyleProp<ViewStyle>;
+  buttonLabelStyle?: StyleProp<TextStyle>;
 }

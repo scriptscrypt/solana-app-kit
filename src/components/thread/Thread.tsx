@@ -1,26 +1,19 @@
-// src/components/thread/Thread.tsx
-
 import React, {useState} from 'react';
 import {View, Text, FlatList} from 'react-native';
 import ThreadItem from './ThreadItem';
 import ThreadComposer from './ThreadComposer';
 import {createThreadStyles, getMergedTheme} from './thread.styles';
 import Icons from '../../assets/svgs';
-import {ThreadPost, ThreadUser} from './thread.types';
+import {ThreadPost, ThreadUser, ThreadCTAButton} from './thread.types';
 
 interface ThreadProps {
   rootPosts: ThreadPost[];
   currentUser: ThreadUser;
   showHeader?: boolean;
   onPostCreated?: () => void;
-
-  /** If true, hides the composer at the top of the thread. Default: false */
   hideComposer?: boolean;
-
-  /** Called when the user taps on a post or reply. */
   onPressPost?: (post: ThreadPost) => void;
-
-  /** Theming & styling overrides for advanced customization */
+  ctaButtons?: ThreadCTAButton[];
   themeOverrides?: Partial<Record<string, any>>;
   styleOverrides?: {[key: string]: object};
   userStyleSheet?: {[key: string]: object};
@@ -33,6 +26,7 @@ export default function Thread({
   onPostCreated,
   hideComposer = false,
   onPressPost,
+  ctaButtons,
   themeOverrides,
   styleOverrides,
   userStyleSheet,
@@ -63,6 +57,7 @@ export default function Thread({
       styleOverrides={styleOverrides}
       userStyleSheet={userStyleSheet}
       onPressPost={onPressPost}
+      ctaButtons={ctaButtons} // Pass CTA buttons to ThreadItem
     />
   );
 

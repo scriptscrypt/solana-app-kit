@@ -58,7 +58,10 @@ export default function PostHeader({
     <View style={styles.threadItemHeaderRow}>
       {/* Avatar + username */}
       <View style={styles.threadItemHeaderLeft}>
-        <Image source={user.avatar} style={styles.threadItemAvatar} />
+     <View style={{position:"relative"}}>
+     <Image source={user.avatar} style={styles.threadItemAvatar} />
+     <Icons.addUserIcon style={{position:"absolute",bottom:-4,zIndex:10,right:4,width:16,height:16,borderRadius:8,borderWidth:2,borderColor:"white"}}/>
+     </View>
         <View style={{marginLeft: 8}}>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Text style={styles.threadItemUsername}>{user.username}</Text>
