@@ -1,4 +1,4 @@
-import {StyleSheet} from 'react-native';
+import {DimensionValue, StyleSheet} from 'react-native';
 import {THREAD_DEFAULT_THEME} from './thread.theme';
 
 export function getMergedTheme(
@@ -258,10 +258,12 @@ export function createThreadStyles(
        CTA (PostCTA)
        ====================== */
     threadPostCTAContainer: {
+      width: theme['--thread-cta-container-width'] as DimensionValue, // Explicitly cast to DimensionValue
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 8,
       marginTop: 8,
+      alignSelf: 'flex-end',
     },
     threadPostCTAButton: {
       backgroundColor: '#2A2A2A',
@@ -274,7 +276,6 @@ export function createThreadStyles(
       fontSize: 14,
       fontWeight: '600',
     },
-
     /* ======================
        TradeCard
        ====================== */
