@@ -32,12 +32,21 @@ const tweetData = [
 
 
 
-const graphData = [50, 80, 60, 90, 70, 95, 88, 85, 91, 85, 87, 89];
+type Timeframe = '1H' | '1D' | '1W' | '1M' | 'All';
+
+// Type the graphData object
+const graphData: Record<Timeframe, number[]> = {
+    '1H': [50, 48, 52, 51, 49, 53, 52, 50, 51, 52, 51, 53], // More subtle changes for hourly
+    '1D': [45, 47, 46, 52, 50, 55, 58, 56, 60, 58, 62, 65], // Steady increase throughout the day
+    '1W': [40, 45, 43, 48, 52, 50, 55, 58, 54, 60, 58, 63], // More volatility with overall upward trend
+    '1M': [30, 35, 45, 42, 55, 52, 58, 65, 75, 72, 78, 85], // Significant growth over the month
+    'All': [10, 15, 25, 35, 32, 45, 55, 65, 75, 85, 88, 95]  // Long-term exponential growth
+};
 
 
 export const TopScreen = () => {
 
-    const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
+    const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('1D');
     const [modalVisible, setModalVisible] = useState(true);  // Add state for modal
 
 
@@ -67,13 +76,13 @@ export const TopScreen = () => {
                         </View>
                     </View>
                     <View style={styles.graphSection}>
-                        <LineGraph data={graphData} />
+                        <LineGraph data={graphData[selectedTimeframe]} />
 
                         const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
 
                         // Update the timeframe buttons section:
                         <View style={styles.timeframeButtons}>
-                            {['1H', '1D', '1W', '1M', 'All'].map((timeframe) => (
+                            {(['1H', '1D', '1W', '1M', 'All'] as const).map((timeframe) => (
                                 <TouchableOpacity
                                     key={timeframe}
                                     style={[
@@ -158,11 +167,11 @@ export const TopScreen = () => {
                     activeOpacity={1}
                     onPress={() => setModalVisible(false)}
                 >
-                     <TouchableOpacity 
-            activeOpacity={1}
-            onPress={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
-            style={styles.modalContainer}
-        >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
+                        style={styles.modalContainer}
+                    >
                         {/* Modal Header */}
                         <View style={styles.modalHeader}>
                             {/* Left Side */}
@@ -188,7 +197,10 @@ export const TopScreen = () => {
 
                         {/* Graph */}
                         <View style={styles.modalGraph}>
-                            <LineGraph data={graphData} width={Dimensions.get('window').width - 72} />
+                            <LineGraph
+                                data={graphData[selectedTimeframe]}
+                                width={Dimensions.get('window').width - 72}
+                            />
                         </View>
 
                         {/* Buttons */}
@@ -218,7 +230,7 @@ export const TopScreen = () => {
                                 <Text style={styles.modalBottomButtonText}>Get $SEND</Text>
                             </TouchableOpacity>
                         </View>
-                        </TouchableOpacity>
+                    </TouchableOpacity>
                 </TouchableOpacity>
             </Modal>
         </>
