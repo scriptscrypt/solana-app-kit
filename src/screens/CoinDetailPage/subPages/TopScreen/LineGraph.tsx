@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Dimensions } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Dimensions, Animated } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Circle } from 'react-native-svg';
 
@@ -10,6 +10,39 @@ interface LineGraphProps {
 
 const LineGraph: React.FC<LineGraphProps> = ({ data, width }) => {
   const screenWidth = width || Dimensions.get('window').width - 32;
+  const animatedData = useRef(new Animated.Value(0)).current;
+  const currentData = useRef(data);
+  const [displayData, setDisplayData] = React.useState(data);
+
+  useEffect(() => {
+    // Reset animation value
+    animatedData.setValue(0);
+
+    // Store the previous data
+    const previousData = [...currentData.current];
+    currentData.current = data;
+
+    // Animate the transition
+    Animated.timing(animatedData, {
+      toValue: 1,
+      duration: 300, // Adjust duration as needed
+      useNativeDriver: true,
+    }).start();
+
+    // Update display data during animation
+    animatedData.addListener(({ value }) => {
+      const newData = data.map((target, index) => {
+        const start = previousData[index] || target;
+        return start + (target - start) * value;
+      });
+      setDisplayData(newData);
+    });
+
+    // Cleanup listener
+    return () => {
+      animatedData.removeAllListeners();
+    };
+  }, [data]);
 
   return (
     <LineChart
@@ -17,9 +50,9 @@ const LineGraph: React.FC<LineGraphProps> = ({ data, width }) => {
         labels: ["", "", "", "", "", ""],
         datasets: [
           {
-            data: data,
-            strokeWidth: 4, // Thicker line
-            color: () => '#318EF8' // Solid blue color
+            data: displayData,
+            strokeWidth: 4,
+            color: () => '#318EF8'
           }
         ]
       }}
@@ -30,19 +63,19 @@ const LineGraph: React.FC<LineGraphProps> = ({ data, width }) => {
         backgroundGradientFrom: '#ffffff',
         backgroundGradientTo: '#ffffff',
         decimalPlaces: 0,
-        color: () => 'transparent', // Hide grid lines
-        labelColor: () => 'transparent', // Hide labels
+        color: () => 'transparent',
+        labelColor: () => 'transparent',
         style: {
           borderRadius: 16
         },
         propsForDots: {
-          r: '0', // Hide dots
+          r: '0',
         },
         propsForBackgroundLines: {
-          strokeWidth: 0 // Hide grid lines
+          strokeWidth: 0
         },
         propsForLabels: {
-          fontSize: 0 // Hide label text
+          fontSize: 0
         }
       }}
       bezier
@@ -50,7 +83,7 @@ const LineGraph: React.FC<LineGraphProps> = ({ data, width }) => {
       withVerticalLines={false}
       withDots={true}
       renderDotContent={({x, y, index}) => {
-        if (index === data.length - 1) {
+        if (index === displayData.length - 1) {
           return (
             <Circle
               key={index}
