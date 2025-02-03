@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 import COLORS from "../../assets/colors";
 
 export const styles = StyleSheet.create({
-    container: {flex: 1, alignItems: 'center'},
+    container: {flex: 1, alignItems: 'center', backgroundColor: '#FFFFFF',},
     headerList: {fontSize: 20, paddingTop: 20},
     list: {
         flexDirection: 'row',
