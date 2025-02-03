@@ -5,10 +5,11 @@ import { Circle } from 'react-native-svg';
 
 interface LineGraphProps {
   data: number[];
+  width?: number;
 }
 
-const LineGraph: React.FC<LineGraphProps> = ({ data }) => {
-  const screenWidth = Dimensions.get('window').width;
+const LineGraph: React.FC<LineGraphProps> = ({ data, width }) => {
+  const screenWidth = width || Dimensions.get('window').width - 32;
 
   return (
     <LineChart
@@ -25,9 +26,9 @@ const LineGraph: React.FC<LineGraphProps> = ({ data }) => {
       width={screenWidth - 32}
       height={200}
       chartConfig={{
-        backgroundColor: '#f2f2f2',
-        backgroundGradientFrom: '#f2f2f2',
-        backgroundGradientTo: '#f2f2f2',
+        backgroundColor: '#ffffff',
+        backgroundGradientFrom: '#ffffff',
+        backgroundGradientTo: '#ffffff',
         decimalPlaces: 0,
         color: () => 'transparent', // Hide grid lines
         labelColor: () => 'transparent', // Hide labels
