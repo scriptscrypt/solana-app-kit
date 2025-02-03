@@ -41,7 +41,7 @@ const graphData: Record<Timeframe, number[]> = {
     '1W': [40, 45, 43, 48, 52, 50, 55, 58, 54, 60, 58, 63], // More volatility with overall upward trend
     '1M': [30, 35, 45, 42, 55, 52, 58, 65, 75, 72, 78, 85], // Significant growth over the month
     'All': [10, 15, 25, 35, 32, 45, 55, 65, 75, 85, 88, 95]  // Long-term exponential growth
-};
+}; 
 
 
 export const TopScreen = () => {
@@ -77,10 +77,6 @@ export const TopScreen = () => {
                     </View>
                     <View style={styles.graphSection}>
                         <LineGraph data={graphData[selectedTimeframe]} />
-
-                        const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
-
-                        // Update the timeframe buttons section:
                         <View style={styles.timeframeButtons}>
                             {(['1H', '1D', '1W', '1M', 'All'] as const).map((timeframe) => (
                                 <TouchableOpacity
