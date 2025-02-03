@@ -39,4 +39,7 @@ export const THREAD_DEFAULT_THEME = {
 
   // NEW: line color for replies
   '--thread-reply-line-color': '#E0E0E0',
+
+  // NEW: CTA container width
+  '--thread-cta-container-width': '84%' as const,
 };

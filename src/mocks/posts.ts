@@ -1,4 +1,4 @@
-import { ThreadPost } from "../components/thread/thread.types";
+import {ThreadPost} from '../components/thread/thread.types';
 
 export const allposts: ThreadPost[] = [
   // ====== Example Post 1: Simple text-only ======
@@ -23,7 +23,7 @@ export const allposts: ThreadPost[] = [
     replies: [],
     reactionCount: 10,
     retweetCount: 2,
-    quoteCount: 1, // example
+    quoteCount: 1,
   },
 
   // ====== Example Post 2: Text + Image ======
@@ -51,7 +51,7 @@ export const allposts: ThreadPost[] = [
     quoteCount: 3,
   },
 
-  // ====== Example Post 3: Text + TradeCard ======
+  // ====== Example Post 3: Text + TradeCard (Updated for two tokens) ======
   {
     id: 'post-3',
     user: {
@@ -67,13 +67,15 @@ export const allposts: ThreadPost[] = [
       {
         id: 'section-3',
         type: 'TEXT_TRADE',
-        text: 'Look at this $SEND trade opportunity!',
+        text: 'Look at this $SEND and $SOL swap opportunity!',
         tradeData: {
-          tokenAvatar: require('../assets/images/Smiley.png'),
-          tokenName: 'SEND Coin',
-          tokenPriceUsdLeft: '$0.02',
-          tokenPriceSolRight: '0.0008 SOL',
-          tokenPriceUsdRight: '$0.02',
+          token1Avatar: require('../assets/images/Smiley.png'),
+          token1Name: 'SEND Coin',
+          token1PriceUsd: '$0.02',
+          token2Avatar: require('../assets/images/reaction-user-1.png'),
+          token2Name: 'SOL',
+          token2PriceUsd: '$20.00',
+          token2PriceSol: '1 SOL',
         },
       },
     ],

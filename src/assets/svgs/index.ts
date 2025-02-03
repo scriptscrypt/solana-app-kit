@@ -21,13 +21,23 @@ import infoIcon from './Union.svg';
 import PinLocation from "./pin-location.svg";
 import SubscriptionTick from "./subscription-tick.svg";
 import SwapIcon from "./Swap.svg";
-import NotifIcon from "./notif-icon.svg";
+import NotifBell from "./notif-bell.svg";
 import HomeIcon from "./home-icon.svg";
 import FeedIcon from "./feed-icon.svg";
 import ProfileIcon from "./profile-icon.svg";
 import ExploreIcon from "./explore-icon.svg";
-import arrow from "./arrow.svg"
-import arrowDown from "./ArrowDown.svg";
+import Arrow from "./arrow.svg"
+import ArrowDown from "./ArrowDown.svg";
+import NotifBellSelected from "./notif-bell-selected.svg";
+import HomeIconSelected from "./home-icon-selected.svg";
+import FeedIconSelected from "./feed-icon-selected.svg";
+import ExploreIconSelected from "./explore-icon-selected.svg";
+import ProfileIconSelected from "./profile-icon-selected.svg";
+import addUserIcon from './Subtract.svg';
+import AddBtnIcon from './addBtn.svg';
+import MessageIcon from './messages.svg';
+import BellIcon from './bell-icon.svg';
+import BookmarkActive from './bookmark-active.svg'
 
 export default {
   SolanaDot,
@@ -53,11 +63,21 @@ export default {
   PinLocation,
   SubscriptionTick,
   SwapIcon,
-  NotifIcon,
+  NotifBell,
   HomeIcon,
   FeedIcon,
   ProfileIcon,
   ExploreIcon,
-  arrow,
-  arrowDown
+  Arrow,
+  ArrowDown,
+  NotifBellSelected,
+  HomeIconSelected,
+  FeedIconSelected,
+  ExploreIconSelected,
+  ProfileIconSelected,
+  addUserIcon,
+  AddBtnIcon,
+  MessageIcon,
+  BellIcon,
+  BookmarkActive
 };

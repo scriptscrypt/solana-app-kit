@@ -7,9 +7,17 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
 import Icons from '../assets/svgs';
 
-import type {MainTabParamList} from '../hooks/useAppNavigation';
+import AnimatedTabIcon from './AnimatedTabIcon';
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Tab = createBottomTabNavigator();
+
+const iconStyle = {
+  shadowColor: '#000',
+  shadowOffset: {width: 0, height: 10},
+  shadowOpacity: 0.4,
+  shadowRadius: 3,
+  elevation: 6,
+};
 
 export default function MainTabs() {
   return (
@@ -19,18 +27,33 @@ export default function MainTabs() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: 'black',
-        tabBarInactiveTintColor: 'lightgray',
+        tabBarStyle: {
+          paddingTop: 10,
+          backgroundColor: '#ffffff',
+          borderTopWidth: 0,
+        },
       }}>
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
-            <Icons.HomeIcon
-              width={size * 1.4}
-              height={size * 1.4}
-              stroke={color}
-              fill="none"
+          tabBarIcon: ({focused, size}) => (
+            <AnimatedTabIcon
+              focused={focused}
+              size={size * 1.4}
+              icon={
+                Icons.HomeIcon as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              iconSelected={
+                Icons.HomeIconSelected as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              style={iconStyle}
             />
           ),
         }}
@@ -39,12 +62,23 @@ export default function MainTabs() {
         name="Search"
         component={SearchScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
-            <Icons.ExploreIcon
-              width={size * 1.4}
-              height={size * 1.4}
-              stroke={color}
-              fill="none"
+          tabBarIcon: ({focused, size}) => (
+            <AnimatedTabIcon
+              focused={focused}
+              size={size * 1.4}
+              icon={
+                Icons.ExploreIcon as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              iconSelected={
+                Icons.ExploreIconSelected as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              style={iconStyle}
             />
           ),
         }}
@@ -53,26 +87,55 @@ export default function MainTabs() {
         name="Feed"
         component={FeedScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
-            <Icons.FeedIcon
-              width={size * 1.4}
-              height={size * 1.4}
-              stroke={color}
-              fill="none"
+          tabBarIcon: ({focused, size}) => (
+            <AnimatedTabIcon
+              focused={focused}
+              size={size * 1.4}
+              icon={
+                Icons.FeedIcon as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              iconSelected={
+                Icons.FeedIconSelected as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              style={{
+                shadowColor: '#000',
+                shadowOffset: {width: 0, height: 15},
+                shadowOpacity: 0.8,
+                shadowRadius: 6,
+                elevation: 6,
+              }}
             />
           ),
         }}
       />
+
       <Tab.Screen
         name="Notifications"
         component={NotificationsScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
-            <Icons.NotifIcon
-              width={size * 1.4}
-              height={size * 1.4}
-              stroke={color}
-              fill="none"
+          tabBarIcon: ({focused, size}) => (
+            <AnimatedTabIcon
+              focused={focused}
+              size={size * 1}
+              icon={
+                Icons.NotifBell as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              iconSelected={
+                Icons.NotifBellSelected as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              style={iconStyle}
             />
           ),
         }}
@@ -81,12 +144,23 @@ export default function MainTabs() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarIcon: ({color, size}) => (
-            <Icons.ProfileIcon
-              width={size * 1.4}
-              height={size * 1.4}
-              stroke={color}
-              fill="none"
+          tabBarIcon: ({focused, size}) => (
+            <AnimatedTabIcon
+              focused={focused}
+              size={size * 1.8}
+              icon={
+                Icons.ProfileIcon as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              iconSelected={
+                Icons.ProfileIconSelected as React.ComponentType<{
+                  width: number;
+                  height: number;
+                }>
+              }
+              style={iconStyle}
             />
           ),
         }}

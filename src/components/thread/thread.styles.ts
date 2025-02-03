@@ -1,4 +1,4 @@
-import {StyleSheet} from 'react-native';
+import {DimensionValue, StyleSheet} from 'react-native';
 import {THREAD_DEFAULT_THEME} from './thread.theme';
 
 export function getMergedTheme(
@@ -25,14 +25,14 @@ export function createThreadStyles(
 ): {[key: string]: any} {
   const baseStyles: {[key: string]: any} = StyleSheet.create({
     threadRootContainer: {
-      backgroundColor: theme['--thread-bg-primary'],
+      backgroundColor: 'white',
       flex: 1,
     },
 
     header: {
       width: '100%',
+      backgroundColor: 'white',
       alignItems: 'center',
-      marginBottom: 8,
     },
 
     divider: {
@@ -49,13 +49,14 @@ export function createThreadStyles(
       paddingHorizontal: 16,
       paddingTop: 8,
       paddingBottom: 8,
-      backgroundColor: theme['--thread-composer-bg'],
+      backgroundColor: 'white',
     },
     composerAvatarContainer: {
       position: 'relative',
       width: theme['--thread-avatar-size'],
       height: theme['--thread-avatar-size'],
       marginRight: 8,
+      backgroundColor: 'white',
     },
     composerAvatar: {
       width: '100%',
@@ -69,6 +70,7 @@ export function createThreadStyles(
       borderRadius: 25,
     },
     composerMiddle: {
+      backgroundColor: 'white',
       flex: 1,
     },
     composerUsername: {
@@ -81,7 +83,7 @@ export function createThreadStyles(
       borderWidth: 0,
       borderRadius: 8,
       height: 40,
-      paddingHorizontal: 1,
+      paddingHorizontal: 2,
       marginBottom: 4,
       fontSize: theme['--thread-font-size'],
       color: theme['--thread-text-primary'],
@@ -170,6 +172,8 @@ export function createThreadStyles(
     /* Body / content area */
     extraContentContainer: {
       marginVertical: theme['--thread-section-spacing'],
+      width: '100%',
+      alignItems: 'flex-end',
     },
     threadItemText: {
       fontSize: theme['--thread-font-size'],
@@ -222,10 +226,14 @@ export function createThreadStyles(
     /* Footer (icon row + reply button) */
     footerContainer: {
       marginTop: 6,
+      width: '100%',
+
+      alignItems: 'flex-end',
     },
     itemIconsRow: {
+      width: '84%',
       flexDirection: 'row',
-      justifyContent: 'flex-start',
+      justifyContent: 'space-between',
       alignItems: 'center',
       marginTop: 8,
       gap: 16,
@@ -235,10 +243,109 @@ export function createThreadStyles(
       gap: 6,
       alignItems: 'center',
     },
+    itemRightIcons: {
+      flexDirection: 'row',
+      gap: 16,
+      alignItems: 'center',
+    },
     iconText: {
       fontSize: 12,
       color: theme['--thread-text-secondary'],
       marginLeft: -2,
+    },
+
+    /* ======================
+       CTA (PostCTA)
+       ====================== */
+    threadPostCTAContainer: {
+      width: theme['--thread-cta-container-width'] as DimensionValue, // Explicitly cast to DimensionValue
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 8,
+      alignSelf: 'flex-end',
+    },
+    threadPostCTAButton: {
+      backgroundColor: '#2A2A2A',
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+    },
+    threadPostCTAButtonLabel: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    /* ======================
+       TradeCard
+       ====================== */
+    tradeCardContainer: {
+      width: '100%',
+      gap: 10,
+      padding: 12,
+      marginBottom: 8,
+      flex: 1,
+    },
+    tradeCardCombinedSides: {
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      backgroundColor: theme['--thread-bg-secondary'],
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginBottom: 8,
+    },
+    tradeCardLeftSide: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    tradeCardTokenImage: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      marginRight: 8,
+    },
+    tradeCardNamePriceContainer: {
+      flexDirection: 'column',
+    },
+    tradeCardTokenName: {
+      fontSize: 14,
+      fontWeight: '600',
+      marginBottom: 2,
+      color: theme['--thread-text-primary'],
+    },
+    tradeCardTokenPrice: {
+      fontSize: 14,
+      color: '#999999',
+      fontWeight: '500',
+    },
+    tradeCardRightSide: {
+      alignItems: 'flex-end',
+    },
+    tradeCardSolPrice: {
+      color: '#32DE6B',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    tradeCardUsdPrice: {
+      fontSize: 13,
+      color: '#777',
+    },
+    tradeCardSwapIcon: {
+      backgroundColor: theme['--thread-bg-secondary'],
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      borderWidth: 8,
+      borderColor: '#FFFFFF',
+      zIndex: 10,
+      transform: [{translateX: -15}, {translateY: -15}],
     },
   });
 
