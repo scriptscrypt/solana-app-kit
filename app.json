@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "SolanaSocialStarter",
-    "slug": "SolanaSocialStarter",
+    "name": "solanasocialstarter",
+    "slug": "solanasocialstarter",
+    "scheme": "solanasocialstarter",
     "version": "0.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -14,6 +15,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.bhu1tyagi.solanasocialstarter"
-    }
+    },
+    "plugins": ["expo-secure-store"]
   }
 }
