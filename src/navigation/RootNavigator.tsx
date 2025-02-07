@@ -4,12 +4,15 @@ import IntroScreen from '../screens/IntroScreen/IntroScreen';
 import MainTabs from './MainTabs';
 import LoginScreen from '../screens/LoginScreen/LoginScreen';
 import CoinDetailPage from '../screens/CoinDetailPage/CoinDetailPage';
+import BlinkScreen from '../screens/BlinkScreen';
+
 
 export type RootStackParamList = {
   Intro: undefined;
   MainTabs: undefined;
   LoginOptions: undefined;
   CoinDetailPage : undefined;
+  Blink : undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -29,6 +32,7 @@ export default function RootNavigator() {
         component={CoinDetailPage}
         options={{headerShown: false}}
       />
+       <Stack.Screen name="Blink" component={BlinkScreen} />
     </Stack.Navigator>
   );
 }

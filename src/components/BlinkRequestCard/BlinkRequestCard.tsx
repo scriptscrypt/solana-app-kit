@@ -1,76 +1,83 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { Blink } from '@dialectlabs/blinks-react-native';
-import { useAction } from '@dialectlabs/blinks';
-import { useWallet } from '@solana/wallet-adapter-react'; // Import the wallet hook
-import { styles } from './BlinkRequestCard.style';
-
-function getWalletAdapter(wallet : any) {
-  return {
-    connect: async () => {
-      if (!wallet.connected) {
-        await wallet.connect();
-      }
-      return wallet.publicKey.toString();
-    },
-    signTransaction: async (transaction : any) => {
-      if (!wallet.connected) {
-        throw new Error('Wallet not connected');
-      }
-      const signedTransaction = await wallet.signTransaction(transaction);
-      return {
-        signature: signedTransaction.signature.toString(),
-      };
-    },
-    confirmTransaction: async (signature : any) => {
-      console.log('confirmTransaction', signature);
-    },
-    signMessage: async (message : any) => {
-      if (!wallet.connected) {
-        throw new Error('Wallet not connected');
-      }
-      const signedMessage = await wallet.signMessage(message);
-      return {
-        signature: signedMessage.toString(),
-      };
-    },
-    metadata: {
-        name: 'Phantom Wallet', // Example wallet name
-        icon: 'https://example.com/phantom-icon.png', // URL to the wallet's icon
-        supportedBlockchainIds: ['solana'], // Solana is supported
-      }
-  };
-}
-
-export const BlinkRequestCard: React.FC<{ url: string }> = ({ url }) => {
-  const wallet = useWallet(); // Use the wallet hook
-  const adapter = getWalletAdapter(wallet);
-  const { action } = useAction({ url });
-
-  if (!action) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.message}>Loading...</Text>
-      </View>
-    );
+import {
+    Blink,
+    BlockchainIds,
+    createSignMessageText,
+    Miniblink,
+    useAction,
+    type ActionAdapter,
+    type SignMessageData,
+  } from '@dialectlabs/blinks-react-native';
+  import { PublicKey } from '@solana/web3.js';
+  import type React from 'react';
+  import { ActivityIndicator } from 'react-native';
+  
+  function getWalletAdapter(): ActionAdapter {
+    return {
+      connect: async (_context) => {
+        console.log('connect');
+        return PublicKey.default.toString();
+      },
+      signTransaction: async (_tx, _context) => {
+        console.log('signTransaction');
+        return {
+          signature: 'signature',
+        };
+      },
+      signMessage: async (message: string | SignMessageData, _context) => {
+        const messageToSign =
+          typeof message === 'string' ? message : createSignMessageText(message);
+        console.log('signMessage', messageToSign);
+        return { signature: 'signature' };
+      },
+      confirmTransaction: async (_signature, _context) => {
+        console.log('confirmTransaction');
+      },
+      metadata: { supportedBlockchainIds: [BlockchainIds.SOLANA_MAINNET] },
+    };
   }
-
-  const actionUrl = new URL(url);
-
-  return (
-    <View style={styles.container}>
+  
+  export const BlinkExample: React.FC<{
+    url: string; // could be action api or website url
+  }> = ({ url }) => {
+    const adapter = getWalletAdapter();
+    const { action } = useAction({ url });
+  
+    if (!action) {
+      return <ActivityIndicator />;
+    }
+    const actionUrl = new URL(url);
+    return (
       <Blink
         theme={{
           '--blink-button': '#1D9BF0',
           '--blink-border-radius-rounded-button': 9999,
+          '--blink-spacing-input-height': 44,
         }}
-        action={action as any}
+        action={action}
         adapter={adapter}
         websiteUrl={actionUrl.href}
         websiteText={actionUrl.hostname}
       />
-    </View>
-  );
-};
-
-export default BlinkRequestCard;
+    );
+  };
+  
+  export const MiniblinkExample: React.FC<{
+    url: string; // could be action api or website url
+  }> = ({ url }) => {
+    const adapter = getWalletAdapter();
+    const { action } = useAction({ url });
+  
+    if (!action) {
+      return <ActivityIndicator />;
+    }
+  
+    return (
+      <Miniblink
+        action={action}
+        adapter={adapter}
+        selector={(currentAction) =>
+          currentAction.actions.find((a) => a.label === 'Donate')!
+        }
+      />
+    );
+  };
