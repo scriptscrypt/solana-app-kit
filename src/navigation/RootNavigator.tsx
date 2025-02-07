@@ -4,12 +4,14 @@ import IntroScreen from '../screens/IntroScreen/IntroScreen';
 import MainTabs from './MainTabs';
 import LoginScreen from '../screens/LoginScreen/LoginScreen';
 import CoinDetailPage from '../screens/CoinDetailPage/CoinDetailPage';
+import EmbeddedWalletScreen from '../screens/EmbeddedWalletScreen';
 
 export type RootStackParamList = {
   Intro: undefined;
   MainTabs: undefined;
   LoginOptions: undefined;
   CoinDetailPage : undefined;
+  EmbeddedWallet: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -29,6 +31,7 @@ export default function RootNavigator() {
         component={CoinDetailPage}
         options={{headerShown: false}}
       />
+      <Stack.Screen name="EmbeddedWallet" component={EmbeddedWalletScreen} />
     </Stack.Navigator>
   );
 }
