@@ -6,6 +6,7 @@ import LoginScreen from '../screens/LoginScreen/LoginScreen';
 import CoinDetailPage from '../screens/CoinDetailPage/CoinDetailPage';
 import BlinkScreen from '../screens/BlinkScreen';
 
+import EmbeddedWalletScreen from '../screens/EmbeddedWalletScreen';
 
 export type RootStackParamList = {
   Intro: undefined;
@@ -13,6 +14,7 @@ export type RootStackParamList = {
   LoginOptions: undefined;
   CoinDetailPage : undefined;
   Blink : undefined;
+  EmbeddedWallet: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -33,6 +35,7 @@ export default function RootNavigator() {
         options={{headerShown: false}}
       />
        <Stack.Screen name="Blink" component={BlinkScreen} />
+      <Stack.Screen name="EmbeddedWallet" component={EmbeddedWalletScreen} />
     </Stack.Navigator>
   );
 }
