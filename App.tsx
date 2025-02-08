@@ -6,16 +6,18 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
 import {navigationRef} from './src/hooks/useAppNavigation';
 import {store} from './src/state/store';
+import {PRIVY_APP_ID, PRIVY_CLIENT_ID} from '@env';
 
 import {PrivyElements, PrivyProvider} from '@privy-io/expo';
 
 export default function App() {
+  console.log('PRIVY_APP_ID:', PRIVY_APP_ID);
   return (
     <SafeAreaProvider>
       <ReduxProvider store={store}>
         <PrivyProvider
-          appId="cm6uomkl50041far9mfyj0i34"
-          clientId="client-WY5gJ6MajBtnHq1Zq8Sawz75FEaYiZ2iiFFruvM7WgmkT"
+          appId={PRIVY_APP_ID}
+          clientId={PRIVY_CLIENT_ID}
           config={{
             embedded: {
               solana: {
