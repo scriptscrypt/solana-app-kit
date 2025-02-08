@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity , Button} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function SearchScreen() {
@@ -14,6 +14,10 @@ export default function SearchScreen() {
       >
         <Text style={styles.buttonText}>Go to Blink</Text>
       </TouchableOpacity>
+      <Button
+        title="Go to Wallet Screen"
+        onPress={() => navigation.navigate('EmbeddedWallet' as never)}
+      />
     </View>
   );
 }
