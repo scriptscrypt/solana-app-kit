@@ -13,6 +13,10 @@
     "@dialectlabs/blinks": "^0.22.2",
     "@dialectlabs/blinks-react-native": "^0.8.6",
     "@dialectlabs/sdk": "^1.9.4",
+    "@dynamic-labs/client": "4.0.0-alpha.52",
+    "@dynamic-labs/react-hooks": "4.0.0-alpha.52",
+    "@dynamic-labs/react-native-extension": "4.0.0-alpha.52",
+    "@dynamic-labs/solana-extension": "4.0.0-alpha.52",
     "@ethersproject/shims": "^5.7.0",
     "@expo/metro-runtime": "^4.0.1",
     "@privy-io/expo": "^0.45.0",
@@ -60,7 +64,15 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "react-redux": "^9.2.0",
+    "text-encoding": "^0.7.0",
     "viem": "^2.22.23"
+  },
+  "resolutions": {
+    "@dynamic-labs/utils": "4.0.0-alpha.52",
+    "@dynamic-labs/iconic": "4.0.0-alpha.52",
+    "@dynamic-labs/wallet-book": "4.0.0-alpha.52",
+    "@dynamic-labs/wallet-connector-core": "4.0.0-alpha.52",
+    "@dynamic-labs/rpc-providers": "4.0.0-alpha.52"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

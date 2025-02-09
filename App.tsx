@@ -1,3 +1,5 @@
+// File: /Users/bhuwantyagi/Desktop/sendAi/solana-social-starter/App.tsx
+
 import 'react-native-gesture-handler';
 import React from 'react';
 import {Provider as ReduxProvider} from 'react-redux';
@@ -8,6 +10,8 @@ import {navigationRef} from './src/hooks/useAppNavigation';
 import {store} from './src/state/store';
 import {PRIVY_APP_ID, PRIVY_CLIENT_ID} from '@env';
 import {PrivyElements, PrivyProvider} from '@privy-io/expo';
+
+import {dynamicClient} from './src/services/walletProviders/dynamic';
 
 export default function App() {
   return (
@@ -26,6 +30,7 @@ export default function App() {
           <NavigationContainer ref={navigationRef}>
             <RootNavigator />
           </NavigationContainer>
+          <dynamicClient.reactNative.WebView />
           <PrivyElements />
         </PrivyProvider>
       </ReduxProvider>
