@@ -1,16 +1,19 @@
 import React, {useEffect, useRef} from 'react';
-import {View, TouchableOpacity, Animated, Text, Dimensions} from 'react-native';
+import {View, Animated, Text, Dimensions} from 'react-native';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
 import Icons from '../../assets/svgs/index';
 import styles from './LoginScreen.styles';
 import COLORS from '../../assets/colors';
 import {useAppNavigation} from '../../hooks/useAppNavigation';
+import {useDispatch} from 'react-redux';
+import {loginSuccess} from '../../state/auth/reducer';
 import EmbeddedWalletAuth from '../../components/wallet/EmbeddedWallet';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 export default function LoginScreen() {
   const navigation = useAppNavigation();
+  const dispatch = useDispatch();
 
   const solanaDotOpacity = useRef(new Animated.Value(0)).current;
   const splashTextOpacity = useRef(new Animated.Value(0)).current;
@@ -36,10 +39,6 @@ export default function LoginScreen() {
     ]).start();
   }, [solanaDotOpacity, splashTextOpacity, smileScale]);
 
-  const handleLogin = () => {
-    navigation.navigate('MainTabs' as never);
-  };
-
   return (
     <View style={styles.container}>
       <Svg
@@ -63,7 +62,6 @@ export default function LoginScreen() {
           style={[styles.splashTextContainer, {opacity: splashTextOpacity}]}>
           <Icons.SplashText />
         </Animated.View>
-
         <Animated.View
           style={[
             styles.smileFaceContainer,
@@ -73,7 +71,15 @@ export default function LoginScreen() {
         </Animated.View>
       </View>
 
-      <EmbeddedWalletAuth onWalletConnected={(info) => console.log('Wallet connected:', info)} />
+      {/* When the embedded wallet connects, dispatch the login action */}
+      <EmbeddedWalletAuth
+        onWalletConnected={info => {
+          console.log('Wallet connected:', info);
+          dispatch(
+            loginSuccess({provider: info.provider, address: info.address}),
+          );
+        }}
+      />
       <Text style={styles.agreementText}>
         by continuing, you agree to t&amp;c and privacy policy
       </Text>

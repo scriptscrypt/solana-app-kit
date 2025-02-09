@@ -1,39 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity , Button} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import {View, Text, TouchableOpacity} from 'react-native';
+import { useAuth } from '../hooks/useAuth';
 
 export default function SearchScreen() {
-  const navigation = useNavigation();
+  // Use the same auth provider (e.g. "privy") as in the login flow
+  const {logout} = useAuth('privy');
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Search Screen</Text>
+    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+      <Text>Search Screen</Text>
       <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate('Blink' as never)}
-      >
-        <Text style={styles.buttonText}>Go to Blink</Text>
+        onPress={logout}
+        style={{
+          marginTop: 20,
+          padding: 10,
+          backgroundColor: '#ccc',
+          borderRadius: 5,
+        }}>
+        <Text>Logout</Text>
       </TouchableOpacity>
-      <Button
-        title="Go to Wallet Screen"
-        onPress={() => navigation.navigate('EmbeddedWallet' as never)}
-      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  text: { fontSize: 20 },
-  button: {
-    marginTop: 20,
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
