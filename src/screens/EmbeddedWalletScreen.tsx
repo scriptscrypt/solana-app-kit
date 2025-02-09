@@ -1,17 +1,17 @@
+// src/screens/EmbeddedWalletScreen.tsx
+
 import React, {useState, useCallback} from 'react';
 import {View, Text, SafeAreaView} from 'react-native';
-import EmbeddedWallet, {
-  WalletProvider,
-} from '../components/wallet/EmbeddedWallet';
+import EmbeddedWallet from '../components/wallet/EmbeddedWallet';
 
 const EmbeddedWalletScreen: React.FC = () => {
   const [walletInfo, setWalletInfo] = useState<{
-    provider: WalletProvider;
+    provider: 'privy' | 'dynamic' | 'turnkey';
     address: string;
   } | null>(null);
 
   const handleWalletConnected = useCallback(
-    (info: {provider: WalletProvider; address: string}) => {
+    (info: {provider: 'privy' | 'dynamic' | 'turnkey'; address: string}) => {
       setWalletInfo(info);
     },
     [],
@@ -22,7 +22,7 @@ const EmbeddedWalletScreen: React.FC = () => {
       <EmbeddedWallet
         walletProvider="privy"
         onWalletConnected={handleWalletConnected}
-        // themeOverrides, styleOverrides, and userStyleSheet can be provided here for customization
+        // themeOverrides, styleOverrides, userStyleSheet, etc. if you want them
       />
       {walletInfo && (
         <View style={{padding: 16, alignItems: 'center'}}>
@@ -30,9 +30,7 @@ const EmbeddedWalletScreen: React.FC = () => {
             Wallet Connected!
           </Text>
           <Text style={{fontSize: 14}}>
-            Provider:{' '}
-            {walletInfo.provider.charAt(0).toUpperCase() +
-              walletInfo.provider.slice(1)}
+            Provider: {walletInfo.provider.toUpperCase()}
           </Text>
           <Text style={{fontSize: 14}}>Address: {walletInfo.address}</Text>
         </View>
