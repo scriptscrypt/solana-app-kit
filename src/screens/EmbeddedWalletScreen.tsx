@@ -1,5 +1,3 @@
-// src/screens/EmbeddedWalletScreen.tsx
-
 import React, {useState, useCallback} from 'react';
 import {View, Text, SafeAreaView} from 'react-native';
 import EmbeddedWallet from '../components/wallet/EmbeddedWallet';
@@ -20,7 +18,7 @@ const EmbeddedWalletScreen: React.FC = () => {
   return (
     <SafeAreaView style={{flex: 1}}>
       <EmbeddedWallet
-        walletProvider="privy"
+        provider="privy"
         onWalletConnected={handleWalletConnected}
         // themeOverrides, styleOverrides, userStyleSheet, etc. if you want them
       />

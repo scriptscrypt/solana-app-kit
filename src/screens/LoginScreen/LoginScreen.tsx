@@ -71,8 +71,8 @@ export default function LoginScreen() {
         </Animated.View>
       </View>
 
-      {/* When the embedded wallet connects, dispatch the login action */}
       <EmbeddedWalletAuth
+        provider="privy"
         onWalletConnected={info => {
           console.log('Wallet connected:', info);
           dispatch(
