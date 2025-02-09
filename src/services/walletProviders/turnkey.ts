@@ -1,10 +1,9 @@
-// services/walletProviders/turnkeyWallet.ts
-
 import {
   createPasskey,
   PasskeyStamper,
 } from '@turnkey/react-native-passkey-stamper';
 import {TurnkeyClient} from '@turnkey/http';
+import { TURNKEY_BASE_URL, TURNKEY_RP_ID, TURNKEY_RP_NAME } from '@env';
 
 export async function handleTurnkeyConnect(
   onWalletConnected?: (info: {provider: 'turnkey'; address: string}) => void,
@@ -12,13 +11,11 @@ export async function handleTurnkeyConnect(
 ) {
   setStatusMessage?.('Connecting with Turnkey...');
   try {
-    // This is the exact code from your EmbeddedWallet, just moved here.
-    // (Hardcoded for demo, with environment-based domain/name.)
     const authenticatorParams = await createPasskey({
       authenticatorName: 'End-User Passkey',
       rp: {
-        id: process.env.TURNKEY_RP_ID || '',
-        name: process.env.TURNKEY_RP_NAME || '',
+        id: TURNKEY_RP_ID,
+        name: TURNKEY_RP_NAME,
       },
       user: {
         id: String(Date.now()), // Unique user ID for demo
@@ -29,17 +26,15 @@ export async function handleTurnkeyConnect(
     console.log('Turnkey authenticator parameters:', authenticatorParams);
 
     const stamper = new PasskeyStamper({
-      rpId: process.env.TURNKEY_RP_ID || '',
+      rpId: TURNKEY_RP_ID,
     });
     const turnkeyClient = new TurnkeyClient(
-      {baseUrl: process.env.TURNKEY_BASE_URL || ''},
+      {baseUrl: TURNKEY_BASE_URL},
       stamper,
     );
 
-    // For demo, consider it successful once passkey is created
     setStatusMessage?.('Turnkey login flow initiated successfully.');
 
-    // If your backend returns a real address, you'd put that here. For demo, just use Date.now().
     onWalletConnected?.({
       provider: 'turnkey',
       address: String(Date.now()),

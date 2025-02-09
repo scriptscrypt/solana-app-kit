@@ -5,6 +5,7 @@ import Icons from '../../assets/svgs/index';
 import styles from './LoginScreen.styles';
 import COLORS from '../../assets/colors';
 import {useAppNavigation} from '../../hooks/useAppNavigation';
+import EmbeddedWalletAuth from '../../components/wallet/EmbeddedWallet';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -72,22 +73,7 @@ export default function LoginScreen() {
         </Animated.View>
       </View>
 
-      <View style={styles.bottomButtonsContainer}>
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Icons.Google width={24} height={24} />
-          <Text style={styles.buttonText}>Continue with Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Icons.Apple width={24} height={24} />
-          <Text style={styles.buttonText}>Continue with Apple</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Icons.Device width={24} height={24} />
-          <Text style={styles.buttonText}>Continue with Email</Text>
-        </TouchableOpacity>
-      </View>
+      <EmbeddedWalletAuth onWalletConnected={(info) => console.log('Wallet connected:', info)} />
       <Text style={styles.agreementText}>
         by continuing, you agree to t&amp;c and privacy policy
       </Text>
