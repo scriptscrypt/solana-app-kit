@@ -7,11 +7,9 @@ import RootNavigator from './src/navigation/RootNavigator';
 import {navigationRef} from './src/hooks/useAppNavigation';
 import {store} from './src/state/store';
 import {PRIVY_APP_ID, PRIVY_CLIENT_ID} from '@env';
-
 import {PrivyElements, PrivyProvider} from '@privy-io/expo';
 
 export default function App() {
-  console.log('PRIVY_APP_ID:', PRIVY_APP_ID);
   return (
     <SafeAreaProvider>
       <ReduxProvider store={store}>
