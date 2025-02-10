@@ -1,3 +1,4 @@
+// File: src/components/thread/PostCTA.tsx
 import React from 'react';
 import {
   View,
@@ -7,12 +8,13 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import type {ThreadPost, ThreadCTAButton} from './thread.types';
-import {createThreadStyles, getMergedTheme} from './thread.styles';
+import type { ThreadPost, ThreadCTAButton } from './thread.types';
+import { createThreadStyles, getMergedTheme } from './thread.styles';
 
 interface PostCTAProps {
   post: ThreadPost;
   buttons?: ThreadCTAButton[];
+  onTradePress?: (post: ThreadPost) => void;
   themeOverrides?: Partial<Record<string, any>>;
   styleOverrides?: {
     container?: StyleProp<ViewStyle>;
@@ -29,11 +31,12 @@ interface PostCTAProps {
 export default function PostCTA({
   post,
   buttons,
+  onTradePress,
   themeOverrides,
   styleOverrides,
   userStyleSheet,
 }: PostCTAProps) {
-  if (!buttons || buttons.length === 0) return null;
+  if (!buttons && !onTradePress) return null;
 
   const mergedTheme = getMergedTheme(themeOverrides);
   const styles = createThreadStyles(
@@ -43,30 +46,32 @@ export default function PostCTA({
   );
 
   return (
-    <View
-      style={[
-        styles.threadPostCTAContainer,
-        styleOverrides?.container,
-        userStyleSheet?.container,
-      ]}>
-      {buttons.map((btn, index) => (
+    <View style={[styles.threadPostCTAContainer, styleOverrides?.container, userStyleSheet?.container]}>
+      {buttons?.map((btn, index) => (
         <TouchableOpacity
           key={`${btn.label}-${index}`}
           style={[
-            styles.threadPostCTAButton, // Default button style
-            styleOverrides?.button, // Global style override
-            userStyleSheet?.button, // User style sheet
-            btn.buttonStyle, // Individual button style
+            styles.threadPostCTAButton,
+            styleOverrides?.button,
+            userStyleSheet?.button,
+            btn.buttonStyle,
           ]}
-          onPress={() => btn.onPress(post)}
-          activeOpacity={0.8}>
+          onPress={() => {
+            console.log(`Button pressed: ${btn.label}`);
+            if (btn.label === 'Trade' && onTradePress) {
+              onTradePress(post);
+            }
+          }}
+          activeOpacity={0.8}
+        >
           <Text
             style={[
-              styles.threadPostCTAButtonLabel, // Default label style
-              styleOverrides?.buttonLabel, // Global label style override
-              userStyleSheet?.buttonLabel, // User label style sheet
-              btn.buttonLabelStyle, // Individual label style
-            ]}>
+              styles.threadPostCTAButtonLabel,
+              styleOverrides?.buttonLabel,
+              userStyleSheet?.buttonLabel,
+              btn.buttonLabelStyle,
+            ]}
+          >
             {btn.label}
           </Text>
         </TouchableOpacity>

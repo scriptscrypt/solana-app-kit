@@ -2,11 +2,13 @@
 import {configureStore} from '@reduxjs/toolkit';
 import threadReducer from './thread/reducer';
 import authReducer from './auth/reducer';
+import tradeReducer from './trade/tradeSlice';
 
 export const store = configureStore({
   reducer: {
     thread: threadReducer,
     auth: authReducer,
+    trade: tradeReducer,
   },
 });
 
