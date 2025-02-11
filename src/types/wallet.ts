@@ -1,4 +1,4 @@
-// File: /Users/bhuwantyagi/Desktop/sendAi/solana-social-starter/src/types/wallet.ts
+// File: src/types/wallet.ts
 import {
   Transaction,
   PublicKey,
@@ -8,11 +8,11 @@ import {
 } from '@solana/web3.js';
 
 /**
- * Interface representing a Solana wallet implementation.
+ * Interface representing a Solana wallet implementation
  *
  * @interface BaseWallet
  * @description Defines the standard interface for interacting with a Solana wallet,
- * including transaction signing and (optionally) sending transactions.
+ * including transaction signing, message signing, and connection status.
  */
 export interface BaseWallet {
   /**
@@ -20,6 +20,12 @@ export interface BaseWallet {
    * @type {PublicKey}
    */
   readonly publicKey: PublicKey;
+
+  /**
+   * Indicates if the wallet is currently connected.
+   * @type {boolean}
+   */
+  readonly isConnected: boolean;
 
   /**
    * Signs a single transaction.
@@ -42,11 +48,34 @@ export interface BaseWallet {
   ): Promise<T[]>;
 
   /**
-   * (Optional) Signs and sends a transaction to the network.
-   * Implement this method later as needed.
+   * Signs a message.
+   * @param {Uint8Array} message - The message to be signed.
+   * @returns {Promise<Uint8Array>} Promise resolving to the signed message as a Uint8Array.
+   */
+  signMessage(message: Uint8Array): Promise<Uint8Array>;
+
+  /**
+   * Connects the wallet.
+   * @returns {Promise<void>}
+   */
+  connect(): Promise<void>;
+
+  /**
+   * Disconnects the wallet.
+   * @returns {Promise<void>}
+   */
+  disconnect(): Promise<void>;
+
+  // TODO: Implement signAndSendTransaction method to handle transaction signing and sending according to send options
+  /**
+   * Signs and sends a transaction to the network.
+   * @template T - Transaction type (Transaction or VersionedTransaction)
+   * @param {T} transaction - The transaction to be signed and sent.
+   * @param {SendOptions} [options] - Optional transaction send configuration.
+   * @returns {Promise<{signature: TransactionSignature}>} Promise resolving to the transaction signature.
    */
   // signAndSendTransaction<T extends Transaction | VersionedTransaction>(
-  //   transaction: T,
-  //   options?: SendOptions
+  //     transaction: T,
+  //     options?: SendOptions
   // ): Promise<{ signature: TransactionSignature }>;
 }

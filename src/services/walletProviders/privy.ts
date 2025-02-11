@@ -25,19 +25,15 @@ export function usePrivyWalletLogic() {
       setStatusMessage?: (msg: string) => void;
     }) => {
       if (user) {
-        setStatusMessage?.(
-          `You are already logged in as ${user?.id}`,
-        );
+        setStatusMessage?.(`You are already logged in as ${user?.id}`);
         return;
       }
       try {
         setStatusMessage?.(`Connecting with privy via ${loginMethod}...`);
-        console.log("Login Method ///////////////", loginMethod);
+        console.log('Login Method ///////////////', loginMethod);
         const session = await login({
           loginMethods: [loginMethod],
-          appearance: {
-            logo: '',
-          },
+          appearance: {logo: ''},
         });
         console.log('Privy Session:', session);
         if (session?.user) {
@@ -67,9 +63,7 @@ export function usePrivyWalletLogic() {
 
       try {
         if (solanaWallet.getProvider) {
-          const provider = solanaWallet.getProvider
-            ? await solanaWallet.getProvider().catch(() => null)
-            : null;
+          const provider = solanaWallet.getProvider ? await solanaWallet.getProvider().catch(() => null) : null;
           if (provider && solanaWallet.wallets) {
             const connectedWallet = solanaWallet.wallets[0];
             setStatusMessage?.(
@@ -121,9 +115,7 @@ export function usePrivyWalletLogic() {
       try {
         setStatusMessage?.('Recovering wallet...');
         await recover({recoveryMethod, password});
-        const provider = solanaWallet.getProvider
-          ? await solanaWallet.getProvider().catch(() => null)
-          : null;
+        const provider = solanaWallet.getProvider ? await solanaWallet.getProvider().catch(() => null) : null;
         if (
           provider &&
           solanaWallet.wallets &&

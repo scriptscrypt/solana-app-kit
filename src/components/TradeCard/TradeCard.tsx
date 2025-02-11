@@ -1,7 +1,9 @@
+// src/components/TradeCard/TradeCard.tsx
 import React from 'react';
-import {View, Text, Image} from 'react-native';
+import {View, Text, Image, TouchableOpacity} from 'react-native';
 import {createThreadStyles, getMergedTheme} from '../thread/thread.styles';
 import Icon from '../../assets/svgs/index';
+import {useTradeTransaction} from '../../hooks/useTradeTransaction';
 
 interface TradeCardProps {
   token1: {
@@ -15,6 +17,7 @@ interface TradeCardProps {
     priceUsd: string;
     priceSol: string;
   };
+  onTrade?: () => void;
   themeOverrides?: Partial<Record<string, any>>;
   styleOverrides?: {[key: string]: object};
   userStyleSheet?: {[key: string]: object};
@@ -23,6 +26,7 @@ interface TradeCardProps {
 export default function TradeCard({
   token1,
   token2,
+  onTrade,
   themeOverrides,
   styleOverrides,
   userStyleSheet,
@@ -33,6 +37,8 @@ export default function TradeCard({
     styleOverrides,
     userStyleSheet,
   );
+  const {sendTrade} = useTradeTransaction();
+  const tradeAction = onTrade || sendTrade;
 
   return (
     <View style={styles.tradeCardContainer}>
@@ -45,19 +51,14 @@ export default function TradeCard({
               <Text style={styles.tradeCardTokenPrice}>{token1.priceUsd}</Text>
             </View>
           </View>
-
           <View style={styles.tradeCardRightSide}>
             <Text style={styles.tradeCardSolPrice}>{token2.priceSol}</Text>
             <Text style={styles.tradeCardUsdPrice}>{token2.priceUsd}</Text>
           </View>
         </View>
-
-        {/* Swap Icon (Centered) */}
         <View style={styles.tradeCardSwapIcon}>
           <Icon.SwapIcon />
         </View>
-
-        {/* Second Token Row */}
         <View style={styles.tradeCardCombinedSides}>
           <View style={styles.tradeCardLeftSide}>
             <Image source={token2.avatar} style={styles.tradeCardTokenImage} />
@@ -66,13 +67,25 @@ export default function TradeCard({
               <Text style={styles.tradeCardTokenPrice}>{token2.priceUsd}</Text>
             </View>
           </View>
-
           <View style={styles.tradeCardRightSide}>
             <Text style={styles.tradeCardSolPrice}>{token2.priceSol}</Text>
             <Text style={styles.tradeCardUsdPrice}>{token2.priceUsd}</Text>
           </View>
         </View>
       </View>
+      {tradeAction && (
+        <TouchableOpacity
+          style={{
+            marginTop: 10,
+            backgroundColor: '#1d9bf0',
+            padding: 10,
+            borderRadius: 5,
+            alignItems: 'center',
+          }}
+          onPress={tradeAction}>
+          <Text style={{color: '#fff', fontWeight: 'bold'}}>Trade Now</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
