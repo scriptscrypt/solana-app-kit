@@ -13,37 +13,55 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
 
   if (selectedProvider === 'privy') {
     // Use the existing Privy hook
-    const {handlePrivyLogin, handlePrivyLogout, user} = usePrivyWalletLogic();
+    const {
+      handlePrivyLogin,
+      handlePrivyLogout,
+      monitorSolanaWallet,
+      user,
+      solanaWallet,
+    } = usePrivyWalletLogic();
 
     const loginWithGoogle = useCallback(async () => {
       await handlePrivyLogin({
         loginMethod: 'google',
         setStatusMessage: setStatus,
       });
-      if (user && user.id) {
-        dispatch(loginSuccess({provider: 'privy', address: user.id}));
-      }
-    }, [handlePrivyLogin, dispatch, user]);
+      await monitorSolanaWallet({
+        selectedProvider: 'privy',
+        setStatusMessage: setStatus,
+        onWalletConnected: info => {
+          dispatch(loginSuccess({provider: 'privy', address: info.address}));
+        },
+      });
+    }, [handlePrivyLogin, monitorSolanaWallet, dispatch]);
 
     const loginWithApple = useCallback(async () => {
       await handlePrivyLogin({
         loginMethod: 'apple',
         setStatusMessage: setStatus,
       });
-      if (user && user.id) {
-        dispatch(loginSuccess({provider: 'privy', address: user.id}));
-      }
-    }, [handlePrivyLogin, dispatch, user]);
+      await monitorSolanaWallet({
+        selectedProvider: 'privy',
+        setStatusMessage: setStatus,
+        onWalletConnected: info => {
+          dispatch(loginSuccess({provider: 'privy', address: info.address}));
+        },
+      });
+    }, [handlePrivyLogin, monitorSolanaWallet, dispatch]);
 
     const loginWithEmail = useCallback(async () => {
       await handlePrivyLogin({
         loginMethod: 'email',
         setStatusMessage: setStatus,
       });
-      if (user && user.id) {
-        dispatch(loginSuccess({provider: 'privy', address: user.id}));
-      }
-    }, [handlePrivyLogin, dispatch, user]);
+      await monitorSolanaWallet({
+        selectedProvider: 'privy',
+        setStatusMessage: setStatus,
+        onWalletConnected: info => {
+          dispatch(loginSuccess({provider: 'privy', address: info.address}));
+        },
+      });
+    }, [handlePrivyLogin, monitorSolanaWallet, dispatch]);
 
     const logout = useCallback(async () => {
       await handlePrivyLogout(setStatus);
@@ -57,6 +75,7 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
       loginWithEmail,
       logout,
       user,
+      solanaWallet,
     };
   } else if (selectedProvider === 'dynamic') {
     // Use the new Dynamic hook

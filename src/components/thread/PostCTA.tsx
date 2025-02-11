@@ -1,4 +1,5 @@
-import React from 'react';
+// src/components/thread/PostCTA.tsx
+import React, {useState} from 'react';
 import {
   View,
   TouchableOpacity,
@@ -6,9 +7,16 @@ import {
   StyleProp,
   ViewStyle,
   TextStyle,
+  Alert,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import type {ThreadPost, ThreadCTAButton} from './thread.types';
 import {createThreadStyles, getMergedTheme} from './thread.styles';
+import PriorityFeeSelector from '../PriorityFeeSelector';
+import {useSelector} from 'react-redux';
+import {RootState} from '../../state/store';
+import {useTradeTransaction} from '../../hooks/useTradeTransaction';
 
 interface PostCTAProps {
   post: ThreadPost;
@@ -33,14 +41,32 @@ export default function PostCTA({
   styleOverrides,
   userStyleSheet,
 }: PostCTAProps) {
-  if (!buttons || buttons.length === 0) return null;
-
   const mergedTheme = getMergedTheme(themeOverrides);
   const styles = createThreadStyles(
     mergedTheme,
-    styleOverrides as { [key: string]: object } | undefined,
-    userStyleSheet as { [key: string]: object } | undefined,
+    styleOverrides as {[key: string]: object} | undefined,
+    userStyleSheet as {[key: string]: object} | undefined,
   );
+
+  const [showTradeModal, setShowTradeModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const selectedFeeTier = useSelector(
+    (state: RootState) => state.transaction.selectedFeeTier,
+  );
+
+  // Use our trade hook
+  const {sendTrade} = useTradeTransaction();
+
+  const handleTradeButtonPress = () => {
+    setShowTradeModal(true);
+  };
+
+  const handleSubmitTrade = async () => {
+    setLoading(true);
+    await sendTrade();
+    setShowTradeModal(false);
+    setLoading(false);
+  };
 
   return (
     <View
@@ -49,28 +75,79 @@ export default function PostCTA({
         styleOverrides?.container,
         userStyleSheet?.container,
       ]}>
-      {buttons.map((btn, index) => (
-        <TouchableOpacity
-          key={`${btn.label}-${index}`}
-          style={[
-            styles.threadPostCTAButton, // Default button style
-            styleOverrides?.button, // Global style override
-            userStyleSheet?.button, // User style sheet
-            btn.buttonStyle, // Individual button style
-          ]}
-          onPress={() => btn.onPress(post)}
-          activeOpacity={0.8}>
-          <Text
+      {buttons &&
+        buttons.map((btn, index) => (
+          <TouchableOpacity
+            key={`${btn.label}-${index}`}
             style={[
-              styles.threadPostCTAButtonLabel, // Default label style
-              styleOverrides?.buttonLabel, // Global label style override
-              userStyleSheet?.buttonLabel, // User label style sheet
-              btn.buttonLabelStyle, // Individual label style
-            ]}>
-            {btn.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+              styles.threadPostCTAButton,
+              styleOverrides?.button,
+              userStyleSheet?.button,
+              btn.buttonStyle,
+            ]}
+            onPress={() => {
+              if (btn.label.toLowerCase() === 'trade') {
+                handleTradeButtonPress();
+              } else {
+                btn.onPress(post);
+              }
+            }}
+            activeOpacity={0.8}>
+            <Text
+              style={[
+                styles.threadPostCTAButtonLabel,
+                styleOverrides?.buttonLabel,
+                userStyleSheet?.buttonLabel,
+                btn.buttonLabelStyle,
+              ]}>
+              {btn.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+      <Modal
+        visible={showTradeModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTradeModal(false)}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            padding: 20,
+          }}>
+          <View
+            style={{backgroundColor: '#fff', borderRadius: 10, padding: 20}}>
+            <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 10}}>
+              Select Priority Fee Tier
+            </Text>
+            <PriorityFeeSelector />
+            {loading ? (
+              <ActivityIndicator size="large" color="#1d9bf0" />
+            ) : (
+              <TouchableOpacity
+                style={{
+                  marginTop: 20,
+                  backgroundColor: '#1d9bf0',
+                  padding: 15,
+                  borderRadius: 5,
+                  alignItems: 'center',
+                }}
+                onPress={handleSubmitTrade}>
+                <Text style={{color: '#fff', fontWeight: 'bold'}}>
+                  Submit Trade
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={{marginTop: 10, alignItems: 'center'}}
+              onPress={() => setShowTradeModal(false)}>
+              <Text style={{color: '#1d9bf0'}}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

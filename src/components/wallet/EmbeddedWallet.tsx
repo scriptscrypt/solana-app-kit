@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, TouchableOpacity, TextInput} from 'react-native';
+import {View, Text, TouchableOpacity, TextInput, Alert} from 'react-native';
 import Icons from '../../assets/svgs';
 import {useAuth} from '../../hooks/useAuth';
 import styles from '../../screens/LoginScreen/LoginScreen.styles';
@@ -18,12 +18,27 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
   onWalletConnected,
   authMode = 'login',
 }) => {
-  const {status, loginWithGoogle, loginWithApple, loginWithEmail, user} =
-    useAuth(provider);
+  const {
+    status,
+    loginWithGoogle,
+    loginWithApple,
+    loginWithEmail,
+    user,
+    solanaWallet,
+  } = useAuth(provider);
 
   useEffect(() => {
-    if (user && user.id && onWalletConnected) {
-      onWalletConnected({ provider, address: user.id });
+    console.log(solanaWallet, 'solanaWallet');
+    if (user && solanaWallet && onWalletConnected) {
+      const walletPublicKey =
+            solanaWallet.wallets && solanaWallet.wallets.length > 0
+              ? solanaWallet.wallets[0].publicKey
+              : null;
+      if (!solanaWallet || !walletPublicKey) {
+        Alert.alert('Wallet Error', 'Wallet not connected');
+        return;
+      }
+      onWalletConnected({provider, address: walletPublicKey});
     }
   }, [user, onWalletConnected, provider]);
 
