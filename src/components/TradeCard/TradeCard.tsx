@@ -73,7 +73,7 @@ export default function TradeCard({
           </View>
         </View>
       </View>
-      {tradeAction && (
+      {/* {tradeAction && (
         <TouchableOpacity
           style={{
             marginTop: 10,
@@ -85,7 +85,7 @@ export default function TradeCard({
           onPress={tradeAction}>
           <Text style={{color: '#fff', fontWeight: 'bold'}}>Trade Now</Text>
         </TouchableOpacity>
-      )}
+      )} */}
     </View>
   );
 }

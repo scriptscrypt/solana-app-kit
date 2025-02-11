@@ -1,24 +1,22 @@
-// src/hooks/useTradeTransaction.ts
-import {useSelector} from 'react-redux';
-import {Alert} from 'react-native';
-import {useEmbeddedSolanaWallet} from '@privy-io/expo';
+import { useSelector } from 'react-redux';
+import { Alert } from 'react-native';
+import { useEmbeddedSolanaWallet } from '@privy-io/expo';
 import {
   Connection,
   clusterApiUrl,
   SystemProgram,
   PublicKey,
+  TransactionInstruction,
 } from '@solana/web3.js';
-import {sendPriorityTransaction} from '../utils/sendPriorityTx';
-import {RootState} from '../state/store';
+import { sendPriorityTransaction } from '../utils/sendPriorityTx';
+import { sendJitoBundleTransaction } from '../utils/sendJitoBundleTx';
+import { RootState } from '../state/store';
 
 export function useTradeTransaction() {
   const solanaWallet = useEmbeddedSolanaWallet();
-  const selectedFeeTier = useSelector(
-    (state: RootState) => state.transaction.selectedFeeTier,
-  );
+  const selectedFeeTier = useSelector((state: RootState) => state.transaction.selectedFeeTier);
 
-  const sendTrade = async () => {
-    // Retrieve the sender’s public key from the wallet's array
+  const sendTrade = async (mode: 'priority' | 'jito') => {
     const walletPublicKey =
       solanaWallet.wallets && solanaWallet.wallets.length > 0
         ? solanaWallet.wallets[0].publicKey
@@ -27,55 +25,58 @@ export function useTradeTransaction() {
       Alert.alert('Wallet Error', 'Wallet not connected');
       return;
     }
+
     try {
-      const provider = solanaWallet.getProvider
-        ? await solanaWallet.getProvider()
-        : null;
-      if (!provider) {
-        Alert.alert('Provider Error', 'Provider not available');
+      const provider = solanaWallet.getProvider ? await solanaWallet.getProvider() : null;
+      if (!provider || typeof provider.request !== 'function') {
+        Alert.alert('Provider Error', 'Provider does not support signing transactions.');
         return;
       }
-      const connection = new Connection(clusterApiUrl('devnet'));
-      // Convert sender's wallet public key from string to PublicKey
+      // Use mainnet-beta connection since you are sending mainnet transactions.
+      const connection = new Connection(clusterApiUrl('mainnet-beta'));
       const senderPubkey = new PublicKey(walletPublicKey);
-      // Set the receiver's public key (your specified receiver)
-      const receiverPubkey = new PublicKey(
-        '24MDwQXG2TWiST8ty1rjcrKgtaYaMiLdRxFQawYgZh4v',
-      );
+      const receiverPubkey = new PublicKey('5GZJmjy3LmRXwYyNrKUB6mdijqjWM5cszSAwmND6BUV6');
 
-      // Check if the receiver account exists; if not, request an airdrop (for testing on devnet)
+      // Check receiver account (if it doesn’t exist, abort)
       const receiverInfo = await connection.getAccountInfo(receiverPubkey);
       if (!receiverInfo) {
-        console.log(
-          'Receiver account does not exist; requesting airdrop to receiver for testing...',
-        );
-        const airdropReceiverSig = await connection.requestAirdrop(
-          receiverPubkey,
-          1e9,
-        ); // 1 SOL
-        await connection.confirmTransaction(airdropReceiverSig);
+        console.log('[Trade] Receiver account does not exist, cannot proceed.');
+        Alert.alert('Receiver Error', 'Receiver account does not exist.');
+        return;
       }
 
-      // Create a transfer instruction: transfer 1 lamport from sender to receiver
+      let txSignature: string;
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: senderPubkey,
         toPubkey: receiverPubkey,
-        lamports: 500000000,
+        lamports: 10000000, // adjust the lamports as needed (here 0.01 SOL)
       });
+      const instructions: TransactionInstruction[] = [transferInstruction];
 
-      const txSignature = await sendPriorityTransaction(
-        provider,
-        selectedFeeTier,
-        [transferInstruction],
-        connection,
-        senderPubkey,
-      );
+      if (mode === 'priority') {
+        txSignature = await sendPriorityTransaction(
+          provider,
+          selectedFeeTier,
+          instructions,
+          connection,
+          senderPubkey,
+        );
+      } else if (mode === 'jito') {
+        txSignature = await sendJitoBundleTransaction(
+          provider,
+          selectedFeeTier,
+          instructions,
+          senderPubkey,
+        );
+      } else {
+        throw new Error('Invalid mode');
+      }
+      
       Alert.alert('Transaction Sent', `Signature: ${txSignature}`);
-      console.log('Transaction sent successfully', txSignature);
+      console.log('[Trade] Transaction sent successfully', txSignature);
     } catch (error: any) {
       Alert.alert('Transaction Error', error.message);
     }
   };
-
-  return {sendTrade};
+  return { sendTrade };
 }
