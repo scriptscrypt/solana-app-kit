@@ -1,3 +1,4 @@
+// File: src/screens/LoginScreen/LoginScreen.tsx
 import React, {useEffect, useRef} from 'react';
 import {View, Animated, Text, Dimensions} from 'react-native';
 import Svg, {Defs, LinearGradient, Stop, Rect} from 'react-native-svg';
@@ -72,7 +73,6 @@ export default function LoginScreen() {
       </View>
 
       <EmbeddedWalletAuth
-        provider="privy"
         onWalletConnected={info => {
           console.log('Wallet connected:', info);
           dispatch(

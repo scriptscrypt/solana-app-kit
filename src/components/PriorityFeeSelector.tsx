@@ -1,4 +1,3 @@
-// src/components/PriorityFeeSelector.tsx
 import React from 'react';
 import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';

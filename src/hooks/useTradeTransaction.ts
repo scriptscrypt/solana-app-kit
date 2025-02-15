@@ -1,20 +1,26 @@
-import { useSelector } from 'react-redux';
-import { Alert } from 'react-native';
-import { useEmbeddedSolanaWallet } from '@privy-io/expo';
+// File: /Users/bhuwantyagi/Desktop/sendAi/solana-social-starter/src/hooks/useTradeTransaction.ts
+import {useSelector} from 'react-redux';
+import {Alert} from 'react-native';
+import {useEmbeddedSolanaWallet} from '@privy-io/expo';
 import {
   Connection,
   clusterApiUrl,
   SystemProgram,
   PublicKey,
   TransactionInstruction,
+  LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import { sendPriorityTransaction } from '../utils/sendPriorityTx';
-import { sendJitoBundleTransaction } from '../utils/sendJitoBundleTx';
-import { RootState } from '../state/store';
+import {sendPriorityTransaction} from '../utils/sendPriorityTx';
+import {sendJitoBundleTransaction} from '../utils/sendJitoBundleTx';
+import {RootState} from '../state/store';
+import {useCustomization} from '../CustomizationProvider';
 
 export function useTradeTransaction() {
   const solanaWallet = useEmbeddedSolanaWallet();
-  const selectedFeeTier = useSelector((state: RootState) => state.transaction.selectedFeeTier);
+  const {transaction: transactionConfig} = useCustomization();
+  const selectedFeeTier = useSelector(
+    (state: RootState) => state.transaction.selectedFeeTier,
+  );
 
   const sendTrade = async (mode: 'priority' | 'jito') => {
     const walletPublicKey =
@@ -27,29 +33,32 @@ export function useTradeTransaction() {
     }
 
     try {
-      const provider = solanaWallet.getProvider ? await solanaWallet.getProvider() : null;
+      const provider = solanaWallet.getProvider
+        ? await solanaWallet.getProvider()
+        : null;
       if (!provider || typeof provider.request !== 'function') {
-        Alert.alert('Provider Error', 'Provider does not support signing transactions.');
+        Alert.alert(
+          'Provider Error',
+          'Provider does not support signing transactions.',
+        );
         return;
       }
-      // Use mainnet-beta connection since you are sending mainnet transactions.
+
+      // Connect to mainnet-beta
       const connection = new Connection(clusterApiUrl('mainnet-beta'));
       const senderPubkey = new PublicKey(walletPublicKey);
-      const receiverPubkey = new PublicKey('5GZJmjy3LmRXwYyNrKUB6mdijqjWM5cszSAwmND6BUV6');
 
-      // Check receiver account (if it doesn’t exist, abort)
-      const receiverInfo = await connection.getAccountInfo(receiverPubkey);
-      if (!receiverInfo) {
-        console.log('[Trade] Receiver account does not exist, cannot proceed.');
-        Alert.alert('Receiver Error', 'Receiver account does not exist.');
-        return;
-      }
+      // Define the receiver public key (hard-coded)
+      const receiverPubkey = new PublicKey(
+        '24MDwQXG2TWiST8ty1rjcrKgtaYaMiLdRxFQawYgZh4v',
+      );
 
       let txSignature: string;
+
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: senderPubkey,
         toPubkey: receiverPubkey,
-        lamports: 10000000, // adjust the lamports as needed (here 0.01 SOL)
+        lamports: 1000000,
       });
       const instructions: TransactionInstruction[] = [transferInstruction];
 
@@ -60,6 +69,7 @@ export function useTradeTransaction() {
           instructions,
           connection,
           senderPubkey,
+          transactionConfig.feeTiers,
         );
       } else if (mode === 'jito') {
         txSignature = await sendJitoBundleTransaction(
@@ -67,16 +77,19 @@ export function useTradeTransaction() {
           selectedFeeTier,
           instructions,
           senderPubkey,
+          connection,
+          transactionConfig.feeTiers,
         );
       } else {
         throw new Error('Invalid mode');
       }
-      
+
       Alert.alert('Transaction Sent', `Signature: ${txSignature}`);
       console.log('[Trade] Transaction sent successfully', txSignature);
     } catch (error: any) {
       Alert.alert('Transaction Error', error.message);
     }
   };
-  return { sendTrade };
+
+  return {sendTrade};
 }

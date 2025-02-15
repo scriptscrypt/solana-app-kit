@@ -14,8 +14,8 @@ const Tab = createBottomTabNavigator();
 const iconStyle = {
   shadowColor: '#000',
   shadowOffset: {width: 0, height: 10},
-  shadowOpacity: 0.4,
-  shadowRadius: 3,
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
   elevation: 6,
 };
 

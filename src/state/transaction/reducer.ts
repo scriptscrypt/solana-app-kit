@@ -1,4 +1,3 @@
-// src/state/transaction/reducer.ts
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 
 interface TransactionState {
