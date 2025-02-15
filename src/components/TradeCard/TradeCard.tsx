@@ -1,9 +1,7 @@
-// src/components/TradeCard/TradeCard.tsx
 import React from 'react';
 import {View, Text, Image, TouchableOpacity} from 'react-native';
 import {createThreadStyles, getMergedTheme} from '../thread/thread.styles';
 import Icon from '../../assets/svgs/index';
-import {useTradeTransaction} from '../../hooks/useTradeTransaction';
 
 interface TradeCardProps {
   token1: {
@@ -37,8 +35,6 @@ export default function TradeCard({
     styleOverrides,
     userStyleSheet,
   );
-  const {sendTrade} = useTradeTransaction();
-  const tradeAction = onTrade || sendTrade;
 
   return (
     <View style={styles.tradeCardContainer}>

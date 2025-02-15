@@ -37,7 +37,7 @@ import {
   }
   
   export const BlinkExample: React.FC<{
-    url: string; // could be action api or website url
+    url: string;
   }> = ({ url }) => {
     const adapter = getWalletAdapter();
     const { action } = useAction({ url });

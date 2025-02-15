@@ -1,18 +1,25 @@
-// File: /src/hooks/useAuth.ts
-import {useCallback, useState} from 'react';
+// File: src/hooks/useAuth.ts
+import {useCallback} from 'react';
 import {useDispatch} from 'react-redux';
 import {loginSuccess, logoutSuccess} from '../state/auth/reducer';
 import {usePrivyWalletLogic} from '../services/walletProviders/privy';
-import {useDynamicWalletLogic} from '../services/walletProviders/dynamic';
+import {useDynamicWalletLogic} from './useDynamicWalletLogic';
+import {useCustomization} from '../CustomizationProvider';
 
-export type AuthProvider = 'privy' | 'dynamic' | 'turnkey';
-
-export function useAuth(selectedProvider: AuthProvider = 'privy') {
+/**
+ * Summarized usage:
+ *  1) Read which provider is set from config.
+ *  2) If 'privy', we handle via `usePrivyWalletLogic`.
+ *  3) If 'dynamic', we handle via `useDynamicWalletLogic`.
+ *  4) If 'turnkey', we do not have a full usage example, but we show how you might do it.
+ */
+export function useAuth() {
+  const {auth: authConfig} = useCustomization();
+  const selectedProvider = authConfig.provider;
   const dispatch = useDispatch();
-  const [status, setStatus] = useState<string>('');
 
+  /** PRIVY CASE */
   if (selectedProvider === 'privy') {
-    // Use the existing Privy hook
     const {
       handlePrivyLogin,
       handlePrivyLogout,
@@ -24,11 +31,11 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
     const loginWithGoogle = useCallback(async () => {
       await handlePrivyLogin({
         loginMethod: 'google',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
       });
       await monitorSolanaWallet({
         selectedProvider: 'privy',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
         onWalletConnected: info => {
           dispatch(loginSuccess({provider: 'privy', address: info.address}));
         },
@@ -38,11 +45,11 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
     const loginWithApple = useCallback(async () => {
       await handlePrivyLogin({
         loginMethod: 'apple',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
       });
       await monitorSolanaWallet({
         selectedProvider: 'privy',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
         onWalletConnected: info => {
           dispatch(loginSuccess({provider: 'privy', address: info.address}));
         },
@@ -52,11 +59,11 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
     const loginWithEmail = useCallback(async () => {
       await handlePrivyLogin({
         loginMethod: 'email',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
       });
       await monitorSolanaWallet({
         selectedProvider: 'privy',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
         onWalletConnected: info => {
           dispatch(loginSuccess({provider: 'privy', address: info.address}));
         },
@@ -64,12 +71,12 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
     }, [handlePrivyLogin, monitorSolanaWallet, dispatch]);
 
     const logout = useCallback(async () => {
-      await handlePrivyLogout(setStatus);
+      await handlePrivyLogout(() => {});
       dispatch(logoutSuccess());
     }, [handlePrivyLogout, dispatch]);
 
     return {
-      status,
+      status: '',
       loginWithGoogle,
       loginWithApple,
       loginWithEmail,
@@ -78,7 +85,7 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
       solanaWallet,
     };
   } else if (selectedProvider === 'dynamic') {
-    // Use the new Dynamic hook
+    /** DYNAMIC CASE */
     const {
       handleDynamicLogin,
       handleDynamicLogout,
@@ -86,13 +93,12 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
       user,
       monitorDynamicWallet,
     } = useDynamicWalletLogic();
-    console.log('walletAddress', walletAddress);
+
     const loginWithEmail = useCallback(async () => {
       await handleDynamicLogin({
         loginMethod: 'email',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
       });
-      // Wait for the wallet to be created/monitored.
       if (walletAddress) {
         dispatch(loginSuccess({provider: 'dynamic', address: walletAddress}));
       }
@@ -101,7 +107,7 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
     const loginWithSMS = useCallback(async () => {
       await handleDynamicLogin({
         loginMethod: 'sms',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
       });
       if (walletAddress) {
         dispatch(loginSuccess({provider: 'dynamic', address: walletAddress}));
@@ -111,7 +117,7 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
     const loginWithGoogle = useCallback(async () => {
       await handleDynamicLogin({
         loginMethod: 'google',
-        setStatusMessage: setStatus,
+        setStatusMessage: () => {},
       });
       if (walletAddress) {
         dispatch(loginSuccess({provider: 'dynamic', address: walletAddress}));
@@ -119,12 +125,12 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
     }, [handleDynamicLogin, dispatch, walletAddress]);
 
     const logout = useCallback(async () => {
-      await handleDynamicLogout(setStatus);
+      await handleDynamicLogout(() => {});
       dispatch(logoutSuccess());
     }, [handleDynamicLogout, dispatch]);
 
     return {
-      status,
+      status: '',
       loginWithEmail,
       loginWithSMS,
       loginWithGoogle,
@@ -132,22 +138,23 @@ export function useAuth(selectedProvider: AuthProvider = 'privy') {
       user: walletAddress ? {id: walletAddress} : user,
     };
   } else if (selectedProvider === 'turnkey') {
-    // Turnkey logic (if implemented) would go here.
+    /** TURNKEY CASE */
+    // Example: you would implement the Turnkey logic similarly to above
     const logout = useCallback(async () => {
-      // Placeholder implementation for turnkey logout.
+      // For Turnkey, you might do some session reset
       dispatch(logoutSuccess());
     }, [dispatch]);
 
     return {
-      status,
+      status: '',
       loginWithEmail: async () => {
-        /* Turnkey login not implemented in this example */
+        // Turnkey login not fully implemented in this example
       },
       logout,
       user: null,
     };
   }
 
-  // Fallback
-  return {status, logout: async () => {}};
+  // If no recognized provider, just return empties
+  return {status: '', logout: async () => {}};
 }

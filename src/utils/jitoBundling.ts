@@ -1,5 +1,5 @@
-import { VersionedTransaction } from '@solana/web3.js';
-import { Buffer } from 'buffer';
+import {VersionedTransaction} from '@solana/web3.js';
+import {Buffer} from 'buffer';
 
 export interface JitoBundleResponse {
   jsonrpc: string;
@@ -7,9 +7,13 @@ export interface JitoBundleResponse {
   id: number;
 }
 
-// Use the mainnet bundling endpoint. (Note: the variable name is updated to reflect mainnet.)
-const JITO_MAINNET_URL = 'https://mainnet.block-engine.jito.wtf/api/v1/bundles';
+// Use the mainnet bundling endpoint.
+const JITO_MAINNET_URL =
+  'https://mainnet.block-engine.jito.wtf:443/api/v1/bundles';
 
+/**
+ * Sends a bundle of signed transactions to Jito's block engine.
+ */
 export async function sendJitoBundle(
   transactions: VersionedTransaction[],
 ): Promise<JitoBundleResponse> {
@@ -19,7 +23,9 @@ export async function sendJitoBundle(
   const base64Txns = transactions.map((tx, index) => {
     const serializedTx = tx.serialize();
     const base64Tx = Buffer.from(serializedTx).toString('base64');
-    console.log(`[sendJitoBundle] Serialized transaction ${index + 1}: ${base64Tx}`);
+    console.log(
+      `[sendJitoBundle] Serialized transaction ${index + 1}: ${base64Tx}`,
+    );
     return base64Tx;
   });
 
@@ -28,10 +34,13 @@ export async function sendJitoBundle(
     jsonrpc: '2.0',
     id: 1,
     method: 'sendBundle',
-    params: [base64Txns, { encoding: 'base64' }],
+    params: [base64Txns, {encoding: 'base64'}],
   };
 
-  console.log('[sendJitoBundle] Bundle request:', JSON.stringify(bundleRequest, null, 2));
+  console.log(
+    '[sendJitoBundle] Bundle request:',
+    JSON.stringify(bundleRequest, null, 2),
+  );
 
   // Send the bundle to Jito's block engine.
   const response = await fetch(JITO_MAINNET_URL, {
@@ -42,10 +51,52 @@ export async function sendJitoBundle(
     body: JSON.stringify(bundleRequest),
   });
 
-  console.log('[sendJitoBundle] Received response with status:', response.status);
-
   const responseBody = await response.json();
-  console.log('[sendJitoBundle] Response body:', JSON.stringify(responseBody, null, 2));
+  console.log(
+    '[sendJitoBundle] Response body:',
+    JSON.stringify(responseBody, null, 2),
+  );
 
   return responseBody;
+}
+
+/**
+ * Retrieves Solscan links for each transaction in the bundle.
+ * @param bundleId - The bundle ID returned by sendJitoBundle.
+ * @returns An array of Solscan transaction links.
+ */
+export async function getSolscanLinks(bundleId: string): Promise<string[]> {
+  const url =
+    'https://mainnet.block-engine.jito.wtf:443/api/v1/getBundleStatuses';
+  const payload = {
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'getBundleStatuses',
+    params: [[bundleId]],
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+
+  const result = await response.json();
+  console.log(
+    '[getSolscanLinks] Bundle status response:',
+    JSON.stringify(result, null, 2),
+  );
+
+  if (
+    result &&
+    result.result &&
+    result.result.value &&
+    result.result.value.length > 0
+  ) {
+    const bundleResult = result.result.value[0];
+    return bundleResult.transactions.map(
+      (txSignature: string) => `https://solscan.io/tx/${txSignature}`,
+    );
+  }
+  return [];
 }
