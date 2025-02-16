@@ -48,9 +48,24 @@ export function useTradeTransaction() {
       const connection = new Connection(clusterApiUrl('mainnet-beta'));
       const senderPubkey = new PublicKey(walletPublicKey);
 
+      const balance = await connection.getBalance(senderPubkey);
+      const transferLamports = 1000000;
+      const estimatedFee = 500000; // Add buffer for transaction fee
+      const totalRequired = transferLamports + estimatedFee;
+
+      console.log('balance', balance);
+
+      if (balance < totalRequired) {
+        Alert.alert(
+          'Insufficient Balance',
+          `Your wallet has ${balance} lamports, but the transaction needs ${totalRequired} (including fees).`,
+        );
+        return;
+      }
+
       // Define the receiver public key (hard-coded)
       const receiverPubkey = new PublicKey(
-        '24MDwQXG2TWiST8ty1rjcrKgtaYaMiLdRxFQawYgZh4v',
+        '5GZJmjy3LmRXwYyNrKUB6mdijqjWM5cszSAwmND6BUV6',
       );
 
       let txSignature: string;

@@ -1,5 +1,6 @@
-import {VersionedTransaction} from '@solana/web3.js';
-import {Buffer} from 'buffer';
+// File: src/utils/jitoBundling.ts
+import { VersionedTransaction } from '@solana/web3.js';
+import { Buffer } from 'buffer';
 
 export interface JitoBundleResponse {
   jsonrpc: string;
@@ -34,7 +35,7 @@ export async function sendJitoBundle(
     jsonrpc: '2.0',
     id: 1,
     method: 'sendBundle',
-    params: [base64Txns, {encoding: 'base64'}],
+    params: [base64Txns, { encoding: 'base64' }],
   };
 
   console.log(
@@ -66,8 +67,7 @@ export async function sendJitoBundle(
  * @returns An array of Solscan transaction links.
  */
 export async function getSolscanLinks(bundleId: string): Promise<string[]> {
-  const url =
-    'https://mainnet.block-engine.jito.wtf:443/api/v1/getBundleStatuses';
+  const url = 'https://mainnet.block-engine.jito.wtf:443/api/v1/getBundleStatuses';
   const payload = {
     jsonrpc: '2.0',
     id: 1,
@@ -75,28 +75,51 @@ export async function getSolscanLinks(bundleId: string): Promise<string[]> {
     params: [[bundleId]],
   };
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload),
-  });
+  // We'll try a few times, because there's often a delay before
+  // the block engine returns transaction signatures.
+  let attempts = 0;
+  const maxAttempts = 10;
+  const delayMs = 2000; // 2 seconds between polls
 
-  const result = await response.json();
-  console.log(
-    '[getSolscanLinks] Bundle status response:',
-    JSON.stringify(result, null, 2),
-  );
+  while (attempts < maxAttempts) {
+    attempts += 1;
+    console.log(`[getSolscanLinks] Attempt ${attempts} of ${maxAttempts}...`);
 
-  if (
-    result &&
-    result.result &&
-    result.result.value &&
-    result.result.value.length > 0
-  ) {
-    const bundleResult = result.result.value[0];
-    return bundleResult.transactions.map(
-      (txSignature: string) => `https://solscan.io/tx/${txSignature}`,
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    console.log(
+      '[getSolscanLinks] Bundle status response:',
+      JSON.stringify(result, null, 2),
     );
+
+    if (
+      result &&
+      result.result &&
+      result.result.value &&
+      result.result.value.length > 0
+    ) {
+      const bundleResult = result.result.value[0];
+      // Once we have "transactions", return the links immediately.
+      if (bundleResult.transactions && bundleResult.transactions.length > 0) {
+        return bundleResult.transactions.map(
+          (txSignature: string) => `https://solscan.io/tx/${txSignature}`,
+        );
+      }
+    }
+
+    // If we didn't get any signatures yet, wait and try again
+    console.log('[getSolscanLinks] No transaction signatures yet. Retrying...');
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
+
+  // If still no signatures, give up and return empty.
+  console.warn(
+    '[getSolscanLinks] Could not find transaction signatures after polling.',
+  );
   return [];
 }

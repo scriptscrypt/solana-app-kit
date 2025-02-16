@@ -8,8 +8,8 @@ import {
   ComputeBudgetProgram,
   SystemProgram,
 } from '@solana/web3.js';
-import {Buffer} from 'buffer';
-import {sendJitoBundle, getSolscanLinks} from './jitoBundling';
+import { Buffer } from 'buffer';
+import { sendJitoBundle, getSolscanLinks } from './jitoBundling';
 
 // Define tipping accounts.
 const TIP_ACCOUNTS = [
@@ -41,7 +41,7 @@ export async function sendJitoBundleTransaction(
 
   // Set compute unit limit instruction.
   const computeUnitLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 2000000,
+    units: 2_000_000,
   });
 
   const microLamports = feeMapping[feeTier];
@@ -59,13 +59,13 @@ export async function sendJitoBundleTransaction(
   const allInstructions = [
     tipInstruction,
     computeUnitLimitIx,
-    ComputeBudgetProgram.setComputeUnitPrice({microLamports}),
+    ComputeBudgetProgram.setComputeUnitPrice({ microLamports }),
     ...instructions,
   ];
   console.log('[sendJitoBundleTransaction] Combined all instructions.');
 
   // Get latest blockhash and compile the transaction message.
-  const {blockhash} = await connection.getLatestBlockhash();
+  const { blockhash } = await connection.getLatestBlockhash();
   console.log(
     `[sendJitoBundleTransaction] Fetched latest blockhash: ${blockhash}`,
   );
@@ -128,6 +128,7 @@ export async function sendJitoBundleTransaction(
 
     // Retrieve the individual transaction signatures from the bundle status.
     const solscanLinks = await getSolscanLinks(bundleResponse.result);
+
     if (solscanLinks.length > 0) {
       console.log(
         `[sendJitoBundleTransaction] Transaction sent. Check on Solscan Mainnet: ${solscanLinks.join(
