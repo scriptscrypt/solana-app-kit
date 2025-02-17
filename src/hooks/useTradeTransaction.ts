@@ -47,10 +47,11 @@ export function useTradeTransaction() {
       // Connect to mainnet-beta
       const connection = new Connection(clusterApiUrl('mainnet-beta'));
       const senderPubkey = new PublicKey(walletPublicKey);
-
+      console.log('senderPubkey', senderPubkey);
+      console.log('walletPublicKey', walletPublicKey);
       const balance = await connection.getBalance(senderPubkey);
-      const transferLamports = 1000000;
-      const estimatedFee = 500000; // Add buffer for transaction fee
+      const transferLamports = 20000000;
+      const estimatedFee = 500000;
       const totalRequired = transferLamports + estimatedFee;
 
       console.log('balance', balance);
@@ -65,7 +66,7 @@ export function useTradeTransaction() {
 
       // Define the receiver public key (hard-coded)
       const receiverPubkey = new PublicKey(
-        '5GZJmjy3LmRXwYyNrKUB6mdijqjWM5cszSAwmND6BUV6',
+        '24MDwQXG2TWiST8ty1rjcrKgtaYaMiLdRxFQawYgZh4v',
       );
 
       let txSignature: string;
@@ -73,7 +74,7 @@ export function useTradeTransaction() {
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: senderPubkey,
         toPubkey: receiverPubkey,
-        lamports: 1000000,
+        lamports: transferLamports,
       });
       const instructions: TransactionInstruction[] = [transferInstruction];
 

@@ -4,6 +4,7 @@ import {useAppSelector} from '../../hooks/useReduxHooks';
 import {ThreadPost} from '../../components/thread/thread.types';
 import ProfileIcons from '../../assets/svgs';
 import {styles} from './ProfileScreen.styles';
+import WalletSlide from '../../components/WalletSlide/walletSlide';
 
 /** Current user ID for demonstration */
 const CURRENT_USER_ID = 'user-1';
@@ -18,7 +19,7 @@ export default function ProfileScreen() {
     setMyPosts(userPosts);
   }, [allPosts]);
 
-  const renderPostItem = ({item}: {item: ThreadPost}) => { 
+  const renderPostItem = ({item}: {item: ThreadPost}) => {
     return (
       <View style={styles.postItemContainer}>
         <Image source={item.user.avatar} style={styles.postItemAvatar} />
@@ -40,77 +41,80 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.profileHeaderContainer}>
-        <View style={styles.profileInnerRow}>
-          <View style={styles.profileAvatarBox}>
-            <Image
-              source={require('../../assets/images/User.png')}
-              style={styles.profileAvatar}
-            />
-          </View>
+    <>
+      <WalletSlide />
+    </>
+    // <SafeAreaView style={styles.container}>
+    //   <View style={styles.profileHeaderContainer}>
+    //     <View style={styles.profileInnerRow}>
+    //       <View style={styles.profileAvatarBox}>
+    //         <Image
+    //           source={require('../../assets/images/User.png')}
+    //           style={styles.profileAvatar}
+    //         />
+    //       </View>
 
-          <View style={{flex: 1, marginLeft: 12}}>
-            <View style={styles.profileNameRow}>
-              <Text style={styles.profileUsername}>Alice</Text>
-              <ProfileIcons.SubscriptionTick />
-            </View>
+    //       <View style={{flex: 1, marginLeft: 12}}>
+    //         <View style={styles.profileNameRow}>
+    //           <Text style={styles.profileUsername}>Alice</Text>
+    //           <ProfileIcons.SubscriptionTick />
+    //         </View>
 
-            <View style={styles.handleFollowsRow}>
-              <Text style={styles.profileHandle}>@aliceSmith</Text>
-              <Text style={styles.profileFollowsYouBadge}>It’s you!</Text>
-            </View>
-          </View>
-        </View>
+    //         <View style={styles.handleFollowsRow}>
+    //           <Text style={styles.profileHandle}>@aliceSmith</Text>
+    //           <Text style={styles.profileFollowsYouBadge}>It’s you!</Text>
+    //         </View>
+    //       </View>
+    //     </View>
 
-        {/* Bio section (example) */}
-        <Text style={styles.profileBio}>
-          Lorem ipsum about me. I love building on Solana and exploring Web3.
-          Based in @someLocation.
-        </Text>
+    //     {/* Bio section (example) */}
+    //     <Text style={styles.profileBio}>
+    //       Lorem ipsum about me. I love building on Solana and exploring Web3.
+    //       Based in @someLocation.
+    //     </Text>
 
-        {/* Stats row */}
-        <View style={styles.profileStatsRow}>
-          <View style={styles.profileStat}>
-            <Text style={styles.statNumber}>42</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
+    //     {/* Stats row */}
+    //     <View style={styles.profileStatsRow}>
+    //       <View style={styles.profileStat}>
+    //         <Text style={styles.statNumber}>42</Text>
+    //         <Text style={styles.statLabel}>Followers</Text>
+    //       </View>
 
-          <View style={styles.profileStat}>
-            <Text style={styles.statNumber}>89</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </View>
+    //       <View style={styles.profileStat}>
+    //         <Text style={styles.statNumber}>89</Text>
+    //         <Text style={styles.statLabel}>Following</Text>
+    //       </View>
 
-          <View style={styles.profileStatLocation}>
-            <ProfileIcons.PinLocation width={16} height={16} />
-            <Text style={styles.statLabel}>Mars</Text>
-          </View>
-        </View>
+    //       <View style={styles.profileStatLocation}>
+    //         <ProfileIcons.PinLocation width={16} height={16} />
+    //         <Text style={styles.statLabel}>Mars</Text>
+    //       </View>
+    //     </View>
 
-        <View style={styles.btnGrp}>
-          <View style={styles.disabledBtn}>
-            <Text style={styles.disabledBtnText}>Edit Profile</Text>
-          </View>
-          <View style={styles.disabledBtn}>
-            <Text style={styles.disabledBtnText}>Send to Wallet</Text>
-          </View>
-        </View>
-      </View>
+    //     <View style={styles.btnGrp}>
+    //       <View style={styles.disabledBtn}>
+    //         <Text style={styles.disabledBtnText}>Edit Profile</Text>
+    //       </View>
+    //       <View style={styles.disabledBtn}>
+    //         <Text style={styles.disabledBtnText}>Send to Wallet</Text>
+    //       </View>
+    //     </View>
+    //   </View>
 
-      <FlatList
-        data={myPosts}
-        keyExtractor={post => post.id}
-        renderItem={renderPostItem}
-        ListEmptyComponent={
-          <View style={styles.noPostContainer}>
-            <Text style={styles.noPostText}>
-              You haven't posted or replied yet!
-            </Text>
-          </View>
-        }
-        style={{flex: 1}}
-        contentContainerStyle={styles.flatListContent}
-      />
-    </SafeAreaView>
+    //   <FlatList
+    //     data={myPosts}
+    //     keyExtractor={post => post.id}
+    //     renderItem={renderPostItem}
+    //     ListEmptyComponent={
+    //       <View style={styles.noPostContainer}>
+    //         <Text style={styles.noPostText}>
+    //           You haven't posted or replied yet!
+    //         </Text>
+    //       </View>
+    //     }
+    //     style={{flex: 1}}
+    //     contentContainerStyle={styles.flatListContent}
+    //   />
+    // </SafeAreaView>
   );
 }

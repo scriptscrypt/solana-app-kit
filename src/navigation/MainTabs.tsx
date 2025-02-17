@@ -106,8 +106,8 @@ export default function MainTabs() {
               style={{
                 shadowColor: '#000',
                 shadowOffset: {width: 0, height: 15},
-                shadowOpacity: 0.8,
-                shadowRadius: 6,
+                shadowOpacity: 0.6,
+                shadowRadius: 8,
                 elevation: 6,
               }}
             />
