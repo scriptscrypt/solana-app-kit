@@ -30,6 +30,16 @@ export default function SearchScreen() {
         }}>
         <Text style={{color: '#fff'}}>Go to Blink Screen</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Pumpfun' as never)}
+        style={{
+          marginTop: 20,
+          padding: 10,
+          backgroundColor: '#007bff',
+          borderRadius: 5,
+        }}>
+        <Text style={{color: '#fff'}}>Go to Pump fun Screen</Text>
+      </TouchableOpacity>
     </View>
   );
 }
