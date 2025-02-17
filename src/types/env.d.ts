@@ -6,4 +6,5 @@ declare module '@env' {
   export const TURNKEY_RP_NAME: string;
   export const DYNAMIC_API_KEY: string;
   export const DYNAMIC_ENVIRONMENT_ID: string;
+  export const HELIUS_RPC_URL: string;
 }
