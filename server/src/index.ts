@@ -173,17 +173,18 @@ app.post('/api/tokens', async (req: Request<{}, {}, TokenParams>, res: Response)
  * @route POST /api/stake
  * @param {StakingParams} req.body - Staking parameters
  */
-app.post('/api/stake', async (req: Request<{}, {}, StakingParams>, res: Response) => {
-    try {
-      const result = await tokenMill.stake(req.body);
-      res.json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
+app.post('/api/stake', async (req: Request<{}, {}, StakingParams & { userPublicKey: string }>, res: Response) => {
+  try {
+    const result = await tokenMill.buildStakeTx(req.body);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
   
 /**
  * Create a new vesting schedule
