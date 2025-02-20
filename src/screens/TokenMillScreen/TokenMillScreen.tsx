@@ -7,14 +7,16 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../hooks/useAuth'; // your Privy auth hook
+import { useAuth } from '../../hooks/useAuth';
 import {
   Transaction,
   Connection,
   PublicKey,
   clusterApiUrl,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { Buffer } from 'buffer';
 global.Buffer = Buffer;
@@ -26,7 +28,7 @@ export default function TokenMillScreen() {
 
   if (!solanaWallet || !solanaWallet.wallets || solanaWallet.wallets.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
         <Text style={styles.errorText}>Wallet not connected</Text>
       </SafeAreaView>
     );
@@ -48,10 +50,12 @@ export default function TokenMillScreen() {
   const [vestingPlanAddress, setVestingPlanAddress] = useState('');
   const [swapType, setSwapType] = useState<'buy' | 'sell'>('buy');
   const [swapAmount, setSwapAmount] = useState('1000000');
+  const [loading, setLoading] = useState(false);
 
   // Handler for creating a market
   const handleCreateMarket = async () => {
     try {
+      setLoading(true);
       console.log('[handleCreateMarket] Initiating...');
       const body = {
         name: tokenName,
@@ -75,23 +79,23 @@ export default function TokenMillScreen() {
         throw new Error(json.error || 'Market creation failed');
       }
 
-      // 1) Convert base64 to buffer, parse as a Legacy Transaction
+      // Convert base64 to buffer, parse as a Legacy Transaction
       const txBuffer = Buffer.from(json.transaction, 'base64');
       const tx = Transaction.from(txBuffer);
       console.log('[handleCreateMarket] Deserialized Transaction:', tx);
 
-      // 2) Get the wallet provider
+      // Get the wallet provider
       const provider = solanaWallet.getProvider && (await solanaWallet.getProvider());
       if (!provider || typeof provider.request !== 'function') {
         throw new Error('Wallet provider does not support the request method');
       }
 
-      // 3) Serialize just the transaction *message* for signing
+      // Serialize the transaction message for signing
       const serializedMessage = tx.serializeMessage();
       const base64Message = Buffer.from(serializedMessage).toString('base64');
       console.log('[handleCreateMarket] Serialized transaction message (base64):', base64Message);
 
-      // 4) Ask the wallet to sign the message
+      // Ask the wallet to sign the message
       const signResult = await provider.request({
         method: 'signMessage',
         params: { message: base64Message },
@@ -101,14 +105,14 @@ export default function TokenMillScreen() {
         throw new Error('No signature returned from wallet');
       }
 
-      // 5) Insert that signature into the Transaction object
+      // Insert the wallet's signature into the Transaction object
       tx.addSignature(
         new PublicKey(publicKey),
         Buffer.from(signResult.signature, 'base64')
       );
       console.log('[handleCreateMarket] Signature added to transaction');
 
-      // 6) Send the fully signed transaction
+      // Send the fully signed transaction
       const signedTx = tx.serialize();
       console.log('[handleCreateMarket] Sending signed transaction...');
       const txSignature = await connection.sendRawTransaction(signedTx);
@@ -126,35 +130,85 @@ export default function TokenMillScreen() {
     } catch (error: any) {
       console.error('[handleCreateMarket] Error:', error);
       Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleStake = async (amount: number) => {
     try {
-      console.log('[handleStake] Staking', amount, 'tokens in market:', marketAddress);
+      setLoading(true);
+      console.log('[handleStake] Initiating stake...');
+      
+      // 1) Ask server to build a legacy transaction message
+      const body = {
+        marketAddress,
+        amount,
+        userPublicKey: publicKey,
+      };
       const response = await fetch(`${SERVER_URL}/api/stake`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          marketAddress,
-          amount,
-          userPublicKey: publicKey,
-        }),
+        body: JSON.stringify(body),
       });
-      const data = await response.json();
-      console.log('[handleStake] Stake response:', data);
-      if (!data.success) {
-        throw new Error(data.error || 'Stake failed');
+      const json = await response.json();
+      console.log('[handleStake] Server response:', json);
+      if (!json.success) {
+        throw new Error(json.error || 'Stake failed');
       }
-      Alert.alert('Staked Successfully', `Tx: ${data.data.signature}`);
+  
+      // 2) Deserialize the base64-encoded, legacy transaction
+      const txBuffer = Buffer.from(json.data, 'base64');
+      const tx = Transaction.from(txBuffer);
+      console.log('[handleStake] Deserialized stake transaction:', tx);
+  
+      // 3) Ask the wallet to sign the transaction message
+      const provider = solanaWallet.getProvider && (await solanaWallet.getProvider());
+      if (!provider || typeof provider.request !== 'function') {
+        throw new Error('Wallet provider does not support the request method');
+      }
+      const serializedMessage = tx.serializeMessage();
+      const base64Message = Buffer.from(serializedMessage).toString('base64');
+      console.log('[handleStake] Stake message (base64) for signing:', base64Message);
+  
+      const signResult = await provider.request({
+        method: 'signMessage',
+        params: { message: base64Message },
+      });
+      console.log('[handleStake] Wallet signature result:', signResult);
+      if (!signResult || !signResult.signature) {
+        throw new Error('No signature returned from wallet');
+      }
+  
+      // 4) Insert the signature into the Transaction
+      tx.addSignature(
+        new PublicKey(publicKey),
+        Buffer.from(signResult.signature, 'base64')
+      );
+      console.log('[handleStake] Signature added to transaction');
+  
+      // 5) Serialize and send
+      const signedTx = tx.serialize();
+      console.log('[handleStake] Sending stake transaction...');
+      const txSignature = await connection.sendRawTransaction(signedTx);
+      console.log('[handleStake] Stake transaction sent, signature:', txSignature);
+  
+      await connection.confirmTransaction(txSignature);
+      console.log('[handleStake] Stake transaction confirmed');
+      Alert.alert('Staked Successfully', `Tx: ${txSignature}`);
     } catch (error: any) {
       console.error('[handleStake] Error:', error);
       Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
+  
+  
 
   const handleCreateVesting = async () => {
     try {
+      setLoading(true);
       console.log('[handleCreateVesting] Creating vesting plan for market:', marketAddress);
       const response = await fetch(`${SERVER_URL}/api/vesting`, {
         method: 'POST',
@@ -177,11 +231,14 @@ export default function TokenMillScreen() {
     } catch (error: any) {
       console.error('[handleCreateVesting] Error:', error);
       Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleReleaseVesting = async () => {
     try {
+      setLoading(true);
       console.log('[handleReleaseVesting] Releasing vesting for market:', marketAddress);
       const endpoint = `${SERVER_URL}/api/vesting/${marketAddress}/claim`;
       const response = await fetch(endpoint, {
@@ -200,11 +257,14 @@ export default function TokenMillScreen() {
     } catch (error: any) {
       console.error('[handleReleaseVesting] Error:', error);
       Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSwap = async () => {
     try {
+      setLoading(true);
       console.log('[handleSwap] Initiating swap in market:', marketAddress);
       const response = await fetch(`${SERVER_URL}/api/swap`, {
         method: 'POST',
@@ -226,138 +286,235 @@ export default function TokenMillScreen() {
     } catch (error: any) {
       console.error('[handleSwap] Error:', error);
       Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>TokenMill Screen</Text>
-        <Text style={styles.helpText}>Your Pubkey: {publicKey}</Text>
+        <Text style={styles.header}>TokenMill</Text>
+        <Text style={styles.subHeader}>Your Pubkey: {publicKey}</Text>
+        {loading && <ActivityIndicator size="large" color="#2a2a2a" style={styles.loader} />}
 
-        {/* 1) CREATE MARKET (TOKEN) */}
-        <Text style={styles.sectionTitle}>1) Create Market (Token)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Token Name"
-          value={tokenName}
-          onChangeText={setTokenName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Token Symbol"
-          value={tokenSymbol}
-          onChangeText={setTokenSymbol}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Metadata URI"
-          value={metadataUri}
-          onChangeText={setMetadataUri}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Total Supply"
-          value={totalSupply}
-          onChangeText={setTotalSupply}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Creator Fee BPS"
-          value={creatorFee}
-          onChangeText={setCreatorFee}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Staking Fee BPS"
-          value={stakingFee}
-          onChangeText={setStakingFee}
-        />
-        <TouchableOpacity style={styles.button} onPress={handleCreateMarket}>
-          <Text style={styles.buttonText}>Create Market</Text>
-        </TouchableOpacity>
+        {/* Existing Market Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Existing Market (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Market Address"
+            value={marketAddress}
+            onChangeText={setMarketAddress}
+          />
+        </View>
 
-        {/* 2) STAKE */}
-        <Text style={styles.sectionTitle}>2) Stake in the Market</Text>
-        <TouchableOpacity style={styles.button} onPress={() => handleStake(50000)}>
-          <Text style={styles.buttonText}>Stake 50,000 tokens</Text>
-        </TouchableOpacity>
-
-        {/* 3) VESTING */}
-        <Text style={styles.sectionTitle}>3) Vesting</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Vesting Amount"
-          value={vestingAmount}
-          onChangeText={setVestingAmount}
-        />
-        <TouchableOpacity style={styles.button} onPress={handleCreateVesting}>
-          <Text style={styles.buttonText}>Create Vesting</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleReleaseVesting}>
-          <Text style={styles.buttonText}>Release Vesting</Text>
-        </TouchableOpacity>
-
-        {/* 4) SWAP */}
-        <Text style={styles.sectionTitle}>4) Swap</Text>
-        <View style={styles.row}>
-          <TouchableOpacity
-            style={[styles.swapBtn, swapType === 'buy' && styles.swapBtnActive]}
-            onPress={() => setSwapType('buy')}>
-            <Text style={[styles.swapBtnText, swapType === 'buy' && styles.swapBtnTextActive]}>Buy</Text>
+        {/* Create Market Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Create Market (Token)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Token Name"
+            value={tokenName}
+            onChangeText={setTokenName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Token Symbol"
+            value={tokenSymbol}
+            onChangeText={setTokenSymbol}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Metadata URI"
+            value={metadataUri}
+            onChangeText={setMetadataUri}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Total Supply"
+            value={totalSupply}
+            onChangeText={setTotalSupply}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Creator Fee BPS"
+            value={creatorFee}
+            onChangeText={setCreatorFee}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Staking Fee BPS"
+            value={stakingFee}
+            onChangeText={setStakingFee}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleCreateMarket}>
+            <Text style={styles.buttonText}>Create Market</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.swapBtn, swapType === 'sell' && styles.swapBtnActive]}
-            onPress={() => setSwapType('sell')}>
-            <Text style={[styles.swapBtnText, swapType === 'sell' && styles.swapBtnTextActive]}>Sell</Text>
+          {marketAddress ? (
+            <Text style={styles.result}>Market Address: {marketAddress}</Text>
+          ) : null}
+        </View>
+
+        {/* Stake Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Stake in the Market</Text>
+          <TouchableOpacity style={styles.button} onPress={() => handleStake(50000)}>
+            <Text style={styles.buttonText}>Stake 50,000 tokens</Text>
           </TouchableOpacity>
         </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Swap Amount"
-          value={swapAmount}
-          onChangeText={setSwapAmount}
-        />
-        <TouchableOpacity style={styles.button} onPress={handleSwap}>
-          <Text style={styles.buttonText}>Swap</Text>
-        </TouchableOpacity>
 
-        <View style={{ height: 200 }} />
+        {/* Vesting Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Vesting</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Vesting Amount"
+            value={vestingAmount}
+            onChangeText={setVestingAmount}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleCreateVesting}>
+            <Text style={styles.buttonText}>Create Vesting</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={handleReleaseVesting}>
+            <Text style={styles.buttonText}>Release Vesting</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Swap Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Swap</Text>
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={[styles.swapBtn, swapType === 'buy' && styles.swapBtnActive]}
+              onPress={() => setSwapType('buy')}
+            >
+              <Text style={[styles.swapBtnText, swapType === 'buy' && styles.swapBtnTextActive]}>
+                Buy
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.swapBtn, swapType === 'sell' && styles.swapBtnActive]}
+              onPress={() => setSwapType('sell')}
+            >
+              <Text style={[styles.swapBtnText, swapType === 'sell' && styles.swapBtnTextActive]}>
+                Sell
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Swap Amount"
+            value={swapAmount}
+            onChangeText={setSwapAmount}
+          />
+          <TouchableOpacity style={styles.button} onPress={handleSwap}>
+            <Text style={styles.buttonText}>Swap</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 12, marginBottom: 6 },
-  helpText: { fontSize: 12, color: '#555', marginBottom: 10 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: {
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
+    color: '#2a2a2a',
+  },
+  subHeader: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 16,
+  },
+  section: {
+    width: '100%',
+    backgroundColor: '#f8f8f8',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#2a2a2a',
+  },
   input: {
-    backgroundColor: '#f4f4f4',
-    marginVertical: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 6,
+    width: '100%',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    marginBottom: 12,
   },
   button: {
+    width: '100%',
     backgroundColor: '#2a2a2a',
-    padding: 12,
-    marginVertical: 4,
-    borderRadius: 6,
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 12,
   },
-  buttonText: { color: '#fff' },
-  row: { flexDirection: 'row', marginVertical: 4 },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    justifyContent: 'space-between',
+  },
   swapBtn: {
+    flex: 1,
     backgroundColor: '#eee',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
     marginRight: 8,
-    borderRadius: 4,
   },
-  swapBtnActive: { backgroundColor: '#333' },
-  swapBtnText: { color: '#000' },
-  swapBtnTextActive: { color: '#fff' },
-  errorText: { fontSize: 16, color: 'red', textAlign: 'center', marginTop: 20 },
+  swapBtnActive: {
+    backgroundColor: '#2a2a2a',
+  },
+  swapBtnText: {
+    color: '#2a2a2a',
+    fontWeight: '600',
+  },
+  swapBtnTextActive: {
+    color: '#fff',
+  },
+  result: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#2a2a2a',
+    textAlign: 'center',
+  },
+  loader: {
+    marginVertical: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 20,
+  },
 });

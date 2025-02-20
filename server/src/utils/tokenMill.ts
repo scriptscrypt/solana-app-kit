@@ -593,6 +593,71 @@ export class TokenMillClient {
     }
   }
 
+  // Add this function in your TokenMillClient class
+  async buildStakeTx(
+    params: StakingParams & { userPublicKey: string }
+  ): Promise<TokenMillResponse<string>> {
+    try {
+      const marketPubkey = new PublicKey(params.marketAddress);
+      const userPubkey = new PublicKey(params.userPublicKey);
+  
+      // Derive the staking PDA
+      const stakingAccount = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("market_staking"), 
+          marketPubkey.toBuffer(), 
+          //userPubkey.toBuffer()
+        ],
+        this.program.programId
+      )[0];
+      console.log("Derived staking PDA:", stakingAccount.toString());
+  
+      // 1) Build the instruction using Anchor—but DO NOT sign with user.
+      console.log("[buildStakeTx] Building stake instruction via Anchor...");
+      const anchorTx: Transaction = await this.program.methods
+        .createStaking()
+        .accountsPartial({
+          market: marketPubkey,
+          staking: stakingAccount,
+          payer: userPubkey, // client’s key
+        })
+        .transaction(); 
+      console.log("[buildStakeTx] Anchor created transaction with instructions.");
+  
+      // 2) Build a new (legacy) Transaction from the anchorTx instructions
+      console.log("[buildStakeTx] Forcing legacy transaction creation...");
+      const { blockhash } = await this.connection.getLatestBlockhash();
+      const legacyTx = new Transaction({
+        feePayer: userPubkey,
+        recentBlockhash: blockhash,
+      });
+      // Add the instructions from anchorTx
+      legacyTx.add(...anchorTx.instructions);
+  
+      // 3) We do NOT sign with user’s key on the server. 
+      //    If you have ephemeral signers, sign them here. 
+      //    For stake, there’s no ephemeral signers, so skip.
+  
+      // 4) Serialize the entire transaction (no partial signers).
+      const serializedTx = legacyTx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      const base64Tx = serializedTx.toString("base64");
+      console.log("[buildStakeTx] Final stake transaction (base64):", base64Tx);
+  
+      return { success: true, data: base64Tx };
+    } catch (error: any) {
+      console.error("[buildStakeTx] Error:", error);
+      return {
+        success: false,
+        error: error.message || "Unknown error",
+      };
+    }
+  }
+  
+
+
   /**
    * Creates a new staking position for a market.
    * @param params - Staking parameters including market address
