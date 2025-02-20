@@ -40,6 +40,17 @@ export default function SearchScreen() {
         }}>
         <Text style={{color: '#fff'}}>Go to Pump fun Screen</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('TokenMill' as never)}
+        style={{
+          marginTop: 20,
+          padding: 10,
+          backgroundColor: '#FF7700',
+          borderRadius: 5,
+        }}
+      >
+        <Text style={{ color: '#fff' }}>Go to Token Mill</Text>
+      </TouchableOpacity>
     </View>
   );
 }
