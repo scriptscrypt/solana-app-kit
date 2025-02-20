@@ -69,18 +69,14 @@ export interface StakingParams {
 export interface VestingParams {
   /** Address of the market */
   marketAddress: string;
-  /** Address of vesting recipient */
   recipient: string;
-  /** Amount to vest */
-  amount: string | number;
-  /** Start time of vesting (unix timestamp) */
+  amount: number;
   startTime: number;
-  /** Duration of vesting period in seconds */
   duration: number;
-  /** Optional cliff duration in seconds */
   cliffDuration?: number;
-  /** Base token mint address */
   baseTokenMint: string;
+  userPublicKey: string;
+
 }
 
 /**

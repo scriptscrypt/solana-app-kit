@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import bs58 from "bs58";
 import * as anchor from "@coral-xyz/anchor";
 import * as spl from "@solana/spl-token";
-import { Connection, PublicKey, Keypair, Transaction, clusterApiUrl } from "@solana/web3.js";
+import { Connection, PublicKey, Keypair, Transaction, clusterApiUrl, SystemProgram, TransactionInstruction } from "@solana/web3.js";
 import TokenMillIDL from "../idl/token_mill.json";
 import BN from "bn.js";
 import {
@@ -695,6 +695,214 @@ export class TokenMillClient {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  async buildCreateVestingTxWithAutoPositionAndATA(params: {
+    marketAddress: string;
+    userPublicKey: string; // the wallet address
+    baseTokenMint: string; // must be an SPL mint
+    recipient: string;     
+    amount: number;
+    startTime: number;
+    duration: number;
+    cliffDuration?: number;
+  }): Promise<TokenMillResponse<{ transaction: string; ephemeralVestingPubkey: string }>> {
+    try {
+      console.log("[buildCreateVestingTxWithAutoPositionAndATA] Received params:", params);
+
+      // 1) Convert strings to PublicKeys
+      const marketPubkey = new PublicKey(params.marketAddress);
+      const userPubkey = new PublicKey(params.userPublicKey);
+      const baseTokenMintPubkey = new PublicKey(params.baseTokenMint);
+      const recipientPubkey = new PublicKey(params.recipient);
+
+      // 2) Derive PDAs: staking, stakePosition, eventAuthority
+      const [stakingPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("market_staking"), marketPubkey.toBuffer()],
+        this.program.programId
+      );
+      const [stakePositionPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), marketPubkey.toBuffer(), userPubkey.toBuffer()],
+        this.program.programId
+      );
+      const [eventAuthorityPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("__event_authority")],
+        this.program.programId
+      );
+
+      // 3) Derive ATAs: marketBaseTokenAta & userBaseTokenAta
+      const marketBaseTokenAta = spl.getAssociatedTokenAddressSync(
+        baseTokenMintPubkey,
+        marketPubkey,
+        true
+      );
+      const userBaseTokenAta = spl.getAssociatedTokenAddressSync(
+        baseTokenMintPubkey,
+        userPubkey,
+        true
+      );
+
+      // 4) Ephemeral vesting Keypair
+      const vestingKeypair = Keypair.generate();
+
+      // 5) We'll gather instructions in an array
+      const instructions: TransactionInstruction[] = [];
+
+      // (a) Create userBaseTokenAta if not existing
+      const userATAinfo = await this.connection.getAccountInfo(userBaseTokenAta);
+      if (!userATAinfo) {
+        console.log("User ATA does not exist. We will create it now.");
+        // We can build a normal "createAssociatedTokenAccount" IX for userPubkey as payer:
+        const createUserATAix = spl.createAssociatedTokenAccountInstruction(
+          userPubkey,         // payer
+          userBaseTokenAta,   // the address of the ATA to create
+          userPubkey,         // owner of this ATA
+          baseTokenMintPubkey // mint
+        );
+        instructions.push(createUserATAix);
+      } else {
+        console.log("User ATA already exists:", userBaseTokenAta.toBase58());
+      }
+
+      // (b) Create stakePosition if not existing
+      const stakePositionInfo = await this.connection.getAccountInfo(stakePositionPda);
+      if (!stakePositionInfo) {
+        console.log("stake_position NOT found. We'll create it now.");
+        const stakeIx = await this.program.methods
+          .createStakePosition()
+          .accountsPartial({
+            market: marketPubkey,
+            stakePosition: stakePositionPda,
+            user: userPubkey,
+            systemProgram: SystemProgram.programId,
+          })
+          .instruction();
+        instructions.push(stakeIx);
+      } else {
+        console.log("stake_position found:", stakePositionPda.toBase58());
+      }
+
+      // (c) createVestingPlan always
+      const vestingIx = await this.program.methods
+        .createVestingPlan(
+          new BN(params.startTime),
+          new BN(params.amount),
+          new BN(params.duration),
+          params.cliffDuration ? new BN(params.cliffDuration) : new BN(0)
+        )
+        .accountsPartial({
+          market: marketPubkey,
+          staking: stakingPda,
+          stakePosition: stakePositionPda,
+          vestingPlan: vestingKeypair.publicKey,
+          baseTokenMint: baseTokenMintPubkey,
+          marketBaseTokenAta,
+          userBaseTokenAta,
+          user: userPubkey,
+          baseTokenProgram: spl.TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          eventAuthority: eventAuthorityPda,
+          program: this.program.programId,
+        })
+        .instruction();
+      instructions.push(vestingIx);
+
+      console.log("We have", instructions.length, "instructions in total.");
+
+      // 6) Combine instructions into one Transaction
+      const { blockhash } = await this.connection.getLatestBlockhash();
+      const legacyTx = new Transaction({
+        feePayer: userPubkey,
+        recentBlockhash: blockhash,
+      });
+      legacyTx.add(...instructions);
+
+      // 7) Partially sign with ephemeral vesting (since vestingPlan is a signer)
+      legacyTx.partialSign(vestingKeypair);
+
+      // 8) Serialize & return base64
+      const serialized = legacyTx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      const base64Tx = serialized.toString("base64");
+
+      return {
+        success: true,
+        data: {
+          transaction: base64Tx,
+          ephemeralVestingPubkey: vestingKeypair.publicKey.toBase58(),
+        },
+      };
+    } catch (err: any) {
+      console.error("[buildCreateVestingTxWithAutoPositionAndATA] Error:", err);
+      return {
+        success: false,
+        error: err.message || "Unknown error",
+      };
+    }
+  }
+
+
+
+  // ----------------------------------------------------------------
+  // BUILD RELEASE VESTING TX
+  // ----------------------------------------------------------------
+  async buildReleaseVestingTx(params: {
+    marketAddress: string;
+    vestingPlanAddress: string;
+    baseTokenMint: string;
+    userPublicKey: string;
+  }): Promise<TokenMillResponse<string>> {
+    try {
+      const { marketAddress, vestingPlanAddress, baseTokenMint, userPublicKey } = params;
+      const marketPubkey = new PublicKey(marketAddress);
+      const vestingPubkey = new PublicKey(vestingPlanAddress);
+      const baseTokenMintPubkey = new PublicKey(baseTokenMint);
+      const userPubkey = new PublicKey(userPublicKey);
+
+      // 1) Build Anchor instruction
+      const anchorTx = await this.program.methods
+        .release() // or whatever your method is
+        .accountsPartial({
+          market: marketPubkey,
+          vestingPlan: vestingPubkey,
+          baseTokenMint: baseTokenMintPubkey,
+          user: userPubkey,
+          // plus any other accounts needed (ATA, staking, stakePosition, etc.)
+        })
+        .transaction();
+
+      // 2) Convert to legacy Tx
+      const { blockhash } = await this.connection.getLatestBlockhash();
+      const legacyTx = new Transaction({
+        feePayer: userPubkey,
+        recentBlockhash: blockhash,
+      });
+      legacyTx.add(...anchorTx.instructions);
+
+      // 3) No ephemeral signer needed if vesting is a PDA. If ephemeral, you'd partialSign here.
+      //    For example, if you needed ephemeral key, you do:
+      //    legacyTx.partialSign(ephemeralKeypair);
+
+      // 4) Serialize
+      const serializedTx = legacyTx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      const base64Tx = serializedTx.toString('base64');
+
+      return {
+        success: true,
+        data: base64Tx,
+      };
+    } catch (error: any) {
+      console.error('[buildReleaseVestingTx] Error:', error);
+      return {
+        success: false,
+        error: error.message || 'Unknown error',
       };
     }
   }
