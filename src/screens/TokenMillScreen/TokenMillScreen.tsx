@@ -16,7 +16,6 @@ import {
   Connection,
   PublicKey,
   clusterApiUrl,
-  VersionedTransaction,
 } from '@solana/web3.js';
 import { Buffer } from 'buffer';
 global.Buffer = Buffer;
@@ -52,11 +51,51 @@ export default function TokenMillScreen() {
   const [swapAmount, setSwapAmount] = useState('1000000');
   const [loading, setLoading] = useState(false);
 
-  // Handler for creating a market
+  // console.log(baseTokenMint, "baseTokenMint");
+
+  // --------------------------------------------------
+  // Helper: sign and send a base64-encoded Legacy Transaction
+  // --------------------------------------------------
+  const signAndSendLegacyTx = async (base64Tx: string) => {
+    // 1) Deserialize
+    const txBuffer = Buffer.from(base64Tx, 'base64');
+    const legacyTx = Transaction.from(txBuffer);
+    // 2) Ask wallet to sign the message
+    const provider = solanaWallet.getProvider && (await solanaWallet.getProvider());
+    if (!provider || typeof provider.request !== 'function') {
+      throw new Error('Wallet provider does not support the request method');
+    }
+    const serializedMessage = legacyTx.serializeMessage();
+    const base64Message = Buffer.from(serializedMessage).toString('base64');
+
+    const signResult = await provider.request({
+      method: 'signMessage',
+      params: { message: base64Message },
+    });
+    if (!signResult || !signResult.signature) {
+      throw new Error('No signature returned from wallet');
+    }
+
+    // 3) Insert signature
+    legacyTx.addSignature(
+      new PublicKey(publicKey),
+      Buffer.from(signResult.signature, 'base64')
+    );
+
+    // 4) Send raw
+    const signedTx = legacyTx.serialize();
+    const txSignature = await connection.sendRawTransaction(signedTx);
+    await connection.confirmTransaction(txSignature);
+    return txSignature;
+  };
+
+  // --------------------------------------------------
+  // Create Market Handler
+  // --------------------------------------------------
   const handleCreateMarket = async () => {
     try {
       setLoading(true);
-      console.log('[handleCreateMarket] Initiating...');
+
       const body = {
         name: tokenName,
         symbol: tokenSymbol,
@@ -73,58 +112,16 @@ export default function TokenMillScreen() {
         body: JSON.stringify(body),
       });
       const json = await response.json();
-      console.log('[handleCreateMarket] Server response:', json);
 
       if (!json.success) {
         throw new Error(json.error || 'Market creation failed');
       }
 
-      // Convert base64 to buffer, parse as a Legacy Transaction
-      const txBuffer = Buffer.from(json.transaction, 'base64');
-      const tx = Transaction.from(txBuffer);
-      console.log('[handleCreateMarket] Deserialized Transaction:', tx);
-
-      // Get the wallet provider
-      const provider = solanaWallet.getProvider && (await solanaWallet.getProvider());
-      if (!provider || typeof provider.request !== 'function') {
-        throw new Error('Wallet provider does not support the request method');
-      }
-
-      // Serialize the transaction message for signing
-      const serializedMessage = tx.serializeMessage();
-      const base64Message = Buffer.from(serializedMessage).toString('base64');
-      console.log('[handleCreateMarket] Serialized transaction message (base64):', base64Message);
-
-      // Ask the wallet to sign the message
-      const signResult = await provider.request({
-        method: 'signMessage',
-        params: { message: base64Message },
-      });
-      console.log('[handleCreateMarket] Wallet signature result:', signResult);
-      if (!signResult || !signResult.signature) {
-        throw new Error('No signature returned from wallet');
-      }
-
-      // Insert the wallet's signature into the Transaction object
-      tx.addSignature(
-        new PublicKey(publicKey),
-        Buffer.from(signResult.signature, 'base64')
-      );
-      console.log('[handleCreateMarket] Signature added to transaction');
-
-      // Send the fully signed transaction
-      const signedTx = tx.serialize();
-      console.log('[handleCreateMarket] Sending signed transaction...');
-      const txSignature = await connection.sendRawTransaction(signedTx);
-      console.log('[handleCreateMarket] Transaction sent, signature:', txSignature);
-
-      await connection.confirmTransaction(txSignature);
-      console.log('[handleCreateMarket] Transaction confirmed');
-
-      Alert.alert(
-        'Market Created',
-        `Market: ${json.marketAddress}\nTx: ${txSignature}`
-      );
+      // The server returns { success, transaction (base64), marketAddress, baseTokenMint }
+      // 1) sign & send
+      const txSig = await signAndSendLegacyTx(json.transaction);
+      Alert.alert('Market Created', `Market: ${json.marketAddress}\nTx: ${txSig}`);
+      // 2) store addresses
       setMarketAddress(json.marketAddress);
       setBaseTokenMint(json.baseTokenMint);
     } catch (error: any) {
@@ -135,67 +132,28 @@ export default function TokenMillScreen() {
     }
   };
 
+  // --------------------------------------------------
+  // Stake Handler
+  // --------------------------------------------------
   const handleStake = async (amount: number) => {
     try {
       setLoading(true);
-      console.log('[handleStake] Initiating stake...');
-      
-      // 1) Ask server to build a legacy transaction message
-      const body = {
-        marketAddress,
-        amount,
-        userPublicKey: publicKey,
-      };
       const response = await fetch(`${SERVER_URL}/api/stake`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          marketAddress,
+          amount,
+          userPublicKey: publicKey,
+        }),
       });
       const json = await response.json();
-      console.log('[handleStake] Server response:', json);
       if (!json.success) {
         throw new Error(json.error || 'Stake failed');
       }
-  
-      // 2) Deserialize the base64-encoded, legacy transaction
-      const txBuffer = Buffer.from(json.data, 'base64');
-      const tx = Transaction.from(txBuffer);
-      console.log('[handleStake] Deserialized stake transaction:', tx);
-  
-      // 3) Ask the wallet to sign the transaction message
-      const provider = solanaWallet.getProvider && (await solanaWallet.getProvider());
-      if (!provider || typeof provider.request !== 'function') {
-        throw new Error('Wallet provider does not support the request method');
-      }
-      const serializedMessage = tx.serializeMessage();
-      const base64Message = Buffer.from(serializedMessage).toString('base64');
-      console.log('[handleStake] Stake message (base64) for signing:', base64Message);
-  
-      const signResult = await provider.request({
-        method: 'signMessage',
-        params: { message: base64Message },
-      });
-      console.log('[handleStake] Wallet signature result:', signResult);
-      if (!signResult || !signResult.signature) {
-        throw new Error('No signature returned from wallet');
-      }
-  
-      // 4) Insert the signature into the Transaction
-      tx.addSignature(
-        new PublicKey(publicKey),
-        Buffer.from(signResult.signature, 'base64')
-      );
-      console.log('[handleStake] Signature added to transaction');
-  
-      // 5) Serialize and send
-      const signedTx = tx.serialize();
-      console.log('[handleStake] Sending stake transaction...');
-      const txSignature = await connection.sendRawTransaction(signedTx);
-      console.log('[handleStake] Stake transaction sent, signature:', txSignature);
-  
-      await connection.confirmTransaction(txSignature);
-      console.log('[handleStake] Stake transaction confirmed');
-      Alert.alert('Staked Successfully', `Tx: ${txSignature}`);
+      // sign & send
+      const txSig = await signAndSendLegacyTx(json.data);
+      Alert.alert('Staked Successfully', `Tx: ${txSig}`);
     } catch (error: any) {
       console.error('[handleStake] Error:', error);
       Alert.alert('Error', error.message);
@@ -203,14 +161,15 @@ export default function TokenMillScreen() {
       setLoading(false);
     }
   };
-  
-  
 
+  // --------------------------------------------------
+  // Create Vesting Handler
+  // --------------------------------------------------
   const handleCreateVesting = async () => {
     try {
       setLoading(true);
-      console.log('[handleCreateVesting] Creating vesting plan for market:', marketAddress);
-      const response = await fetch(`${SERVER_URL}/api/vesting`, {
+
+      const resp = await fetch(`${SERVER_URL}/api/vesting`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -218,42 +177,54 @@ export default function TokenMillScreen() {
           recipient: publicKey,
           amount: parseInt(vestingAmount, 10),
           startTime: Math.floor(Date.now() / 1000),
-          duration: 3600,
-          cliffDuration: 1800,
+          duration: 3600,        // 1 hour
+          cliffDuration: 1800,   // 30 minutes
           baseTokenMint,
+          userPublicKey: publicKey, // your wallet
         }),
       });
-      const data = await response.json();
-      console.log('[handleCreateVesting] Vesting response:', data);
-      if (!data.success) throw new Error(data.error || 'Vesting failed');
-      setVestingPlanAddress(data.data.vestingAccount);
-      Alert.alert('Vesting Created', `Plan: ${data.data.vestingAccount}`);
-    } catch (error: any) {
-      console.error('[handleCreateVesting] Error:', error);
-      Alert.alert('Error', error.message);
+
+      const data = await resp.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Vesting creation failed');
+      }
+      // data.data => { transaction, ephemeralVestingPubkey }
+      const txSig = await signAndSendLegacyTx(data.data.transaction);
+      Alert.alert(
+        'Vesting Created',
+        `VestingPlan: ${data.data.ephemeralVestingPubkey}\nTx: ${txSig}`
+      );
+    } catch (err: any) {
+      console.error('[handleCreateVesting] Error:', err);
+      Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // --------------------------------------------------
+  // Release Vesting Handler
+  // --------------------------------------------------
   const handleReleaseVesting = async () => {
     try {
       setLoading(true);
-      console.log('[handleReleaseVesting] Releasing vesting for market:', marketAddress);
-      const endpoint = `${SERVER_URL}/api/vesting/${marketAddress}/claim`;
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${SERVER_URL}/api/vesting/release`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          marketAddress,
           vestingPlanAddress,
           baseTokenMint,
           userPublicKey: publicKey,
         }),
       });
       const data = await response.json();
-      console.log('[handleReleaseVesting] Release vesting response:', data);
-      if (!data.success) throw new Error(data.error || 'Release failed');
-      Alert.alert('Vesting Released', data.data.signature || 'No signature');
+      if (!data.success) {
+        throw new Error(data.error || 'Release vesting failed');
+      }
+      // data.data => base64 transaction
+      const txSig = await signAndSendLegacyTx(data.data);
+      Alert.alert('Vesting Released', `Tx: ${txSig}`);
     } catch (error: any) {
       console.error('[handleReleaseVesting] Error:', error);
       Alert.alert('Error', error.message);
@@ -262,16 +233,18 @@ export default function TokenMillScreen() {
     }
   };
 
+  // --------------------------------------------------
+  // Swap Handler
+  // --------------------------------------------------
   const handleSwap = async () => {
     try {
       setLoading(true);
-      console.log('[handleSwap] Initiating swap in market:', marketAddress);
       const response = await fetch(`${SERVER_URL}/api/swap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           market: marketAddress,
-          quoteTokenMint: 'So11111111111111111111111111111111111111112',
+          quoteTokenMint: 'So11111111111111111111111111111111111111112', // wSOL
           action: swapType,
           tradeType: 'exactInput',
           amount: parseInt(swapAmount, 10),
@@ -280,8 +253,9 @@ export default function TokenMillScreen() {
         }),
       });
       const data = await response.json();
-      console.log('[handleSwap] Swap response:', data);
-      if (!data.success) throw new Error(data.error || 'Swap failed');
+      if (!data.success) {
+        throw new Error(data.error || 'Swap failed');
+      }
       Alert.alert('Swap Success', data.signature || '');
     } catch (error: any) {
       console.error('[handleSwap] Error:', error);
@@ -291,6 +265,9 @@ export default function TokenMillScreen() {
     }
   };
 
+  // --------------------------------------------------
+  // Render UI
+  // --------------------------------------------------
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -306,6 +283,15 @@ export default function TokenMillScreen() {
             placeholder="Enter Market Address"
             value={marketAddress}
             onChangeText={setMarketAddress}
+          />
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Existing Base Token Mint (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Base Token Mint"
+            value={baseTokenMint}
+            onChangeText={setBaseTokenMint}
           />
         </View>
 
@@ -417,6 +403,7 @@ export default function TokenMillScreen() {
   );
 }
 
+// ---------------------- STYLES -------------------------
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

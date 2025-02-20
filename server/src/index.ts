@@ -184,7 +184,6 @@ app.post('/api/stake', async (req: Request<{}, {}, StakingParams & { userPublicK
     });
   }
 });
-
   
 /**
  * Create a new vesting schedule
@@ -192,16 +191,17 @@ app.post('/api/stake', async (req: Request<{}, {}, StakingParams & { userPublicK
  * @param {VestingParams} req.body - Vesting schedule parameters
  */
 app.post('/api/vesting', async (req: Request<{}, {}, VestingParams>, res: Response) => {
-    try {
-      const result = await tokenMill.createVesting(req.body);
-      res.json(result);
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
+  try {
+    const result = await tokenMill.buildCreateVestingTxWithAutoPositionAndATA(req.body);
+    res.json(result);
+  } catch (error: any) {
+    console.error('[POST /api/vesting] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Unknown error',
+    });
+  }
+});
   
 /**
  * Claim vested tokens for a specific market
