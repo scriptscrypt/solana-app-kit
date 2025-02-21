@@ -1,150 +1,131 @@
 // File: src/hooks/usePumpfun.ts
 
-import {useAppDispatch, useAppSelector} from './useReduxHooks';
+import {useCallback} from 'react';
+import {Alert} from 'react-native';
+import {useAuth} from './useAuth';
 import {
-  launchTokenThunk,
-  buyTokenThunk,
-  sellTokenThunk,
-  resetPumpfunState,
-} from '../state/pumpfun/reducer';
+  buyTokenViaPumpfun,
+  sellTokenViaPumpfun,
+  launchTokenViaPumpfun,
+} from '../services/pumpfun/pumpfunService';
 
-function maskKey(key: string): string {
-  if (!key) return '';
-  // Show only first 5 and last 5 chars, for logging
-  const firstFive = key.slice(0, 5);
-  const lastFive = key.slice(-5);
-  return `${firstFive}...${lastFive}`;
+interface BuyParams {
+  tokenAddress: string;
+  solAmount: number;
 }
-
-export function usePumpfun() {
-  const dispatch = useAppDispatch();
-  const pumpfunState = useAppSelector(state => state.pumpfun);
-
-  /**
-   * Launch a new Pumpfun token.
-   */
-  const launchToken = async ({
-    privateKey,
-    tokenName,
-    tokenTicker,
-    description,
-    imageUrl,
-    twitter,
-    telegram,
-    website,
-  }: {
-    privateKey: string;
-    tokenName: string;
-    tokenTicker: string;
-    description: string;
-    imageUrl: string;
+interface SellParams {
+  tokenAddress: string;
+  tokenAmount: number;
+}
+interface LaunchParams {
+  tokenName: string;
+  tokenSymbol: string;
+  description?: string;
+  imageUrl?: string;
+  additionalOptions?: {
     twitter?: string;
     telegram?: string;
     website?: string;
-  }) => {
-    console.log('[usePumpfun.launchToken] Called with:', {
-      maskedPrivateKey: maskKey(privateKey),
+  };
+}
+
+/**
+ * usePumpfun hook: now uses Pinata under the hood for uploading metadata
+ * (see launchTokenViaPumpfun in pumpfunService.ts).
+ */
+export function usePumpfun() {
+  const {solanaWallet} = useAuth();
+
+  const buyToken = useCallback(
+    async ({tokenAddress, solAmount}: BuyParams) => {
+      if (!solanaWallet) {
+        Alert.alert('Error', 'No Solana wallet found. Please connect first.');
+        return;
+      }
+      try {
+        console.log('[usePumpfun.buyToken] Attempting to buy token:', {
+          tokenAddress,
+          solAmount,
+        });
+        await buyTokenViaPumpfun({
+          buyerPublicKey: solanaWallet.wallets?.[0]?.publicKey || '',
+          tokenAddress,
+          solAmount,
+          solanaWallet,
+        });
+        Alert.alert('Success', `Bought token: ${tokenAddress}`);
+      } catch (error: any) {
+        console.error('[usePumpfun.buyToken] Error:', error);
+        Alert.alert('Error Buying Token', error?.message || String(error));
+      }
+    },
+    [solanaWallet],
+  );
+
+  const sellToken = useCallback(
+    async ({tokenAddress, tokenAmount}: SellParams) => {
+      if (!solanaWallet) {
+        Alert.alert('Error', 'No Solana wallet found. Please connect first.');
+        return;
+      }
+      try {
+        console.log('[usePumpfun.sellToken] Attempting to sell token:', {
+          tokenAddress,
+          tokenAmount,
+        });
+        await sellTokenViaPumpfun({
+          sellerPublicKey: solanaWallet.wallets?.[0]?.publicKey || '',
+          tokenAddress,
+          tokenAmount,
+          solanaWallet,
+        });
+        Alert.alert('Success', `Sold ${tokenAmount} tokens: ${tokenAddress}`);
+      } catch (error: any) {
+        console.error('[usePumpfun.sellToken] Error:', error);
+        Alert.alert('Error Selling Token', error?.message || String(error));
+      }
+    },
+    [solanaWallet],
+  );
+
+  const launchToken = useCallback(
+    async ({
       tokenName,
-      tokenTicker,
+      tokenSymbol,
       description,
       imageUrl,
-      twitter,
-      telegram,
-      website,
-    });
-    try {
-      dispatch(
-        launchTokenThunk({
-          privateKey,
+      additionalOptions,
+    }: LaunchParams) => {
+      if (!solanaWallet) {
+        Alert.alert('Error', 'No Solana wallet found. Please connect first.');
+        return;
+      }
+      try {
+        console.log('[usePumpfun.launchToken] Attempting to launch token:', {
           tokenName,
-          tokenTicker,
+          tokenSymbol,
+        });
+        const {mintPubkey} = await launchTokenViaPumpfun({
+          solanaWallet,
+          tokenName,
+          tokenSymbol,
           description,
           imageUrl,
-          twitter,
-          telegram,
-          website,
-        }),
-      );
-      console.log('[usePumpfun.launchToken] Dispatch successful.');
-    } catch (error) {
-      console.error(
-        '[usePumpfun.launchToken] Error dispatching launchTokenThunk:',
-        error,
-      );
-    }
-  };
-
-  /**
-   * Buy a Pumpfun token with SOL.
-   */
-  const buyToken = async ({
-    buyerPublicKey,
-    tokenAddress,
-    solAmount,
-  }: {
-    buyerPublicKey: string;
-    tokenAddress: string;
-    solAmount: number;
-  }) => {
-    console.log('[usePumpfun.buyToken] Called with:', {
-      buyerPublicKey,
-      tokenAddress,
-      solAmount,
-    });
-    try {
-      dispatch(buyTokenThunk({buyerPublicKey, tokenAddress, solAmount}));
-      console.log('[usePumpfun.buyToken] Dispatch successful.');
-    } catch (error) {
-      console.error(
-        '[usePumpfun.buyToken] Error dispatching buyTokenThunk:',
-        error,
-      );
-    }
-  };
-
-  /**
-   * Sell a certain amount of Pumpfun tokens.
-   */
-  const sellToken = async ({
-    sellerPublicKey,
-    tokenAddress,
-    tokenAmount,
-  }: {
-    sellerPublicKey: string;
-    tokenAddress: string;
-    tokenAmount: number;
-  }) => {
-    console.log('[usePumpfun.sellToken] Called with:', {
-      sellerPublicKey,
-      tokenAddress,
-      tokenAmount,
-    });
-    try {
-      dispatch(sellTokenThunk({sellerPublicKey, tokenAddress, tokenAmount}));
-      console.log('[usePumpfun.sellToken] Dispatch successful.');
-    } catch (error) {
-      console.error(
-        '[usePumpfun.sellToken] Error dispatching sellTokenThunk:',
-        error,
-      );
-    }
-  };
-
-  /**
-   * Reset the pumpfun state in Redux.
-   */
-  const resetState = () => {
-    console.log(
-      '[usePumpfun.resetPumpfunState] Called. Dispatching resetPumpfunState.',
-    );
-    dispatch(resetPumpfunState());
-  };
+          additionalOptions,
+        });
+        // Only show success alert if no error was thrown:
+        Alert.alert('Success', `Launched new token with mint: ${mintPubkey}`);
+      } catch (error: any) {
+        console.error('[usePumpfun.launchToken] Error:', error);
+        Alert.alert('Error Launching Token', error?.message || String(error));
+      }
+    },
+    [solanaWallet],
+  );
 
   return {
-    pumpfunState,
-    launchToken,
     buyToken,
     sellToken,
-    resetPumpfunState: resetState,
+    launchToken,
   };
 }

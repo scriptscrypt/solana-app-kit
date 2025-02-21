@@ -6,6 +6,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
 import {navigationRef} from './src/hooks/useAppNavigation';
 import {store} from './src/state/store';
+import './src/utils/polyfills';
 
 import {PrivyProvider, PrivyElements} from '@privy-io/expo';
 

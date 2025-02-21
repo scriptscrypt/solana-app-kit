@@ -10,8 +10,8 @@ import {
   TransactionInstruction,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import {sendPriorityTransaction} from '../utils/sendPriorityTx';
-import {sendJitoBundleTransaction} from '../utils/sendJitoBundleTx';
+import {sendPriorityTransaction} from '../utils/transactions/sendPriorityTx';
+import {sendJitoBundleTransaction} from '../utils/transactions/sendJitoBundleTx';
 import {RootState} from '../state/store';
 import {useCustomization} from '../CustomizationProvider';
 
