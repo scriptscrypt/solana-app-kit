@@ -239,24 +239,30 @@ export default function TokenMillScreen() {
   const handleSwap = async () => {
     try {
       setLoading(true);
+  
       const response = await fetch(`${SERVER_URL}/api/swap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           market: marketAddress,
           quoteTokenMint: 'So11111111111111111111111111111111111111112', // wSOL
-          action: swapType,
-          tradeType: 'exactInput',
+          action: swapType,             // 'buy' | 'sell'
+          tradeType: 'exactInput',      // or 'exactOutput'
           amount: parseInt(swapAmount, 10),
-          otherAmountThreshold: 950000,
-          userPublicKey: publicKey,
+          otherAmountThreshold: 1, // or any fallback
+          userPublicKey: publicKey,     // let the server know the user’s key
         }),
       });
       const data = await response.json();
       if (!data.success) {
         throw new Error(data.error || 'Swap failed');
       }
-      Alert.alert('Swap Success', data.signature || '');
+  
+      // data.transaction is the base64-encoded transaction
+      const txSig = await signAndSendLegacyTx(data.transaction);
+  
+      // All done
+      Alert.alert('Swap Success', `Signature: ${txSig}`);
     } catch (error: any) {
       console.error('[handleSwap] Error:', error);
       Alert.alert('Error', error.message);

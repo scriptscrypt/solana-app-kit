@@ -17,6 +17,13 @@ import {
 import { TokenMillType } from "../idl/token_mill";
 import axios from "axios";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  TOKEN_PROGRAM_ID,
+  getAccount,
+  getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountInstruction
+} from '@solana/spl-token';
+
 
 // Initialize dotenv
 dotenv.config();
@@ -844,6 +851,269 @@ export class TokenMillClient {
       };
     }
   }
+
+
+  async buildSwapTx(params: SwapParams): Promise<TokenMillResponse<{ transaction: string }>> {
+    try {
+      console.log("[buildSwapTx] START with params:", params);
+  
+      const {
+        market,
+        quoteTokenMint,
+        action,
+        tradeType,
+        amount,
+        otherAmountThreshold,
+        userPublicKey,
+      } = params;
+  
+      const userPubkey = new PublicKey(userPublicKey);
+      const marketPubkey = new PublicKey(market);
+      const quoteMintPubkey = new PublicKey(quoteTokenMint);
+  
+      // 1) Fetch market account
+      console.log("[buildSwapTx] Fetching market account:", market);
+      const marketAccount = await this.program.account.market.fetch(marketPubkey);
+      const configPubkey = marketAccount.config as PublicKey;
+      const baseTokenMint = marketAccount.baseTokenMint as PublicKey;
+      console.log("    - Market baseTokenMint:", baseTokenMint.toBase58());
+      console.log("    - Market configPubkey:", configPubkey.toBase58());
+  
+      // 2) Load swapAuthority from .env
+      console.log("[buildSwapTx] Loading swapAuthorityKeypair from env SWAP_AUTHORITY_KEY");
+      const swapAuthorityKeypair = Keypair.fromSecretKey(
+        bs58.decode(process.env.SWAP_AUTHORITY_KEY!)
+      );
+      console.log("    - swapAuthority pubkey:", swapAuthorityKeypair.publicKey.toBase58());
+  
+      // Derive swapAuthorityBadge
+      const swapAuthorityBadge = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("swap_authority"),
+          marketPubkey.toBuffer(),
+          swapAuthorityKeypair.publicKey.toBuffer(),
+        ],
+        this.program.programId
+      )[0];
+      console.log("    - swapAuthorityBadge PDA:", swapAuthorityBadge.toBase58());
+  
+      // 3) Derive ATAs
+      console.log("[buildSwapTx] Deriving ATAs...");
+      const marketQuoteTokenAta = getAssociatedTokenAddressSync(
+        quoteMintPubkey,
+        marketPubkey,
+        true
+      );
+      const marketBaseTokenAta = getAssociatedTokenAddressSync(
+        baseTokenMint,
+        marketPubkey,
+        true
+      );
+      const userQuoteTokenAta = getAssociatedTokenAddressSync(
+        quoteMintPubkey,
+        userPubkey
+      );
+      const userBaseTokenAta = getAssociatedTokenAddressSync(
+        baseTokenMint,
+        userPubkey
+      );
+      console.log("    - marketQuoteTokenAta:", marketQuoteTokenAta.toBase58());
+      console.log("    - marketBaseTokenAta:", marketBaseTokenAta.toBase58());
+      console.log("    - userQuoteTokenAta:", userQuoteTokenAta.toBase58());
+      console.log("    - userBaseTokenAta:", userBaseTokenAta.toBase58());
+  
+      // Protocol fee info
+      console.log("[buildSwapTx] Fetching configAccount for protocol fee...");
+      const configAccount = await this.program.account.tokenMillConfig.fetch(configPubkey);
+      const protocolFeeRecipient = (configAccount as any).protocolFeeRecipient as PublicKey;
+      const protocolQuoteTokenAta = getAssociatedTokenAddressSync(
+        quoteMintPubkey,
+        protocolFeeRecipient,
+        true
+      );
+      console.log("    - protocolFeeRecipient:", protocolFeeRecipient.toBase58());
+      console.log("    - protocolQuoteTokenAta:", protocolQuoteTokenAta.toBase58());
+  
+      // 4) Check if swapAuthorityBadge is on-chain
+      console.log("[buildSwapTx] Checking if swapAuthorityBadge is on-chain...");
+      const badgeInfo = await this.connection.getAccountInfo(swapAuthorityBadge);
+      const badgeExists = !!badgeInfo;
+      console.log("    - swapAuthorityBadge Exists?", badgeExists);
+  
+      // 5) Check market’s quote ATA & read wSOL balance
+      console.log("[buildSwapTx] Checking if market quote ATA exists on-chain...");
+      const marketQuoteInfo = await this.connection.getAccountInfo(marketQuoteTokenAta);
+  
+      let marketWsolBalance = 0;
+      let marketHasQuoteAta = false;
+      if (marketQuoteInfo) {
+        marketHasQuoteAta = true;
+        // If it exists, let's read the wSOL balance
+        console.log("[buildSwapTx] Market quote ATA found, fetching wSOL balance...");
+        const balanceInfo = await this.connection.getTokenAccountBalance(marketQuoteTokenAta);
+        marketWsolBalance = balanceInfo?.value?.uiAmount || 0;
+      } else {
+        console.log("[buildSwapTx] Market quote ATA does NOT exist => balance is 0");
+      }
+      console.log("[buildSwapTx] Market's wSOL balance (or 0 if no ATA):", marketWsolBalance);
+  
+      // 6) Check user's quote ATA & base ATA
+      console.log("[buildSwapTx] Checking if user quote ATA exists...");
+      const userQuoteInfo = await this.connection.getAccountInfo(userQuoteTokenAta);
+      const userHasQuoteAta = !!userQuoteInfo;
+  
+      console.log("[buildSwapTx] Checking if user base ATA exists...");
+      const userBaseInfo = await this.connection.getAccountInfo(userBaseTokenAta);
+      const userHasBaseAta = !!userBaseInfo;
+  
+      // Decide if we do "freeMarket" or remain locked
+      const doFreeMarket = marketHasQuoteAta && marketWsolBalance >= 69;
+      console.log("[buildSwapTx] doFreeMarket:", doFreeMarket);
+  
+      // 7) Build instructions
+      const instructions: TransactionInstruction[] = [];
+  
+      // (A) If swapAuthorityBadge does NOT exist, create it with lockMarket
+      if (!badgeExists) {
+        console.log("[buildSwapTx] swapAuthorityBadge not found => Pushing lockMarket instruction...");
+        const lockIx = await this.program.methods
+          .lockMarket(swapAuthorityKeypair.publicKey)
+          .accountsPartial({
+            market: marketPubkey,
+            swapAuthorityBadge,
+            creator: userPubkey,
+          })
+          .instruction();
+        instructions.push(lockIx);
+      }
+  
+      // (B) If the market's quote ATA does NOT exist, create it
+      if (!marketHasQuoteAta) {
+        console.log("[buildSwapTx] Pushing instruction to create Market quote ATA...");
+        const createMarketQuoteIx = createAssociatedTokenAccountInstruction(
+          userPubkey,          // payer
+          marketQuoteTokenAta, // ATA
+          marketPubkey,        // owner
+          quoteMintPubkey
+        );
+        instructions.push(createMarketQuoteIx);
+      }
+  
+      // (C) If the user’s quote ATA does NOT exist, create it
+      if (!userHasQuoteAta) {
+        console.log("[buildSwapTx] Pushing instruction to create User quote ATA...");
+        const createUserQuoteIx = createAssociatedTokenAccountInstruction(
+          userPubkey,         // payer
+          userQuoteTokenAta,  // ATA
+          userPubkey,         // owner
+          quoteMintPubkey
+        );
+        instructions.push(createUserQuoteIx);
+      }
+  
+      // (D) If the user’s base ATA does NOT exist, create it
+      // THIS is the crucial fix for "AccountNotInitialized: user_base_token_account"
+      if (!userHasBaseAta) {
+        console.log("[buildSwapTx] Pushing instruction to create User BASE token ATA...");
+        const createUserBaseIx = createAssociatedTokenAccountInstruction(
+          userPubkey,         // payer
+          userBaseTokenAta,   // ATA
+          userPubkey,         // owner
+          baseTokenMint
+        );
+        instructions.push(createUserBaseIx);
+      }
+  
+      // (E) If we want to free the market, push freeMarket instruction
+      if (doFreeMarket) {
+        console.log("[buildSwapTx] Pushing freeMarket instruction => user as new authority");
+        const freeMarketIx = await this.program.methods
+          .freeMarket()
+          .accountsPartial({
+            market: marketPubkey,
+            swapAuthority: swapAuthorityKeypair.publicKey
+          })
+          .instruction();
+        instructions.push(freeMarketIx);
+      }
+  
+      // (F) permissionedSwap
+      const finalSwapAuthority = doFreeMarket
+        ? userPubkey
+        : swapAuthorityKeypair.publicKey;
+  
+      console.log("[buildSwapTx] finalSwapAuthority:", finalSwapAuthority.toBase58());
+  
+      const finalThreshold = otherAmountThreshold ?? (
+        action === "buy"
+          ? Math.floor(amount * 0.99)
+          : Math.floor(amount * 1.01)
+      );
+      console.log("[buildSwapTx] finalThreshold:", finalThreshold);
+  
+      const swapIx = await this.program.methods
+        .permissionedSwap(
+          action === 'buy' ? { buy: {} } : { sell: {} },
+          tradeType === 'exactInput' ? { exactInput: {} } : { exactOutput: {} },
+          new BN(amount),
+          new BN(finalThreshold),
+        )
+        .accountsPartial({
+          config: configPubkey,
+          market: marketPubkey,
+          baseTokenMint,
+          quoteTokenMint: quoteMintPubkey,
+          marketBaseTokenAta,
+          marketQuoteTokenAta,
+          userBaseTokenAccount: userBaseTokenAta,  // <--- now guaranteed to exist
+          userQuoteTokenAccount: userQuoteTokenAta,
+          protocolQuoteTokenAta,
+          referralTokenAccount: this.program.programId,
+          swapAuthority: finalSwapAuthority,
+          swapAuthorityBadge,
+          user: userPubkey,
+          baseTokenProgram: TOKEN_PROGRAM_ID,
+          quoteTokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction();
+  
+      instructions.push(swapIx);
+  
+      // 8) Build Transaction
+      console.log("[buildSwapTx] Building Transaction with", instructions.length, "instruction(s).");
+      const { blockhash } = await this.connection.getLatestBlockhash();
+      const legacyTx = new Transaction({
+        feePayer: userPubkey,
+        recentBlockhash: blockhash,
+      });
+      instructions.forEach(ix => legacyTx.add(ix));
+  
+      // 9) Partial-sign with swapAuthorityKeypair
+      console.log("[buildSwapTx] partialSign with server's swapAuthorityKeypair...");
+      legacyTx.partialSign(swapAuthorityKeypair);
+  
+      // 10) Serialize & return base64
+      const serializedTx = legacyTx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      const base64Tx = serializedTx.toString("base64");
+      console.log("[buildSwapTx] DONE. Returning base64 transaction...");
+  
+      return {
+        success: true,
+        data: { transaction: base64Tx },
+      };
+    } catch (error: any) {
+      console.error("[buildSwapTx] FATAL ERROR:", error);
+      return {
+        success: false,
+        error: error.message ?? "Unknown error",
+      };
+    }
+  }
+  
+
 
 
 
