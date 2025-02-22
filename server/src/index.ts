@@ -121,51 +121,49 @@ app.post('/api/tokens', async (req: Request<{}, {}, TokenParams>, res: Response)
       });
     }
   });
-  app.post('/api/swap', async (req: Request, res: Response):Promise<any> => {
-    try{
-      const { 
-        action, 
-        tradeType, 
-        amount, 
-        otherAmountThreshold, 
-        market, 
-        quoteTokenMint } = req.body as SwapParams;
-    
-        // Calculate otherAmountThreshold if not provided
-        const calculatedThreshold = otherAmountThreshold ?? (
-          action === "buy" 
-            ? Math.floor(amount * 0.99)  // 1% slippage for buy
-            : Math.floor(amount * 1.01)  // 1% slippage for sell
-        );
-    
-    const result = await tokenMill.executeSwap({
-      market: market,
-      quoteTokenMint: quoteTokenMint,
+app.post('/api/swap', async (req: Request, res: Response): Promise<any> => {
+  try {
+    // Cast to your extended SwapParams that includes userPublicKey
+    const {
+      market,
+      quoteTokenMint,
       action,
       tradeType,
       amount,
-      otherAmountThreshold: calculatedThreshold
+      otherAmountThreshold,
+      userPublicKey
+    } = req.body;
+
+    // Build a single transaction
+    const result = await tokenMill.buildSwapTx({
+      market,
+      quoteTokenMint,
+      action,
+      tradeType,
+      amount,
+      otherAmountThreshold,
+      userPublicKey,
     });
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Swap failed',
+      });
+    }
+
+    // Return { success, transaction: base64Tx }
     return res.status(200).json({
       success: true,
-      signature: result.signature,
-      message: "Swap executed successfully",
-      details: {
-        action,
-        tradeType,
-        amount,
-        otherAmountThreshold: calculatedThreshold,
-        market,
-        quoteTokenMint
-      }
+      transaction: result.data?.transaction,
     });
-  } catch (error) {
-    res.status(500).json({
+  } catch (error: any) {
+    console.error('[POST /api/swap] Error:', error);
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error.message || 'Unknown error',
     });
   }
-
 });
   
 /**
