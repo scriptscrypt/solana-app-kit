@@ -345,16 +345,16 @@ export default function TokenMillScreen() {
         body: JSON.stringify({
           market: marketAddress,
           userPublicKey: publicKey,
-          askPrices,
-          bidPrices,
+          askPrices, // from your state
+          bidPrices, // from your state
         }),
       });
       const json = await response.json();
       if (!json.success) {
-        throw new Error(
-          json.error || 'Failed to build setMarketPrices transaction',
-        );
+        throw new Error(json.error || 'Failed to build setMarketPrices transaction');
       }
+  
+      // sign & send
       const txSig = await signAndSendLegacyTx(json.data.transaction);
       Alert.alert('Bonding Curve Set', `Tx: ${txSig}`);
     } catch (error: any) {
@@ -363,6 +363,7 @@ export default function TokenMillScreen() {
       setLoading(false);
     }
   };
+  
 
   //-------------------------------------------------------------------------------------
   // 8) Chart Data & Dynamic Scale
@@ -434,6 +435,15 @@ export default function TokenMillScreen() {
             placeholder="Enter Base Token Mint"
             value={baseTokenMint}
             onChangeText={setBaseTokenMint}
+          />
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Existing Vesting Plan Address (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Base Token Mint"
+            value={vestingPlanAddress}
+            onChangeText={setVestingPlanAddress}
           />
         </View>
 
