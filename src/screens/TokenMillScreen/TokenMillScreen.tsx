@@ -260,6 +260,7 @@ export default function TokenMillScreen() {
         throw new Error(data.error || 'Vesting creation failed');
       }
       const txSig = await signAndSendLegacyTx(data.data.transaction);
+      setVestingPlanAddress(data.data.ephemeralVestingPubkey);
       Alert.alert(
         'Vesting Created',
         `VestingPlan: ${data.data.ephemeralVestingPubkey}\nTx: ${txSig}`,
@@ -276,21 +277,23 @@ export default function TokenMillScreen() {
       setLoading(true);
       const response = await fetch(`${SERVER_URL}/api/vesting/release`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           marketAddress,
           vestingPlanAddress,
           baseTokenMint,
-          userPublicKey: publicKey,
+          userPublicKey: publicKey, // who pays
         }),
       });
       const data = await response.json();
       if (!data.success) {
         throw new Error(data.error || 'Release vesting failed');
       }
+      // data.data => base64 transaction
       const txSig = await signAndSendLegacyTx(data.data);
       Alert.alert('Vesting Released', `Tx: ${txSig}`);
     } catch (error: any) {
+      console.error('[handleReleaseVesting] Error:', error);
       Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
