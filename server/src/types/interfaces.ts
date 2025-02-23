@@ -5,20 +5,13 @@ import { PublicKey } from "@solana/web3.js";
  * Parameters for creating a new market
  */
 export interface MarketParams {
-  /** Name of the market */
   name: string;
-  /** Symbol for the market token */
   symbol: string;
-  /** URI for market metadata */
   uri: string;
-  /** Total supply of tokens (as string or number) */
-  totalSupply: string | number;
-  /** Fee share percentage for creator (0-100) */
+  totalSupply: number;
   creatorFeeShare: number;
-  /** Fee share percentage for staking (0-100) */
   stakingFeeShare: number;
-  /** Public key of quote token mint */
-  quoteTokenMint: string;
+  userPublicKey: string; // <-- Added property
 }
 
 /**
@@ -133,6 +126,7 @@ export interface SwapParams {
   tradeType: 'exactInput' | 'exactOutput';
   amount: number;
   otherAmountThreshold: number;
+  userPublicKey: string;
 }
 export interface TokenMetadata {
   mint: string;
