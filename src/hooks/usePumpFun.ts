@@ -6,7 +6,6 @@ import {useAuth} from './useAuth';
 import {
   buyTokenViaPumpfun,
   sellTokenViaPumpfun,
-  launchTokenViaPumpfun,
 } from '../services/pumpfun/pumpfunService';
 
 interface BuyParams {
@@ -88,44 +87,8 @@ export function usePumpfun() {
     [solanaWallet],
   );
 
-  const launchToken = useCallback(
-    async ({
-      tokenName,
-      tokenSymbol,
-      description,
-      imageUrl,
-      additionalOptions,
-    }: LaunchParams) => {
-      if (!solanaWallet) {
-        Alert.alert('Error', 'No Solana wallet found. Please connect first.');
-        return;
-      }
-      try {
-        console.log('[usePumpfun.launchToken] Attempting to launch token:', {
-          tokenName,
-          tokenSymbol,
-        });
-        const {mintPubkey} = await launchTokenViaPumpfun({
-          solanaWallet,
-          tokenName,
-          tokenSymbol,
-          description,
-          imageUrl,
-          additionalOptions,
-        });
-        // Only show success alert if no error was thrown:
-        Alert.alert('Success', `Launched new token with mint: ${mintPubkey}`);
-      } catch (error: any) {
-        console.error('[usePumpfun.launchToken] Error:', error);
-        Alert.alert('Error Launching Token', error?.message || String(error));
-      }
-    },
-    [solanaWallet],
-  );
-
   return {
     buyToken,
     sellToken,
-    launchToken,
   };
 }
