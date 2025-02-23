@@ -10,4 +10,9 @@ declare module '@env' {
   export const RPC_URL: string;
   export const WALLET_PRIVATE_KEY: string;
   export const TOKEN_MILL_CONFIG_PDA: string;
+  export const HELIUS_API_KEY: string;
+  export const PINATA_JWT: string;
+  export const PINATA_API_KEY: string;
+  export const PINATA_SECRET: string;
+  export const PINATA_GATEWAY: string;
 }

@@ -1,0 +1,258 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
+import {Picker} from '@react-native-picker/picker';
+import {LineChart} from 'react-native-chart-kit';
+import Slider from '@react-native-community/slider';
+
+type CurveType = 'linear' | 'power' | 'exponential' | 'logistic';
+
+interface Props {
+  curveType: CurveType;
+  setCurveType: (type: CurveType) => void;
+  nPoints: number;
+  setNPoints: (v: number) => void;
+  minPrice: number;
+  setMinPrice: (v: number) => void;
+  maxPrice: number;
+  setMaxPrice: (v: number) => void;
+  exponent: number;
+  setExponent: (v: number) => void;
+  growthRate: number;
+  setGrowthRate: (v: number) => void;
+  midPoint: number;
+  setMidPoint: (v: number) => void;
+  steepness: number;
+  setSteepness: (v: number) => void;
+  askPrices: number[];
+  bidPrices: number[];
+  chartData: any;
+  screenWidth: number;
+  handleSetCurve: () => void;
+}
+
+export default function BondingCurveCustomizer(props: Props) {
+  const {
+    curveType,
+    setCurveType,
+    nPoints,
+    setNPoints,
+    minPrice,
+    setMinPrice,
+    maxPrice,
+    setMaxPrice,
+    exponent,
+    setExponent,
+    growthRate,
+    setGrowthRate,
+    midPoint,
+    setMidPoint,
+    steepness,
+    setSteepness,
+    askPrices,
+    bidPrices,
+    chartData,
+    screenWidth,
+    handleSetCurve,
+  } = props;
+
+  return (
+    <View style={curveStyles.section}>
+      <Text style={curveStyles.sectionTitle}>Bonding Curve Customization</Text>
+
+      {/* Curve Type Picker */}
+      <Text style={curveStyles.label}>Curve Type:</Text>
+      <Picker
+        selectedValue={curveType}
+        onValueChange={itemValue => setCurveType(itemValue as CurveType)}
+        style={curveStyles.picker}>
+        <Picker.Item label="Linear" value="linear" />
+        <Picker.Item label="Power" value="power" />
+        <Picker.Item label="Exponential" value="exponential" />
+        <Picker.Item label="Logistic" value="logistic" />
+      </Picker>
+
+      {/* Number of points */}
+      <Text style={curveStyles.smallLabel}>Number of Points: {nPoints}</Text>
+      <Slider
+        style={curveStyles.slider}
+        minimumValue={5}
+        maximumValue={20}
+        step={1}
+        value={nPoints}
+        onValueChange={v => setNPoints(Math.round(v))}
+      />
+
+      {/* minPrice / maxPrice */}
+      <Text style={curveStyles.smallLabel}>Min Price: {minPrice}</Text>
+      <Slider
+        style={curveStyles.slider}
+        minimumValue={1}
+        maximumValue={1000}
+        step={1}
+        value={minPrice}
+        onValueChange={val => setMinPrice(Math.round(val))}
+      />
+
+      <Text style={curveStyles.smallLabel}>Max Price: {maxPrice}</Text>
+      <Slider
+        style={curveStyles.slider}
+        minimumValue={1000}
+        maximumValue={1000000}
+        step={1000}
+        value={maxPrice}
+        onValueChange={val => setMaxPrice(Math.round(val))}
+      />
+
+      {/* Power-specific */}
+      {curveType === 'power' && (
+        <>
+          <Text style={curveStyles.smallLabel}>
+            Exponent: {exponent.toFixed(2)}
+          </Text>
+          <Slider
+            style={curveStyles.slider}
+            minimumValue={0.5}
+            maximumValue={3.5}
+            step={0.1}
+            value={exponent}
+            onValueChange={val => setExponent(val)}
+          />
+        </>
+      )}
+
+      {/* Exponential-specific */}
+      {curveType === 'exponential' && (
+        <>
+          <Text style={curveStyles.smallLabel}>
+            Growth Rate: {growthRate.toFixed(2)}
+          </Text>
+          <Slider
+            style={curveStyles.slider}
+            minimumValue={1.0}
+            maximumValue={3.0}
+            step={0.05}
+            value={growthRate}
+            onValueChange={val => setGrowthRate(val)}
+          />
+        </>
+      )}
+
+      {/* Logistic-specific */}
+      {curveType === 'logistic' && (
+        <>
+          <Text style={curveStyles.smallLabel}>
+            Mid-Point: {midPoint.toFixed(2)}
+          </Text>
+          <Slider
+            style={curveStyles.slider}
+            minimumValue={0.0}
+            maximumValue={1.0}
+            step={0.01}
+            value={midPoint}
+            onValueChange={val => setMidPoint(val)}
+          />
+          <Text style={curveStyles.smallLabel}>
+            Steepness: {steepness.toFixed(2)}
+          </Text>
+          <Slider
+            style={curveStyles.slider}
+            minimumValue={1}
+            maximumValue={10}
+            step={0.5}
+            value={steepness}
+            onValueChange={val => setSteepness(val)}
+          />
+        </>
+      )}
+
+      {/* Display final ask array */}
+      <View style={{marginTop: 12}}>
+        <Text style={{fontWeight: '600', marginBottom: 4}}>Ask Prices:</Text>
+        <Text style={{fontSize: 12, color: '#666'}}>
+          {askPrices.join(', ')}
+        </Text>
+      </View>
+
+      {/* Chart */}
+      <LineChart
+        data={chartData}
+        width={screenWidth * 0.9}
+        height={220}
+        chartConfig={{
+          backgroundGradientFrom: '#fff',
+          backgroundGradientTo: '#fff',
+          color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+          labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+          style: {borderRadius: 16},
+          propsForDots: {r: '3', strokeWidth: '2'},
+        }}
+        withShadow
+        withDots
+        style={{marginTop: 16, borderRadius: 16}}
+      />
+
+      <TouchableOpacity style={curveStyles.button} onPress={handleSetCurve}>
+        <Text style={curveStyles.buttonText}>Set Bonding Curve On-Chain</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const curveStyles = StyleSheet.create({
+  section: {
+    width: '100%',
+    backgroundColor: '#f2f2f2',
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 16,
+
+    // Subtle shadow for nicer UI
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    color: '#2a2a2a',
+  },
+  label: {
+    marginBottom: 4,
+    fontWeight: '600',
+    color: '#333',
+  },
+  smallLabel: {
+    marginTop: 8,
+    color: '#555',
+  },
+  picker: {
+    width: '100%',
+    backgroundColor: '#fff',
+    marginBottom: 12,
+    borderRadius: 4,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  button: {
+    backgroundColor: '#2a2a2a',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
