@@ -21,5 +21,5 @@ export * from './components/wallet';
 export * from './components/TradeCard';
 
 // Export transaction utilities (if needed)
-export {sendPriorityTransaction} from './utils/sendPriorityTx';
-export {sendJitoBundleTransaction} from './utils/sendJitoBundleTx';
+export {sendPriorityTransaction} from './utils/transactions/sendPriorityTx';
+export {sendJitoBundleTransaction} from './utils/transactions/sendJitoBundleTx';
