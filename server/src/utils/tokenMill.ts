@@ -1794,6 +1794,59 @@ export class TokenMillClient {
     }
   }
 
+
+  async buildSetCurveTx(params: {
+    market: string;
+    userPublicKey: string;
+    askPrices: number[]; 
+    bidPrices: number[];
+  }): Promise<TokenMillResponse<{ transaction: string }>> {
+    try {
+      console.log("[buildSetCurveTx] Received params:", params);
+      const { market, userPublicKey, askPrices, bidPrices } = params;
+      const marketPubkey = new PublicKey(market);
+      const userPubkey = new PublicKey(userPublicKey);
+
+      // 1) Convert askPrices[], bidPrices[] into BN arrays
+      const bnAsk = askPrices.map((n) => new BN(n));
+      const bnBid = bidPrices.map((n) => new BN(n));
+
+      // 2) Build the anchor instruction
+      console.log("[buildSetCurveTx] Building setMarketPrices instruction...");
+      const anchorTx = await this.program.methods
+        .setMarketPrices(bnBid, bnAsk)
+        .accountsPartial({
+          market: marketPubkey,
+          creator: userPubkey, // user must be the "creator" or authorized
+        })
+        .transaction();
+
+      // 3) Convert anchorTx -> legacy Tx
+      const { blockhash } = await this.connection.getLatestBlockhash();
+      const legacyTx = new Transaction({
+        feePayer: userPubkey,
+        recentBlockhash: blockhash,
+      });
+      legacyTx.add(...anchorTx.instructions);
+
+      // 4) No ephemeral signers needed if your program does not require them
+      //    If it does, partialSign them here.
+
+      // 5) Serialize -> base64
+      const serializedTx = legacyTx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      const base64Tx = serializedTx.toString("base64");
+      console.log("[buildSetCurveTx] Final base64:", base64Tx);
+
+      return { success: true, data: { transaction: base64Tx } };
+    } catch (error: any) {
+      console.error("[buildSetCurveTx] Error:", error);
+      return { success: false, error: error.message || "Unknown error" };
+    }
+  }
+
   async quoteSwap({
     market,
     quoteTokenMint,

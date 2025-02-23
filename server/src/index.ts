@@ -277,6 +277,41 @@ app.post('/api/vesting/release', async (req: any, res: any) => {
   }
 });
 
+app.post("/api/set-curve", async (req: any, res: any) => {
+  try {
+    const { market, userPublicKey, askPrices, bidPrices } = req.body;
+
+    // 1) Validate
+    if (!market || !userPublicKey || !askPrices || !bidPrices) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing market, userPublicKey, askPrices, or bidPrices",
+      });
+    }
+
+    // 2) Call buildSetCurveTx in tokenMill
+    const result = await tokenMill.buildSetCurveTx({
+      market,
+      userPublicKey,
+      askPrices,
+      bidPrices,
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ success: false, error: result.error });
+    }
+
+    // 3) Return the base64 transaction
+    return res.json({ success: true, data: result.data });
+  } catch (error: any) {
+    console.error("[POST /api/set-curve] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Unknown error",
+    });
+  }
+});
+
 
 app.post(
   '/api/quote-swap',
