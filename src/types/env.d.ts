@@ -7,6 +7,9 @@ declare module '@env' {
   export const DYNAMIC_API_KEY: string;
   export const DYNAMIC_ENVIRONMENT_ID: string;
   export const HELIUS_RPC_URL: string;
+  export const RPC_URL: string;
+  export const WALLET_PRIVATE_KEY: string;
+  export const TOKEN_MILL_CONFIG_PDA: string;
   export const HELIUS_API_KEY: string;
   export const PINATA_JWT: string;
   export const PINATA_API_KEY: string;

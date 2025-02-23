@@ -11,10 +11,10 @@ import {
 import {useAuth} from '../../hooks/useAuth';
 import {PumpfunBuyButton} from '../../components/pumpfun/PumpfunBuyButton';
 import {PumpfunSellButton} from '../../components/pumpfun/PumpfunSellButton';
-import {PumpfunLaunchButton} from '../../components/pumpfun/PumpfunLaunchButton';
 import {HELIUS_API_KEY} from '@env';
 import COLORS from '../../assets/colors';
 import {fetchWithRetries} from '../../utils/common/fetch';
+import PumpportalLaunchButton from '../../components/pumpfun/PumpportalLaunchButton';
 
 type TokenEntry = {
   accountPubkey: string;
@@ -303,7 +303,7 @@ export default function PumpfunScreen() {
           </>
         )}
 
-        {activeTab === 'launch' && <PumpfunLaunchButton />}
+        {activeTab === 'launch' && <PumpportalLaunchButton />}
       </View>
     );
   };

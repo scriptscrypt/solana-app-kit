@@ -31,84 +31,10 @@ import {
 // --- NEW: we import uploadPinataMetadata instead of the old “uploadPumpfunMetadata”
 import {
   getProvider,
-  uploadPinataMetadata,
-  buildPumpfunLaunchTransaction,
 } from '../../utils/pumpfun/pumpfunUtils';
 
-/**
- * LAUNCH a new token on Pump.fun, but use Pinata for uploading the NFT metadata JSON
- */
-export async function launchTokenViaPumpfun({
-  solanaWallet,
-  tokenName,
-  tokenSymbol,
-  description,
-  imageUrl,
-  additionalOptions,
-  customComputeUnitPrice,
-}: {
-  solanaWallet: any;
-  tokenName: string;
-  tokenSymbol: string;
-  description?: string;
-  imageUrl?: string;
-  additionalOptions?: {twitter?: string; telegram?: string; website?: string};
-  customComputeUnitPrice?: number;
-}): Promise<{txId: string; mintPubkey: string}> {
-  if (!solanaWallet) {
-    throw new Error(`[launchTokenViaPumpfun] No wallet found`);
-  }
-
-  // 1) Upload metadata to Pinata
-  const metadataUri = await uploadPinataMetadata(
-    tokenName,
-    tokenSymbol,
-    description || '',
-    imageUrl || '',
-    additionalOptions,
-  );
-  console.log('[launchTokenViaPumpfun] Pinata metadataUri =>', metadataUri);
-
-  // 2) Build the Pumpfun transaction
-  const provider = getProvider();
-  const connection = provider.connection;
-
-  const payerPubkeyStr =
-    solanaWallet.wallets && solanaWallet.wallets.length > 0
-      ? solanaWallet.wallets[0].publicKey
-      : null;
-  if (!payerPubkeyStr) {
-    throw new Error('[launchTokenViaPumpfun] Missing wallet public key.');
-  }
-  const payerPubkey = new PublicKey(payerPubkeyStr);
-
-  const {transaction, mintKeypair, mintPubkey} =
-    await buildPumpfunLaunchTransaction({
-      connection,
-      payerPubkey,
-      tokenName,
-      tokenSymbol,
-      uri: metadataUri,
-      microLamports: customComputeUnitPrice,
-    });
-
-  // 3) Sign with the “owner” via Privy
-  const privyProvider = await solanaWallet.getProvider();
-  const fullySignedTx = await signLegacyTransactionWithPrivy(
-    transaction,
-    payerPubkey,
-    privyProvider,
-  );
-
-  // 4) Send transaction
-  const txId = await connection.sendRawTransaction(fullySignedTx.serialize());
-  console.log('[launchTokenViaPumpfun] => SUCCESS, txId:', txId);
-
-  return {txId, mintPubkey};
-}
-
 /* =========================================================================
-   2) BUY UTILITY
+   1) BUY UTILITY
    ========================================================================= */
 export async function buyTokenViaPumpfun({
   buyerPublicKey,
