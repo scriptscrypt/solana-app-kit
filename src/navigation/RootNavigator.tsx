@@ -9,6 +9,7 @@ import BlinkScreen from '../screens/BlinkScreen';
 import IntroScreen from '../screens/IntroScreen/IntroScreen';
 import PumpfunScreen from '../screens/pumpfunScreen/pumpfunScreen';
 import TokenMillScreen from '../screens/TokenMillScreen/TokenMillScreen';
+import NftScreen from '../screens/NftScreen';
 
 export type RootStackParamList = {
   LoginOptions: undefined;
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   IntroScreen: undefined;
   Pumpfun: undefined;
   TokenMill : undefined;
+  NftScreen: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -34,6 +36,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Blink" component={BlinkScreen} />
           <Stack.Screen name="Pumpfun" component={PumpfunScreen} />
           <Stack.Screen name="TokenMill" component={TokenMillScreen} />
+          <Stack.Screen name="NftScreen" component={NftScreen} />
         </>
       ) : (
         <>
