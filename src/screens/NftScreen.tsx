@@ -10,10 +10,16 @@ import {
   StyleSheet,
   Image,
   Modal,
-  Pressable
+  Pressable,
+  Alert
 } from 'react-native';
-import { PublicKey, Connection } from '@solana/web3.js';
-import { HELIUS_API_KEY } from '@env';  // Make sure this is set in your .env
+import { 
+  PublicKey, 
+  Connection, 
+  Transaction, 
+  VersionedTransaction 
+} from '@solana/web3.js';
+import { HELIUS_API_KEY, TENSOR_API_KEY } from '@env';  // from your .env
 import { useAuth } from '../hooks/useAuth';
 import { fetchWithRetries } from '../utils/common/fetch';
 import { BlinkExample } from '../components/BlinkRequestCard/BlinkRequestCard';
@@ -29,7 +35,10 @@ interface NftItem {
 
 const NftScreen: React.FC = () => {
   const { solanaWallet } = useAuth();
+
+  // The user’s public key (string) and wallet object
   const userPublicKey = solanaWallet?.wallets?.[0]?.publicKey || null;
+  const userWallet = solanaWallet?.wallets?.[0] || null;
 
   // ----------------------------------
   // Tabs: 'buy' / 'sell'
@@ -48,8 +57,10 @@ const NftScreen: React.FC = () => {
   const [loadingNfts, setLoadingNfts] = useState(false);
   const [ownedNfts, setOwnedNfts] = useState<NftItem[]>([]);
   const [selectedNft, setSelectedNft] = useState<NftItem | null>(null);
-  const [salePrice, setSalePrice] = useState('1.0');
-  const [sellBlinkUrl, setSellBlinkUrl] = useState<string | null>(null);
+
+  // Additional fields for listing
+  const [salePrice, setSalePrice] = useState<string>('1.0'); // price in SOL
+  const [durationDays, setDurationDays] = useState<string>(''); // optional listing duration
 
   // ----------------------------------
   // Error handling
@@ -57,19 +68,11 @@ const NftScreen: React.FC = () => {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   // ----------------------------------
-  // 1) Build Dialect Blink URLs
+  // 1) Build Dialect Blink URLs (Buy only)
   // ----------------------------------
   const buildBuyFloorBlink = useCallback((slug: string) => {
     const baseUrl = 'https://api.dial.to/v1/blink';
     const encodedApiUrl = encodeURIComponent(`https://tensor.dial.to/buy-floor/${slug}`);
-    return `${baseUrl}?apiUrl=${encodedApiUrl}`;
-  }, []);
-
-  const buildSellNftBlink = useCallback((mintAddress: string, price: string) => {
-    const baseUrl = 'https://api.dial.to/v1/blink';
-    // For Tensor marketplace, use their specific listing format:
-    const tensorApiUrl = `https://tensor.dial.to/list/${mintAddress}?price=${price}`;
-    const encodedApiUrl = encodeURIComponent(tensorApiUrl);
     return `${baseUrl}?apiUrl=${encodedApiUrl}`;
   }, []);
 
@@ -83,27 +86,116 @@ const NftScreen: React.FC = () => {
   };
 
   // ----------------------------------
-  // 3) Sell NFT Flow
+  // 3) Sell NFT Flow (Tensor API)
   // ----------------------------------
-  const handleGenerateSellBlink = () => {
-    if (!selectedNft || !salePrice) return;
-    const url = buildSellNftBlink(selectedNft.mint, salePrice);
-    setSellBlinkUrl(url);
+  /**
+   * Convert SOL (user input) to lamports before calling Tensor’s API.
+   * 1 SOL = 1,000,000,000 lamports
+   */
+  const SOL_TO_LAMPORTS = 1_000_000_000;
+
+  const handleSellNftOnTensor = async () => {
+    if (!selectedNft) {
+      console.log('No NFT selected. Aborting listing.');
+      return;
+    }
+    if (!salePrice) {
+      Alert.alert('Error', 'Please enter a valid sale price in SOL.');
+      return;
+    }
+    if (!userPublicKey || !userWallet) {
+      Alert.alert('Error', 'Wallet not connected.');
+      return;
+    }
+
+    try {
+      console.log('Starting NFT listing on Tensor...');
+
+      const mintAddress = selectedNft.mint;
+      // Convert SOL to lamports
+      const priceLamports = Math.floor(parseFloat(salePrice) * SOL_TO_LAMPORTS);
+
+      // Optionally compute expiry if provided
+      let expiryParam = '';
+      if (durationDays && !isNaN(parseFloat(durationDays))) {
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        const addedSeconds = parseFloat(durationDays) * 24 * 60 * 60;
+        const expiryTs = Math.floor(nowSeconds + addedSeconds);
+        expiryParam = `&expiry=${expiryTs}`;
+        console.log(`Listing will expire in ${durationDays} day(s) => ${expiryTs}`);
+      }
+
+      // Create a connection to fetch a recent blockhash
+      const connection = new Connection('https://api.mainnet-beta.solana.com');
+      const { blockhash } = await connection.getRecentBlockhash();
+      console.log('Obtained recent blockhash:', blockhash);
+
+      // Construct the URL for Tensor's list transaction endpoint.
+      // We now include both seller and owner (set to the userPublicKey)
+      const baseUrl = 'https://api.mainnet.tensordev.io/api/v1/tx/list';
+      const listUrl = `${baseUrl}?seller=${userPublicKey}&owner=${userPublicKey}&mint=${mintAddress}&price=${priceLamports}&blockhash=${blockhash}${expiryParam}`;
+      console.log('Tensor listing URL:', listUrl);
+
+      // Call the Tensor API with the API key header
+      const resp = await fetch(listUrl, {
+        headers: { 'x-tensor-api-key': TENSOR_API_KEY }
+      });
+      const rawText = await resp.text();
+      console.log('Raw response from Tensor (text):\n', rawText);
+
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error('Failed to parse Tensor response as JSON. Full text:\n', rawText);
+        throw new Error('Tensor returned non-JSON response. Check console for details.');
+      }
+
+      if (!data.txs || data.txs.length === 0) {
+        throw new Error('No transactions returned from Tensor API for listing.');
+      }
+
+      // For each returned transaction, sign & send
+      for (let i = 0; i < data.txs.length; i++) {
+        const txObj = data.txs[i];
+        let transaction: Transaction | VersionedTransaction;
+        if (txObj.txV0) {
+          const txBuffer = Buffer.from(txObj.txV0.data);
+          transaction = VersionedTransaction.deserialize(txBuffer);
+          console.log(`Deserialized versioned transaction #${i + 1}`);
+        } else if (txObj.tx) {
+          const txBuffer = Buffer.from(txObj.tx.data);
+          transaction = Transaction.from(txBuffer);
+          console.log(`Deserialized legacy transaction #${i + 1}`);
+        } else {
+          throw new Error(`Transaction #${i + 1} is in an unknown format.`);
+        }
+        console.log(`Signing & sending transaction #${i + 1}...`);
+        const provider = await userWallet.getProvider();
+        const { signature } = await provider.request({
+          method: 'signAndSendTransaction',
+          params: { transaction, connection }
+        });
+        console.log(`Transaction #${i + 1} signature: ${signature}`);
+      }
+
+      Alert.alert('Success', `NFT listed on Tensor at ${salePrice} SOL!`);
+      console.log('Listing complete.');
+    } catch (err: any) {
+      console.error('Error listing NFT on Tensor:', err);
+      Alert.alert('Error', err.message || 'Failed to list NFT on Tensor.');
+    } finally {
+      setSelectedNft(null);
+      setSalePrice('1.0');
+      setDurationDays('');
+    }
   };
 
   // ----------------------------------
   // 4) Fetch Owned NFTs
   // ----------------------------------
-
-  /**
-   * Fix known image URL issues:
-   * - ipfs:// => https://ipfs.io/ipfs/
-   * - ar:// => https://arweave.net/
-   * - Missing protocol => https://
-   */
   const fixImageUrl = (url: string): string => {
     if (!url) return '';
-    
     if (url.startsWith('ipfs://')) {
       return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
     }
@@ -119,32 +211,22 @@ const NftScreen: React.FC = () => {
     return url;
   };
 
-  /**
-   * If NFT's image or name are missing, fetch metadata from the URI.
-   */
   const fetchMetadataIfNeeded = async (nfts: NftItem[]): Promise<NftItem[]> => {
     const nftsToUpdate = nfts.filter(nft => nft.uri && (!nft.image || !nft.name));
-    
     if (nftsToUpdate.length === 0) return nfts;
-    
     const updatedNfts = [...nfts];
-
     await Promise.all(
       nftsToUpdate.map(async (nft) => {
         if (!nft.uri) return;
-        
         try {
           const fixedUri = fixImageUrl(nft.uri);
           const response = await fetchWithRetries(fixedUri, { method: 'GET' });
-          
           if (!response.ok) {
             console.warn(`Metadata fetch failed for ${nft.mint} => status: ${response.status}`);
             return;
           }
-          
           const metadata = await response.json();
           const index = updatedNfts.findIndex(item => item.mint === nft.mint);
-          
           if (index !== -1) {
             if (!updatedNfts[index].image && metadata.image) {
               updatedNfts[index].image = fixImageUrl(metadata.image);
@@ -152,7 +234,6 @@ const NftScreen: React.FC = () => {
             if (!updatedNfts[index].name && metadata.name) {
               updatedNfts[index].name = metadata.name;
             }
-            // If there's a nested collection name
             if (!updatedNfts[index].collection && metadata.collection?.name) {
               updatedNfts[index].collection = metadata.collection.name;
             }
@@ -162,41 +243,26 @@ const NftScreen: React.FC = () => {
         }
       })
     );
-    
     return updatedNfts;
   };
 
-  /**
-   * Fetch user's NFTs from Helius (DAS API => fallback => RPC).
-   */
   const fetchOwnedNfts = useCallback(async () => {
     if (!userPublicKey) return;
-
     setLoadingNfts(true);
     setOwnedNfts([]);
     setFetchError(null);
-
-    // Use your actual Helius API key or from .env
-    const apiKey = HELIUS_API_KEY || 'INSERT_YOUR_HELIUS_API_KEY';
-
+    const apiKey = HELIUS_API_KEY || 'da5b04e7-ae1c-4474-ae18-cf81af2b0653';
     try {
-      // --------------------------------------------------
-      // 1) Try the DAS API (v1) at /v1/addresses/:address/assets
-      // --------------------------------------------------
       const url = `https://api.helius.xyz/v1/addresses/${userPublicKey}/assets?api-key=${apiKey}`;
       console.log('Fetching NFTs from Helius DAS API:', url);
-      
       const response = await fetchWithRetries(url, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      
       if (!response.ok) {
         throw new Error(`DAS API request failed with status ${response.status}`);
       }
-      
       const data = await response.json();
-      
       if (data.result && Array.isArray(data.result)) {
         const mappedNfts = data.result
           .filter((item: any) => 
@@ -204,32 +270,24 @@ const NftScreen: React.FC = () => {
             (item.tokenStandard === 'NonFungible' && !item.compression?.compressed)
           )
           .map((item: any) => {
-            // Attempt to parse out name & image from known fields
             const name =
               item.content?.json?.name ||
               item.content?.metadata?.name ||
               item.name ||
               'Unknown NFT';
-
-            // Potential image fields
             const rawImage =
               item.content?.json?.image ||
               item.content?.metadata?.image ||
               item.content?.files?.[0]?.uri ||
               (item.content?.links?.image || '');
-
-            // Potential collection fields
             const collection =
               item.grouping?.find((g: any) => g.group_key === 'collection')?.group_value ||
               item.content?.json?.collection?.name ||
               item.content?.metadata?.collection?.name;
-
-            // Potential metadata URI
             const uri =
               item.content?.json_uri ||
               item.content?.metadata?.uri ||
               '';
-
             return {
               mint: item.id || item.mint,
               name,
@@ -239,32 +297,20 @@ const NftScreen: React.FC = () => {
               uri: fixImageUrl(uri),
             } as NftItem;
           });
-
         console.log('NFTs found via DAS API:', mappedNfts.length);
-
-        // Attempt to fetch metadata for missing images/names
         const nftsWithMetadata = await fetchMetadataIfNeeded(mappedNfts);
-
         setOwnedNfts(nftsWithMetadata);
         setLoadingNfts(false);
         return;
       }
-      
       throw new Error('DAS API did not return expected data format');
-      
     } catch (error) {
       console.error('DAS API error:', error);
-
       try {
-        // --------------------------------------------------
-        // 2) Fallback: Old Helius endpoint /v0/addresses/:address/nfts
-        // --------------------------------------------------
         const fallbackUrl = `https://api.helius.xyz/v0/addresses/${userPublicKey}/nfts?api-key=${apiKey}`;
         console.log('Trying legacy Helius endpoint:', fallbackUrl);
-        
         const fallbackRes = await fetchWithRetries(fallbackUrl, { method: 'GET' });
         const fallbackData = await fallbackRes.json();
-        
         if (Array.isArray(fallbackData)) {
           const mappedNfts = fallbackData
             .filter((item: any) => item.tokenStandard === 'NonFungible')
@@ -274,22 +320,18 @@ const NftScreen: React.FC = () => {
                 item.onChainMetadata?.metadata?.name ||
                 item.symbol ||
                 'Unknown NFT';
-              
               const rawImage =
                 item.offChainData?.metadata?.image ||
                 item.onChainMetadata?.metadata?.image ||
                 '';
-
               const collection =
                 item.offChainData?.metadata?.collection?.name ||
                 item.onChainMetadata?.metadata?.collection?.name ||
                 '';
-
               const uri =
                 item.offChainData?.uri ||
                 item.onChainMetadata?.uri ||
                 '';
-
               return {
                 mint: item.mint,
                 name,
@@ -299,34 +341,22 @@ const NftScreen: React.FC = () => {
                 uri: fixImageUrl(uri),
               } as NftItem;
             });
-          
           console.log('NFTs found via legacy API:', mappedNfts.length);
-
-          // Attempt to fetch metadata for missing images/names
           const nftsWithMetadata = await fetchMetadataIfNeeded(mappedNfts);
-
           setOwnedNfts(nftsWithMetadata);
           setLoadingNfts(false);
           return;
         }
-        
         throw new Error('Legacy API did not return valid data');
-        
       } catch (legacyError) {
         console.error('Legacy API error:', legacyError);
-        
         try {
-          // --------------------------------------------------
-          // 3) Final fallback: Use Solana RPC
-          // --------------------------------------------------
           console.log('Attempting RPC fallback...');
           const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
           const accounts = await connection.getParsedTokenAccountsByOwner(
             new PublicKey(userPublicKey),
             { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') }
           );
-          
-          // Filter for NFTs (amount = 1, decimals = 0)
           const nfts = accounts.value
             .filter(({ account }) => {
               const amount = account.data.parsed.info.tokenAmount;
@@ -337,16 +367,14 @@ const NftScreen: React.FC = () => {
               return {
                 mint,
                 name: `NFT ${mint.slice(0, 6)}...`,
-                image: '', // No direct image from RPC
+                image: '',
                 symbol: '',
                 uri: '',
               } as NftItem;
             });
-          
           console.log('NFTs from RPC fallback:', nfts.length);
           setOwnedNfts(nfts);
           setFetchError('Limited NFT data available (RPC fallback) - only basic info shown');
-          
         } catch (rpcError) {
           console.error('RPC fallback failed:', rpcError);
           setFetchError('Failed to fetch NFTs. Please try again later.');
@@ -357,17 +385,12 @@ const NftScreen: React.FC = () => {
     }
   }, [userPublicKey]);
 
-  // When user switches to "sell" tab, fetch NFTs
   useEffect(() => {
     if (activeTab === 'sell' && userPublicKey) {
       fetchOwnedNfts();
     }
   }, [activeTab, userPublicKey, fetchOwnedNfts]);
 
-  // ----------------------------------
-  // 5) Rendering
-  // ----------------------------------
-  // If no userPublicKey, prompt user to connect wallet
   if (!userPublicKey) {
     return (
       <SafeAreaView style={styles.container}>
@@ -376,7 +399,6 @@ const NftScreen: React.FC = () => {
     );
   }
 
-  // Individual NFT card
   const renderNftCard = ({ item }: { item: NftItem }) => {
     const isSelected = selectedNft?.mint === item.mint;
     return (
@@ -398,23 +420,19 @@ const NftScreen: React.FC = () => {
             </View>
           )}
         </View>
-        
         <View style={styles.nftDetails}>
           <Text style={styles.nftName} numberOfLines={1}>
             {item.name || 'Unnamed NFT'}
           </Text>
-          
           {!!item.collection && (
             <Text style={styles.collectionName} numberOfLines={1}>
               {item.collection}
             </Text>
           )}
-          
           <Text style={styles.mintAddress} numberOfLines={1}>
             {item.mint.slice(0, 8)}...{item.mint.slice(-4)}
           </Text>
         </View>
-        
         {isSelected && (
           <View style={styles.selectedIndicator}>
             <Text style={styles.selectedText}>✓</Text>
@@ -439,12 +457,10 @@ const NftScreen: React.FC = () => {
             Buy
           </Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'sell' && styles.tabButtonActive]}
           onPress={() => {
             setActiveTab('sell');
-            setSellBlinkUrl(null);
           }}
         >
           <Text style={[styles.tabButtonText, activeTab === 'sell' && styles.tabButtonTextActive]}>
@@ -463,11 +479,9 @@ const NftScreen: React.FC = () => {
             value={collectionName}
             onChangeText={setCollectionName}
           />
-
           <TouchableOpacity style={styles.actionButton} onPress={handleGenerateBuyBlink}>
             <Text style={styles.actionButtonText}>Buy Floor</Text>
           </TouchableOpacity>
-
           {buyBlinkUrl && (
             <View style={styles.blinkContainerBuy}>
               <BlinkExample url={buyBlinkUrl} />
@@ -487,11 +501,9 @@ const NftScreen: React.FC = () => {
               <Text style={styles.reloadButtonText}>Reload</Text>
             </TouchableOpacity>
           </View>
-
           {fetchError && (
             <Text style={styles.errorText}>{fetchError}</Text>
           )}
-
           {loadingNfts ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#32D4DE" />
@@ -512,13 +524,6 @@ const NftScreen: React.FC = () => {
               }
             />
           )}
-
-          {/* Display Sell Blink if generated */}
-          {sellBlinkUrl && (
-            <View style={styles.blinkContainerSell}>
-              <BlinkExample url={sellBlinkUrl} />
-            </View>
-          )}
         </View>
       )}
 
@@ -529,18 +534,14 @@ const NftScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={() => setSelectedNft(null)}
       >
-        {/* Press anywhere outside the form to close */}
         <Pressable style={styles.modalOverlay} onPress={() => setSelectedNft(null)}>
-          {/* Pressable inside to stop events from closing modal */}
           <Pressable style={styles.sellForm} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.formTitle}>List NFT for Sale</Text>
-            
             <View style={styles.selectedNftInfo}>
               <Text style={styles.label}>Selected NFT</Text>
               <Text style={styles.selectedNftName}>{selectedNft?.name}</Text>
               <Text style={styles.selectedMint}>{selectedNft?.mint}</Text>
             </View>
-
             <Text style={styles.label}>Sale Price (SOL)</Text>
             <TextInput
               style={styles.input}
@@ -549,9 +550,16 @@ const NftScreen: React.FC = () => {
               value={salePrice}
               onChangeText={setSalePrice}
             />
-
-            <TouchableOpacity style={styles.actionButton} onPress={handleGenerateSellBlink}>
-              <Text style={styles.actionButtonText}>List for Sale</Text>
+            <Text style={styles.label}>Duration (days, optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 7"
+              keyboardType="numeric"
+              value={durationDays}
+              onChangeText={setDurationDays}
+            />
+            <TouchableOpacity style={styles.actionButton} onPress={handleSellNftOnTensor}>
+              <Text style={styles.actionButtonText}>List on Tensor</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
