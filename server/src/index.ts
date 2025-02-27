@@ -12,6 +12,7 @@ import {
 } from './types/interfaces';
 import {PublicKey} from '@solana/web3.js';
 import { pumpportalRouter } from './routes/pumpportal';
+import { buildCompressedNftListingTx } from './utils/compressedNftListing';
 
 /**
  * Express application instance
@@ -358,6 +359,17 @@ app.get(
     }
   },
 );
+
+
+app.post('/api/build-compressed-nft-listing-tx', async (req: any, res: any) => {
+  try {
+    const result = await buildCompressedNftListingTx(req.body);
+    return res.json(result);
+  } catch (err: any) {
+    console.error('Failed to build compressed NFT listing tx:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /**
  * Start the Express server
