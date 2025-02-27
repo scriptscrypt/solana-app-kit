@@ -12,19 +12,19 @@ import {
   ActivityIndicator,
   StyleSheet
 } from 'react-native';
-import { 
-  Connection, 
-  Transaction, 
-  VersionedTransaction, 
-  PublicKey 
+import {
+  Connection,
+  Transaction,
+  VersionedTransaction,
+  PublicKey,
+  SendTransactionError
 } from '@solana/web3.js';
-import { 
+import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
-  getAccount 
+  getAccount
 } from '@solana/spl-token';
-
-import { TENSOR_API_KEY } from '@env';
+import { HELIUS_API_KEY, TENSOR_API_KEY } from '@env';
 import { fetchWithRetries } from '../../utils/common/fetch';
 
 const SOL_TO_LAMPORTS = 1_000_000_000;
@@ -38,7 +38,7 @@ interface NftItem {
   image?: string;
   priceSol?: number;
   description?: string;
-  isCompressed?: boolean; // new flag
+  isCompressed?: boolean;
 }
 
 interface SellSectionProps {
@@ -46,9 +46,7 @@ interface SellSectionProps {
   userWallet: any;
 }
 
-/**
- * Helper to fix IPFS/Arweave/etc. URLs
- */
+/** Helper to fix various NFT image URI formats. */
 function fixImageUrl(url: string): string {
   if (!url) return '';
   if (url.startsWith('ipfs://')) return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
@@ -59,8 +57,7 @@ function fixImageUrl(url: string): string {
 }
 
 /**
- * Ensures the ATA (associated token account) for (mint, userPublicKey) exists.
- * If not, creates it before we proceed with the listing.
+ * Ensures an associated token account (ATA) is initialized for a standard (non-compressed) NFT.
  */
 async function ensureAtaIfNeeded(
   connection: Connection,
@@ -70,44 +67,104 @@ async function ensureAtaIfNeeded(
 ) {
   const mintPubkey = new PublicKey(mint);
   const ownerPubkey = new PublicKey(owner);
-
-  // Derive the ATA
   const ataAddr = await getAssociatedTokenAddress(mintPubkey, ownerPubkey);
   try {
-    // If getAccount() succeeds, the ATA is already initialized
     await getAccount(connection, ataAddr);
-    // No need to create
     return ataAddr;
   } catch (err) {
-    console.log('ATA not found, creating it now...', ataAddr.toBase58());
+    console.log('ATA not found; creating:', ataAddr.toBase58());
   }
-
-  // Construct a tx to create the associated token account
   const createTx = new Transaction();
   const instruction = createAssociatedTokenAccountInstruction(
-    ownerPubkey,   // payer
-    ataAddr,       // the new associated token account address
-    ownerPubkey,   // token account owner
-    mintPubkey     // mint
+    ownerPubkey,
+    ataAddr,
+    ownerPubkey,
+    mintPubkey
   );
   createTx.add(instruction);
-
-  // Set feePayer, blockhash
   const { blockhash } = await connection.getLatestBlockhash();
   createTx.recentBlockhash = blockhash;
   createTx.feePayer = ownerPubkey;
 
-  // Request the wallet to sign & send
   const provider = await userWallet.getProvider();
-  console.log('Creating ATA transaction, signing now...');
+  console.log('[ensureAtaIfNeeded] about to sign ATA creation TX...');
   const { signature } = await provider.request({
     method: 'signAndSendTransaction',
     params: { transaction: createTx, connection }
   });
-
-  console.log('ATA creation sig:', signature);
-  // Once confirmed, the ATA is created
+  console.log('ATA creation signature:', signature);
   return ataAddr;
+}
+
+/**
+ * Fetch actual compressed NFT data using Helius’s DAS API (getAssetProof).
+ *
+ * The DAS API endpoint is: https://mainnet.helius-rpc.com/?api-key=<YOUR_KEY>
+ *
+ * Example request (JSON‑RPC):
+ *
+ * {
+ *   "jsonrpc": "2.0",
+ *   "id": "my-id",
+ *   "method": "getAssetProof",
+ *   "params": { "id": "<asset id>" }
+ * }
+ *
+ * The response returns fields:
+ * - tree_id: the Merkle tree address
+ * - proof: an array (often an array of arrays); we take the first array
+ * - root: the Merkle root (hex)
+ * - node_index: the leaf index
+ * - leaf: the leaf hash (we’ll use this as the dataHash)
+ *
+ * We set creatorsHash to a dummy value (all zeros). Adjust as needed.
+ */
+async function getRealCompressedNFTData(nft: NftItem, ownerAddress: string) {
+  console.log('[getRealCompressedNFTData] Called for NFT:', nft);
+  const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+  const body = {
+    jsonrpc: "2.0",
+    id: "my-id",
+    method: "getAssetProof",
+    params: {
+      id: nft.mint  // assuming the mint is used as the asset ID
+    }
+  };
+  console.log('[getRealCompressedNFTData] Fetching asset proof from Helius with URL:', url);
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch asset proof from Helius: ${resp.status}`);
+  }
+  const json = await resp.json();
+  console.log('[getRealCompressedNFTData] Helius getAssetProof response:', json);
+  const result = json.result;
+  if (!result || !result.tree_id) {
+    throw new Error('Helius response missing asset proof data.');
+  }
+  // If proof is an array of arrays, take the first array.
+  const proof = Array.isArray(result.proof) && Array.isArray(result.proof[0])
+    ? result.proof[0]
+    : result.proof;
+  // Use the returned leaf as the dataHash.
+  const dataHash = result.leaf;
+  // Use a dummy creatorsHash (adjust if you can fetch the actual value).
+  const creatorsHash = "0000000000000000000000000000000000000000000000000000000000000000";
+  // Use canopyDepth from the result if provided; otherwise, default to 14.
+  const canopyDepth = result.canopyDepth || 14;
+  const leafIndex = result.node_index;
+  return {
+    merkleTree: result.tree_id, // the Merkle tree address
+    proof,
+    root: result.root,
+    canopyDepth,
+    leafIndex,
+    dataHash,
+    creatorsHash
+  };
 }
 
 const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) => {
@@ -116,30 +173,24 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
   const [selectedNft, setSelectedNft] = useState<NftItem | null>(null);
   const [salePrice, setSalePrice] = useState<string>('1.0');
   const [durationDays, setDurationDays] = useState<string>('');
-
   const [activeListings, setActiveListings] = useState<NftItem[]>([]);
   const [loadingActiveListings, setLoadingActiveListings] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // -------------------------------------------------------------------------
-  // 1) On mount, fetch both owned NFTs & active listings
-  // -------------------------------------------------------------------------
   useEffect(() => {
     if (userPublicKey) {
+      console.log('[SellSection] userPublicKey:', userPublicKey);
       fetchOwnedNfts();
       fetchActiveListings();
     }
   }, [userPublicKey]);
 
-  // -------------------------------------------------------------------------
-  // 2) Fetch user’s NFTs from Tensor portfolio
-  //    Mark compressed NFTs with isCompressed
-  // -------------------------------------------------------------------------
   const fetchOwnedNfts = useCallback(async () => {
     if (!userPublicKey) return;
     setLoadingNfts(true);
     setOwnedNfts([]);
     setFetchError(null);
+    console.log('[fetchOwnedNfts] for wallet:', userPublicKey);
 
     const url = `https://api.mainnet.tensordev.io/api/v1/user/portfolio?wallet=${userPublicKey}&includeUnverified=true&includeCompressed=true`;
     const options = {
@@ -149,60 +200,45 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
         'x-tensor-api-key': TENSOR_API_KEY
       }
     };
-
     try {
       const response = await fetchWithRetries(url, options);
       if (!response.ok) {
         throw new Error(`Portfolio API request failed with status ${response.status}`);
       }
       const data = await response.json();
-
       const dataArray = Array.isArray(data) ? data : [];
-      const mappedNfts: NftItem[] = dataArray.map((item: any) => {
-        if (!item.setterMintMe) return null;
-        const mint = item.setterMintMe;
-        const name = item.name || 'Unnamed NFT';
-        const image = item.imageUri ? fixImageUrl(item.imageUri) : '';
-        const description = item.description || '';
-        const symbol = item.symbol || '';
-        const collection = item.slugDisplay || '';
-        const isCompressed = !!item.compressed;
-
-        let priceSol;
-        if (item.statsV2?.buyNowPrice) {
-          const lamports = parseInt(item.statsV2.buyNowPrice, 10);
-          priceSol = lamports / SOL_TO_LAMPORTS;
-        }
-
-        return {
-          mint,
-          name,
-          description,
-          symbol,
-          collection,
-          image,
-          priceSol,
-          isCompressed
-        };
-      }).filter(Boolean) as NftItem[];
-
-      console.log('Mapped NFTs:', mappedNfts);
+      const mappedNfts: NftItem[] = dataArray
+        .map((item: any) => {
+          if (!item.setterMintMe) return null;
+          const mint = item.setterMintMe;
+          const name = item.name || 'Unnamed NFT';
+          const image = item.imageUri ? fixImageUrl(item.imageUri) : '';
+          const description = item.description || '';
+          const symbol = item.symbol || '';
+          const collection = item.slugDisplay || '';
+          const isCompressed = !!item.compressed;
+          let priceSol;
+          if (item.statsV2?.buyNowPrice) {
+            const lamports = parseInt(item.statsV2.buyNowPrice, 10);
+            priceSol = lamports / SOL_TO_LAMPORTS;
+          }
+          return { mint, name, description, symbol, collection, image, priceSol, isCompressed };
+        })
+        .filter(Boolean) as NftItem[];
+      console.log('[fetchOwnedNfts] Mapped NFTs:', mappedNfts);
       setOwnedNfts(mappedNfts);
-    } catch (error: any) {
-      console.error('Error fetching portfolio:', error);
-      setFetchError(error.message);
+    } catch (err: any) {
+      console.error('[fetchOwnedNfts] error:', err);
+      setFetchError(err.message);
     } finally {
       setLoadingNfts(false);
     }
   }, [userPublicKey]);
 
-  // -------------------------------------------------------------------------
-  // 3) Fetch active listings from Tensor
-  // -------------------------------------------------------------------------
   const fetchActiveListings = useCallback(async () => {
     if (!userPublicKey) return;
     setLoadingActiveListings(true);
-
+    console.log('[fetchActiveListings] for wallet:', userPublicKey);
     try {
       const url = `https://api.mainnet.tensordev.io/api/v1/user/active_listings?wallets=${userPublicKey}&sortBy=PriceAsc&limit=50`;
       const options = {
@@ -217,19 +253,18 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
         throw new Error(`Failed to fetch active listings: ${res.status}`);
       }
       const data = await res.json();
-
       if (data.listings && Array.isArray(data.listings)) {
         const mappedListings = data.listings.map((item: any) => {
           const mintObj = item.mint || {};
-          const mintAddress = (typeof item.mint === 'object' && item.mint.onchainId)
-            ? item.mint.onchainId
-            : item.mint;
+          const mintAddress =
+            typeof item.mint === 'object' && item.mint.onchainId
+              ? item.mint.onchainId
+              : item.mint;
           const nftName = mintObj?.name || 'Unnamed NFT';
           const nftImage = fixImageUrl(mintObj?.imageUri || '');
           const nftCollection = mintObj?.collName || '';
           const lamports = parseInt(item.grossAmount || '0', 10);
           const priceSol = lamports / SOL_TO_LAMPORTS;
-
           return {
             mint: mintAddress,
             name: nftName,
@@ -238,39 +273,25 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
             priceSol
           } as NftItem;
         });
-        console.log('Mapped active listings:', mappedListings);
+        console.log('[fetchActiveListings] fetched:', mappedListings);
         setActiveListings(mappedListings);
       } else {
+        console.log('[fetchActiveListings] no listings found');
         setActiveListings([]);
       }
     } catch (err: any) {
-      console.error('Error fetching active listings:', err);
+      console.error('[fetchActiveListings] error:', err);
       Alert.alert('Error', err.message || 'Failed to fetch active listings');
     } finally {
       setLoadingActiveListings(false);
     }
   }, [userPublicKey]);
 
-  // -------------------------------------------------------------------------
-  // 4) Handle listing with “NFT List” endpoint (legacy). 
-  //    If compressed => block. 
-  //    If uninitialized ATA => create it, then proceed.
-  // -------------------------------------------------------------------------
   const handleSellNftOnTensor = async () => {
     if (!selectedNft) {
-      console.log('No NFT selected. Aborting listing.');
+      console.log('[handleSellNftOnTensor] No NFT selected.');
       return;
     }
-
-    // If the NFT is compressed, block listing
-    if (selectedNft.isCompressed) {
-      Alert.alert(
-        'Compressed NFT Not Supported',
-        'This NFT is compressed. Tensor’s Legacy listing endpoint cannot list compressed NFTs.'
-      );
-      return;
-    }
-
     if (!salePrice) {
       Alert.alert('Error', 'Please enter a valid sale price in SOL.');
       return;
@@ -279,86 +300,135 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
       Alert.alert('Error', 'Wallet not connected.');
       return;
     }
-
+    console.log('[handleSellNftOnTensor] Starting listing, selected NFT:', selectedNft);
     try {
-      const mintAddress = selectedNft.mint;
-      const priceLamports = Math.floor(parseFloat(salePrice) * SOL_TO_LAMPORTS);
-
-      // Attempt to ensure the ATA is created for this mint
       const connection = new Connection('https://api.mainnet-beta.solana.com');
-      await ensureAtaIfNeeded(connection, mintAddress, userPublicKey, userWallet);
-
-      // Optional expiry
-      let expiryParam = '';
+      const priceLamports = Math.floor(parseFloat(salePrice) * SOL_TO_LAMPORTS);
+      let expiryValue: number | undefined;
       if (durationDays && !isNaN(parseFloat(durationDays))) {
         const nowSeconds = Math.floor(Date.now() / 1000);
         const addedSeconds = parseFloat(durationDays) * 24 * 60 * 60;
-        const expiryTs = Math.floor(nowSeconds + addedSeconds);
-        expiryParam = `&expiry=${expiryTs}`;
-        console.log(`Listing will expire in ${durationDays} day(s) => ${expiryTs}`);
+        expiryValue = nowSeconds + addedSeconds;
+        console.log('[handleSellNftOnTensor] Listing expiry (seconds):', expiryValue);
       }
-
-      // Get blockhash for listing TX
-      const { blockhash } = await connection.getRecentBlockhash();
-      console.log('Obtained recent blockhash:', blockhash);
-
-      // Construct the list URL
-      const listUrl =
-        `https://api.mainnet.tensordev.io/api/v1/tx/list` +
-        `?seller=${userPublicKey}&owner=${userPublicKey}` +
-        `&mint=${mintAddress}&price=${priceLamports}` +
-        `&blockhash=${blockhash}${expiryParam}`;
-
-      console.log('Tensor listing URL:', listUrl);
-
-      const resp = await fetch(listUrl, {
-        headers: { 'x-tensor-api-key': TENSOR_API_KEY }
-      });
-      const rawText = await resp.text();
-      console.log('Raw response from Tensor (list):', rawText);
-
-      let data: any;
-      try {
-        data = JSON.parse(rawText);
-      } catch (parseErr) {
-        console.error('Failed to parse Tensor response as JSON. Full text:', rawText);
-        throw new Error('Tensor returned non-JSON response. Check console for details.');
-      }
-
-      if (!data.txs || data.txs.length === 0) {
-        throw new Error('No transactions returned from Tensor API for listing.');
-      }
-
-      // Execute each transaction
-      for (let i = 0; i < data.txs.length; i++) {
-        const txObj = data.txs[i];
-        let transaction: Transaction | VersionedTransaction;
-
-        if (txObj.txV0) {
-          const txBuffer = Buffer.from(txObj.txV0.data, 'base64');
-          transaction = VersionedTransaction.deserialize(txBuffer);
-          console.log(`Deserialized versioned transaction #${i + 1}`);
-        } else if (txObj.tx) {
-          const txBuffer = Buffer.from(txObj.tx.data, 'base64');
-          transaction = Transaction.from(txBuffer);
-          console.log(`Deserialized legacy transaction #${i + 1}`);
-        } else {
-          throw new Error(`Transaction #${i + 1} is in an unknown format.`);
-        }
-
-        console.log(`Signing & sending transaction #${i + 1}...`);
-        const provider = await userWallet.getProvider();
-        const { signature } = await provider.request({
-          method: 'signAndSendTransaction',
-          params: { transaction, connection }
+      if (selectedNft.isCompressed) {
+        console.log('[handleSellNftOnTensor] This NFT is compressed. Fetching tree data...');
+        // Use DAS API to get the asset proof.
+        const compressedData = await getRealCompressedNFTData(selectedNft, userPublicKey);
+        console.log('[handleSellNftOnTensor] cNFT data:', compressedData);
+        const params = {
+          seller: userPublicKey,
+          owner: userPublicKey,
+          price: priceLamports,
+          expiry: expiryValue,
+          merkleTree: compressedData.merkleTree,
+          proof: compressedData.proof,
+          root: compressedData.root,
+          canopyDepth: compressedData.canopyDepth,
+          leafIndex: compressedData.leafIndex,
+          dataHash: compressedData.dataHash,
+          creatorsHash: compressedData.creatorsHash
+        };
+        console.log('[handleSellNftOnTensor] sending to server:', params);
+        const resp = await fetch('http://localhost:3000/api/build-compressed-nft-listing-tx', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-tensor-api-key': TENSOR_API_KEY
+          },
+          body: JSON.stringify(params)
         });
-        console.log(`Transaction #${i + 1} signature: ${signature}`);
+        const result = await resp.json();
+        console.log('[handleSellNftOnTensor] server response:', result);
+        if (!result.success || !result.transaction) {
+          throw new Error('No transaction returned for compressed NFT listing.');
+        }
+        const unsignedTxBase64 = result.transaction;
+        const txBuffer = Buffer.from(unsignedTxBase64, 'base64');
+        const unsignedTx = Transaction.from(txBuffer);
+        console.log('[handleSellNftOnTensor] about to sign cNFT listing TX...');
+        const provider = await userWallet.getProvider();
+        const serializedMessage = unsignedTx.serializeMessage();
+        const base64Message = Buffer.from(serializedMessage).toString('base64');
+        const signResult = await provider.request({
+          method: 'signMessage',
+          params: { message: base64Message }
+        });
+        if (!signResult?.signature) {
+          throw new Error('No signature returned from wallet.');
+        }
+        unsignedTx.addSignature(
+          new PublicKey(userPublicKey),
+          Buffer.from(signResult.signature, 'base64')
+        );
+        const signedTx = unsignedTx.serialize();
+        console.log('[handleSellNftOnTensor] sending raw transaction...');
+        let txSignature: string;
+        try {
+          txSignature = await connection.sendRawTransaction(signedTx, { skipPreflight: false });
+          console.log('[handleSellNftOnTensor] raw TX sent. Sig:', txSignature);
+          const confirmResult = await connection.confirmTransaction(txSignature, 'confirmed');
+          console.log('[handleSellNftOnTensor] confirmation result:', confirmResult);
+        } catch (sendErr: any) {
+          console.error('[handleSellNftOnTensor] sendRawTransaction error:', sendErr);
+          if (sendErr instanceof SendTransactionError) {
+            console.error('SendTransactionError logs:', sendErr.logs);
+          } else if (sendErr.logs) {
+            console.error('Raw logs:', sendErr.logs);
+          }
+          throw sendErr;
+        }
+        Alert.alert('Success', `Compressed NFT listed at ${salePrice} SOL!`);
+      } else {
+        console.log('[handleSellNftOnTensor] This NFT is NOT compressed.');
+        await ensureAtaIfNeeded(connection, selectedNft.mint, userPublicKey, userWallet);
+        const { blockhash } = await connection.getLatestBlockhash();
+        const mintAddress = selectedNft.mint;
+        const listUrl =
+          `https://api.mainnet.tensordev.io/api/v1/tx/list` +
+          `?seller=${userPublicKey}&owner=${userPublicKey}` +
+          `&mint=${mintAddress}&price=${priceLamports}` +
+          `&blockhash=${blockhash}`;
+        console.log('[handleSellNftOnTensor] calling list endpoint:', listUrl);
+        const resp = await fetch(listUrl, {
+          headers: { 'x-tensor-api-key': TENSOR_API_KEY }
+        });
+        const rawText = await resp.text();
+        let data: any;
+        try {
+          data = JSON.parse(rawText);
+        } catch (parseErr) {
+          console.error('[handleSellNftOnTensor] failed to parse JSON from Tensor:', rawText);
+          throw new Error('Tensor returned non-JSON response. Check the logs.');
+        }
+        if (!data.txs?.length) {
+          throw new Error('No transactions returned from Tensor for listing.');
+        }
+        const provider = await userWallet.getProvider();
+        for (let i = 0; i < data.txs.length; i++) {
+          let transaction: Transaction | VersionedTransaction;
+          const txObj = data.txs[i];
+          if (txObj.txV0) {
+            const txBuffer = Buffer.from(txObj.txV0.data, 'base64');
+            transaction = VersionedTransaction.deserialize(txBuffer);
+          } else if (txObj.tx) {
+            const txBuffer = Buffer.from(txObj.tx.data, 'base64');
+            transaction = Transaction.from(txBuffer);
+          } else {
+            throw new Error(`Transaction #${i + 1} is in an unknown format.`);
+          }
+          console.log(`[handleSellNftOnTensor] signing standard NFT TX #${i + 1}...`);
+          const { signature } = await provider.request({
+            method: 'signAndSendTransaction',
+            params: { transaction, connection }
+          });
+          console.log(`[handleSellNftOnTensor] TX #${i + 1} confirmed. Sig: ${signature}`);
+        }
+        Alert.alert('Success', `NFT listed at ${salePrice} SOL!`);
       }
-
-      Alert.alert('Success', `NFT listed on Tensor at ${salePrice} SOL!`);
     } catch (err: any) {
-      console.error('Error listing NFT on Tensor:', err);
-      Alert.alert('Error', err.message || 'Failed to list NFT on Tensor.');
+      console.error('[handleSellNftOnTensor] error:', err);
+      Alert.alert('Error', err.message || 'Failed to list NFT.');
     } finally {
       setSelectedNft(null);
       setSalePrice('1.0');
@@ -366,48 +436,36 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
     }
   };
 
-  // -------------------------------------------------------------------------
-  // 5) Renders an active listing
-  // -------------------------------------------------------------------------
-  const renderActiveListingCard = ({ item }: { item: NftItem }) => {
-    return (
-      <View style={styles.listedCard}>
-        <View style={styles.imageContainer}>
-          {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.nftImage} resizeMode="cover" />
-          ) : (
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>No Image</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.nftDetails}>
-          <Text style={styles.nftName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          {!!item.collection && (
-            <Text style={styles.collectionName} numberOfLines={1}>
-              {item.collection}
-            </Text>
-          )}
-          <Text style={styles.mintAddress} numberOfLines={1}>
-            {item.mint
-              ? item.mint.slice(0, 8) + '...' + item.mint.slice(-4)
-              : 'No Mint'}
-          </Text>
-          {item.priceSol !== undefined && (
-            <Text style={styles.priceText}>
-              Listed @ {item.priceSol.toFixed(2)} SOL
-            </Text>
-          )}
-        </View>
+  const renderActiveListingCard = ({ item }: { item: NftItem }) => (
+    <View style={styles.listedCard}>
+      <View style={styles.imageContainer}>
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={styles.nftImage} />
+        ) : (
+          <View style={styles.placeholderImage}>
+            <Text style={styles.placeholderText}>No Image</Text>
+          </View>
+        )}
       </View>
-    );
-  };
+      <View style={styles.nftDetails}>
+        <Text style={styles.nftName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        {!!item.collection && (
+          <Text style={styles.collectionName} numberOfLines={1}>
+            {item.collection}
+          </Text>
+        )}
+        <Text style={styles.mintAddress} numberOfLines={1}>
+          {item.mint ? item.mint.slice(0, 8) + '...' + item.mint.slice(-4) : 'No Mint'}
+        </Text>
+        {item.priceSol !== undefined && (
+          <Text style={styles.priceText}>Listed @ {item.priceSol.toFixed(2)} SOL</Text>
+        )}
+      </View>
+    </View>
+  );
 
-  // -------------------------------------------------------------------------
-  // 6) Renders each owned NFT card; tap to select
-  // -------------------------------------------------------------------------
   const renderNftCard = ({ item }: { item: NftItem }) => {
     const isSelected = selectedNft?.mint === item.mint;
     return (
@@ -417,7 +475,7 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
       >
         <View style={styles.imageContainer}>
           {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.nftImage} resizeMode="cover" />
+            <Image source={{ uri: item.image }} style={styles.nftImage} />
           ) : (
             <View style={styles.placeholderImage}>
               <Text style={styles.placeholderText}>No Image</Text>
@@ -439,11 +497,8 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
             </Text>
           ) : null}
           <Text style={styles.mintAddress} numberOfLines={1}>
-            {item.mint
-              ? item.mint.slice(0, 8) + '...' + item.mint.slice(-4)
-              : 'No Mint'}
+            {item.mint ? item.mint.slice(0, 8) + '...' + item.mint.slice(-4) : 'No Mint'}
           </Text>
-          {/* Optionally show isCompressed status */}
         </View>
         {isSelected && (
           <View style={styles.selectedIndicator}>
@@ -454,12 +509,8 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
     );
   };
 
-  // -------------------------------------------------------------------------
-  // 7) Render the main Sell Section UI
-  // -------------------------------------------------------------------------
   return (
     <View style={{ flex: 1 }}>
-      {/* Active Listings */}
       <View style={styles.sellHeader}>
         <Text style={styles.infoText}>Active Listings ({activeListings.length})</Text>
         <TouchableOpacity style={styles.reloadButton} onPress={fetchActiveListings}>
@@ -482,8 +533,6 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
           }
         />
       )}
-
-      {/* Owned NFTs */}
       <View style={styles.sellHeader}>
         <Text style={styles.infoText}>Your NFTs ({ownedNfts.length})</Text>
         <TouchableOpacity style={styles.reloadButton} onPress={fetchOwnedNfts}>
@@ -511,8 +560,6 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
           }
         />
       )}
-
-      {/* Modal: Listing Form */}
       <Modal
         transparent
         visible={selectedNft !== null}
@@ -555,27 +602,21 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
 
 export default SellSection;
 
-// -------------------- STYLES --------------------
 const styles = StyleSheet.create({
   sellHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 12
   },
-  infoText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  infoText: { fontSize: 14, fontWeight: '500' },
   reloadButton: {
     backgroundColor: '#f3f3f3',
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 6,
+    borderRadius: 6
   },
-  reloadButtonText: {
-    fontWeight: '600',
-  },
+  reloadButtonText: { fontWeight: '600' },
   listedCard: {
     width: 140,
     borderRadius: 12,
@@ -588,74 +629,38 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 2
   },
   imageContainer: {
     width: '100%',
     height: 140,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: '#f7f7f7'
   },
-  nftImage: {
-    width: '100%',
-    height: '100%',
-  },
+  nftImage: { width: '100%', height: '100%' },
   placeholderImage: {
     flex: 1,
     backgroundColor: '#eee',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
-  placeholderText: {
-    color: '#999',
-  },
-  nftDetails: {
-    padding: 8,
-  },
-  nftName: {
-    fontWeight: '600',
-    fontSize: 14,
-    color: '#222',
-    marginBottom: 4,
-  },
-  collectionName: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  mintAddress: {
-    fontSize: 10,
-    color: '#999',
-  },
-  priceText: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#333',
-  },
+  placeholderText: { color: '#999' },
+  nftDetails: { padding: 8 },
+  nftName: { fontWeight: '600', fontSize: 14, color: '#222', marginBottom: 4 },
+  collectionName: { fontSize: 12, color: '#666', marginBottom: 4 },
+  mintAddress: { fontSize: 10, color: '#999' },
+  priceText: { marginTop: 4, fontSize: 12, fontWeight: '500', color: '#333' },
   errorText: {
     color: '#ff6b6b',
     marginBottom: 12,
     padding: 8,
     backgroundColor: '#fff0f0',
     borderRadius: 4,
-    fontSize: 12,
+    fontSize: 12
   },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    color: '#666',
-  },
-  nftList: {
-    paddingBottom: 80,
-  },
-  nftGrid: {
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
+  loadingContainer: { justifyContent: 'center', alignItems: 'center', padding: 20 },
+  loadingText: { marginTop: 12, color: '#666' },
+  nftList: { paddingBottom: 80 },
+  nftGrid: { justifyContent: 'space-between', marginBottom: 12 },
   nftCard: {
     width: '48%',
     borderRadius: 12,
@@ -668,12 +673,12 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 2
   },
   nftCardSelected: {
     borderColor: '#32D4DE',
     borderWidth: 2,
-    backgroundColor: '#f0fbfc',
+    backgroundColor: '#f0fbfc'
   },
   selectedIndicator: {
     position: 'absolute',
@@ -684,26 +689,16 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
-  selectedText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyListText: {
-    textAlign: 'center',
-    color: '#999',
-    fontSize: 16,
-  },
+  selectedText: { color: 'white', fontWeight: 'bold' },
+  emptyContainer: { padding: 40, alignItems: 'center' },
+  emptyListText: { textAlign: 'center', color: '#999', fontSize: 16 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   sellForm: {
     backgroundColor: '#f8f8f8',
@@ -712,52 +707,32 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     width: '90%',
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#eee'
   },
-  formTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
-  },
+  formTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, color: '#333' },
   selectedNftInfo: {
     marginBottom: 16,
     padding: 8,
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 8
   },
-  label: {
-    fontWeight: '600',
-    marginVertical: 4,
-    color: '#444',
-  },
-  selectedNftName: {
-    fontWeight: '500',
-    marginBottom: 4,
-    color: '#222',
-  },
-  selectedMint: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-  },
+  label: { fontWeight: '600', marginVertical: 4, color: '#444' },
+  selectedNftName: { fontWeight: '500', marginBottom: 4, color: '#222' },
+  selectedMint: { fontSize: 12, color: '#666', marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderColor: '#dadada',
     borderRadius: 6,
     padding: 10,
     marginBottom: 12,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#fafafa'
   },
   actionButton: {
     backgroundColor: '#32D4DE',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: 8
   },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
+  actionButtonText: { color: '#fff', fontWeight: '600' }
 });
