@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {Picker} from '@react-native-picker/picker';
 import {LineChart} from 'react-native-chart-kit';
 import Slider from '@react-native-community/slider';
@@ -178,23 +173,29 @@ export default function BondingCurveCustomizer(props: Props) {
         </Text>
       </View>
 
-      {/* Chart */}
-      <LineChart
-        data={chartData}
-        width={screenWidth * 0.9}
-        height={220}
-        chartConfig={{
-          backgroundGradientFrom: '#fff',
-          backgroundGradientTo: '#fff',
-          color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-          style: {borderRadius: 16},
-          propsForDots: {r: '3', strokeWidth: '2'},
-        }}
-        withShadow
-        withDots
-        style={{marginTop: 16, borderRadius: 16}}
-      />
+      {/* Conditionally render the chart only if data is available */}
+      {askPrices.length > 0 ? (
+        <LineChart
+          data={chartData}
+          width={screenWidth * 0.9}
+          height={220}
+          chartConfig={{
+            backgroundGradientFrom: '#fff',
+            backgroundGradientTo: '#fff',
+            color: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+            labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
+            style: {borderRadius: 16},
+            propsForDots: {r: '3', strokeWidth: '2'},
+          }}
+          withShadow
+          withDots
+          style={{marginTop: 16, borderRadius: 16}}
+        />
+      ) : (
+        <Text style={{marginTop: 16, color: '#888'}}>
+          Calculating chart data…
+        </Text>
+      )}
 
       <TouchableOpacity style={curveStyles.button} onPress={handleSetCurve}>
         <Text style={curveStyles.buttonText}>Set Bonding Curve On-Chain</Text>
@@ -210,8 +211,6 @@ const curveStyles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     marginBottom: 16,
-
-    // Subtle shadow for nicer UI
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,

@@ -11,14 +11,14 @@ import {
   SwapAmounts,
 } from './types/interfaces';
 import {PublicKey} from '@solana/web3.js';
-import { pumpportalRouter } from './routes/pumpportal';
+import { launchRouter } from './routes/pumpfunLaunch';
 
 /**
  * Express application instance
  */
 const app = express();
 app.use(express.json());
-app.use('/api/pumpportal', pumpportalRouter);
+app.use('/api/pumpfun', launchRouter);
 /**
  * TokenMill client instance for interacting with the Solana program
  */
