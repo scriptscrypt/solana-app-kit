@@ -98,26 +98,6 @@ async function ensureAtaIfNeeded(
 
 /**
  * Fetch actual compressed NFT data using Helius’s DAS API (getAssetProof).
- *
- * The DAS API endpoint is: https://mainnet.helius-rpc.com/?api-key=<YOUR_KEY>
- *
- * Example request (JSON‑RPC):
- *
- * {
- *   "jsonrpc": "2.0",
- *   "id": "my-id",
- *   "method": "getAssetProof",
- *   "params": { "id": "<asset id>" }
- * }
- *
- * The response returns fields:
- * - tree_id: the Merkle tree address
- * - proof: an array (often an array of arrays); we take the first array
- * - root: the Merkle root (hex)
- * - node_index: the leaf index
- * - leaf: the leaf hash (we’ll use this as the dataHash)
- *
- * We set creatorsHash to a dummy value (all zeros). Adjust as needed.
  */
 async function getRealCompressedNFTData(nft: NftItem, ownerAddress: string) {
   console.log('[getRealCompressedNFTData] Called for NFT:', nft);
@@ -312,8 +292,12 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
         console.log('[handleSellNftOnTensor] Listing expiry (seconds):', expiryValue);
       }
       if (selectedNft.isCompressed) {
+        // For now, alert the user that selling compressed NFTs is not supported.
+        Alert.alert("Unsupported", "Selling compressed NFTs is not supported as of now.");
+        return;
+        /* 
+        // Uncomment this block when you are ready to enable cNFT sales:
         console.log('[handleSellNftOnTensor] This NFT is compressed. Fetching tree data...');
-        // Use DAS API to get the asset proof.
         const compressedData = await getRealCompressedNFTData(selectedNft, userPublicKey);
         console.log('[handleSellNftOnTensor] cNFT data:', compressedData);
         const params = {
@@ -379,6 +363,7 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey, userWallet }) 
           throw sendErr;
         }
         Alert.alert('Success', `Compressed NFT listed at ${salePrice} SOL!`);
+        */
       } else {
         console.log('[handleSellNftOnTensor] This NFT is NOT compressed.');
         await ensureAtaIfNeeded(connection, selectedNft.mint, userPublicKey, userWallet);
