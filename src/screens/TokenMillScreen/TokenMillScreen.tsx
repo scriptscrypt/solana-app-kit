@@ -102,7 +102,7 @@ export default function TokenMillScreen() {
     const newAsks: number[] = [];
 
     for (let i = 0; i < nPoints; i++) {
-      const t = i / (nPoints - 1);
+      const t = i / (nPoints - 1); // safe since nPoints >= 5
       let val: number;
 
       switch (curveType) {
@@ -117,10 +117,13 @@ export default function TokenMillScreen() {
           val = minPrice * Math.pow(ratio, growthRate / 2);
           break;
         }
-        case 'logistic':
+        case 'logistic': {
           const logistic = 1 / (1 + Math.exp(-steepness * (t - midPoint)));
           val = minPrice + (maxPrice - minPrice) * logistic;
           break;
+        }
+        default:
+          val = 0;
       }
       newAsks.push(Math.round(val));
     }
@@ -136,7 +139,7 @@ export default function TokenMillScreen() {
     steepness,
   ]);
 
-  // Whenever askPrices changes, recalc bid
+  // Recalculate bid prices as 2% lower than ask prices
   useEffect(() => {
     setBidPrices(askPrices.map(x => Math.floor(x * 0.98)));
   }, [askPrices]);
@@ -362,10 +365,14 @@ export default function TokenMillScreen() {
   };
 
   //-------------------------------------------------------------------------------------
-  // 8) Chart Data & Dynamic Scale
+  // 8) Chart Data & Dynamic Scale (with safety checks)
   //-------------------------------------------------------------------------------------
-  const maxAsk = Math.max(...askPrices, 0);
-  const maxBid = Math.max(...bidPrices, 0);
+  // Ensure all numbers are finite:
+  const safeAskPrices = askPrices.map(n => (Number.isFinite(n) ? n : 0));
+  const safeBidPrices = bidPrices.map(n => (Number.isFinite(n) ? n : 0));
+
+  const maxAsk = Math.max(...safeAskPrices, 0);
+  const maxBid = Math.max(...safeBidPrices, 0);
   const globalMax = Math.max(maxAsk, maxBid);
 
   let scaleFactor = 1;
@@ -378,16 +385,34 @@ export default function TokenMillScreen() {
     labelSuffix = 'K';
   }
 
+  // Normalize data by scaleFactor
+  const normalizedAskData = safeAskPrices.map(n => n / scaleFactor);
+  const normalizedBidData = safeBidPrices.map(n => n / scaleFactor);
+
+  // If all data points are the same, adjust the last point by a tiny amount to avoid zero range
+  if (
+    normalizedAskData.length > 0 &&
+    Math.min(...normalizedAskData) === Math.max(...normalizedAskData)
+  ) {
+    normalizedAskData[normalizedAskData.length - 1] += 0.0001;
+  }
+  if (
+    normalizedBidData.length > 0 &&
+    Math.min(...normalizedBidData) === Math.max(...normalizedBidData)
+  ) {
+    normalizedBidData[normalizedBidData.length - 1] += 0.0001;
+  }
+
   const chartData = {
-    labels: askPrices.map((_, i) => i.toString()),
+    labels: normalizedAskData.map((_, i) => i.toString()),
     datasets: [
       {
-        data: askPrices.map(n => n / scaleFactor),
+        data: normalizedAskData,
         color: () => '#f55',
         strokeWidth: 2,
       },
       {
-        data: bidPrices.map(n => n / scaleFactor),
+        data: normalizedBidData,
         color: () => '#55f',
         strokeWidth: 2,
       },
@@ -555,7 +580,7 @@ export default function TokenMillScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ----------------- Bonding Curve Section Moved to a Separate Component ----------------- */}
+        {/* ----------------- Bonding Curve Section (in separate component) ----------------- */}
         <BondingCurveCustomizer
           curveType={curveType}
           setCurveType={setCurveType}
@@ -587,7 +612,7 @@ export default function TokenMillScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#e9e9e9', // Subtle gray background
+    backgroundColor: '#e9e9e9',
   },
   container: {
     padding: 16,
@@ -620,8 +645,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
-
-    // subtle shadow for a nicer card look
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
