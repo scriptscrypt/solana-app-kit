@@ -9,6 +9,7 @@ import {useAppSelector} from '../../../hooks/useReduxHooks';
 import {VersionedTransaction, PublicKey} from '@solana/web3.js';
 import {useLoginWithOAuth} from '@privy-io/expo';
 import { useDynamicWalletLogic } from './useDynamicWalletLogic';
+import { useTurnkeyWalletLogic } from './useTurnkeyWalletLogic';
 import { StandardWallet, LoginMethod, WalletMonitorParams } from '../types';
 
 /**
@@ -16,7 +17,7 @@ import { StandardWallet, LoginMethod, WalletMonitorParams } from '../types';
  *  1) Read which provider is set from config.
  *  2) If 'privy', we handle via `usePrivyWalletLogic`.
  *  3) If 'dynamic', we handle via `useDynamicWalletLogic`.
- *  4) If 'turnkey', we do not have a full usage example, but we show how you might do it.
+ *  4) If 'turnkey', we handle via `useTurnkeyWalletLogic`.
  */
 export function useAuth() {
   const {auth: authConfig} = useCustomization();
@@ -474,21 +475,149 @@ export function useAuth() {
     };
   } else if (selectedProvider === 'turnkey') {
     /** TURNKEY CASE */
-    // Example: you would implement the Turnkey logic similarly to above
+    const {
+      user,
+      walletAddress,
+      isAuthenticated,
+      loading,
+      otpResponse,
+      handleInitOtpLogin,
+      handleVerifyOtp,
+      handleOAuthLogin,
+      handleTurnkeyLogout
+    } = useTurnkeyWalletLogic();
+
+    // Create a standardized wallet object for Turnkey
+    const standardWallet: StandardWallet | null = walletAddress ? {
+      provider: 'turnkey',
+      address: walletAddress,
+      publicKey: walletAddress,
+      rawWallet: { address: walletAddress },
+      getWalletInfo: () => ({
+        walletType: 'Turnkey',
+        address: walletAddress,
+      }),
+      getProvider: async () => {
+        try {
+          // In a real implementation, we would get a proper provider
+          // For now, we'll return a simplified provider structure
+          return {
+            _turnkeySdk: true,
+            address: walletAddress,
+            request: async ({ method, params }: any) => {
+              if (method === 'signAndSendTransaction') {
+                // The actual implementation would use the Turnkey SDK
+                // to sign and send the transaction
+                throw new Error('Turnkey transaction signing not fully implemented yet');
+              }
+              throw new Error(`Method ${method} not supported by Turnkey provider`);
+            }
+          };
+        } catch (error) {
+          console.error('Error getting Turnkey wallet provider:', error);
+          throw error;
+        }
+      }
+    } : null;
+
+    // Create a solanaWallet object that mimics the Privy structure for compatibility
+    const solanaWallet = standardWallet ? {
+      wallets: [{
+        publicKey: standardWallet.address,
+        address: standardWallet.address
+      }],
+      getProvider: standardWallet.getProvider
+    } : null;
+
+    // Implement login methods
+    const loginWithGoogle = useCallback(async () => {
+      try {
+        // To be implemented using OAuth
+        return await handleOAuthLogin({
+          oidcToken: '', // This would be provided by the OAuth flow
+          providerName: 'google',
+          setStatusMessage: () => {},
+          onWalletConnected: (info) => {
+            dispatch(loginSuccess({provider: 'turnkey', address: info.address}));
+            navigation.navigate('MainTabs');
+            return { address: info.address };
+          }
+        });
+      } catch (error) {
+        console.error('Google login error:', error);
+      }
+    }, [handleOAuthLogin, dispatch, navigation]);
+
+    const loginWithApple = useCallback(async () => {
+      try {
+        // To be implemented using OAuth
+        return await handleOAuthLogin({
+          oidcToken: '', // This would be provided by the OAuth flow
+          providerName: 'apple',
+          setStatusMessage: () => {},
+          onWalletConnected: (info) => {
+            dispatch(loginSuccess({provider: 'turnkey', address: info.address}));
+            navigation.navigate('MainTabs');
+            return { address: info.address };
+          }
+        });
+      } catch (error) {
+        console.error('Apple login error:', error);
+      }
+    }, [handleOAuthLogin, dispatch, navigation]);
+
+    // Method to initiate email OTP login
+    const initEmailOtpLogin = useCallback(async (email: string) => {
+      try {
+        return await handleInitOtpLogin({
+          email,
+          setStatusMessage: () => {},
+          onSuccess: (info) => {
+            dispatch(loginSuccess({provider: 'turnkey', address: info.address}));
+            navigation.navigate('MainTabs');
+          }
+        });
+      } catch (error) {
+        console.error('Email OTP initiation error:', error);
+        throw error;
+      }
+    }, [handleInitOtpLogin, dispatch, navigation]);
+
+    // Method to verify email OTP
+    const verifyEmailOtp = useCallback(async (otpCode: string) => {
+      try {
+        return await handleVerifyOtp({
+          otpCode,
+          setStatusMessage: () => {},
+          onWalletConnected: (info) => {
+            dispatch(loginSuccess({provider: 'turnkey', address: info.address}));
+            navigation.navigate('MainTabs');
+          }
+        });
+      } catch (error) {
+        console.error('Email OTP verification error:', error);
+        throw error;
+      }
+    }, [handleVerifyOtp, dispatch, navigation]);
+
     const logout = useCallback(async () => {
-      // For Turnkey, you might do some session reset
+      await handleTurnkeyLogout(() => {});
       dispatch(logoutSuccess());
-    }, [dispatch]);
+    }, [handleTurnkeyLogout, dispatch]);
 
     return {
-      status: '',
-      loginWithEmail: async () => {
-        // Turnkey login not fully implemented in this example
-      },
+      status: isAuthenticated ? 'authenticated' : '',
+      loginWithGoogle,
+      loginWithApple,
+      loginWithEmail: () => {}, // Placeholder, will not be used directly
+      initEmailOtpLogin,
+      verifyEmailOtp,
+      loading,
+      otpResponse,
       logout,
-      user: null,
-      solanaWallet: null,
-      wallet: null,
+      user,
+      solanaWallet,
+      wallet: standardWallet,
     };
   }
 

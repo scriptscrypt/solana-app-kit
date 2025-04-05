@@ -17,11 +17,12 @@ import { store } from './src/state/store';
 import './src/utils/polyfills';
 
 import { PrivyProvider, PrivyElements } from '@privy-io/expo';
+import { TurnkeyProvider } from '@turnkey/sdk-react-native';
 
 // Dynamic client initialization
 import { CustomizationProvider } from './src/CustomizationProvider';
 import { DefaultCustomizationConfig } from './src/config';
-import { getDynamicClient, initDynamicClient } from './src/modules/embeddedWalletProviders/services/walletProviders';
+import { getDynamicClient, initDynamicClient } from './src/modules/embeddedWalletProviders/services/walletProviders/dynamic';
 import TransactionNotification from './src/core/sharedUI/Common/TransactionNotification';
 
 export default function App() {
@@ -63,6 +64,12 @@ export default function App() {
     </>
   );
 
+  // Configure Turnkey session
+  const turnkeySessionConfig = {
+    apiBaseUrl: config.auth.turnkey.baseUrl,
+    organizationId: config.auth.turnkey.organizationId,
+  };
+
   return (
     <CustomizationProvider config={config}>
       <SafeAreaProvider>
@@ -86,6 +93,14 @@ export default function App() {
               <GlobalUIElements />
               <PrivyElements />
             </PrivyProvider>
+          ) : config.auth.provider === 'turnkey' ? (
+            <TurnkeyProvider config={turnkeySessionConfig}>
+              <NavigationContainer ref={navigationRef}>
+                <RootNavigator />
+              </NavigationContainer>
+              {getDynamicWebView()}
+              <GlobalUIElements />
+            </TurnkeyProvider>
           ) : (
             <>
               <NavigationContainer ref={navigationRef}>
