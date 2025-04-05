@@ -8,8 +8,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useAppNavigation } from '../../../hooks/useAppNavigation';
 import COLORS from '../../../assets/colors';
 import EmbeddedWalletAuth from '../../../modules/embeddedWalletProviders/components/wallet/EmbeddedWallet';
+import TurnkeyWalletAuth from '../../../modules/embeddedWalletProviders/components/turnkey/TurnkeyWallet';
 import { loginSuccess } from '../../../state/auth/reducer';
 import { RootState } from '../../../state/store';
+import { useCustomization } from '../../../CustomizationProvider';
 import axios from 'axios';
 import { SERVER_URL } from '@env';
 
@@ -21,7 +23,8 @@ export default function LoginScreen() {
   const navigation = useAppNavigation();
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
-
+  const { auth: authConfig } = useCustomization();
+  
   const solanaDotOpacity = useRef(new Animated.Value(0)).current;
   const splashTextOpacity = useRef(new Animated.Value(0)).current;
   const smileScale = useRef(new Animated.Value(0.5)).current;
@@ -78,6 +81,17 @@ export default function LoginScreen() {
     }
   };
 
+  const renderAuthComponent = () => {
+    switch(authConfig.provider) {
+      case 'turnkey':
+        return <TurnkeyWalletAuth onWalletConnected={handleWalletConnected} />;
+      case 'privy':
+      case 'dynamic':
+      default:
+        return <EmbeddedWalletAuth onWalletConnected={handleWalletConnected} />;
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Svg
@@ -110,7 +124,7 @@ export default function LoginScreen() {
         </Animated.View>
       </View>
 
-      <EmbeddedWalletAuth onWalletConnected={handleWalletConnected} />
+      {renderAuthComponent()}
 
       <Text style={styles.agreementText}>
         by continuing, you agree to t&amp;c and privacy policy

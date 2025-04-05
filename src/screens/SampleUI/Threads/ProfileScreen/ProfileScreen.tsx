@@ -87,12 +87,6 @@ export default function ProfileScreen() {
     }, [userWallet])
   );
 
-  // Log user data only when it changes
-  useEffect(() => {
-    console.log('user', user);
-    console.log('attachmentData from Redux:', attachmentData);
-  }, [userWallet, storedProfilePic, storedUsername, storedDescription]);
-
   return (
     <>
       {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: '#fff' }} />}
