@@ -1,44 +1,54 @@
-import express, { Request, Response } from 'express';
+// File: src/routes/auth/turnkeyAuthRoutes.ts
+import express, { Request, Response, Router } from 'express';
 import dotenv from 'dotenv';
-import { DEFAULT_SOLANA_ACCOUNTS, Turnkey } from '@turnkey/sdk-server';
+import { DEFAULT_ETHEREUM_ACCOUNTS, Turnkey } from '@turnkey/sdk-server';
+import { decode, JwtPayload } from 'jsonwebtoken';
 
-// Load environment variables
 dotenv.config();
 
-// Set up Turnkey configuration from environment variables
-let apiBaseUrl = process.env.TURNKEY_API_URL || '';
+const router: Router = express.Router();
 
-// Make sure the API URL is a complete URL
-if (apiBaseUrl && !apiBaseUrl.startsWith('http')) {
-  apiBaseUrl = 'https://' + apiBaseUrl;
-}
-
+// Turnkey configuration from environment variables
 const turnkeyConfig = {
-  apiBaseUrl,
+  // Use TURNKEY_API_URL instead of TURNKEY_BASE_URL to match .env file
+  apiBaseUrl: process.env.TURNKEY_API_URL && !process.env.TURNKEY_API_URL.startsWith('http') 
+    ? `https://${process.env.TURNKEY_API_URL}` 
+    : process.env.TURNKEY_API_URL || 'https://api.turnkey.com',
   defaultOrganizationId: process.env.TURNKEY_ORGANIZATION_ID || '',
   apiPublicKey: process.env.TURNKEY_API_PUBLIC_KEY || '',
   apiPrivateKey: process.env.TURNKEY_API_PRIVATE_KEY || '',
 };
 
-console.log('Initializing Turnkey with config:', {
-  apiBaseUrl: turnkeyConfig.apiBaseUrl,
-  defaultOrganizationId: turnkeyConfig.defaultOrganizationId,
-  hasApiPublicKey: !!turnkeyConfig.apiPublicKey,
-  hasApiPrivateKey: !!turnkeyConfig.apiPrivateKey
-});
+console.log("Turnkey API Base URL:", turnkeyConfig.apiBaseUrl);
+console.log("Turnkey Organization ID:", turnkeyConfig.defaultOrganizationId);
 
-// Initialize Turnkey client
+// Create Turnkey client
 const turnkey = new Turnkey(turnkeyConfig).apiClient();
 
-const router = express.Router();
+// JWT decoding utility
+const decodeJwt = (credential: string): JwtPayload | null => {
+  const decoded = decode(credential);
+
+  if (decoded && typeof decoded === 'object' && 'email' in decoded) {
+    return decoded as JwtPayload;
+  }
+
+  return null;
+};
 
 /**
- * Get sub-organization ID based on filter criteria
+ * Route to get a sub-organization ID based on a filter
  */
-router.post('/getSubOrgId', async (req: any, res: any) => {
+router.post('/getSubOrgId', async (req: Request, res: Response) => {
   try {
     const { filterType, filterValue } = req.body;
-    console.log(`Getting sub-org ID with filterType: ${filterType}, filterValue: ${filterValue}`);
+    
+    if (!filterType || !filterValue) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required parameters' 
+      });
+    }
     
     const { organizationIds } = await turnkey.getSubOrgIds({
       filterType,
@@ -49,123 +59,160 @@ router.post('/getSubOrgId', async (req: any, res: any) => {
       success: true,
       organizationId: organizationIds[0] || turnkeyConfig.defaultOrganizationId,
     });
-  } catch (err: any) {
-    console.error('Error getting sub-org ID:', err);
-    return res.status(500).json({ success: false, error: err.message });
+  } catch (error: any) {
+    console.error('Error in getSubOrgId:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to get Sub Org ID' 
+    });
   }
 });
 
 /**
- * Initialize OTP authentication
+ * Route to initialize OTP authentication
  */
-router.post('/initOtpAuth', async (req: any, res: any) => {
+router.post('/initOtpAuth', async (req: Request, res: Response) => {
   try {
-    const {otpType, contact} = req.body;
-    let organizationId = turnkeyConfig.defaultOrganizationId;
-    console.log(`Initializing OTP auth with otpType: ${otpType}, contact: ${contact}`);
-    console.log("Organization ID:", organizationId);
+    const { otpType, contact } = req.body;
     
-    try {
-      // Check if user already exists
-      console.log("Checking if user exists with filter:", {
-        filterType: otpType === 'OTP_TYPE_EMAIL' ? 'EMAIL' : 'PHONE_NUMBER',
-        filterValue: contact,
+    if (!otpType || !contact) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required parameters' 
       });
-      
-      const {organizationIds} = await turnkey.getSubOrgIds({
-        filterType: otpType === 'OTP_TYPE_EMAIL' ? 'EMAIL' : 'PHONE_NUMBER',
-        filterValue: contact,
-      });
-      console.log("Found organization IDs:", organizationIds);
-      
-      if (organizationIds.length > 0) {
-        organizationId = organizationIds[0];
-      } else {
-        // Create a new sub-organization if user doesn't exist
-        console.log("User doesn't exist, creating sub-organization");
-        const createSubOrgParams =
-          otpType === 'OTP_TYPE_EMAIL' ? {email: contact} : {phone: contact};
-
-        const subOrgResponse = await createSubOrg(createSubOrgParams);
-        organizationId = subOrgResponse.subOrganizationId;
-        console.log("Created sub-organization with ID:", organizationId);
-      }
-    } catch (error) {
-      console.error("Error checking/creating user:", error);
-      // Continue with default organization ID if we can't check or create user
-      console.log("Using default organization ID:", organizationId);
+    }
+    
+    let organizationId = turnkeyConfig.defaultOrganizationId;
+    console.log("organizationId", organizationId);
+    console.log("otpType", otpType);
+    console.log("contact", contact);
+    // Check if user already exists
+    const { organizationIds } = await turnkey.getSubOrgIds({
+      filterType: otpType === "OTP_TYPE_EMAIL" ? "EMAIL" : "PHONE_NUMBER",
+      filterValue: contact,
+    });
+    console.log("organizationIds", organizationIds);
+    if (organizationIds.length > 0) {
+      organizationId = organizationIds[0];
+    } else {
+      // Create a new sub-organization if user doesn't exist
+      const subOrgResult = await createSubOrg(
+        otpType === "OTP_TYPE_EMAIL" ? { email: contact } : { phone: contact }
+      );
+      organizationId = subOrgResult.subOrganizationId;
     }
 
     // Initialize OTP authentication
-    console.log("Initializing OTP with organization ID:", organizationId);
     const result = await turnkey.initOtpAuth({
       organizationId,
       otpType,
       contact,
     });
 
-    console.log("OTP initialized successfully, otpId:", result.otpId);
     return res.json({
       success: true,
       otpId: result.otpId,
       organizationId,
     });
-  } catch (err: any) {
-    console.error('Error initializing OTP auth:', err);
-    return res.status(500).json({success: false, error: err.message});
+  } catch (error: any) {
+    console.error('Error in initOtpAuth:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to initialize OTP authentication' 
+    });
   }
 });
 
 /**
- * Verify OTP code and create session
+ * Route to complete OTP authentication
  */
-router.post('/otpAuth', async (req: any, res: any) => {
+router.post('/otpAuth', async (req: Request, res: Response) => {
   try {
     const {
       otpId,
       otpCode,
       organizationId,
       targetPublicKey,
-      expirationSeconds = '86400', // Default to 24 hours
+      expirationSeconds = '3600',
       invalidateExisting = false,
     } = req.body;
+    
+    if (!otpId || !otpCode || !organizationId || !targetPublicKey) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required parameters' 
+      });
+    }
 
-    // Perform OTP authentication
-    const result = await turnkey.otpAuth({
-      otpId,
-      otpCode,
-      organizationId,
-      targetPublicKey,
-      expirationSeconds,
-      invalidateExisting,
-    });
+    console.log(`Processing OTP verification: otpId=${otpId}, code format=${typeof otpCode}, code length=${otpCode.length}`);
+    
+    // Ensure the OTP code format is correct (string)
+    const normalizedOtpCode = String(otpCode).trim();
+    
+    // Log the sanitized input for debugging
+    console.log(`Normalized OTP code: ${normalizedOtpCode}`);
 
-    return res.json({
-      success: true,
-      credentialBundle: result.credentialBundle,
+    try {
+      const result = await turnkey.otpAuth({
+        otpId,
+        otpCode: normalizedOtpCode,
+        organizationId,
+        targetPublicKey,
+        expirationSeconds,
+        invalidateExisting,
+      });
+
+      console.log('OTP verification successful');
+      
+      return res.json({
+        success: true,
+        credentialBundle: result.credentialBundle,
+      });
+    } catch (otpError: any) {
+      console.error('Turnkey OTP API error:', otpError);
+      
+      // Provide more specific error message based on the error
+      let errorMessage = 'Failed to authenticate with verification code';
+      
+      if (otpError.message && otpError.message.includes('invalid otp')) {
+        errorMessage = 'Invalid verification code, please check and try again';
+      } else if (otpError.message && otpError.message.includes('expired')) {
+        errorMessage = 'Verification code has expired, please request a new one';
+      }
+      
+      return res.status(400).json({ 
+        success: false, 
+        error: errorMessage
+      });
+    }
+  } catch (error: any) {
+    console.error('Error in otpAuth:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to authenticate with verification code' 
     });
-  } catch (err: any) {
-    console.error('Error completing OTP auth:', err);
-    return res.status(500).json({success: false, error: err.message});
   }
 });
 
 /**
- * Authenticate with OAuth token
+ * Route for OAuth login (Google, Apple)
  */
-router.post('/oAuthLogin', async (req: any, res: any) => {
+router.post('/oAuthLogin', async (req: Request, res: Response) => {
   try {
-    const {
-      oidcToken,
-      providerName,
-      targetPublicKey,
-      expirationSeconds = '86400',
-    } = req.body;
+    const { oidcToken, providerName, targetPublicKey, expirationSeconds = '3600' } = req.body;
+    
+    if (!oidcToken || !providerName || !targetPublicKey) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required parameters' 
+      });
+    }
+    
     let organizationId = turnkeyConfig.defaultOrganizationId;
 
-    // Check if user already exists
-    const {organizationIds} = await turnkey.getSubOrgIds({
-      filterType: 'OIDC_TOKEN',
+    // Check if user exists
+    const { organizationIds } = await turnkey.getSubOrgIds({
+      filterType: "OIDC_TOKEN",
       filterValue: oidcToken,
     });
 
@@ -173,13 +220,13 @@ router.post('/oAuthLogin', async (req: any, res: any) => {
       organizationId = organizationIds[0];
     } else {
       // Create a new sub-organization if user doesn't exist
-      const subOrgResponse = await createSubOrg({
-        oauth: {oidcToken, providerName},
+      const subOrgResult = await createSubOrg({
+        oauth: { oidcToken, providerName }
       });
-      organizationId = subOrgResponse.subOrganizationId;
+      organizationId = subOrgResult.subOrganizationId;
     }
 
-    // Create OAuth session
+    // Authenticate with OAuth
     const oauthResponse = await turnkey.oauth({
       organizationId,
       oidcToken,
@@ -191,44 +238,44 @@ router.post('/oAuthLogin', async (req: any, res: any) => {
       success: true,
       credentialBundle: oauthResponse.credentialBundle,
     });
-  } catch (err: any) {
-    console.error('Error during OAuth login:', err);
-    return res.status(500).json({success: false, error: err.message});
-  }
-});
-
-/**
- * Create a new sub-organization
- */
-router.post('/createSubOrg', async (req: any, res: any) => {
-  try {
-    const result = await createSubOrg(req.body);
-    return res.json({
-      success: true,
-      subOrganizationId: result.subOrganizationId,
+  } catch (error: any) {
+    console.error('Error in oAuthLogin:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to authenticate with OAuth' 
     });
-  } catch (err: any) {
-    console.error('Error creating sub-organization:', err);
-    return res.status(500).json({success: false, error: err.message});
   }
 });
 
 /**
  * Helper function to create a sub-organization
  */
-async function createSubOrg(params: any) {
+async function createSubOrg(params: {
+  email?: string;
+  phone?: string;
+  passkey?: {
+    challenge: string;
+    attestation: any;
+  };
+  oauth?: {
+    providerName: string;
+    oidcToken: string;
+  };
+}) {
   const { email, phone, passkey, oauth } = params;
 
+  // Configure authenticators if passkey is provided
   const authenticators = passkey
     ? [
         {
-          authenticatorName: 'Passkey',
+          authenticatorName: "Passkey",
           challenge: passkey.challenge,
           attestation: passkey.attestation,
         },
       ]
     : [];
 
+  // Configure OAuth providers if OAuth is provided
   const oauthProviders = oauth
     ? [
         {
@@ -238,21 +285,21 @@ async function createSubOrg(params: any) {
       ]
     : [];
 
+  // Extract user email from OAuth token if available
   let userEmail = email;
-
   if (oauth) {
-    // Try to extract email from OIDC token
     const decoded = decodeJwt(oauth.oidcToken);
     if (decoded?.email) {
       userEmail = decoded.email;
     }
   }
 
+  // Create a name for the sub-organization
   const userPhoneNumber = phone;
-  const subOrganizationName = `Sub Org - ${email || phone || 'User'}`;
-  const userName = userEmail ? userEmail.split('@')[0] || userEmail : 'user';
+  const subOrganizationName = `Sub Org - ${email || phone || 'OAuth User'}`;
+  const userName = userEmail ? userEmail.split("@")[0] || userEmail : "User";
 
-  // Create the sub-organization with Solana wallet
+  // Create the sub-organization
   const result = await turnkey.createSubOrganization({
     organizationId: turnkeyConfig.defaultOrganizationId,
     subOrganizationName,
@@ -268,35 +315,12 @@ async function createSubOrg(params: any) {
     ],
     rootQuorumThreshold: 1,
     wallet: {
-      walletName: 'Solana Wallet',
-      accounts: DEFAULT_SOLANA_ACCOUNTS,
+      walletName: "Default Wallet",
+      accounts: DEFAULT_ETHEREUM_ACCOUNTS,
     },
   });
 
   return { subOrganizationId: result.subOrganizationId };
 }
 
-/**
- * Helper function to decode JWT token
- */
-function decodeJwt(token: string) {
-  try {
-    // Simple parsing of JWT without verification
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        })
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Error decoding JWT:', error);
-    return null;
-  }
-}
-
-export { router as turnkeyAuthRouter }; 
+export default router; 

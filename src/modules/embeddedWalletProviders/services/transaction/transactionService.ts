@@ -148,10 +148,10 @@ export class TransactionService {
           }
           
           // Don't try to get provider for MWA wallets
-          if ((wallet as any).provider === 'mwa') {
+          if (wallet.provider === 'mwa') {
             filteredStatusCallback?.('Opening mobile wallet for transaction approval...');
             this.log("Standard wallet with MWA provider, using MWA flow");
-            const walletAddress = (wallet as any).address || (wallet as any).publicKey;
+            const walletAddress = wallet.address || wallet.publicKey;
             if (!walletAddress) {
               throw new Error('No wallet address found for MWA wallet');
             }
@@ -190,20 +190,17 @@ export class TransactionService {
           );
           break;
         case 'turnkey':
-          signature = await this.signAndSendWithTurnkey(
-            transaction,
-            connection,
-            normalizedProvider.walletAddress
-          );
+          // Implementation for Turnkey would go here
+          throw new Error('Turnkey provider not yet implemented');
           break;
         case 'autodetect':
           // Auto-detect provider type based on the currentProvider value
-          if ((normalizedProvider as any).currentProvider === 'mwa') {
+          if (normalizedProvider.currentProvider === 'mwa') {
             filteredStatusCallback?.('Opening mobile wallet for transaction approval...');
             this.log("Autodetected MWA provider");
             const walletAddress = 
-              (normalizedProvider as any).provider.address || 
-              (normalizedProvider as any).provider.publicKey;
+              normalizedProvider.provider.address || 
+              normalizedProvider.provider.publicKey;
             
             if (!walletAddress) {
               throw new Error('No wallet address found for MWA provider');
@@ -215,20 +212,20 @@ export class TransactionService {
               walletAddress
             );
           }
-          else if ((normalizedProvider as any).currentProvider === 'privy') {
+          else if (normalizedProvider.currentProvider === 'privy') {
             signature = await this.signAndSendWithPrivy(
               transaction,
               connection,
-              (normalizedProvider as any).provider
+              normalizedProvider.provider
             );
-          } else if ((normalizedProvider as any).currentProvider === 'dynamic') {
+          } else if (normalizedProvider.currentProvider === 'dynamic') {
             // For dynamic, we need to get the wallet address from the provider
-            if ((normalizedProvider as any).provider && (normalizedProvider as any).provider.address) {
+            if (normalizedProvider.provider && normalizedProvider.provider.address) {
               // If provider has address directly (our standardized object)
               signature = await this.signAndSendWithDynamic(
                 transaction,
                 connection,
-                (normalizedProvider as any).provider.address
+                normalizedProvider.provider.address
               );
             } else {
               // Try to get from Dynamic client
@@ -245,11 +242,11 @@ export class TransactionService {
                 address
               );
             }
-          } else if ((normalizedProvider as any).currentProvider === 'mwa') {
+          } else if (normalizedProvider.currentProvider === 'mwa') {
             filteredStatusCallback?.('Opening mobile wallet for transaction approval...');
             const walletAddress = 
-              (normalizedProvider as any).provider.address || 
-              (normalizedProvider as any).provider.publicKey;
+              normalizedProvider.provider.address || 
+              normalizedProvider.provider.publicKey;
             
             if (!walletAddress) {
               throw new Error('No wallet address found for MWA provider');
@@ -261,7 +258,7 @@ export class TransactionService {
               walletAddress
             );
           } else {
-            throw new Error(`Unsupported provider type: ${(normalizedProvider as any).currentProvider}`);
+            throw new Error(`Unsupported provider type: ${normalizedProvider.currentProvider}`);
           }
           break;
         default:
@@ -318,9 +315,9 @@ export class TransactionService {
     // First, check for MWA wallet - this should be prioritized
     if (provider && typeof provider === 'object') {
       // Check for special isMWAProvider flag (from our useWallet hook)
-      if ((provider as any).isMWAProvider) {
+      if (provider.isMWAProvider) {
         this.log("Detected special MWA provider from useWallet");
-        const walletAddress = (provider as any).address;
+        const walletAddress = provider.address;
         if (!walletAddress) {
           throw new Error('No wallet address found in MWA provider');
         }
@@ -331,9 +328,9 @@ export class TransactionService {
       }
       
       // Direct check for MWA provider
-      if ((provider as any).provider === 'mwa') {
+      if (provider.provider === 'mwa') {
         this.log("Detected MWA wallet by provider property");
-        const walletAddress = (provider as any).address || (provider as any).publicKey;
+        const walletAddress = provider.address || provider.publicKey;
         if (!walletAddress) {
           throw new Error('No wallet address found for MWA provider');
         }
@@ -344,12 +341,12 @@ export class TransactionService {
       }
       
       // Check via getWalletInfo for MWA
-      if (typeof (provider as any).getWalletInfo === 'function') {
+      if (typeof provider.getWalletInfo === 'function') {
         try {
-          const walletInfo = (provider as any).getWalletInfo();
+          const walletInfo = provider.getWalletInfo();
           if (walletInfo && walletInfo.walletType === 'MWA') {
             this.log("Detected MWA wallet by wallet info");
-            const walletAddress = (provider as any).address || (provider as any).publicKey;
+            const walletAddress = provider.address || provider.publicKey;
             if (!walletAddress) {
               this.log("MWA wallet detected but no address found, falling back to standard");
               return { 
@@ -383,9 +380,9 @@ export class TransactionService {
       this.log("Detected StandardWallet with provider:", provider.provider);
       
       // Special case for MWA Standard wallet
-      if ((provider as any).provider === 'mwa') {
+      if (provider.provider === 'mwa') {
         this.log("Detected StandardWallet with MWA provider");
-        const walletAddress = (provider as any).address || (provider as any).publicKey;
+        const walletAddress = provider.address || provider.publicKey;
         if (!walletAddress) {
           this.log("MWA wallet detected but no address found, falling back to standard");
           return { 
@@ -408,28 +405,28 @@ export class TransactionService {
     // If it has a type property indicating it's from a specific wallet provider
     if (provider && typeof provider === 'object') {
       // Detect Privy wallet
-      if ((provider as any).type === 'privy' || 
-          ((provider as any).provider && (provider as any).provider === 'privy') ||
+      if (provider.type === 'privy' || 
+          (provider.provider && provider.provider === 'privy') ||
           // Additional Privy-specific checks
-          ((provider as any).wallets && Array.isArray((provider as any).wallets) && (provider as any).getProvider)) {
+          (provider.wallets && Array.isArray(provider.wallets) && provider.getProvider)) {
         this.log("Detected Privy wallet");
         return { type: 'privy', provider };
       }
       
       // Detect Dynamic wallet
-      if ((provider as any).type === 'dynamic' || 
-          ((provider as any).provider && (provider as any).provider === 'dynamic') ||
+      if (provider.type === 'dynamic' || 
+          (provider.provider && provider.provider === 'dynamic') ||
           // Additional Dynamic-specific properties
-          (provider as any)._dynamicSdk ||
-          ((provider as any).wallet && (provider as any).wallet.type === 'dynamic_embedded_wallet')) {
+          provider._dynamicSdk ||
+          (provider.wallet && provider.wallet.type === 'dynamic_embedded_wallet')) {
         this.log("Detected Dynamic wallet");
         
         let walletAddress = '';
         
         if ('address' in provider) {
-          walletAddress = (provider as any).address;
-        } else if ((provider as any).wallets && (provider as any).wallets[0]) {
-          walletAddress = (provider as any).wallets[0].publicKey || (provider as any).wallets[0].address || '';
+          walletAddress = provider.address;
+        } else if (provider.wallets && provider.wallets[0]) {
+          walletAddress = provider.wallets[0].publicKey || provider.wallets[0].address;
         }
         
         if (walletAddress) {
@@ -441,18 +438,18 @@ export class TransactionService {
     // For backward compatibility - ensure we correctly identify wallet types
     if (provider && typeof provider === 'object') {
       // Special detection for the exact structure provided by useAuth's solanaWallet for Privy
-      if ((provider as any).wallets && (provider as any).getProvider && !((provider as any).type) && !((provider as any).provider)) {
+      if (provider.wallets && provider.getProvider && !provider.type && !provider.provider) {
         this.log("Detected classic Privy wallet structure from useAuth");
         return { type: 'privy', provider };
       }
       
       // Special detection for the exact structure provided by Dynamic client
-      if (((provider as any).primary || (provider as any).userWallets) && !((provider as any).type) && !((provider as any).provider)) {
+      if ((provider.primary || provider.userWallets) && !provider.type && !provider.provider) {
         this.log("Detected Dynamic client or wallet collection");
         // Try to extract a wallet from primary or userWallets
-        const walletToUse = (provider as any).primary || 
-                          ((provider as any).userWallets && ((provider as any).userWallets.length > 0 ? 
-                            (provider as any).userWallets[0] : null));
+        const walletToUse = provider.primary || 
+                          (provider.userWallets && provider.userWallets.length > 0 ? 
+                            provider.userWallets[0] : null);
                             
         if (walletToUse && walletToUse.address) {
           return { type: 'dynamic', walletAddress: walletToUse.address };
@@ -468,15 +465,15 @@ export class TransactionService {
         
     if (provider && typeof provider === 'object') {
       // If we have a wallets array or a primary/current wallet, this is likely one of our providers
-      if ((provider as any).wallets || (provider as any).primary || (provider as any).current) {
+      if (provider.wallets || provider.primary || provider.current) {
         this.log("Provider has wallet collections, treating as dynamic");
         
         // Try to extract a wallet address
         let walletAddress = '';
-        if ((provider as any).wallets && (provider as any).wallets[0]) {
-          walletAddress = (provider as any).wallets[0].publicKey || (provider as any).wallets[0].address;
-        } else if ((provider as any).primary) {
-          walletAddress = (provider as any).primary.address;
+        if (provider.wallets && provider.wallets[0]) {
+          walletAddress = provider.wallets[0].publicKey || provider.wallets[0].address;
+        } else if (provider.primary) {
+          walletAddress = provider.primary.address;
         }
         
         if (walletAddress) {
@@ -494,10 +491,10 @@ export class TransactionService {
     
     // Default to autodetect with better provider type detection
     const providerType = 
-      ((provider as any)?.provider) || 
-      ((provider as any)?.type) || 
-      (provider && typeof provider === 'object' && (provider as any).wallets ? 'privy' : 
-       (provider && typeof provider === 'object' && (provider as any).provider === 'mwa' ? 'mwa' : 'unknown'));
+      (provider as any)?.provider || 
+      (provider as any)?.type || 
+      (provider && typeof provider === 'object' && provider.wallets ? 'privy' : 
+       (provider && typeof provider === 'object' && provider.provider === 'mwa' ? 'mwa' : 'unknown'));
       
     this.log("Using autodetect with provider type:", providerType);
       
@@ -1014,62 +1011,6 @@ export class TransactionService {
     } catch (error: any) {
       this.log('MWA module error:', error);
       throw new Error(`MWA transaction failed: ${error.message}`);
-    }
-  }
-
-  /**
-   * Private method to sign and send a transaction using Turnkey
-   */
-  private static async signAndSendWithTurnkey(
-    transaction: AnyTransaction,
-    connection: Connection,
-    walletAddress: string
-  ): Promise<string> {
-    try {
-      console.log('Signing transaction with Turnkey for address:', walletAddress);
-      
-      // This is where we would use the Turnkey SDK to sign the transaction
-      // For now, we'll throw an error since this needs to be properly implemented
-      
-      /* 
-      // Example implementation would look something like this:
-      const turnkeyClient = getTurnkeyClient();
-      
-      // 1. Sign the transaction with Turnkey
-      // Serialize the transaction for signing
-      const serializedTx = transaction instanceof VersionedTransaction 
-        ? transaction.serialize()
-        : transaction.serialize();
-        
-      // Send to Turnkey for signing
-      const signedTxResponse = await turnkeyClient.signSolanaTransaction({
-        organizationId: TURNKEY_ORGANIZATION_ID,
-        type: 'ACTIVITY_TYPE_SIGN_SOLANA_TRANSACTION',
-        timestampMs: Date.now().toString(),
-        parameters: {
-          walletId: walletId, // Would need the wallet ID
-          transactionData: Buffer.from(serializedTx).toString('base64'),
-        }
-      });
-      
-      // 2. Get the signed transaction
-      const signedTxData = signedTxResponse.activity.result.signSolanaTransactionResult.signedTransaction;
-      const signedTxBuffer = Buffer.from(signedTxData, 'base64');
-      
-      // 3. Send the signed transaction to the network
-      const signature = await connection.sendRawTransaction(signedTxBuffer, {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed',
-        maxRetries: 3
-      });
-      
-      return signature;
-      */
-      
-      throw new Error('Turnkey transaction signing not yet implemented');
-    } catch (error: any) {
-      console.error('Error signing with Turnkey:', error);
-      throw new Error(`Turnkey signing failed: ${error.message}`);
     }
   }
 }

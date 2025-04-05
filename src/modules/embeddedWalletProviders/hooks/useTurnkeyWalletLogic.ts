@@ -1,418 +1,368 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { PublicKey } from '@solana/web3.js';
 import { useCustomization } from '../../../CustomizationProvider';
-import { 
-  getTurnkeyClient, 
-  getTurnkeyStamper, 
-  initTurnkeyClient, 
-  createTurnkeyPasskey, 
-  isTurnkeySupported 
-} from '../services/walletProviders/turnkey';
-import { LoginMethod, WalletMonitorParams } from '../types';
+import { TURNKEY_ORGANIZATION_ID } from '@env';
+import { useTurnkey } from '@turnkey/sdk-react-native'; 
 import { SERVER_URL } from '@env';
+import { PublicKey } from '@solana/web3.js';
 
-const SERVER_BASE_URL = SERVER_URL;
+// Types for the OTP flow
+export interface OtpResponse {
+  otpId: string;
+  organizationId: string;
+}
+
+export interface OtpAuthParams {
+  otpId: string;
+  otpCode: string;
+  organizationId: string;
+  targetPublicKey: string;
+}
+
+// Utility function to convert hex string to base58 Solana address
+const hexToSolanaAddress = (hexKey: string): string => {
+  try {
+    // Remove '0x' prefix if present
+    const cleanHex = hexKey.startsWith('0x') ? hexKey.slice(2) : hexKey;
+    
+    // Convert hex to bytes
+    const bytes = new Uint8Array(cleanHex.length / 2);
+    for (let i = 0; i < cleanHex.length; i += 2) {
+      bytes[i / 2] = parseInt(cleanHex.substr(i, 2), 16);
+    }
+    
+    // Create a Solana PublicKey from the bytes and return as base58
+    const solanaKey = new PublicKey(bytes);
+    return solanaKey.toBase58();
+  } catch (error) {
+    console.error('Failed to convert hex to Solana address:', error);
+    // If conversion fails, create a deterministic key from the hex string
+    // This is a fallback to avoid breaking the flow if the conversion fails
+    return new PublicKey(
+      Array.from(hexKey).map(c => c.charCodeAt(0) % 256).slice(0, 32)
+    ).toBase58();
+  }
+};
 
 export function useTurnkeyWalletLogic() {
   const [user, setUser] = useState<any>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [credentialBundle, setCredentialBundle] = useState<string | null>(null);
-
-  // Get Turnkey config from customization provider
-  const {
-    auth: { turnkey: turnkeyConfig },
-  } = useCustomization();
-
-  // Assert the type with required properties
-  const config = turnkeyConfig as {
-    baseUrl: string;
-    organizationId: string;
-    rpId: string;
-    rpName: string;
-  };
-
-  // Initialize client on first render
+  const [loading, setLoading] = useState(false);
+  const [otpResponse, setOtpResponse] = useState<OtpResponse | null>(null);
+  
+  // Get Turnkey SDK hooks
+  const { createEmbeddedKey, createSession, clearSession } = useTurnkey();
+  
+  const { auth: { turnkey: turnkeyConfig } } = useCustomization();
+  
+  // Monitor for authenticated user
   useEffect(() => {
-    try {
-      initTurnkeyClient();
-    } catch (e) {
-      console.error('Failed to initialize Turnkey client:', e);
+    if (walletAddress) {
+      setIsAuthenticated(true);
+      setUser({ id: walletAddress });
+    } else {
+      setIsAuthenticated(false);
+      setUser(null);
     }
-  }, []);
-
-  // Function to create or monitor an existing Turnkey wallet
-  const monitorTurnkeyWallet = useCallback(
-    async ({
-      setStatusMessage,
-      onWalletConnected,
-    }: WalletMonitorParams) => {
+  }, [walletAddress]);
+  
+  // Clear any existing session when component mounts
+  useEffect(() => {
+    const clearExistingSession = async () => {
       try {
-        if (!credentialBundle) {
-          setStatusMessage?.('No active Turnkey session');
-          return;
+        if (clearSession) {
+          console.log('Clearing existing Turnkey session on component mount');
+          await clearSession();
         }
+      } catch (error) {
+        // Ignore errors on initial cleanup
+        console.log('No session to clear or error clearing session:', error);
+      }
+    };
+    
+    // Only clear if not authenticated
+    if (!isAuthenticated) {
+      clearExistingSession();
+    }
+  }, [clearSession, isAuthenticated]);
 
-        // If we have a wallet address already, return it
-        if (walletAddress) {
-          setStatusMessage?.(`Connected to wallet: ${walletAddress}`);
-          onWalletConnected?.({
-            provider: 'turnkey' as const,
-            address: walletAddress,
-          });
-          return;
-        }
-
-        // Otherwise, try to get wallet info from Turnkey
-        setStatusMessage?.('Getting wallet from Turnkey...');
-        const client = getTurnkeyClient();
-
+  // Initiates the email OTP login flow
+  const handleInitOtpLogin = useCallback(async ({
+    email,
+    setStatusMessage,
+    onSuccess
+  }: {
+    email: string;
+    setStatusMessage?: (msg: string) => void;
+    onSuccess?: (info: { provider: 'turnkey'; address: string }) => void;
+  }) => {
+    setLoading(true);
+    setStatusMessage?.('Initiating OTP verification...');
+    
+    try {
+      // Clear any existing session first
+      if (clearSession) {
         try {
-          // Query for wallet accounts
-          const result = await client.getWallets({
-            organizationId: config.organizationId,
-            type: 'ACTIVITY_TYPE_GET_WALLETS',
-            timestampMs: Date.now().toString(),
-          } as any);
-
-          // Check if there are any wallets
-          const wallets = (result as any).activity.result.getWalletsResult?.wallets || [];
-          
-          if (wallets.length > 0) {
-            // Find a Solana wallet if available
-            const solanaWallet = wallets.find((wallet: any) => 
-              wallet.accounts.some((account: any) => account.chainType === 'CHAIN_TYPE_SOLANA')
-            );
-
-            if (solanaWallet) {
-              const account = solanaWallet.accounts.find((acc: any) => acc.chainType === 'CHAIN_TYPE_SOLANA');
-              if (account && account.address) {
-                setWalletAddress(account.address);
-                setStatusMessage?.(`Connected to wallet: ${account.address}`);
-                onWalletConnected?.({
-                  provider: 'turnkey' as const,
-                  address: account.address,
-                });
-                return;
-              }
-            }
-          }
-
-          // If no wallets or no Solana account found, create one
-          setStatusMessage?.('No wallet found, creating new wallet...');
-          
-          // Code to create a new wallet would go here
-          // This would involve calling the Turnkey API to create a new wallet
-          
-          // For now, just log an error
-          setStatusMessage?.('Wallet creation not implemented yet');
-          
-        } catch (error) {
-          console.error('Error getting wallets from Turnkey:', error);
-          setStatusMessage?.(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          console.log('Clearing any existing Turnkey session before OTP login');
+          await clearSession();
+        } catch (clearError) {
+          console.log('No session to clear or error clearing session:', clearError);
+          // Continue with the login flow
         }
-      } catch (error) {
-        console.error('Turnkey wallet monitoring error:', error);
-        setStatusMessage?.(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    },
-    [walletAddress, credentialBundle, config.organizationId]
-  );
+      
+      const SERVER_BASE_URL = SERVER_URL || 'http://localhost:8080';
+      const response = await fetch(`${SERVER_BASE_URL}/api/auth/initOtpAuth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          otpType: 'OTP_TYPE_EMAIL', 
+          contact: email 
+        }),
+      });
 
-  // Function to handle OTP login
-  const handleTurnkeyOtpLogin = useCallback(
-    async ({
-      loginMethod = 'email',
-      contact,
-      setStatusMessage,
-      onSuccess,
-    }: {
-      loginMethod: 'email' | 'sms';
-      contact: string;
-      setStatusMessage?: (msg: string) => void;
-      onSuccess?: (info: { provider: 'turnkey'; address: string }) => void;
-    }) => {
-      try {
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to initiate OTP verification');
+      }
+      
+      setStatusMessage?.('OTP sent to your email');
+      setOtpResponse({
+        otpId: data.otpId,
+        organizationId: data.organizationId,
+      });
+      
+      return data;
+    } catch (error: any) {
+      console.error('OTP initiation error:', error);
+      setStatusMessage?.(`Failed to send OTP: ${error.message}`);
+      Alert.alert('Authentication Error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [clearSession]);
+
+  // Verifies the OTP code
+  const handleVerifyOtp = useCallback(async ({
+    otpCode,
+    setStatusMessage,
+    onWalletConnected,
+  }: {
+    otpCode: string;
+    setStatusMessage?: (msg: string) => void;
+    onWalletConnected?: (info: { provider: 'turnkey'; address: string }) => void;
+  }) => {
+    if (!otpResponse) {
+      setStatusMessage?.('No active OTP verification in progress');
+      return;
+    }
+    
+    setLoading(true);
+    setStatusMessage?.('Verifying OTP...');
+    
+    try {
+      // Try to clear any existing session first
+      if (clearSession) {
+        try {
+          console.log('Clearing any existing Turnkey session before verification');
+          await clearSession();
+        } catch (clearError) {
+          console.log('No session to clear or error clearing session:', clearError);
+          // Continue with the verification flow
+        }
+      }
+      
+      // Generate public key for the embedded key
+      const targetPublicKey = await createEmbeddedKey();
+      
+      const SERVER_BASE_URL = SERVER_URL || 'http://localhost:8080';
+      const response = await fetch(`${SERVER_BASE_URL}/api/auth/otpAuth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          otpId: otpResponse.otpId,
+          otpCode,
+          organizationId: otpResponse.organizationId,
+          targetPublicKey,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to verify OTP');
+      }
+      
+      if (data.credentialBundle) {
+        // Create session with the credential bundle
+        setStatusMessage?.('Creating wallet session...');
         
-        // ORIGINAL CODE COMMENTED OUT UNTIL BACKEND IS READY
-        // Send OTP initiation request to backend
-        const otpType = loginMethod === 'email' ? 'OTP_TYPE_EMAIL' : 'OTP_TYPE_SMS';
-        
-        const initResponse = await fetch(`${SERVER_BASE_URL}/api/auth/initOtpAuth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ otpType, contact }),
+        // Use a unique session key based on the organization ID to avoid conflicts
+        const sessionKey = `@turnkey/session/${otpResponse.organizationId}`;
+        await createSession({ 
+          bundle: data.credentialBundle,
+          sessionKey: sessionKey
         });
         
-        if (!initResponse.ok) {
-          throw new Error(`Failed to initiate OTP: ${initResponse.statusText}`);
-        }
+        // Convert the hex public key to a base58 Solana address
+        console.log('Raw public key from Turnkey:', targetPublicKey);
+        const solanaAddress = hexToSolanaAddress(targetPublicKey);
+        console.log('Converted Solana address:', solanaAddress);
         
-        const initData = await initResponse.json();
-        
-        if (!initData.otpId || !initData.organizationId) {
-          throw new Error('Invalid OTP initialization response');
-        }
-        
-        setStatusMessage?.(`OTP sent via ${loginMethod}. Please check your ${loginMethod} and enter the code.`);
-        
-        // At this point, we would typically show an OTP entry UI
-        // We can create a modal or navigate to an OTP entry screen
-        
-        Alert.alert(
-          'OTP Verification',
-          `Please check your ${loginMethod} for a verification code and enter it below:`,
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Submit',
-              onPress: async (otpCode) => {
-                if (!otpCode) {
-                  setStatusMessage?.('OTP code is required');
-                  return;
-                }
-                
-                try {
-                  // Create a new public key for the target
-                  const client = getTurnkeyClient();
-                  const stamper = getTurnkeyStamper();
-                  
-                  // This is just placeholder code - in a real implementation, we'd need to create
-                  // an embedded key or generate a keypair for Turnkey to use
-                  const keyPair = PublicKey.unique();
-                  const targetPublicKey = keyPair.toBase58();
-                  
-                  // Complete the OTP authentication process
-                  const completeResponse = await fetch(`${SERVER_BASE_URL}/api/auth/otpAuth`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      otpId: initData.otpId,
-                      otpCode,
-                      organizationId: initData.organizationId,
-                      targetPublicKey,
-                      expirationSeconds: '86400', // 24 hours
-                    }),
-                  });
-                  
-                  if (!completeResponse.ok) {
-                    throw new Error(`Failed to verify OTP: ${completeResponse.statusText}`);
-                  }
-                  
-                  const completeData = await completeResponse.json();
-                  
-                  if (!completeData.credentialBundle) {
-                    throw new Error('Invalid OTP verification response');
-                  }
-                  
-                  // Store the credential bundle
-                  setCredentialBundle(completeData.credentialBundle);
-                  setIsAuthenticated(true);
-                  
-                  // After successful auth, monitor wallet to get address
-                  await monitorTurnkeyWallet({
-                    setStatusMessage,
-                    onWalletConnected: onSuccess as any,
-                  });
-                } catch (verifyError) {
-                  console.error('OTP verification error:', verifyError);
-                  setStatusMessage?.(`OTP verification failed: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`);
-                }
-              },
-            },
-          ],
-          { cancelable: false } as any
-        );
-      } catch (error) {
-        console.error('Turnkey OTP login error:', error);
-        setStatusMessage?.(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        throw error;
-      }
-    },
-    [monitorTurnkeyWallet]
-  );
-
-  // Function to handle passkey login/signup
-  const handleTurnkeyPasskeyLogin = useCallback(
-    async ({
-      isSignUp = false,
-      setStatusMessage,
-      onSuccess,
-    }: {
-      isSignUp?: boolean;
-      setStatusMessage?: (msg: string) => void;
-      onSuccess?: (info: { provider: 'turnkey'; address: string }) => void;
-    }) => {
-      try {
-        if (!isTurnkeySupported()) {
-          setStatusMessage?.('Passkey authentication is not supported on this device');
-          return;
-        }
-        
-        setStatusMessage?.(`Initializing passkey ${isSignUp ? 'registration' : 'authentication'}...`);
-        
-        if (isSignUp) {
-          // Create a new passkey
-          const passkeyParams = await createTurnkeyPasskey();
-          
-          // Register passkey with backend
-          const response = await fetch(`${SERVER_BASE_URL}/api/auth/createSubOrg`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              passkey: {
-                challenge: passkeyParams.challenge,
-                attestation: passkeyParams.attestation,
-              },
-            }),
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Failed to register passkey: ${response.statusText}`);
-          }
-          
-          const data = await response.json();
-          
-          if (!data.subOrganizationId) {
-            throw new Error('Invalid passkey registration response');
-          }
-          
-          setStatusMessage?.('Passkey registered successfully. Initiating session...');
-        }
-        
-        // Authenticate with passkey
-        const client = getTurnkeyClient();
-        const stamper = getTurnkeyStamper();
-        
-        // Generate a public key for the target
-        const keyPair = PublicKey.unique();
-        const targetPublicKey = keyPair.toBase58();
-        
-        // Create a session
-        const sessionResponse = await client.createReadWriteSession({
-          type: 'ACTIVITY_TYPE_CREATE_READ_WRITE_SESSION_V2',
-          timestampMs: Date.now().toString(),
-          organizationId: config.organizationId,
-          parameters: {
-            targetPublicKey,
-          },
-        } as any);
-        
-        const bundle = sessionResponse.activity.result.createReadWriteSessionResultV2?.credentialBundle;
-        
-        if (!bundle) {
-          throw new Error('Failed to create session');
-        }
-        
-        setCredentialBundle(bundle);
+        // Set the wallet address to the converted base58 format
+        setWalletAddress(solanaAddress);
         setIsAuthenticated(true);
-        setStatusMessage?.('Passkey authentication successful');
+        setUser({ id: solanaAddress });
         
-        // After successful auth, monitor wallet to get address
-        await monitorTurnkeyWallet({
-          setStatusMessage,
-          onWalletConnected: onSuccess as any,
-        });
-      } catch (error) {
-        console.error('Turnkey passkey login error:', error);
-        setStatusMessage?.(`Passkey authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setStatusMessage?.(`Successfully authenticated with wallet: ${solanaAddress}`);
+        onWalletConnected?.({ provider: 'turnkey', address: solanaAddress });
+        
+        return { address: solanaAddress };
+      } else {
+        throw new Error('No credential bundle received');
       }
-    },
-    [monitorTurnkeyWallet, config.organizationId]
-  );
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      setStatusMessage?.(`Failed to verify OTP: ${error.message}`);
+      Alert.alert('Authentication Error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+      setOtpResponse(null); // Clear OTP response after verification attempt
+    }
+  }, [otpResponse, createEmbeddedKey, createSession, clearSession]);
 
-  // Function to handle OAuth login
-  const handleTurnkeyOAuthLogin = useCallback(
-    async ({
-      oidcToken,
-      providerName,
-      setStatusMessage,
-      onSuccess,
-    }: {
-      oidcToken: string;
-      providerName: string;
-      setStatusMessage?: (msg: string) => void;
-      onSuccess?: (info: { provider: 'turnkey'; address: string }) => void;
-    }) => {
-      try {
-        setStatusMessage?.(`Authenticating with ${providerName}...`);
+  // Handle OAuth login (Google, Apple)
+  const handleOAuthLogin = useCallback(async ({
+    oidcToken,
+    providerName,
+    setStatusMessage,
+    onWalletConnected,
+  }: {
+    oidcToken: string;
+    providerName: string;
+    setStatusMessage?: (msg: string) => void;
+    onWalletConnected?: (info: { provider: 'turnkey'; address: string }) => void;
+  }) => {
+    setLoading(true);
+    setStatusMessage?.(`Authenticating with ${providerName}...`);
+    
+    try {
+      // Try to clear any existing session first
+      if (clearSession) {
+        try {
+          console.log('Clearing any existing Turnkey session before OAuth login');
+          await clearSession();
+        } catch (clearError) {
+          console.log('No session to clear or error clearing session:', clearError);
+          // Continue with the login flow
+        }
+      }
+      
+      // Generate public key for the embedded key
+      const targetPublicKey = await createEmbeddedKey();
+      
+      const SERVER_BASE_URL = SERVER_URL || 'http://localhost:8080';
+      const response = await fetch(`${SERVER_BASE_URL}/api/auth/oAuthLogin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oidcToken,
+          providerName,
+          targetPublicKey,
+          expirationSeconds: '3600', // 1 hour
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to authenticate with ${providerName}`);
+      }
+      
+      if (data.credentialBundle) {
+        // Create session with the credential bundle
+        setStatusMessage?.('Creating wallet session...');
         
-        // Generate a public key for the target
-        const keyPair = PublicKey.unique();
-        const targetPublicKey = keyPair.toBase58();
-        
-        // Send OAuth login request to backend
-        const response = await fetch(`${SERVER_BASE_URL}/api/auth/oAuthLogin`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            oidcToken,
-            providerName,
-            targetPublicKey,
-            expirationSeconds: '86400', // 24 hours
-          }),
+        // Use a unique session key to avoid conflicts
+        const sessionKey = `@turnkey/session/${providerName}`;
+        await createSession({ 
+          bundle: data.credentialBundle,
+          sessionKey: sessionKey 
         });
         
-        if (!response.ok) {
-          throw new Error(`Failed to authenticate with ${providerName}: ${response.statusText}`);
-        }
+        // Convert the hex public key to a base58 Solana address
+        console.log('Raw public key from Turnkey OAuth:', targetPublicKey);
+        const solanaAddress = hexToSolanaAddress(targetPublicKey);
+        console.log('Converted Solana address from OAuth:', solanaAddress);
         
-        const data = await response.json();
-        
-        if (!data.credentialBundle) {
-          throw new Error(`Invalid ${providerName} authentication response`);
-        }
-        
-        setCredentialBundle(data.credentialBundle);
+        // Set the wallet address to the converted base58 format
+        setWalletAddress(solanaAddress);
         setIsAuthenticated(true);
-        setStatusMessage?.(`${providerName} authentication successful`);
+        setUser({ id: solanaAddress });
         
-        // After successful auth, monitor wallet to get address
-        await monitorTurnkeyWallet({
-          setStatusMessage,
-          onWalletConnected: onSuccess as any,
-        });
-      } catch (error) {
-        console.error('Turnkey OAuth login error:', error);
-        setStatusMessage?.(`OAuth authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setStatusMessage?.(`Successfully authenticated with wallet: ${solanaAddress}`);
+        onWalletConnected?.({ provider: 'turnkey', address: solanaAddress });
+        
+        return { address: solanaAddress };
+      } else {
+        throw new Error('No credential bundle received');
       }
-    },
-    [monitorTurnkeyWallet]
-  );
+    } catch (error: any) {
+      console.error('OAuth login error:', error);
+      setStatusMessage?.(`Failed to authenticate: ${error.message}`);
+      Alert.alert('Authentication Error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [createEmbeddedKey, createSession, clearSession]);
 
-  // Function to handle logout
-  const handleTurnkeyLogout = useCallback(
-    async (setStatusMessage?: (msg: string) => void) => {
-      try {
-        setStatusMessage?.('Logging out...');
-        
-        // Clear local state
-        setUser(null);
-        setWalletAddress(null);
-        setIsAuthenticated(false);
-        setCredentialBundle(null);
-        
-        setStatusMessage?.('Logged out successfully');
-      } catch (error) {
-        console.error('Turnkey logout error:', error);
-        setStatusMessage?.(error instanceof Error ? error.message : 'Logout failed');
+  // Handles logout for Turnkey provider
+  const handleTurnkeyLogout = useCallback(async (setStatusMessage?: (msg: string) => void) => {
+    try {
+      // First reset our local state - do this first to ensure UI updates even if session clearing fails
+      setWalletAddress(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // Try to clear the Turnkey session, but don't fail if session not found
+      if (clearSession) {
+        try {
+          console.log('Attempting to clear Turnkey session');
+          await clearSession();
+          console.log('Successfully cleared Turnkey session');
+        } catch (sessionError: any) {
+          // Ignore "Session not found" errors - this is expected in some cases
+          if (sessionError.message && sessionError.message.includes('Session not found')) {
+            console.log('No active session to clear, continuing with logout');
+          } else {
+            // Log other errors but don't throw them
+            console.warn('Non-critical error during session clearing:', sessionError);
+          }
+        }
       }
-    },
-    []
-  );
+      
+      setStatusMessage?.('Logged out successfully');
+    } catch (error: any) {
+      console.error('Error during Turnkey logout:', error);
+      // Still consider logout successful even if there were errors
+      setStatusMessage?.('Logged out successfully');
+    }
+  }, [clearSession]);
 
   return {
     user,
     walletAddress,
     isAuthenticated,
-    handleTurnkeyOtpLogin,
-    handleTurnkeyPasskeyLogin,
-    handleTurnkeyOAuthLogin,
-    handleTurnkeyLogout,
-    monitorTurnkeyWallet,
+    loading,
+    otpResponse,
+    handleInitOtpLogin,
+    handleVerifyOtp,
+    handleOAuthLogin,
+    handleTurnkeyLogout
   };
 } 

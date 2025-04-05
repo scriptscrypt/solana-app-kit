@@ -18,21 +18,10 @@ import ProfileScreen from '../screens/SampleUI/Threads/ProfileScreen/ProfileScre
 import { TokenMillScreen } from '../modules/tokenMill';
 import { PumpfunScreen } from '../modules/pumpFun';
 import PumpSwapScreen from '../modules/pumpSwap/screens/PumpSwapScreen';
-import { TurnkeyOtpAuth } from '../modules/embeddedWalletProviders/components/turnkey';
 
 export type RootStackParamList = {
   LoginOptions: undefined;
-  Login: undefined;
   MainTabs: undefined;
-  SettingsScreen: undefined;
-  SwapScreen: undefined;
-  ProfileScreen: { userId?: string } | undefined;
-  TurnkeyOtpAuth: {
-    email: string;
-    otpId: string;
-    organizationId: string;
-    onSuccess: (info: { provider: 'turnkey'; address: string }) => void;
-  };
   CoinDetailPage: undefined;
   Blink: undefined;
   IntroScreen: undefined;
@@ -45,6 +34,7 @@ export type RootStackParamList = {
   OtherProfile: { userId: string };
   PostThread: { postId: string };
   FollowersFollowingList: undefined;
+  ProfileScreen: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -74,11 +64,6 @@ export default function RootNavigator() {
             options={{ title: '' }} // or "Followers / Following"
           />
           <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-          <Stack.Screen
-            name="TurnkeyOtpAuth"
-            component={TurnkeyOtpAuth as React.ComponentType<any>}
-            options={{ headerShown: false }}
-          />
         </>
       ) : (
         <>
