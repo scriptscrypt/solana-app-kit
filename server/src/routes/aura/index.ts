@@ -1,10 +1,5 @@
 import express, { Request, Response } from "express";
-import cors from "cors";
 import { config } from "dotenv";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { dasApi } from "@metaplex-foundation/digital-asset-standard-api";
-import { PublicKey } from "@solana/web3.js";
-import { promises } from "dns";
 import{
 GetAssetsByOwnerParams, 
 GetAssetsByAuthorityParams, 
@@ -20,11 +15,7 @@ GetAssetProofBatchParams
 
 config();
 const router = express.Router() as any;
-const PORT = process.env.PORT || 8080;
 
-// Middleware
-router.use(cors());
-router.use(express.json());
 
 async function fetchRPC(method: string, params: any) {
     const response = await fetch(process.env.RPC_URL || "https://aura-mainnet.metaplex.com", {
@@ -399,7 +390,4 @@ router.post("/assets/search", async (req: Request<{}, {}, SearchAssetsParams>, r
     }
 });
 
-// app.listen(PORT, () => {
-//     console.log(`Server running at http://localhost:${PORT}`);
-// });
 export default router;
