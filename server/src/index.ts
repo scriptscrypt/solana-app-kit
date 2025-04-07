@@ -17,6 +17,7 @@ import { threadRouter } from './routes/feed/threadRoutes';
 import profileImageRouter from './routes/user/userRoutes';
 import { pumpSwapRouter } from './routes/pumpfun/pumpSwapRoutes';
 import turnkeyAuthRouter from './routes/auth/turnkeyAuthRoutes';
+import auraRouter from './routes/aura';
 
 const app = express();
 app.use(express.json());
@@ -61,6 +62,7 @@ app.use('/api/thread/images', threadImageRouter);
 app.use('/api/pump-swap', pumpSwapRouter);
 app.use('/api', tokenMillRouter);
 app.use('/api/auth', turnkeyAuthRouter);
+app.use('/api/aura', auraRouter);
 
 // app.post('/api/build-compressed-nft-listing-tx', async (req: any, res: any) => {
 //   try {
