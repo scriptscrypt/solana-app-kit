@@ -71,7 +71,6 @@ A modern React Native social application built on the Solana blockchain, providi
    TURNKEY_RP_ID=host.exp.exponent
    TURNKEY_RP_NAME=send-fi
    DYNAMIC_ENVIRONMENT_ID=your_dynamic_env_id
-   HELIUS_RPC_URL=your_helius_rpc_url
    HELIUS_API_KEY=your_helius_api_key
    SERVER_URL=your_server_url
    TENSOR_API_KEY=your_tensor_api_key

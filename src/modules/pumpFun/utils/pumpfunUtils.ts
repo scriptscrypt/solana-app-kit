@@ -9,7 +9,6 @@ import {
 import {AnchorProvider} from '@coral-xyz/anchor';
 import {PumpFunSDK} from 'pumpdotfun-sdk';
 import {Buffer} from 'buffer';
-import {HELIUS_RPC_URL} from '@env';
 import { ENDPOINTS, PUBLIC_KEYS } from '../../../config/constants';
 import { 
   RaydiumSwapTransactionParams, 
@@ -21,7 +20,7 @@ import {
  * Setup: a standard AnchorProvider.
  */
 export function getProvider(): AnchorProvider {
-  const connection = new Connection(HELIUS_RPC_URL, 'confirmed');
+  const connection = new Connection(ENDPOINTS.helius, 'confirmed');
   // Dummy wallet (no signing needed here).
   const dummyWallet = {
     publicKey: new PublicKey('11111111111111111111111111111111'),

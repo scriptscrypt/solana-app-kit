@@ -4,7 +4,7 @@
  * Service for fetching and processing swap transactions for a user
  */
 
-import { HELIUS_API_KEY, HELIUS_RPC_URL, CLUSTER } from '@env';
+import { CLUSTER } from '@env';
 import { PublicKey, Connection, clusterApiUrl, Cluster } from '@solana/web3.js';
 import { ENDPOINTS } from '../config/constants';
 
@@ -41,7 +41,7 @@ export const fetchRecentSwaps = async (walletAddress: string): Promise<SwapTrans
     }
 
     // Use Helius API or fallback to cluster API URL
-    const rpcUrl = HELIUS_RPC_URL || ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
+    const rpcUrl = ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
     
     // Get swap transaction signatures (adjust limit as needed)
     const params = {
@@ -150,7 +150,7 @@ export const enrichSwapTransactions = async (swaps: SwapTransaction[]): Promise<
         try {
           // For each swap, we would get detailed transaction information
           // and extract the input and output tokens
-          const rpcUrl = HELIUS_RPC_URL || ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
+          const rpcUrl = ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
           
           const txResponse = await fetch(rpcUrl, {
             method: 'POST',

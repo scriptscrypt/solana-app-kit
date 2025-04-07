@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Cluster, clusterApiUrl, Connection, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { buyStyles as styles } from './buySection.styles';
-import { CLUSTER, HELIUS_RPC_URL, TENSOR_API_KEY } from '@env';
+import { CLUSTER, TENSOR_API_KEY } from '@env';
 import { ENDPOINTS } from '../../../config/constants';
 import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
 

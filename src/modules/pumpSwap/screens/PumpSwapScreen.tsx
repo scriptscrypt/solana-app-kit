@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Connection } from '@solana/web3.js';
 import { useWallet } from '../../embeddedWalletProviders/hooks/useWallet';
 import { useAuth } from '../../embeddedWalletProviders/hooks/useAuth';
-import { useSolanaConnection } from '../../../hooks/useSolanaConnection';
 import { useAppSelector } from '../../../hooks/useReduxHooks';
 import {
     SwapSection,
@@ -24,6 +23,7 @@ import {
     LiquidityRemoveSection,
     PoolCreationSection
 } from '../components';
+import { ENDPOINTS } from '../../../config/constants';
 
 type TabType = 'swap' | 'add' | 'remove' | 'create';
 
@@ -36,7 +36,7 @@ const PumpSwapScreen: React.FC = () => {
     const { wallet, address } = useWallet();
     const { solanaWallet } = useAuth();
     const myWallet = useAppSelector(state => state.auth.address);
-    const connection = useSolanaConnection();
+    const connection = new Connection(ENDPOINTS.helius, 'confirmed');
 
     const [activeTab, setActiveTab] = useState<TabType>('swap');
     const [loading, setLoading] = useState(false);

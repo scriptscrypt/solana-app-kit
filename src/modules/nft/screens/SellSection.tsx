@@ -26,7 +26,7 @@ import {
   createAssociatedTokenAccountInstruction,
   getAccount,
 } from '@solana/spl-token';
-import { CLUSTER, HELIUS_API_KEY, HELIUS_RPC_URL, TENSOR_API_KEY } from '@env';
+import { CLUSTER, HELIUS_API_KEY, TENSOR_API_KEY } from '@env';
 import { sellStyles as styles } from './sellSection.styles';
 import { useDispatch } from 'react-redux';
 import { ThreadSection } from '../../../core/thread/components/thread.types';

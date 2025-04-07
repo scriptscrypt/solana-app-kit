@@ -10,7 +10,6 @@ console.log('----------------------------');
   'TURNKEY_RP_ID',
   'TURNKEY_RP_NAME',
   'DYNAMIC_ENVIRONMENT_ID',
-  'HELIUS_RPC_URL', 
   'HELIUS_API_KEY',
   'SERVER_URL',
   'TENSOR_API_KEY',
