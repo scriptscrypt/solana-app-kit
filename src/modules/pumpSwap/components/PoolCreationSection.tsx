@@ -12,7 +12,7 @@ import { useWallet } from '../../walletProviders/hooks/useWallet';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { createPool } from '../services/pumpSwapService'; // <--- calls the server only
 import SelectTokenModal from '../../../core/thread/components/trade/SelectTokenModal';
-import { TokenInfo } from '../../../services/token/tokenService';
+import { TokenInfo } from '../../onChainData/services/tokenService';
 
 // Default index for pool creation
 const DEFAULT_INDEX = 1; // Index used by the server/SDK

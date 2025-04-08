@@ -14,9 +14,9 @@ import {
 import { FontAwesome5 } from '@expo/vector-icons';
 import LineGraph from '../TradeCard/LineGraph';
 import { styles } from './TokenDetailsDrawer.styles';
-import { fetchUserAssets } from '../../../../utils/common/fetch';
-import { Timeframe, useCoingecko } from '../../../../hooks/useCoingecko';
-import { fetchJupiterTokenData } from '../../../../utils/tokenUtils';
+import { fetchUserAssets } from '../../../../modules/onChainData/utils/fetch';
+import { Timeframe, useCoingecko } from '../../../../modules/onChainData/hooks/useCoingecko';
+import { fetchJupiterTokenData } from '../../../../modules/onChainData/utils/tokenUtils';
 
 const { width } = Dimensions.get('window');
 

@@ -15,7 +15,7 @@ import {
   removeLiquidity
 } from '../services/pumpSwapService'; // <--- server calls only
 import { DEFAULT_SLIPPAGE } from '../utils/pumpSwapUtils';
-import { TokenInfo } from '../../../services/token/tokenService';
+import { TokenInfo } from '../../onChainData/services/tokenService';
 import { SERVER_URL } from '@env';
 
 // Token address examples as placeholders

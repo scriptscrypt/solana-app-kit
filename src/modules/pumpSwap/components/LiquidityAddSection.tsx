@@ -16,7 +16,7 @@ import {
   addLiquidity
 } from '../services/pumpSwapService'; // <--- calls the server, not the SDK
 import { DEFAULT_SLIPPAGE } from '../utils/pumpSwapUtils';
-import { TokenInfo } from '../../../services/token/tokenService';
+import { TokenInfo } from '../../onChainData/services/tokenService';
 import { SERVER_URL } from '@env';
 
 // Token address examples as placeholders

@@ -19,7 +19,7 @@ import {
   getTimeAgo,
   extractAmountFromDescription,
   getTransactionTypeInfo
-} from '../../services/profileActions';
+} from '../../utils/profileActionsUtils';
 import { ActionsPageProps } from '../../types';
 
 interface RawTokenAmount {

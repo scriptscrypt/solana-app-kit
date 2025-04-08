@@ -8,7 +8,7 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import { SwapTransaction, TokenMetadata } from '../../../../services/swapTransactions';
+import { SwapTransaction, TokenMetadata } from '../../../../modules/onChainData/services/swapTransactions';
 import { format } from 'date-fns';
 import { FontAwesome5 } from '@expo/vector-icons';
 

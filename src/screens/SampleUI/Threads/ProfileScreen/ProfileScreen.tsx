@@ -6,7 +6,7 @@ import { ThreadPost } from '../../../../core/thread/components/thread.types';
 import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
 import { flattenPosts } from '../../../../core/thread/components/thread.utils';
 import { useFocusEffect } from '@react-navigation/native';
-import { fetchFollowers, fetchFollowing } from '../../../../services/profileService';
+import { fetchFollowers, fetchFollowing } from '../../../../core/profile/services/profileService';
 import { useFetchNFTs } from '../../../../modules/nft';
 
 export default function ProfileScreen() {

@@ -15,10 +15,10 @@ import {
 import Icon from '../../../../assets/svgs/index';
 import { getMergedTheme } from '../../../../core/thread/components/thread.styles';
 import styles from './TradeCard.style';
-import { useCoingecko, Timeframe } from '../../../../hooks/useCoingecko';
+import { useCoingecko, Timeframe } from '../../../../modules/onChainData/hooks/useCoingecko';
 import LineGraph from './LineGraph';
 import TokenDetailsDrawer from '../TokenDetailsDrawer/TokenDetailsDrawer';
-import { fetchJupiterTokenData } from '../../../../utils/tokenUtils';
+import { fetchJupiterTokenData } from '../../../../modules/onChainData/utils/tokenUtils';
 
 export interface TradeData {
   inputMint: string;

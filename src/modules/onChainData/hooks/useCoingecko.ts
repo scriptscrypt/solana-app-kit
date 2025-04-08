@@ -1,5 +1,3 @@
-// FILE: src/hooks/useCoingecko.ts
-
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   getCoinList,

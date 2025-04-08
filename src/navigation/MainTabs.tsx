@@ -9,7 +9,7 @@ import Icons from '../assets/svgs';
 
 import AnimatedTabIcon from './AnimatedTabIcon';
 import FeedScreen from '../screens/SampleUI/Threads/FeedScreen/FeedScreen';
-import NotificationsScreen from '../screens/SampleUI/Threads/NotificationsScreen';
+import SearchScreen from '../screens/SampleUI/Threads/SearchScreen';
 import ProfileScreen from '../screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
 import ModuleScreen from '../screens/Common/ModulesScreen/Modules';
 import ChatScreen from '../screens/SampleUI/Chat/ChatScreen/ChatScreen';
@@ -359,7 +359,7 @@ export default function MainTabs() {
 
         <Tab.Screen
           name="Search"
-          component={NotificationsScreen}
+          component={SearchScreen}
           options={{
             tabBarIcon: ({ focused, size }) => (
               <AnimatedTabIcon

@@ -31,7 +31,7 @@ import { sellStyles as styles } from './sellSection.styles';
 import { useDispatch } from 'react-redux';
 import { ThreadSection } from '../../../core/thread/components/thread.types';
 // import {addRootPost} from '../../../state/thread/reducer';
-import { fetchWithRetries } from '../../../utils/common/fetch';
+import { fetchWithRetries } from '../../onChainData/utils/fetch';
 import { ENDPOINTS } from '../../../config/constants';
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 

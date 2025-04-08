@@ -19,7 +19,7 @@ import {defaultTopSectionStyles} from './CoinDetailTopSection.style';
 import SuggestionsCard from '../suggestionsCard/suggestionsCard';
 import Tweet from '../tweet/tweet';
 import LineGraph from '../../Common/TradeCard/LineGraph';
-import {useCoingecko, Timeframe} from '../../../../hooks/useCoingecko';
+import {useCoingecko, Timeframe} from '../../../../modules/onChainData/hooks/useCoingecko';
 import {
   formatAmount,
   formatLiquidityAsPercentage,

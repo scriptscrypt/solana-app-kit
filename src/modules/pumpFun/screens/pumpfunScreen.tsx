@@ -13,7 +13,7 @@ import {
 
 import { styles } from './pumpfunScreen.style';
 import { useAuth } from '../../walletProviders/hooks/useAuth';
-import { fetchSolBalance, fetchTokenAccounts, TokenEntry } from '../../../utils/common/fetch';
+import { fetchSolBalance, fetchTokenAccounts, TokenEntry } from '../../onChainData/utils/fetch';
 import PumpfunBuySection from '../components/PumpfunBuySection';
 import PumpfunSellSection from '../components/PumpfunSellSection';
 import PumpfunLaunchSection from '../components/PumpfunLaunchSection';

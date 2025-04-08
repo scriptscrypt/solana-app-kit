@@ -19,7 +19,7 @@ import Icons from '../../../../assets/svgs/index';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { IPFSAwareImage, getValidImageSource } from '../../../../utils/IPFSImage';
 
-import { AssetItem, useFetchPortfolio, fixImageUrl } from '../../../../hooks/useFetchTokens';
+import { AssetItem, useFetchPortfolio, fixImageUrl } from '../../../../modules/onChainData/hooks/useFetchTokens';
 import { useAppSelector } from '../../../../hooks/useReduxHooks';
 import TradeModal from '../../../thread/components/trade/TradeModal';
 import TokenDetailsDrawer from '../../../../core/sharedUI/Common/TokenDetailsDrawer/TokenDetailsDrawer';

@@ -1,268 +1,237 @@
 /**
- * Profile actions service
- * Handles profile-related API calls and data transformations for wallet actions
+ * File: src/services/profileActions.ts
+ *
+ * Service for fetching and handling profile actions/transactions.
  */
 
-import { TransactionEvents } from '../types';
+import { HELIUS_API_KEY } from '@env';
+import { createAsyncThunk } from '@reduxjs/toolkit';
 
-/**
- * Action data model representing a wallet transaction/activity
- */
+// Basic action interface
 export interface Action {
-  id: string;
-  type: string;
-  timestamp: number;
-  description?: string;
-  amount?: number;
-  symbol?: string;
-  signature: string;
-  status: 'success' | 'failed';
-  events?: TransactionEvents;
-  source?: string;
-  fee?: number;
-  feePayer?: string;
+  signature?: string;
+  slot?: number | string;
   transactionType?: string;
-  nativeTransfers?: Array<{
-    fromUserAccount: string;
-    toUserAccount: string;
-    amount: number;
-  }>;
-  tokenTransfers?: Array<{
-    fromUserAccount: string;
-    toUserAccount: string;
-    fromTokenAccount: string;
-    toTokenAccount: string;
-    tokenAmount: number;
-    mint: string;
-    tokenName?: string;
-    symbol?: string;
-  }>;
-  accountData?: Array<{
-    account: string;
-    name?: string;
-    nativeBalanceChange?: number;
-    // other account properties
-  }>;
-  // Enriched data properties for displaying transaction info
+  type?: string;
+  instructions?: any[];
+  description?: string;
+  fee?: number;
+  timestamp?: number; // in seconds
+  feePayer?: string;
+  source?: string;
+  events?: any;
+  amount?: number;
+  tokenTransfers?: any[];
+  nativeTransfers?: any[];
+  accountData?: any[];
+  enrichedType?: string;
   enrichedData?: {
-    direction: 'IN' | 'OUT' | 'NEUTRAL';
-    counterparty?: string;
-    swapType?: string;
+    swapType?: 'TOKEN_TO_TOKEN' | 'SOL_TO_TOKEN' | 'TOKEN_TO_SOL';
+    transferType?: 'SOL' | 'TOKEN';
     inputSymbol?: string;
     outputSymbol?: string;
+    tokenSymbol?: string;
     inputAmount?: number;
     outputAmount?: number;
-    transferType?: string;
     amount?: number;
-    tokenSymbol?: string;
+    direction?: 'IN' | 'OUT' | 'NEUTRAL';
+    counterparty?: string;
     decimals?: number;
   };
-  enrichedType?: string;
 }
 
 /**
- * Format SOL amount from lamports
- * @param lamports - Amount in lamports
- * @returns Formatted SOL string with appropriate decimals
+ * Redux thunk for fetching wallet actions
  */
-export function formatSolAmount(lamports: number): string {
-  // 1 SOL = 1,000,000,000 lamports (9 decimal places)
-  const sol = lamports / 1_000_000_000;
+export const fetchWalletActionsAsync = createAsyncThunk(
+  'profile/fetchWalletActions',
+  async (walletAddress: string, { rejectWithValue }) => {
+    if (!walletAddress) {
+      return rejectWithValue('Wallet address is required');
+    }
 
-  // For small amounts, show more decimal places
-  if (Math.abs(sol) < 0.001) {
-    // For very small amounts, show enough decimal places
-    return sol.toLocaleString('en-US', {
-      minimumFractionDigits: 9,
-      maximumFractionDigits: 9,
-      useGrouping: false,
-    });
-  } else if (Math.abs(sol) < 0.01) {
-    return sol.toLocaleString('en-US', {
-      minimumFractionDigits: 6,
-      maximumFractionDigits: 6,
-      useGrouping: false,
-    });
-  }
+    try {
+      console.log('Fetching actions for wallet:', walletAddress);
+      const heliusUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&limit=20`;
 
-  return sol.toLocaleString('en-US', {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
-    useGrouping: false,
-  });
-}
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-/**
- * Format token amounts with appropriate decimal places
- * @param amount - Raw token amount
- * @param decimals - Token decimals
- * @returns Formatted token amount string
- */
-export function formatTokenAmount(amount: number, decimals: number = 0): string {
-  if (amount === 0 || decimals === 0) {
-    return amount.toString();
-  }
+      const res = await fetch(heliusUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
-  const divisor = Math.pow(10, decimals);
-  const convertedAmount = amount / divisor;
+      if (!res.ok) {
+        throw new Error(`Helius fetch failed with status ${res.status}`);
+      }
 
-  // Adjust decimal places based on amount size
-  if (Math.abs(convertedAmount) < 0.001) {
-    return convertedAmount.toLocaleString('en-US', {
-      minimumFractionDigits: Math.min(8, decimals),
-      maximumFractionDigits: Math.min(8, decimals),
-      useGrouping: false,
-    });
-  } else if (Math.abs(convertedAmount) < 0.01) {
-    return convertedAmount.toLocaleString('en-US', {
-      minimumFractionDigits: Math.min(6, decimals),
-      maximumFractionDigits: Math.min(6, decimals),
-      useGrouping: false,
-    });
-  }
-
-  return convertedAmount.toLocaleString('en-US', {
-    minimumFractionDigits: Math.min(4, decimals),
-    maximumFractionDigits: Math.min(4, decimals),
-    useGrouping: false,
-  });
-}
-
-/**
- * Get icon name and color for transaction type
- * @param type - Transaction type
- * @returns Object with icon name, color, and display label
- */
-export function getTransactionTypeInfo(type: string): {
-  icon: string;
-  color: string;
-  label: string;
-} {
-  const lowerType = type.toLowerCase();
-  
-  if (lowerType.includes('transfer')) {
-    return {
-      icon: 'exchange-alt',
-      color: '#3871DD',
-      label: 'Transfer',
-    };
-  }
-
-  if (lowerType.includes('swap')) {
-    return {
-      icon: 'sync-alt',
-      color: '#9945FF',
-      label: 'Swap',
-    };
-  }
-
-  if (lowerType.includes('buy')) {
-    return {
-      icon: 'shopping-cart',
-      color: '#14F195',
-      label: 'Buy',
-    };
-  }
-
-  if (lowerType.includes('sell')) {
-    return {
-      icon: 'tag',
-      color: '#F43860',
-      label: 'Sell',
-    };
-  }
-
-  if (lowerType.includes('stake')) {
-    return {
-      icon: 'certificate',
-      color: '#FF9C2A',
-      label: 'Stake',
-    };
-  }
-
-  if (lowerType.includes('nft')) {
-    return {
-      icon: 'image',
-      color: '#673ab7',
-      label: 'NFT',
-    };
-  }
-
-  if (lowerType.includes('sol') && lowerType.includes('transfer')) {
-    return {
-      icon: 'exchange-alt',
-      color: '#9945FF',
-      label: 'SOL Transfer',
-    };
-  } else if (lowerType.includes('token') && lowerType.includes('transfer')) {
-    return {
-      icon: 'exchange-alt',
-      color: '#8752F3',
-      label: 'Token Transfer',
-    };
-  }
-
-  // Default case
-  return {
-    icon: 'receipt',
-    color: '#607d8b',
-    label: type.charAt(0).toUpperCase() + type.slice(1),
-  };
-}
-
-/**
- * Extract a transaction amount from the description if possible
- */
-export function extractAmountFromDescription(
-  description?: string,
-): {amount: number; symbol: string} | null {
-  if (!description) return null;
-
-  // Match patterns like "0.0001 SOL" or "5 tokens"
-  const amountMatch = description.match(/(\d+\.?\d*)\s+([A-Za-z]+)/);
-  if (amountMatch && amountMatch.length >= 3) {
-    const amount = parseFloat(amountMatch[1]);
-    const symbol = amountMatch[2];
-
-    if (!isNaN(amount)) {
-      return {amount, symbol};
+      const data = await res.json();
+      console.log('Data received, items:', data?.length || 0);
+      
+      // Enrich the data with better formatted information
+      const enrichedData = await enrichActionTransactions(data, walletAddress);
+      return enrichedData || [];
+    } catch (err: any) {
+      console.error('Error fetching actions:', err.message);
+      return rejectWithValue(err.message || 'Failed to fetch actions');
     }
   }
-
-  return null;
-}
+);
 
 /**
- * Truncate addresses: abcd...wxyz
- * @param address - Wallet or token address
- * @returns Truncated address string
+ * Fetch recent blockchain actions for a wallet
+ * 
+ * @param walletAddress The wallet address to fetch actions for
+ * @param limit Number of actions to fetch (default 20)
+ * @returns Array of action objects
  */
-export function truncateAddress(address: string): string {
+export const fetchWalletActions = async (walletAddress: string, limit: number = 20) => {
+  if (!walletAddress) {
+    throw new Error('Wallet address is required');
+  }
+
+  try {
+    console.log('Fetching actions for wallet:', walletAddress);
+    const heliusUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&limit=${limit}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const res = await fetch(heliusUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`Helius fetch failed with status ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log('Data received, items:', data?.length || 0);
+    
+    // Enrich the data with better formatted information
+    const enrichedData = await enrichActionTransactions(data, walletAddress);
+    return enrichedData || [];
+  } catch (err: any) {
+    console.error('Error fetching actions:', err.message);
+    throw new Error(err.message || 'Failed to fetch actions');
+  }
+}; 
+
+/**
+ * Enrich transaction data with more usable information
+ */
+export const enrichActionTransactions = async (actions: Action[], walletAddress: string) => {
+  if (!actions || actions.length === 0) return [];
+  
+  return actions.map(action => {
+    // Determine transaction type with more specificity
+    let enrichedType = action.type || action.transactionType || 'UNKNOWN';
+    
+    // Process swap transactions
+    if (action.events?.swap) {
+      enrichedType = 'SWAP';
+      
+      // Extract swap details if available
+      const swap = action.events.swap;
+      const hasTokenInputs = swap.tokenInputs && swap.tokenInputs.length > 0;
+      const hasTokenOutputs = swap.tokenOutputs && swap.tokenOutputs.length > 0;
+      
+      if (hasTokenInputs && hasTokenOutputs) {
+        // Extract token symbols if available
+        const inputToken = swap.tokenInputs[0];
+        const outputToken = swap.tokenOutputs[0];
+        
+        const inputAmount = inputToken.rawTokenAmount?.tokenAmount 
+          ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
+          : 0;
+          
+        const outputAmount = outputToken.rawTokenAmount?.tokenAmount
+          ? parseFloat(outputToken.rawTokenAmount.tokenAmount) / Math.pow(10, outputToken.rawTokenAmount.decimals || 0)
+          : 0;
+          
+        // Add enriched info
+        action.enrichedData = {
+          swapType: 'TOKEN_TO_TOKEN',
+          inputSymbol: truncateAddress(inputToken.mint),
+          outputSymbol: truncateAddress(outputToken.mint),
+          inputAmount,
+          outputAmount,
+          direction: inputToken.userAccount === walletAddress ? 'OUT' : 'IN'
+        };
+      } else if (swap.nativeInput && hasTokenOutputs) {
+        // SOL to token swap
+        const outputToken = swap.tokenOutputs[0];
+        const outputAmount = outputToken.rawTokenAmount?.tokenAmount
+          ? parseFloat(outputToken.rawTokenAmount.tokenAmount) / Math.pow(10, outputToken.rawTokenAmount.decimals || 0)
+          : 0;
+          
+        action.enrichedData = {
+          swapType: 'SOL_TO_TOKEN',
+          inputSymbol: 'SOL',
+          outputSymbol: truncateAddress(outputToken.mint),
+          inputAmount: swap.nativeInput.amount / 1_000_000_000, // lamports to SOL
+          outputAmount,
+          direction: swap.nativeInput.account === walletAddress ? 'OUT' : 'IN'
+        };
+      } else if (hasTokenInputs && swap.nativeOutput) {
+        // Token to SOL swap
+        const inputToken = swap.tokenInputs[0];
+        const inputAmount = inputToken.rawTokenAmount?.tokenAmount
+          ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
+          : 0;
+          
+        action.enrichedData = {
+          swapType: 'TOKEN_TO_SOL',
+          inputSymbol: truncateAddress(inputToken.mint),
+          outputSymbol: 'SOL',
+          inputAmount,
+          outputAmount: swap.nativeOutput.amount / 1_000_000_000, // lamports to SOL
+          direction: inputToken.userAccount === walletAddress ? 'OUT' : 'IN'
+        };
+      }
+    }
+    
+    // Process transfer transactions
+    else if (action.nativeTransfers && action.nativeTransfers.length > 0) {
+      enrichedType = 'TRANSFER';
+      const transfer = action.nativeTransfers[0];
+      
+      action.enrichedData = {
+        transferType: 'SOL',
+        amount: transfer.amount / 1_000_000_000, // lamports to SOL
+        direction: transfer.fromUserAccount === walletAddress ? 'OUT' : 'IN',
+        counterparty: transfer.fromUserAccount === walletAddress 
+          ? truncateAddress(transfer.toUserAccount)
+          : truncateAddress(transfer.fromUserAccount)
+      };
+    }
+    
+    // Process token transfers
+    else if (action.tokenTransfers && action.tokenTransfers.length > 0) {
+      enrichedType = 'TOKEN_TRANSFER';
+      const transfer = action.tokenTransfers[0];
+      
+      action.enrichedData = {
+        transferType: 'TOKEN',
+        tokenSymbol: transfer.symbol || truncateAddress(transfer.mint),
+        amount: transfer.tokenAmount,
+        direction: transfer.fromUserAccount === walletAddress ? 'OUT' : 'IN',
+        counterparty: transfer.fromUserAccount === walletAddress 
+          ? truncateAddress(transfer.toUserAccount)
+          : truncateAddress(transfer.fromUserAccount),
+        decimals: transfer.decimals || 0
+      };
+    }
+    
+    return {
+      ...action,
+      enrichedType
+    };
+  });
+};
+
+/**
+ * Helper to truncate addresses for display
+ */
+function truncateAddress(address: string): string {
   if (!address || address.length < 10) return address;
   return address.slice(0, 4) + '...' + address.slice(-4);
-}
-
-/**
- * Format timestamp to time-ago string
- * @param timestampSeconds - Timestamp in seconds
- * @returns Formatted time-ago string
- */
-export function getTimeAgo(timestampSeconds: number): string {
-  const nowMs = Date.now();
-  const txMs = timestampSeconds * 1000;
-  const diff = nowMs - txMs;
-  if (diff < 0) return 'just now';
-
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  const years = Math.floor(months / 12);
-  return `${years}y ago`;
 } 

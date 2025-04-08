@@ -28,7 +28,7 @@ type User = {
   profile_picture_url: string | null;
 };
 
-export default function NotificationsScreen() {
+export default function SearchScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);

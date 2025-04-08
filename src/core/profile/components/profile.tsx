@@ -33,12 +33,11 @@ import {
   fetchFollowers,
   fetchFollowing,
   checkIfUserFollowsMe,
-} from '../../../services/profileService';
+} from '../services/profileService';
 import { fetchWalletActionsWithCache, pruneOldActionData } from '../../../state/profile/reducer';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { followUser, unfollowUser } from '../../../state/users/reducer';
-import { useFetchPortfolio, AssetItem } from '../../../hooks/useFetchTokens';
 import COLORS from '../../../assets/colors';
 
 // Import hooks, utils, and types from the modular structure
@@ -55,6 +54,7 @@ import {
   editNameModalStyles,
 } from './profile.style';
 import { ThreadPost } from '../../thread/types';
+import { AssetItem, useFetchPortfolio } from '../../../modules/onChainData/hooks/useFetchTokens';
 
 export default function Profile({
   isOwnProfile = false,

@@ -34,11 +34,11 @@ import {
 } from '../../../../state/thread/reducer';
 import styles from './tradeModal.style';
 import PastSwapItem from './PastSwapItem';
-import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '../../../../services/swapTransactions';
+import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '../../../../modules/onChainData/services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
-import { TokenInfo, TokenService } from '../../../../services/token/tokenService';
-import { TradeService } from '../../../../services/trade/tradeService';
+import { TokenInfo, TokenService } from '../../../../modules/onChainData/services/tokenService';
+import { TradeService } from '../../../../modules/onChainData/services/tradeService';
 
 /**
  * Available tab options in the TradeModal

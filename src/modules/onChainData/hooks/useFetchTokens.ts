@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react';
 import {HELIUS_API_KEY} from '@env';
-import {fetchUserAssets} from '../utils/common/fetch';
+import { fetchUserAssets } from '../utils/fetch';
 
 // Utility function to extract the best available image from an asset
 export const extractAssetImage = (asset: any): string | undefined => {

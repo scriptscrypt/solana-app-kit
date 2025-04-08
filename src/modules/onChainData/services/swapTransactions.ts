@@ -6,7 +6,7 @@
 
 import { CLUSTER } from '@env';
 import { PublicKey, Connection, clusterApiUrl, Cluster } from '@solana/web3.js';
-import { ENDPOINTS } from '../config/constants';
+import { ENDPOINTS } from '../../../config/constants';
 
 export interface TokenMetadata {
   mint: string;

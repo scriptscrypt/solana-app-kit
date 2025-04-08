@@ -2,7 +2,7 @@
 
 import {CLUSTER, HELIUS_API_KEY} from '@env';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../state/store';
+import { RootState } from '../../../state/store';
 
 // Helper function to get the correct RPC URL based on provider
 export function getRpcUrlForProvider(provider: string | null = null) {

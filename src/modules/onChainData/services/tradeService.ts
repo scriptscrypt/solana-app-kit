@@ -1,9 +1,9 @@
 import { Connection, clusterApiUrl, Cluster, Transaction, VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { Buffer } from 'buffer';
-import { ENDPOINTS } from '../../config/constants';
+import { ENDPOINTS } from '../../../config/constants';
 import { CLUSTER } from '@env';
-import { TokenInfo } from '../token/tokenService';
-import { TransactionService } from '../../modules/walletProviders/services/transaction/transactionService';
+import { TokenInfo } from './tokenService';
+import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 
 export interface TradeResponse {
   success: boolean;

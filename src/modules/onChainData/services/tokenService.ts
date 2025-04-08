@@ -1,5 +1,5 @@
 import { Connection, clusterApiUrl, Cluster, PublicKey } from '@solana/web3.js';
-import { ENDPOINTS } from '../../config/constants';
+import { ENDPOINTS } from '../../../config/constants';
 import { CLUSTER } from '@env';
 
 export interface TokenInfo {

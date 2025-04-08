@@ -12,7 +12,7 @@ import {
   ImageStyle,
 } from 'react-native';
 import {COINGECKO_API_KEY} from '@env'; // <--  to supply the API key for images
-import {useCoingecko} from '../../../../hooks/useCoingecko';
+import {useCoingecko} from '../../../../modules/onChainData/hooks/useCoingecko';
 import {searchBarStyles} from './CoinDetailSearchBar.style';
 import Icons from '../../../../assets/svgs/index';
 
