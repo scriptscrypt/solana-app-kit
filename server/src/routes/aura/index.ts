@@ -11,7 +11,7 @@ GetTokenAccountsParams,
 GetAssetProofParams,
 GetAssetsByBatchParams,
 GetAssetProofBatchParams
-} from "../../service/aura/interface";
+} from "../../types/aura/interface";
 
 config();
 const router = express.Router() as any;
