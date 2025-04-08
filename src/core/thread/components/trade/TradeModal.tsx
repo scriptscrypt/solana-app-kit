@@ -27,7 +27,7 @@ import SelectTokenModal from './SelectTokenModal';
 import { ENDPOINTS } from '../../../../config/constants';
 import { CLUSTER } from '@env';
 import { useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
 import {
   addPostLocally,
   createRootPostAsync,

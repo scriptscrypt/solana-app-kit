@@ -16,7 +16,7 @@ import { Cluster, clusterApiUrl, Connection, Transaction, VersionedTransaction }
 import { buyStyles as styles } from './buySection.styles';
 import { CLUSTER, TENSOR_API_KEY } from '@env';
 import { ENDPOINTS } from '../../../config/constants';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
 
 const SOL_TO_LAMPORTS = 1_000_000_000;
 

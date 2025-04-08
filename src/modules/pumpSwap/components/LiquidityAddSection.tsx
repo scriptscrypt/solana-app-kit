@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Alert
 } from 'react-native';
-import { useWallet } from '../../walletProviders/hooks/useWallet';
+import { useWallet } from '../../embeddedWalletProviders/hooks/useWallet';
 import { Connection, PublicKey } from '@solana/web3.js';
 import {
   getDepositQuoteFromBase,

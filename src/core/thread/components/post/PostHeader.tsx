@@ -16,7 +16,7 @@ import Icons from '../../../../assets/svgs';
 import { createThreadStyles, getMergedTheme } from '../thread.styles';
 import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
 import { getValidImageSource, IPFSAwareImage } from '../../../../utils/IPFSImage';
 
 // Always available direct reference to an image in the bundle

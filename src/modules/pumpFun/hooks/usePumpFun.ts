@@ -2,15 +2,15 @@
 
 import {useCallback} from 'react';
 import {Alert} from 'react-native';
-import {useWallet} from '../../walletProviders/hooks/useWallet';
+import {useWallet} from '../../embeddedWalletProviders/hooks/useWallet';
 import {
   buyTokenViaPumpfun,
   sellTokenViaPumpfun,
   createAndBuyTokenViaPumpfun,
 } from '../services/pumpfunService';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
 import { PumpfunBuyParams, PumpfunSellParams, PumpfunLaunchParams } from '../types';
-import { useAuth } from '../../walletProviders/hooks/useAuth';
+import { useAuth } from '../../embeddedWalletProviders/hooks/useAuth';
 
 /**
  * Hook for interacting with Pump.fun platform

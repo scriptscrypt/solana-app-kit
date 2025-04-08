@@ -76,21 +76,8 @@ function formatTokenAmount(amount: number, decimals: number): string {
  * Format date for display
  */
 function formatDate(timestamp: number): string {
-  try {
-    // Convert to Date object (support both seconds and milliseconds formats)
-    const date = new Date(timestamp >= 1000000000000 ? timestamp : timestamp * 1000);
-    
-    // Ensure the date is valid
-    if (isNaN(date.getTime())) {
-      console.error(`Invalid timestamp: ${timestamp}`);
-      return 'Invalid date';
-    }
-    
-    return format(date, 'MMM d, h:mm a');
-  } catch (error) {
-    console.error(`Error formatting date with timestamp ${timestamp}:`, error);
-    return 'Unknown date';
-  }
+  const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
+  return format(date, 'MMM d, h:mm a');
 }
 
 /**

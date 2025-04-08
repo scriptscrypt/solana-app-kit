@@ -8,7 +8,7 @@ export {store} from './state/store';
 export type {RootState, AppDispatch} from './state/store';
 
 // Export Hooks
-export {useAuth} from './modules/walletProviders/hooks/useAuth';
+export {useAuth} from './modules/embeddedWalletProviders/hooks/useAuth';
 export {useTradeTransaction} from './hooks/useTradeTransaction';
 export {useAppSelector, useAppDispatch} from './hooks/useReduxHooks';
 

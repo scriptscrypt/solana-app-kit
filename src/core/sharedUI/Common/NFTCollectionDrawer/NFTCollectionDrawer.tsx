@@ -12,8 +12,8 @@ import {
     Alert,
 } from 'react-native';
 import Icons from '../../../../assets/svgs';
-import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { TransactionService } from '../../../../modules/embeddedWalletProviders/services/transaction/transactionService';
+import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
 import { buyCollectionFloor } from '../../../../modules/nft';
 
 interface NFTCollectionDrawerProps {

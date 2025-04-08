@@ -3,9 +3,9 @@ import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, Platform, Statu
 import BuySection from './BuySection';
 import SellSection from './SellSection';
 import { styles } from './styles';
-import { useAuth } from '../../walletProviders/hooks/useAuth';
+import { useAuth } from '../../embeddedWalletProviders/hooks/useAuth';
 import { useAppSelector } from '../../../hooks/useReduxHooks';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
 
 
 

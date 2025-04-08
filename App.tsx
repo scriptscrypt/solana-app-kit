@@ -22,7 +22,7 @@ import { TurnkeyProvider } from '@turnkey/sdk-react-native';
 // Dynamic client initialization
 import { CustomizationProvider } from './src/CustomizationProvider';
 import { DefaultCustomizationConfig } from './src/config';
-import { getDynamicClient, initDynamicClient } from './src/modules/walletProviders/services/walletProviders/dynamic';
+import { getDynamicClient, initDynamicClient } from './src/modules/embeddedWalletProviders/services/walletProviders/dynamic';
 import TransactionNotification from './src/core/sharedUI/Common/TransactionNotification';
 
 export default function App() {
