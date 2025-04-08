@@ -17,7 +17,7 @@ import { getMergedTheme } from '../../../../core/thread/components/thread.styles
 import styles from './TradeCard.style';
 import { useCoingecko, Timeframe } from '../../../../modules/onChainData/hooks/useCoingecko';
 import LineGraph from './LineGraph';
-import TokenDetailsDrawer from '../TokenDetailsDrawer/TokenDetailsDrawer';
+import TokenDetailsDrawer from '../../../../modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
 import { fetchJupiterTokenData } from '../../../../modules/onChainData/utils/tokenUtils';
 
 export interface TradeData {

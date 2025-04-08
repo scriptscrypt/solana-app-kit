@@ -22,7 +22,7 @@ import { IPFSAwareImage, getValidImageSource } from '../../../../utils/IPFSImage
 import { useFetchPortfolio, fixImageUrl } from '../../../../modules/onChainData/hooks/useFetchTokens';
 import { useAppSelector } from '../../../../hooks/useReduxHooks';
 import TradeModal from '../../../thread/components/trade/TradeModal';
-import TokenDetailsDrawer from '../../../../core/sharedUI/Common/TokenDetailsDrawer/TokenDetailsDrawer';
+import TokenDetailsDrawer from '../../../../modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
 import NFTCollectionDrawer from '../../../../core/sharedUI/Common/NFTCollectionDrawer/NFTCollectionDrawer';
 
 // Import collection search functionality

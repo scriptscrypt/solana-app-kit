@@ -17,7 +17,7 @@ import { AssetItem } from '../../../../hooks/useFetchTokens';
 import { fixImageUrl, fetchNftMetadata } from '../../../../modules/nft';
 import { TENSOR_API_KEY } from '@env';
 import { NftItem } from '../../../../modules/nft/types';
-import TokenDetailsDrawer from '../../../sharedUI/Common/TokenDetailsDrawer/TokenDetailsDrawer';
+import TokenDetailsDrawer from '../../../../modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
 
 export interface PortfolioSectionProps {
   sectionTitle: string;

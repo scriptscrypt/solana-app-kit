@@ -20,7 +20,7 @@ import SearchIcon from '../../../assets/svg/SearchIcon';
 import CloseIcon from '../../../assets/svg/CloseIcon';
 import { SERVER_URL, BIRDEYE_API_KEY } from '@env';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
-import TokenDetailsSheet from './TokenDetailsSheet';
+import TokenDetailsSheet from '../../../modules/onChainData/components/TrendingTokenDetails/TokenDetailsSheet';
 
 const { width } = Dimensions.get('window');
 
