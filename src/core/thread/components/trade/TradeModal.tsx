@@ -27,7 +27,7 @@ import SelectTokenModal from './SelectTokenModal';
 import { ENDPOINTS } from '../../../../config/constants';
 import { CLUSTER } from '@env';
 import { useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
+import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
 import {
   addPostLocally,
   createRootPostAsync,
@@ -36,7 +36,7 @@ import styles from './tradeModal.style';
 import PastSwapItem from './PastSwapItem';
 import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '../../../../services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { TransactionService } from '../../../../modules/embeddedWalletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
 import { TokenInfo, TokenService } from '../../../../services/token/tokenService';
 import { TradeService } from '../../../../services/trade/tradeService';
 

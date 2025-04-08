@@ -24,7 +24,8 @@ export const ENDPOINTS = {
     blockEngine: 'https://mainnet.block-engine.jito.wtf:443/api/v1/bundles',
   },
   // Helius RPC endpoint from env
-  helius: `https://${HELIUS_RPC_CLUSTER}.helius-rpc.com/?api-key=${HELIUS_API_KEY}`,
+  // helius: `https://${HELIUS_RPC_CLUSTER}.helius-rpc.com/?api-key=${HELIUS_API_KEY}`,
+  helius: `https://staked.helius-rpc.com?api-key=HELIUS_API_KEY_REDACTED`,
   tensorFlowBaseUrl: 'https://api.mainnet.tensordev.io',
 };
 

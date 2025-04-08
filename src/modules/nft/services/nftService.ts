@@ -4,7 +4,7 @@
 import { Connection, Cluster, clusterApiUrl, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { Buffer } from 'buffer';
 import { TENSOR_API_KEY, CLUSTER } from '@env';
-import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 import { CollectionData, NftItem } from '../types';
 import { ENDPOINTS } from '../../../config/constants';
 

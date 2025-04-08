@@ -29,9 +29,9 @@ import NFTCollectionDrawer from '../../../../core/sharedUI/Common/NFTCollectionD
 import { searchCollections } from '../../../../modules/nft/services/nftService';
 import { CollectionResult } from '../../../../modules/nft/types';
 import { buyCollectionFloor } from '../../../../modules/nft';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
-import { TransactionService } from '../../../../modules/embeddedWalletProviders/services/transaction/transactionService';
-import { useAuth } from '../../../../modules/embeddedWalletProviders/hooks/useAuth';
+import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
+import { useAuth } from '../../../../modules/walletProviders/hooks/useAuth';
 
 /**
  * Define props for the BuyCard
