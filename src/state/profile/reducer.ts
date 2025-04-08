@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { fetchWalletActionsAsync, Action } from '../../core/profile/services/profileActions';
 import { RootState } from '../store';
-import { HELIUS_API_KEY } from '@env';
+import { HELIUS_API_KEY, HELIUS_STAKED_API_KEY } from '@env';
 
 interface ProfileState {
   actions: {
@@ -49,7 +49,8 @@ export const fetchWalletActionsWithCache = createAsyncThunk(
     // Otherwise proceed with the fetch
     try {
       // Direct call to profile service to avoid thunk inside thunk issues
-      const heliusUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&limit=20`;
+      const heliusApiKey = HELIUS_STAKED_API_KEY || HELIUS_API_KEY;
+      const heliusUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${heliusApiKey}&limit=20`;
       const res = await fetch(heliusUrl);
       if (!res.ok) {
         throw new Error(`Helius fetch failed with status ${res.status}`);

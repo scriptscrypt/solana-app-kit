@@ -13,11 +13,12 @@ import {
 
 import { styles } from './pumpfunScreen.style';
 import { useAuth } from '../../walletProviders/hooks/useAuth';
-import { fetchSolBalance, fetchTokenAccounts, TokenEntry } from '../../onChainData/utils/fetch';
+import { fetchSolBalance, fetchTokenAccounts } from '../../onChainData/utils/fetch';
 import PumpfunBuySection from '../components/PumpfunBuySection';
 import PumpfunSellSection from '../components/PumpfunSellSection';
 import PumpfunLaunchSection from '../components/PumpfunLaunchSection';
 import { useAppSelector } from '../../../hooks/useReduxHooks';
+import { TokenEntry } from '../../onChainData/types/tokenTypes';
 
 const customStyles = StyleSheet.create({
   customCardContainer: {

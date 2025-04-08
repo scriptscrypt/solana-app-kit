@@ -27,7 +27,7 @@ import { fetchAllPosts } from '../../../state/thread/reducer';
 
 import { useFetchNFTs } from '../../../modules/nft';
 import { NftItem } from '../../../modules/nft/types';
-import { useWallet } from '../../../modules/embeddedWalletProviders/hooks/useWallet';
+import { useWallet } from '../../../modules/walletProviders/hooks/useWallet';
 import {
   uploadProfileAvatar,
   fetchFollowers,
@@ -54,7 +54,8 @@ import {
   editNameModalStyles,
 } from './profile.style';
 import { ThreadPost } from '../../thread/types';
-import { AssetItem, useFetchPortfolio } from '../../../modules/onChainData/hooks/useFetchTokens';
+import { useFetchPortfolio } from '../../../modules/onChainData/hooks/useFetchTokens';
+import { AssetItem } from '../../../modules/onChainData/types/assetTypes';
 
 export default function Profile({
   isOwnProfile = false,

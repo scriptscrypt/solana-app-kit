@@ -12,10 +12,10 @@ import {
   TransactionMessage,
 } from '@solana/web3.js';
 import {Buffer} from 'buffer';
-import { TransactionService } from '../../modules/embeddedWalletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../modules/walletProviders/services/transaction/transactionService';
 import { store } from '../../state/store';
 import { Platform } from 'react-native';
-import { StandardWallet } from '../../modules/embeddedWalletProviders/types';
+import { StandardWallet } from '../../modules/walletProviders/types';
 
 /**
  * Fee tier to microLamports mapping for priority transactions

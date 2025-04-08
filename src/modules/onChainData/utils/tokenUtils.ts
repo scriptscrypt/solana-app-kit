@@ -1,16 +1,17 @@
 /**
  * Utility functions for token-related operations
  */
+import { TokenInfo } from '../types/tokenTypes';
 
 // Cache for Jupiter token metadata to avoid duplicate fetches
-const jupiterTokenCache = new Map();
+const jupiterTokenCache = new Map<string, any>();
 
 /**
  * Fetch token metadata from Jupiter API
  * @param mint Token mint address
  * @returns Token metadata
  */
-export async function fetchJupiterTokenData(mint: string) {
+export async function fetchJupiterTokenData(mint: string): Promise<any> {
   // Return from cache if available
   if (jupiterTokenCache.has(mint)) {
     return jupiterTokenCache.get(mint);
@@ -47,6 +48,11 @@ export function getTokenLogo(tokenData: any): string {
     return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
   }
   
+  // Special case for USDC
+  if (tokenData.symbol === 'USDC' || tokenData.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
+    return 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png';
+  }
+  
   return '';
 }
 
@@ -74,4 +80,34 @@ export function formatTokenAmount(amount: number, decimals: number): string {
   } else {
     return tokenAmount.toFixed(6);
   }
+}
+
+/**
+ * Formats a token balance for display with symbol
+ */
+export function formatTokenWithSymbol(amount: number, decimals: number, symbol: string): string {
+  return `${formatTokenAmount(amount, decimals)} ${symbol}`;
+}
+
+/**
+ * Formats a USD value from a token amount
+ */
+export function formatUsdValue(tokenAmount: number, tokenPrice: number): string {
+  if (!tokenAmount || !tokenPrice) return '$0.00';
+  
+  const usdValue = tokenAmount * tokenPrice;
+  
+  if (usdValue < 0.01) {
+    return '<$0.01';
+  }
+  
+  if (usdValue >= 1000000) {
+    return `$${(usdValue / 1000000).toFixed(2)}M`;
+  }
+  
+  if (usdValue >= 1000) {
+    return `$${(usdValue / 1000).toFixed(2)}K`;
+  }
+  
+  return `$${usdValue.toFixed(2)}`;
 } 

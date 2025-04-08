@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import tokenModalStyles from './tokenModal.style';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { TokenInfo } from '../../../../modules/onChainData/services/tokenService';
+import { TokenInfo } from '../../../../modules/onChainData/types/tokenTypes';
 
 const { height } = Dimensions.get('window');
 

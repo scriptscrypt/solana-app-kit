@@ -1,8 +1,11 @@
-import {useState, useEffect} from 'react';
-import {HELIUS_API_KEY} from '@env';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { HELIUS_API_KEY } from '@env';
 import { fetchUserAssets } from '../utils/fetch';
+import { AssetItem, PortfolioData } from '../types/assetTypes';
 
-// Utility function to extract the best available image from an asset
+/**
+ * Extracts the best available image from an asset
+ */
 export const extractAssetImage = (asset: any): string | undefined => {
   // Check all possible image sources in order of priority
   if (asset.content?.files && asset.content.files.length > 0) {
@@ -33,7 +36,9 @@ export const extractAssetImage = (asset: any): string | undefined => {
   return undefined;
 };
 
-// Helper function to fix common image URI issues
+/**
+ * Fixes common image URI issues
+ */
 export const fixImageUrl = (url: string): string => {
   if (!url) return '';
   
@@ -64,7 +69,9 @@ export const fixImageUrl = (url: string): string => {
   return url;
 };
 
-// Function to determine the true asset type
+/**
+ * Determines the true asset type
+ */
 export const determineAssetType = (asset: any): 'token' | 'nft' | 'cnft' => {
   // Explicit check for compressed NFTs
   if (asset.compression?.compressed) {
@@ -104,78 +111,47 @@ export const determineAssetType = (asset: any): 'token' | 'nft' | 'cnft' => {
   return 'nft';
 };
 
-export interface AssetItem {
-  id: string;
-  content?: {
-    json_uri?: string;
-    metadata?: any;
-    files?: any[];
-    links?: any;
-  };
-  authorities?: any[];
-  compression?: {
-    compressed: boolean;
-    data_hash: string;
-    creator_hash: string;
-    eligible: boolean;
-    leaf_id: number;
-    tree_id: string;
-  };
-  grouping?: any[];
-  royalty?: {
-    basis_points: number;
-    primary_sale_happened: boolean;
-    target: string;
-  };
-  creators?: any[];
-  ownership?: {
-    owner: string;
-    delegate: string;
-    delegated: boolean;
-    burnt: boolean;
-    supply: number;
-    mutable: boolean;
-  };
-  uses?: any;
-  supply?: any;
-  interface: string;
-  links?: any;
-  mint: string;
-  name: string;
-  symbol: string;
-  collection?: {
-    name?: string;
-    family?: string;
-  };
-  attributes?: any[];
-  image?: string;
-  description?: string;
-  token_info?: {
-    symbol: string;
-    balance: string;
-    decimals: number;
-    token_program: string;
-    price_info?: {
-      price_per_token?: number;
-      total_price?: number;
-    };
-  };
-  inscription?: any;
-  spl20?: any;
-  assetType?: 'token' | 'nft' | 'cnft'; // Add new field to track determined type
-}
+/**
+ * Processes asset items to enhance them with additional info like image URLs
+ */
+export const processAssetItems = (items: AssetItem[]): AssetItem[] => {
+  return items.map((item: AssetItem) => {
+    // Extract the best available image URL
+    const imageUrl = extractAssetImage(item);
+    
+    // If no image was found through standard extraction, 
+    // try other paths specific to this asset type
+    let finalImageUrl = imageUrl;
+    
+    if (!finalImageUrl) {
+      // For tokens, try to check for a known logo
+      if (item.interface === 'FungibleToken' || item.token_info) {
+        const symbol = (item.token_info?.symbol || item.symbol || '').toLowerCase();
+        if (symbol === 'sol') {
+          finalImageUrl = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
+        } else if (symbol === 'usdc') {
+          finalImageUrl = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png';
+        }
+      }
+    }
+    
+    // Set the image URL on the item
+    item.image = finalImageUrl;
+    
+    // Make sure name and symbol are set properly
+    item.name = item.content?.metadata?.name || item.token_info?.symbol || item.name || 'Unknown Asset';
+    item.symbol = item.token_info?.symbol || item.content?.metadata?.symbol || item.symbol || '';
+    
+    // Determine and store the asset type
+    item.assetType = determineAssetType(item);
+    
+    return item;
+  });
+};
 
-export interface PortfolioData {
-  items: AssetItem[];
-  nativeBalance?: {
-    lamports: number;
-  };
-  total: number;
-  limit: number;
-  page: number;
-  error?: string;
-}
-
+/**
+ * Hook to fetch a user's portfolio (tokens, NFTs, and cNFTs)
+ */
 export function useFetchPortfolio(walletAddress?: string) {
   const [portfolio, setPortfolio] = useState<PortfolioData>({
     items: [],
@@ -186,6 +162,37 @@ export function useFetchPortfolio(walletAddress?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Use useCallback to memoize the fetch function
+  const fetchPortfolioData = useCallback(async () => {
+    if (!walletAddress) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Use the utility function to fetch assets from Helius DAS API
+      const result = await fetchUserAssets(walletAddress);
+      
+      // Process the data to add image URLs and improve item data
+      const processedItems = processAssetItems(result.items);
+
+      setPortfolio({
+        items: processedItems,
+        nativeBalance: result.nativeBalance,
+        total: result.total,
+        limit: result.limit,
+        page: result.page,
+      });
+    } catch (err: any) {
+      console.error('Portfolio fetch error:', err);
+      setError(err.message || 'Failed to fetch portfolio');
+      setPortfolio(prev => ({...prev, error: err.message}));
+    } finally {
+      setLoading(false);
+    }
+  }, [walletAddress]);
+
+  // Effect to trigger data fetch when dependencies change
   useEffect(() => {
     if (!walletAddress) {
       setPortfolio({
@@ -197,75 +204,34 @@ export function useFetchPortfolio(walletAddress?: string) {
       return;
     }
 
-    const fetchPortfolio = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Use the utility function to fetch assets from Helius DAS API
-        const result = await fetchUserAssets(walletAddress);
-        
-        // Process the data to add image URLs and improve item data
-        const processedItems = result.items.map((item: AssetItem) => {
-          // Extract the best available image URL
-          const imageUrl = extractAssetImage(item);
-          
-          // If no image was found through standard extraction, 
-          // try other paths specific to this asset type
-          let finalImageUrl = imageUrl;
-          
-          if (!finalImageUrl) {
-            // For tokens, try to check for a known logo
-            if (item.interface === 'FungibleToken' || item.token_info) {
-              const symbol = (item.token_info?.symbol || item.symbol || '').toLowerCase();
-              if (symbol === 'sol') {
-                finalImageUrl = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
-              } else if (symbol === 'usdc') {
-                finalImageUrl = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png';
-              }
-            }
-          }
-          
-          // Set the image URL on the item
-          item.image = finalImageUrl;
-          
-          // Make sure name and symbol are set properly
-          item.name = item.content?.metadata?.name || item.token_info?.symbol || item.name || 'Unknown Asset';
-          item.symbol = item.token_info?.symbol || item.content?.metadata?.symbol || item.symbol || '';
-          
-          // Determine and store the asset type
-          item.assetType = determineAssetType(item);
-          
-          return item;
-        });
+    fetchPortfolioData();
+  }, [walletAddress, fetchPortfolioData]);
 
-        setPortfolio({
-          items: processedItems,
-          nativeBalance: result.nativeBalance,
-          total: result.total,
-          limit: result.limit,
-          page: result.page,
-        });
-      } catch (err: any) {
-        console.error('Portfolio fetch error:', err);
-        setError(err.message || 'Failed to fetch portfolio');
-        setPortfolio(prev => ({...prev, error: err.message}));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPortfolio();
-  }, [walletAddress]);
-
-  return {portfolio, loading, error};
+  // Memoize the return values to prevent unnecessary re-renders
+  return useMemo(() => ({
+    portfolio,
+    loading,
+    error,
+    refetch: fetchPortfolioData
+  }), [portfolio, loading, error, fetchPortfolioData]);
 }
 
-// Keep the original hook for backwards compatibility
+/**
+ * Hook to fetch only fungible tokens from a user's wallet
+ */
 export function useFetchTokens(walletAddress?: string) {
-  const {portfolio, loading, error} = useFetchPortfolio(walletAddress);
+  const { portfolio, loading, error, refetch } = useFetchPortfolio(walletAddress);
   
-  // Filter out just the fungible tokens from the portfolio
-  const tokens = portfolio.items.filter(item => item.assetType === 'token');
+  // Memoize the tokens to prevent unnecessary re-renders
+  const tokens = useMemo(() => 
+    portfolio.items.filter(item => item.assetType === 'token'),
+    [portfolio.items]
+  );
   
-  return {tokens, loading, error};
+  return useMemo(() => ({
+    tokens,
+    loading,
+    error,
+    refetch
+  }), [tokens, loading, error, refetch]);
 }

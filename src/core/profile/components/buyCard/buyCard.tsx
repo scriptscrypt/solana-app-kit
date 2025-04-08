@@ -19,7 +19,7 @@ import Icons from '../../../../assets/svgs/index';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { IPFSAwareImage, getValidImageSource } from '../../../../utils/IPFSImage';
 
-import { AssetItem, useFetchPortfolio, fixImageUrl } from '../../../../modules/onChainData/hooks/useFetchTokens';
+import { useFetchPortfolio, fixImageUrl } from '../../../../modules/onChainData/hooks/useFetchTokens';
 import { useAppSelector } from '../../../../hooks/useReduxHooks';
 import TradeModal from '../../../thread/components/trade/TradeModal';
 import TokenDetailsDrawer from '../../../../core/sharedUI/Common/TokenDetailsDrawer/TokenDetailsDrawer';
@@ -29,9 +29,10 @@ import NFTCollectionDrawer from '../../../../core/sharedUI/Common/NFTCollectionD
 import { searchCollections } from '../../../../modules/nft/services/nftService';
 import { CollectionResult } from '../../../../modules/nft/types';
 import { buyCollectionFloor } from '../../../../modules/nft';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
-import { TransactionService } from '../../../../modules/embeddedWalletProviders/services/transaction/transactionService';
-import { useAuth } from '../../../../modules/embeddedWalletProviders/hooks/useAuth';
+import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
+import { useAuth } from '../../../../modules/walletProviders/hooks/useAuth';
+import { AssetItem } from '../../../../modules/onChainData/types/assetTypes';
 
 /**
  * Define props for the BuyCard

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,8 @@ import {
   getTransactionTypeInfo
 } from '../../utils/profileActionsUtils';
 import { ActionsPageProps } from '../../types';
+import { useAppDispatch } from '../../../../hooks/useReduxHooks';
+import { fetchWalletActionsWithCache } from '../../services/profileActions';
 
 interface RawTokenAmount {
   tokenAmount: string;
@@ -558,9 +560,26 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
   fetchActionsError,
   walletAddress,
 }) => {
+  const dispatch = useAppDispatch();
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  if (loadingActions) {
+  const handleRefresh = useCallback(async () => {
+    if (!walletAddress) return;
+    setIsRefreshing(true);
+    try {
+      await dispatch(fetchWalletActionsWithCache({ 
+        walletAddress,
+        forceRefresh: true 
+      })).unwrap();
+    } catch (err) {
+      console.error('Error refreshing actions:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [walletAddress, dispatch]);
+
+  if (loadingActions && !isRefreshing) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#3871DD" />
@@ -574,6 +593,12 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
       <View style={styles.centered}>
         <FontAwesome5 name="exclamation-circle" size={32} color="#F43860" />
         <Text style={styles.errorText}>{fetchActionsError}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={handleRefresh}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -585,6 +610,12 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
           <FontAwesome5 name="history" size={26} color="#FFF" />
         </View>
         <Text style={styles.emptyText}>No transactions yet</Text>
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+        >
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -603,6 +634,8 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
         )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshing={isRefreshing}
+        onRefresh={handleRefresh}
       />
 
       <ActionDetailModal
@@ -664,6 +697,30 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     paddingHorizontal: 32,
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#3871DD',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  refreshButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#9945FF',
+    borderRadius: 8,
+  },
+  refreshButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   card: {
     backgroundColor: '#FFFFFF',

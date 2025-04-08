@@ -1,17 +1,22 @@
 // File: src/utils/common/fetch.ts
 
-import {CLUSTER, HELIUS_API_KEY} from '@env';
+import {CLUSTER, HELIUS_API_KEY, HELIUS_STAKED_URL} from '@env';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../state/store';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { TokenEntry } from '../types/tokenTypes';
+import { ENDPOINTS } from '@/config/constants';
 
-// Helper function to get the correct RPC URL based on provider
-export function getRpcUrlForProvider(provider: string | null = null) {
-  // If no provider is explicitly passed, try to get from Redux (requires hook context)
-  const heliusUrl = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-  
-  return heliusUrl;
+/**
+ * Gets the correct RPC URL based on the API key
+ */
+export function getRpcUrl(): string {
+  return HELIUS_STAKED_URL || ENDPOINTS.helius;
 }
 
+/**
+ * Fetch with retries for improved reliability
+ */
 export async function fetchWithRetries(
   url: string,
   options: RequestInit = {},
@@ -19,13 +24,13 @@ export async function fetchWithRetries(
   baseDelay = 500,
 ): Promise<Response> {
   let attempt = 0;
-  let lastError: any;
+  let lastError: Error | undefined;
 
   while (attempt < maxRetries) {
     try {
       const res = await fetch(url, options);
       if (!res.ok) {
-        // e.g. 429, 5xx
+        // Handle non-200 responses
         const bodyText = await res.text();
         throw new Error(`HTTP status ${res.status}, body=${bodyText}`);
       }
@@ -33,6 +38,7 @@ export async function fetchWithRetries(
     } catch (err: any) {
       lastError = err;
       attempt++;
+      
       if (attempt >= maxRetries) break;
 
       // Exponential backoff
@@ -43,30 +49,35 @@ export async function fetchWithRetries(
       await new Promise(res => setTimeout(res, delayMs));
     }
   }
+  
   throw new Error(
     `[fetchWithRetries] All ${maxRetries} attempts failed. Last error: ${
-      lastError?.message ?? lastError
+      lastError?.message ?? 'Unknown error'
     }`,
   );
 }
 
-// Fetch user's SOL balance
+/**
+ * Fetch user's SOL balance
+ */
 export async function fetchSolBalance(
   userPublicKey: string,
 ): Promise<number | null> {
   try {
-    const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+    const url = getRpcUrl();
     const body = {
       jsonrpc: '2.0',
       id: 'get-balance-1',
       method: 'getBalance',
       params: [userPublicKey],
     };
+    
     const res = await fetchWithRetries(url, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    
     const data = await res.json();
     if (data?.result?.value) {
       return data.result.value;
@@ -80,17 +91,12 @@ export async function fetchSolBalance(
   }
 }
 
-export type TokenEntry = {
-  accountPubkey: string;
-  mintPubkey: string;
-  uiAmount: number;
-  decimals: number;
-};
-
-// Fetch user's assets via Helius DAS API (includes tokens, NFTs, and cNFTs)
+/**
+ * Fetch user's assets via Helius DAS API (includes tokens, NFTs, and cNFTs)
+ */
 export async function fetchUserAssets(walletAddress: string) {
   try {
-    const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+    const url = getRpcUrl();
     const response = await fetchWithRetries(url, {
       method: 'POST',
       headers: {
@@ -125,7 +131,9 @@ export async function fetchUserAssets(walletAddress: string) {
   }
 }
 
-// Legacy fetch token accounts (for backward compatibility)
+/**
+ * Legacy fetch token accounts (for backward compatibility)
+ */
 export async function fetchTokenAccounts(
   userPublicKey: string,
 ): Promise<TokenEntry[]> {
@@ -155,61 +163,71 @@ export async function fetchTokenAccounts(
     console.error('Error in fetchTokenAccounts:', err);
     
     // Fall back to legacy method if Helius fails
-    try {
-      const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-      const body = {
-        jsonrpc: '2.0',
-        id: 'get-tkn-accs-1',
-        method: 'getTokenAccountsByOwner',
-        params: [
-          userPublicKey,
-          {programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'},
-          {encoding: 'jsonParsed'},
-        ],
-      };
-
-      const res = await fetchWithRetries(url, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-
-      if (!data?.result?.value) {
-        console.warn('No token accounts found for user');
-        return [];
-      }
-
-      const rawAccounts = data.result.value;
-      const tokenEntries: TokenEntry[] = [];
-
-      for (const acct of rawAccounts) {
-        const accountPubkey = acct.pubkey;
-        const mintPubkey = acct?.account?.data?.parsed?.info?.mint || '';
-
-        // Now fetch each token account's balance
-        const balObj = await fetchTokenAccountBalance(accountPubkey);
-        if (balObj.uiAmount && balObj.uiAmount > 0) {
-          tokenEntries.push({
-            accountPubkey,
-            mintPubkey,
-            uiAmount: balObj.uiAmount,
-            decimals: balObj.decimals,
-          });
-        }
-      }
-      return tokenEntries;
-    } catch (fallbackErr) {
-      console.error('Fallback method also failed:', fallbackErr);
-      return [];
-    }
+    return fetchTokenAccountsFallback(userPublicKey);
   }
 }
 
-// For each token account, get its balance via getTokenAccountBalance
+/**
+ * Fallback method for fetching token accounts
+ * Used when the primary method fails
+ */
+async function fetchTokenAccountsFallback(userPublicKey: string): Promise<TokenEntry[]> {
+  try {
+    const url = getRpcUrl();
+    const body = {
+      jsonrpc: '2.0',
+      id: 'get-tkn-accs-1',
+      method: 'getTokenAccountsByOwner',
+      params: [
+        userPublicKey,
+        {programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'},
+        {encoding: 'jsonParsed'},
+      ],
+    };
+
+    const res = await fetchWithRetries(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (!data?.result?.value) {
+      console.warn('No token accounts found for user');
+      return [];
+    }
+
+    const rawAccounts = data.result.value;
+    const tokenEntries: TokenEntry[] = [];
+
+    for (const acct of rawAccounts) {
+      const accountPubkey = acct.pubkey;
+      const mintPubkey = acct?.account?.data?.parsed?.info?.mint || '';
+
+      // Now fetch each token account's balance
+      const balObj = await fetchTokenAccountBalance(accountPubkey);
+      if (balObj.uiAmount && balObj.uiAmount > 0) {
+        tokenEntries.push({
+          accountPubkey,
+          mintPubkey,
+          uiAmount: balObj.uiAmount,
+          decimals: balObj.decimals,
+        });
+      }
+    }
+    return tokenEntries;
+  } catch (fallbackErr) {
+    console.error('Fallback method also failed:', fallbackErr);
+    return [];
+  }
+}
+
+/**
+ * For each token account, get its balance via getTokenAccountBalance
+ */
 export async function fetchTokenAccountBalance(tokenAccount: string) {
   try {
-    const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+    const url = getRpcUrl();
     const body = {
       jsonrpc: '2.0',
       id: 'token-balance-1',
@@ -233,9 +251,9 @@ export async function fetchTokenAccountBalance(tokenAccount: string) {
   }
 }
 
-// File: src/utils/solanaWithRetries.ts
-import {Connection, PublicKey} from '@solana/web3.js';
-
+/**
+ * Get balance with retries for improved reliability
+ */
 export async function getBalanceWithRetries(
   connection: Connection,
   pubkey: PublicKey,
@@ -243,13 +261,15 @@ export async function getBalanceWithRetries(
   baseDelay = 1000,
 ): Promise<number> {
   let attempt = 0;
-  let lastError: any;
+  let lastError: Error | undefined;
+  
   while (attempt < maxRetries) {
     try {
       return await connection.getBalance(pubkey);
     } catch (err: any) {
       lastError = err;
       attempt++;
+      
       if (attempt >= maxRetries) break;
 
       const delayMs = baseDelay * Math.pow(2, attempt - 1);
@@ -259,9 +279,10 @@ export async function getBalanceWithRetries(
       await new Promise(res => setTimeout(res, delayMs));
     }
   }
+  
   throw new Error(
     `[getBalanceWithRetries] All ${maxRetries} attempts failed. Last error: ${
-      lastError?.message || lastError
+      lastError?.message || 'Unknown error'
     }`,
   );
 }

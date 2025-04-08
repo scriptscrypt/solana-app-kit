@@ -11,8 +11,8 @@ import {
   RemoveLiquidityParams, 
   CreatePoolParams
 } from '../types';
-import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
-import { StandardWallet } from '../../embeddedWalletProviders/types';
+import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import { StandardWallet } from '../../walletProviders/types';
 
 // Define Direction enum locally
 export enum Direction {

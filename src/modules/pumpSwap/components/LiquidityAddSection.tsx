@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Alert
 } from 'react-native';
-import { useWallet } from '../../embeddedWalletProviders/hooks/useWallet';
+import { useWallet } from '../../walletProviders/hooks/useWallet';
 import { Connection, PublicKey } from '@solana/web3.js';
 import {
   getDepositQuoteFromBase,
@@ -16,8 +16,8 @@ import {
   addLiquidity
 } from '../services/pumpSwapService'; // <--- calls the server, not the SDK
 import { DEFAULT_SLIPPAGE } from '../utils/pumpSwapUtils';
-import { TokenInfo } from '../../onChainData/services/tokenService';
 import { SERVER_URL } from '@env';
+import { TokenInfo } from '../../onChainData/types/tokenTypes';
 
 // Token address examples as placeholders
 const SOL_MINT = 'So11111111111111111111111111111111111111112';

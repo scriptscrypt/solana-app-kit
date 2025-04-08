@@ -4,7 +4,7 @@
 
 import { StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { PublicKey, Connection } from '@solana/web3.js';
-import { StandardWallet } from '../../embeddedWalletProviders/types';
+import { StandardWallet } from '../../walletProviders/types';
 
 // Direction enum for swap direction
 export enum Direction {

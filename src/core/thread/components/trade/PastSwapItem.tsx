@@ -8,17 +8,17 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
+import {format} from 'date-fns';
+import {FontAwesome5} from '@expo/vector-icons';
 import { SwapTransaction, TokenMetadata } from '../../../../modules/onChainData/services/swapTransactions';
-import { format } from 'date-fns';
-import { FontAwesome5 } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 interface PastSwapItemProps {
   swap: SwapTransaction;
   onSelect: (swap: SwapTransaction) => void;
   selected: boolean;
-  inputTokenLogoURI?: string;  // New prop for input token logo
+  inputTokenLogoURI?: string; // New prop for input token logo
   outputTokenLogoURI?: string; // New prop for output token logo
 }
 
@@ -36,7 +36,7 @@ function getTokenImageUrl(token: TokenMetadata): string | undefined {
     mint: token.mint,
     symbol: token.symbol,
     image: token.image,
-    logoURI: tokenAny.logoURI
+    logoURI: tokenAny.logoURI,
   });
 
   // Try all possible image sources
@@ -69,45 +69,76 @@ function formatTokenAmount(amount: number, decimals: number): string {
     return result.toFixed(2);
   }
 
-  return result.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return result.toLocaleString(undefined, {maximumFractionDigits: 2});
 }
 
 /**
  * Format date for display
  */
 function formatDate(timestamp: number): string {
-  const date = new Date(timestamp * 1000); // Convert seconds to milliseconds
-  return format(date, 'MMM d, h:mm a');
+  try {
+    // Convert to Date object (support both seconds and milliseconds formats)
+    const date = new Date(
+      timestamp >= 1000000000000 ? timestamp : timestamp * 1000,
+    );
+
+    // Ensure the date is valid
+    if (isNaN(date.getTime())) {
+      console.error(`Invalid timestamp: ${timestamp}`);
+      return 'Invalid date';
+    }
+
+    return format(date, 'MMM d, h:mm a');
+  } catch (error) {
+    console.error(`Error formatting date with timestamp ${timestamp}:`, error);
+    return 'Unknown date';
+  }
 }
 
 /**
  * Component for displaying a past swap transaction item with Jupiter-inspired UI
  */
-const PastSwapItem: React.FC<PastSwapItemProps> = ({ swap, onSelect, selected, inputTokenLogoURI, outputTokenLogoURI }) => {
-  const { inputToken, outputToken, timestamp } = swap;
+const PastSwapItem: React.FC<PastSwapItemProps> = ({
+  swap,
+  onSelect,
+  selected,
+  inputTokenLogoURI,
+  outputTokenLogoURI,
+}) => {
+  const {inputToken, outputToken, timestamp} = swap;
 
   // Format the token amounts with proper decimals
-  const formattedInputAmount = formatTokenAmount(inputToken.amount, inputToken.decimals);
-  const formattedOutputAmount = formatTokenAmount(outputToken.amount, outputToken.decimals);
+  const formattedInputAmount = formatTokenAmount(
+    inputToken.amount,
+    inputToken.decimals,
+  );
+  const formattedOutputAmount = formatTokenAmount(
+    outputToken.amount,
+    outputToken.decimals,
+  );
 
   // Determine image sources with clean fallbacks
-  const inputImageSource = inputTokenLogoURI || inputToken.logoURI || inputToken.image;
-  const outputImageSource = outputTokenLogoURI || outputToken.logoURI || outputToken.image;
+  const inputImageSource =
+    inputTokenLogoURI || inputToken.logoURI || inputToken.image;
+  const outputImageSource =
+    outputTokenLogoURI || outputToken.logoURI || outputToken.image;
 
   // Debug
   console.log('[PastSwapItem] Image sources:', {
     inputImageSource,
     outputImageSource,
     inputToken: `${inputToken.symbol} (${inputToken.mint?.substring(0, 6)}...)`,
-    outputToken: `${outputToken.symbol} (${outputToken.mint?.substring(0, 6)}...)`
+    outputToken: `${outputToken.symbol} (${outputToken.mint?.substring(
+      0,
+      6,
+    )}...)`,
   });
 
   return (
     <TouchableOpacity
       style={[styles.swapItem, selected && styles.selectedSwapItem]}
       onPress={() => onSelect(swap)}
-      activeOpacity={0.7}
-    >
+      activeOpacity={0.7}>
       <View style={styles.swapHeader}>
         <Text style={styles.dateText}>{formatDate(timestamp)}</Text>
 
@@ -125,7 +156,7 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({ swap, onSelect, selected, i
           <View style={styles.tokenIconContainer}>
             {inputImageSource ? (
               <Image
-                source={{ uri: inputImageSource }}
+                source={{uri: inputImageSource}}
                 style={styles.tokenIcon}
                 resizeMode="contain"
               />
@@ -138,10 +169,16 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({ swap, onSelect, selected, i
             )}
           </View>
           <View style={styles.tokenInfo}>
-            <Text style={styles.tokenAmount} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.tokenAmount}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               {formattedInputAmount}
             </Text>
-            <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.tokenSymbol}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               {inputToken.symbol || 'Unknown'}
             </Text>
           </View>
@@ -157,7 +194,7 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({ swap, onSelect, selected, i
           <View style={styles.tokenIconContainer}>
             {outputImageSource ? (
               <Image
-                source={{ uri: outputImageSource }}
+                source={{uri: outputImageSource}}
                 style={styles.tokenIcon}
                 resizeMode="contain"
               />
@@ -170,10 +207,16 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({ swap, onSelect, selected, i
             )}
           </View>
           <View style={styles.tokenInfo}>
-            <Text style={styles.tokenAmount} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.tokenAmount}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               {formattedOutputAmount}
             </Text>
-            <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
+            <Text
+              style={styles.tokenSymbol}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               {outputToken.symbol || 'Unknown'}
             </Text>
           </View>
@@ -199,7 +242,7 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: 'rgba(0,0,0,0.05)',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: {width: 0, height: 2},
         shadowOpacity: 1,
         shadowRadius: 4,
       },
@@ -301,4 +344,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PastSwapItem; 
+export default PastSwapItem;

@@ -3,7 +3,7 @@ import { View, StyleSheet, StatusBar, Platform, SafeAreaView } from 'react-nativ
 import Profile from '../../../../core/profile/components/profile';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useReduxHooks';
 import { ThreadPost } from '../../../../core/thread/components/thread.types';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
+import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
 import { flattenPosts } from '../../../../core/thread/components/thread.utils';
 import { useFocusEffect } from '@react-navigation/native';
 import { fetchFollowers, fetchFollowing } from '../../../../core/profile/services/profileService';
