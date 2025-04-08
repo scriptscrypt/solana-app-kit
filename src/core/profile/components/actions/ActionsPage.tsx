@@ -22,7 +22,8 @@ import {
 } from '../../utils/profileActionsUtils';
 import { ActionsPageProps } from '../../types';
 import { useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { fetchWalletActionsWithCache } from '../../services/profileActions';
+import { fetchWalletActionsWithCache } from '@/state/profile/reducer';
+
 
 interface RawTokenAmount {
   tokenAmount: string;

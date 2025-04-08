@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,12 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { TabView, SceneMap, SceneRendererProps, NavigationState } from 'react-native-tab-view';
 import SearchIcon from '../../../assets/svg/SearchIcon';
 import CloseIcon from '../../../assets/svg/CloseIcon';
-import { SERVER_URL } from '@env';
+import { SERVER_URL, BIRDEYE_API_KEY } from '@env';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
+import TokenDetailsSheet from './TokenDetailsSheet';
 
 const { width } = Dimensions.get('window');
 
@@ -28,23 +30,59 @@ type User = {
   profile_picture_url: string | null;
 };
 
+type Token = {
+  address: string;
+  name: string;
+  symbol: string;
+  logoURI?: string;
+  price: number;
+  priceChange24h?: number;
+  rank?: number;
+};
+
+// Define the route type
+type RouteType = {
+  key: string;
+  title: string;
+};
+
 export default function SearchScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Tabs state
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: 'profiles', title: 'Profiles' },
+    { key: 'tokens', title: 'Tokens' },
+  ]);
+
+  // Users state
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Tokens state
+  const [tokens, setTokens] = useState<Token[]>([]);
+  const [filteredTokens, setFilteredTokens] = useState<Token[]>([]);
+  const [loadingTokens, setLoadingTokens] = useState(false);
+
+  // Selected token state
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [isTokenDetailsVisible, setIsTokenDetailsVisible] = useState(false);
 
   // Get the status bar height for Android
   const STATUSBAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
 
-  // Fetch all users on component mount
+  // Fetch users and tokens on component mount
   useEffect(() => {
     fetchUsers();
+    fetchTrendingTokens();
   }, []);
 
-  // Filter users when search query changes
+  // Filter users and tokens when search query changes
   useEffect(() => {
+    // Filter users
     if (searchQuery.trim() === '') {
       setFilteredUsers(users);
     } else {
@@ -54,10 +92,22 @@ export default function SearchScreen() {
       );
       setFilteredUsers(filtered);
     }
-  }, [searchQuery, users]);
+
+    // Filter tokens
+    if (searchQuery.trim() === '') {
+      setFilteredTokens(tokens);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = tokens.filter(token =>
+        token.name.toLowerCase().includes(query) ||
+        token.symbol.toLowerCase().includes(query)
+      );
+      setFilteredTokens(filtered);
+    }
+  }, [searchQuery, users, tokens]);
 
   const fetchUsers = async () => {
-    setLoading(true);
+    setLoadingUsers(true);
     try {
       console.log('Fetching users from:', `${SERVER_URL}/api/profile/search`);
       const response = await fetch(`${SERVER_URL}/api/profile/search`);
@@ -76,13 +126,71 @@ export default function SearchScreen() {
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
-      setLoading(false);
+      setLoadingUsers(false);
+    }
+  };
+
+  const fetchTrendingTokens = async () => {
+    setLoadingTokens(true);
+    try {
+      // Using BirdEye API to get trending tokens with proper params and API key
+      const response = await fetch(
+        'https://public-api.birdeye.so/defi/token_trending?sort_by=rank&sort_type=asc&offset=0&limit=20',
+        {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+            'x-chain': 'solana',
+            'X-API-KEY': BIRDEYE_API_KEY
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to fetch trending tokens');
+
+      const data = await response.json();
+      console.log('Fetched token data:', data);
+
+      if (data.success && data.data?.tokens) {
+        const formattedTokens: Token[] = data.data.tokens.map((token: any) => ({
+          address: token.address,
+          name: token.name,
+          symbol: token.symbol,
+          logoURI: token.logoURI,
+          price: token.price,
+          priceChange24h: token.price24hChangePercent,
+          rank: token.rank,
+        }));
+
+        console.log('Token price change fields:', {
+          priceChange1D: data.data.tokens[0].priceChange1D,
+          change1d: data.data.tokens[0].change1d,
+          priceChange24h: data.data.tokens[0].priceChange24h
+        });
+
+        setTokens(formattedTokens);
+        setFilteredTokens(formattedTokens);
+      } else {
+        console.error('Invalid token response format:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching trending tokens:', error);
+    } finally {
+      setLoadingTokens(false);
     }
   };
 
   const handleUserPress = (user: User) => {
     navigation.navigate('OtherProfile', { userId: user.id });
   };
+
+  // Token item press handler (placeholder - implement as needed)
+  const handleTokenPress = (token: Token) => {
+    setSelectedToken(token);
+    setIsTokenDetailsVisible(true);
+  };
+
+  // PROFILE TAB COMPONENTS
 
   const renderUserItem = ({ item }: { item: User }) => {
     // Handle profile picture URL for Android - transform IPFS URLs to avoid 403/429 errors
@@ -143,6 +251,171 @@ export default function SearchScreen() {
     );
   };
 
+  // TOKEN TAB COMPONENTS
+
+  const renderTokenItem = ({ item }: { item: Token }) => {
+    const priceChangeColor =
+      !item.priceChange24h ? '#999' :
+        item.priceChange24h >= 0 ? '#4CAF50' : '#F44336';
+
+    const formattedPrice = item.price < 0.01
+      ? item.price.toFixed(8)
+      : item.price.toFixed(2);
+
+    const formattedPriceChange = item.priceChange24h
+      ? `${item.priceChange24h >= 0 ? '+' : ''}${item.priceChange24h.toFixed(2)}%`
+      : 'N/A';
+
+    // Get rank display (medal or number)
+    const getRankDisplay = (rank: number) => {
+      switch (rank) {
+        case 1:
+          return <Text style={styles.medalEmoji}>🥇</Text>;
+        case 2:
+          return <Text style={styles.medalEmoji}>🥈</Text>;
+        case 3:
+          return <Text style={styles.medalEmoji}>🥉</Text>;
+        default:
+          return <Text style={styles.rankNumber}>{rank}</Text>;
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={styles.tokenItem}
+        onPress={() => handleTokenPress(item)}
+        activeOpacity={0.7}
+      >
+        {/* Rank Display */}
+        <View style={styles.rankContainer}>
+          {getRankDisplay(item.rank || 0)}
+        </View>
+
+        {/* Token Logo */}
+        <View style={styles.tokenLogoContainer}>
+          {item.logoURI ? (
+            <Image
+              source={{ uri: item.logoURI }}
+              style={styles.tokenLogo}
+              defaultSource={require('../../../assets/images/SENDlogo.png')}
+            />
+          ) : (
+            <View style={styles.tokenLogoPlaceholder}>
+              <Text style={styles.tokenLogoText}>
+                {item.symbol[0] || '?'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Token Info */}
+        <View style={styles.tokenInfo}>
+          <Text style={styles.tokenSymbol}>{item.symbol}</Text>
+          <Text style={styles.tokenName} numberOfLines={1}>{item.name}</Text>
+        </View>
+
+        {/* Token Price Info */}
+        <View style={styles.tokenPriceContainer}>
+          <Text style={styles.tokenPrice}>${formattedPrice}</Text>
+          <Text style={[styles.tokenPriceChange, { color: priceChangeColor }]}>
+            {formattedPriceChange}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // TAB SCENES
+
+  const ProfilesTab = () => (
+    <View style={styles.tabContent}>
+      {loadingUsers ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0099ff" style={styles.loader} />
+          <Text style={styles.loaderText}>Searching for users...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredUsers}
+          renderItem={renderUserItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {searchQuery.length > 0 ? 'No users found matching your search' : 'No users available'}
+              </Text>
+              <Text style={styles.emptySubText}>
+                {searchQuery.length > 0 ? 'Try different keywords' : 'Check back later'}
+              </Text>
+            </View>
+          }
+        />
+      )}
+    </View>
+  );
+
+  const TokensTab = () => (
+    <View style={styles.tabContent}>
+      {loadingTokens ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0099ff" style={styles.loader} />
+          <Text style={styles.loaderText}>Loading trending tokens...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredTokens}
+          renderItem={renderTokenItem}
+          keyExtractor={item => item.address}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {searchQuery.length > 0 ? 'No tokens found matching your search' : 'No trending tokens available'}
+              </Text>
+              <Text style={styles.emptySubText}>
+                {searchQuery.length > 0 ? 'Try different keywords' : 'Check back later'}
+              </Text>
+            </View>
+          }
+        />
+      )}
+    </View>
+  );
+
+  const renderScene = SceneMap({
+    profiles: ProfilesTab,
+    tokens: TokensTab,
+  });
+
+  // Custom tab bar component
+  const CustomTabBar = () => {
+    return (
+      <View style={styles.tabBarContainer}>
+        <TouchableOpacity
+          style={[styles.tab, index === 0 && styles.activeTab]}
+          onPress={() => setIndex(0)}
+        >
+          <Text style={[styles.tabText, index === 0 && styles.activeTabText]}>
+            Profiles
+          </Text>
+          {index === 0 && <View style={styles.tabIndicator} />}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, index === 1 && styles.activeTab]}
+          onPress={() => setIndex(1)}
+        >
+          <Text style={[styles.tabText, index === 1 && styles.activeTabText]}>
+            Tokens
+          </Text>
+          {index === 1 && <View style={styles.tabIndicator} />}
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <>
       {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: '#fff' }} />}
@@ -154,7 +427,7 @@ export default function SearchScreen() {
           styles.header,
           Platform.OS === 'android' && androidStyles.header
         ]}>
-          <Text style={styles.headerTitle}>Search Users</Text>
+          <Text style={styles.headerTitle}>Search</Text>
         </View>
 
         <View style={styles.searchContainer}>
@@ -163,7 +436,7 @@ export default function SearchScreen() {
           </View>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by username..."
+            placeholder={index === 0 ? "Search by username..." : "Search tokens..."}
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -178,28 +451,23 @@ export default function SearchScreen() {
           )}
         </View>
 
-        {loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#0099ff" style={styles.loader} />
-            <Text style={styles.loaderText}>Searching for users...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredUsers}
-            renderItem={renderUserItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  {searchQuery.length > 0 ? 'No users found matching your search' : 'No users available'}
-                </Text>
-                <Text style={styles.emptySubText}>
-                  {searchQuery.length > 0 ? 'Try different keywords' : 'Check back later'}
-                </Text>
-              </View>
-            }
+        <CustomTabBar />
+
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={{ width }}
+          swipeEnabled={true}
+          renderTabBar={() => null}
+          lazy
+        />
+
+        {selectedToken && (
+          <TokenDetailsSheet
+            visible={isTokenDetailsVisible}
+            onClose={() => setIsTokenDetailsVisible(false)}
+            token={selectedToken}
           />
         )}
       </SafeAreaView>
@@ -223,6 +491,43 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#000',
+  },
+  tabBarContainer: {
+    flexDirection: 'row',
+    height: 48,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  tab: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  activeTab: {
+    backgroundColor: 'transparent',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#888',
+  },
+  activeTabText: {
+    color: '#000',
+    fontWeight: '600',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    height: 3,
+    width: '50%',
+    backgroundColor: '#000',
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  tabContent: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -265,6 +570,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  // User Item Styles
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -308,6 +614,75 @@ const styles = StyleSheet.create({
     color: '#999',
     fontWeight: '300',
   },
+  // Token Item Styles
+  tokenItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tokenLogoContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    overflow: 'hidden',
+  },
+  tokenLogo: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+  },
+  tokenLogoPlaceholder: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#ddd',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tokenLogoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  tokenInfo: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  tokenSymbol: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+  },
+  tokenName: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 2,
+  },
+  tokenPriceContainer: {
+    alignItems: 'flex-end',
+  },
+  tokenPrice: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+  },
+  tokenPriceChange: {
+    fontSize: 13,
+    marginTop: 2,
+  },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -325,6 +700,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#888',
     textAlign: 'center',
+  },
+  rankContainer: {
+    width: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  medalEmoji: {
+    fontSize: 20,
+  },
+  rankNumber: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
   },
 });
 

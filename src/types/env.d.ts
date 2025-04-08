@@ -21,4 +21,5 @@ declare module '@env' {
   export const HELIUS_RPC_CLUSTER: string;
   export const HELIUS_STAKED_URL: string;
   export const HELIUS_STAKED_API_KEY: string;
+  export const BIRDEYE_API_KEY: string;
 }
