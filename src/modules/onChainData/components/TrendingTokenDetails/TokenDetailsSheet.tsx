@@ -14,14 +14,15 @@ import LineGraph from '@/core/sharedUI/Common/TradeCard/LineGraph';
 import { styles } from './TokenDetailsSheet.styles';
 import { TokenDetailsSheetProps } from '../../types/tokenDetails.types';
 import { useTokenDetails } from '../../hooks/useTokenDetails';
-import { 
-    formatDollarChange, 
-    formatNumber, 
-    formatPrice, 
-    formatPriceChange, 
+import {
+    formatDollarChange,
+    formatNumber,
+    formatPrice,
+    formatPriceChange,
     formatTopHolders,
     getGraphData
 } from '../../utils/tokenDetailsFormatters';
+import RiskAnalysisSection from './RiskAnalysisSection';
 
 const { width } = Dimensions.get('window');
 
@@ -141,6 +142,12 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                         )}
                     </View>
 
+                    {/* Risk Analysis Section */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Security Analysis</Text>
+                        <RiskAnalysisSection tokenAddress={token.address} />
+                    </View>
+
                     {/* Info Section */}
                     <View style={styles.infoSection}>
                         <Text style={styles.sectionTitle}>Info</Text>
@@ -148,8 +155,8 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                             <View style={styles.infoItem}>
                                 <Text style={styles.infoLabel}>Created On</Text>
                                 <Text style={styles.infoValue}>
-                                    {tokenOverview?.created_on || 
-                                     (tokenOverview?.created_at ? new Date(tokenOverview.created_at * 1000).toLocaleDateString() : 'N/A')}
+                                    {tokenOverview?.created_on ||
+                                        (tokenOverview?.created_at ? new Date(tokenOverview.created_at * 1000).toLocaleDateString() : 'N/A')}
                                 </Text>
                             </View>
                             <View style={styles.infoItem}>
@@ -171,8 +178,8 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                             <View style={styles.infoItem}>
                                 <Text style={styles.infoLabel}>Circulating Supply</Text>
                                 <Text style={styles.infoValue}>
-                                    {formatNumber(tokenOverview?.supply?.circulating || 
-                                    tokenOverview?.circulatingSupply)}
+                                    {formatNumber(tokenOverview?.supply?.circulating ||
+                                        tokenOverview?.circulatingSupply)}
                                 </Text>
                             </View>
                             <View style={styles.infoItem}>
@@ -227,7 +234,7 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                                     styles.performanceValue,
                                     { color: (tradeData?.unique_wallet_24h_change_percent || 0) >= 0 ? '#4CAF50' : '#F44336' }
                                 ]}>
-                                    {tradeData?.unique_wallet_24h_change_percent 
+                                    {tradeData?.unique_wallet_24h_change_percent
                                         ? `${tradeData.unique_wallet_24h_change_percent >= 0 ? '+' : ''}${tradeData.unique_wallet_24h_change_percent.toFixed(2)}%`
                                         : 'N/A'}
                                 </Text>
@@ -236,7 +243,7 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                     </View>
 
                     {/* Security Section */}
-                    <View style={styles.securitySection}>
+                    {/* <View style={styles.securitySection}>
                         <Text style={styles.sectionTitle}>Security</Text>
                         <View style={styles.securityGrid}>
                             <View style={styles.securityItem}>
@@ -246,44 +253,35 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                             <View style={styles.securityItem}>
                                 <Text style={styles.securityLabel}>Mintable</Text>
                                 <Text style={styles.securityValue}>
-                                    {(tokenOverview?.mint_info?.is_mint_able === true || 
-                                      tokenSecurity?.is_mint_able === true || 
-                                      tokenOverview?.isMintable === true) ? 'Yes' : 'No'}
+                                    {(tokenOverview?.mint_info?.is_mint_able === true ||
+                                        tokenSecurity?.is_mint_able === true ||
+                                        tokenOverview?.isMintable === true)
+                                        ? 'Yes'
+                                        : 'No'}
                                 </Text>
                             </View>
                             <View style={styles.securityItem}>
-                                <Text style={styles.securityLabel}>Mutable Info</Text>
+                                <Text style={styles.securityLabel}>Mutable</Text>
                                 <Text style={styles.securityValue}>
-                                    {(tokenOverview?.metadata_info?.is_mutable === true || 
-                                      tokenSecurity?.is_mutable === true ||
-                                      tokenOverview?.isMutable === true) ? 'Yes' : 'No'}
+                                    {(tokenOverview?.metadata_info?.is_mutable === true ||
+                                        tokenSecurity?.is_mutable === true ||
+                                        tokenOverview?.isMutable === true)
+                                        ? 'Yes'
+                                        : 'No'}
                                 </Text>
                             </View>
                             <View style={styles.securityItem}>
-                                <Text style={styles.securityLabel}>Ownership Renounced</Text>
+                                <Text style={styles.securityLabel}>Authority</Text>
                                 <Text style={styles.securityValue}>
-                                    {tokenSecurity?.is_authority_renounced === true ? 'Yes' : 'No'}
-                                </Text>
-                            </View>
-                            <View style={styles.securityItem}>
-                                <Text style={styles.securityLabel}>Update Authority</Text>
-                                <Text style={styles.securityValue} numberOfLines={1}>
-                                    {(tokenSecurity?.update_authority || tokenSecurity?.updateAuthority) ? 
-                                        (() => {
-                                            const authority = tokenSecurity?.update_authority || tokenSecurity?.updateAuthority || '';
-                                            return `${authority.substring(0, 6)}...${authority.substring(authority.length - 6)}`;
-                                        })()
-                                        : 'N/A'}
-                                </Text>
-                            </View>
-                            <View style={styles.securityItem}>
-                                <Text style={styles.securityLabel}>Liquidity</Text>
-                                <Text style={styles.securityValue}>
-                                    ${formatNumber(marketData?.liquidity || tradeData?.liquidity)}
+                                    {tokenSecurity?.is_authority_renounced === true
+                                        ? 'Renounced'
+                                        : tokenSecurity?.mint_authority || tokenSecurity?.update_authority || tokenSecurity?.updateAuthority
+                                            ? 'Active'
+                                            : 'Unknown'}
                                 </Text>
                             </View>
                         </View>
-                    </View>
+                    </View> */}
                 </ScrollView>
             </View>
         </Modal>

@@ -95,6 +95,9 @@ export const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
     },
+    section: {
+        marginBottom: 32,
+    },
     chartContainer: {
         marginBottom: 32,
         height: 300,
