@@ -21,7 +21,7 @@ import CloseIcon from '../../../assets/svg/CloseIcon';
 import { SERVER_URL, BIRDEYE_API_KEY } from '@env';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
 import TokenDetailsSheet from '../../../modules/onChainData/components/TrendingTokenDetails/TokenDetailsSheet';
-import { getTokenRiskReport, getRiskScoreColor, getRiskLevel } from '../../../services/rugCheckService';
+import { RiskLevel } from '../../../services/rugCheckService';
 
 const { width } = Dimensions.get('window');
 
@@ -39,11 +39,6 @@ type Token = {
   price: number;
   priceChange24h?: number;
   rank?: number;
-  riskScore?: number;
-  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
-  isRugged?: boolean;
-  riskLoading?: boolean;
-  riskError?: boolean;
 };
 
 // Define the route type
@@ -158,6 +153,7 @@ export default function SearchScreen() {
       console.log('Fetched token data:', data);
 
       if (data.success && data.data?.tokens) {
+        // Map directly to the Token type without risk fields
         const formattedTokens: Token[] = data.data.tokens.map((token: any) => ({
           address: token.address,
           name: token.name,
@@ -166,51 +162,11 @@ export default function SearchScreen() {
           price: token.price,
           priceChange24h: token.price24hChangePercent,
           rank: token.rank,
-          riskLoading: true, // Initially set to loading state
         }));
 
         // Set the initial token list first to show content quickly
         setTokens(formattedTokens);
         setFilteredTokens(formattedTokens);
-
-        // Fetch risk data for each token in the background
-        const tokensWithRiskPromises = formattedTokens.map(async (token) => {
-          try {
-            console.log(`Fetching risk data for token: ${token.symbol} (${token.address})`);
-            const riskReport = await getTokenRiskReport(token.address);
-
-            if (riskReport) {
-              console.log(`Received risk data for ${token.symbol}: score=${riskReport.score_normalised}, rugged=${riskReport.rugged}`);
-              return {
-                ...token,
-                riskScore: riskReport.score_normalised,
-                riskLevel: getRiskLevel(riskReport.score_normalised),
-                isRugged: riskReport.rugged,
-                riskLoading: false,
-              };
-            } else {
-              console.log(`No risk data available for ${token.symbol}`);
-              return {
-                ...token,
-                riskLoading: false,
-                riskError: true
-              };
-            }
-          } catch (error) {
-            console.error(`Error fetching risk data for ${token.symbol}:`, error);
-            return {
-              ...token,
-              riskLoading: false,
-              riskError: true
-            };
-          }
-        });
-
-        // Update tokens when all risk data has been fetched
-        const tokensWithRisk = await Promise.all(tokensWithRiskPromises);
-        console.log('Updated tokens with risk data:', tokensWithRisk.map(t => ({ symbol: t.symbol, riskScore: t.riskScore })));
-        setTokens(tokensWithRisk);
-        setFilteredTokens(tokensWithRisk);
       } else {
         console.error('Invalid token response format:', data);
       }
@@ -225,14 +181,13 @@ export default function SearchScreen() {
     navigation.navigate('OtherProfile', { userId: user.id });
   };
 
-  // Token item press handler (placeholder - implement as needed)
+  // Token item press handler - opens the token details sheet
   const handleTokenPress = (token: Token) => {
     setSelectedToken(token);
     setIsTokenDetailsVisible(true);
   };
 
   // PROFILE TAB COMPONENTS
-
   const renderUserItem = ({ item }: { item: User }) => {
     // Handle profile picture URL for Android - transform IPFS URLs to avoid 403/429 errors
     const getProfileImageSource = () => {
@@ -293,7 +248,6 @@ export default function SearchScreen() {
   };
 
   // TOKEN TAB COMPONENTS
-
   const renderTokenItem = ({ item }: { item: Token }) => {
     const priceChangeColor =
       !item.priceChange24h ? '#999' :
@@ -367,7 +321,6 @@ export default function SearchScreen() {
   };
 
   // TAB SCENES
-
   const ProfilesTab = () => (
     <View style={styles.tabContent}>
       {loadingUsers ? (

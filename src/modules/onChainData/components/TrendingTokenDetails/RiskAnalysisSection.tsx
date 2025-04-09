@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevelColor } from '../../../../services/rugCheckService';
+import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevelColor, RiskLevel } from '../../../../services/rugCheckService';
 
 interface RiskAnalysisSectionProps {
     tokenAddress: string;
@@ -21,7 +21,7 @@ const RiskAnalysisSection: React.FC<RiskAnalysisSectionProps> = ({ tokenAddress 
 
         try {
             console.log('[RiskAnalysis] Fetching report for', tokenAddress);
-            const report = await getTokenRiskReport(tokenAddress);
+            const report = await getTokenRiskReport(tokenAddress, true);
 
             if (report) {
                 console.log('[RiskAnalysis] Successfully received report');
@@ -104,7 +104,10 @@ const RiskAnalysisSection: React.FC<RiskAnalysisSectionProps> = ({ tokenAddress 
                         <View key={index} style={styles.riskItem}>
                             <View style={styles.riskItemHeader}>
                                 <Text style={styles.riskName}>{risk.name}</Text>
-                                <View style={[styles.riskLevelBadge, { backgroundColor: getRiskLevelColor(risk.level) }]}>
+                                <View style={[
+                                    styles.riskLevelBadge,
+                                    { backgroundColor: getRiskLevelColor(risk.level.toLowerCase() as RiskLevel) }
+                                ]}>
                                     <Text style={styles.riskLevelText}>{risk.level.toUpperCase()}</Text>
                                 </View>
                             </View>

@@ -2,6 +2,9 @@ import { Platform } from 'react-native';
 
 const RUGCHECK_BASE_URL = 'https://api.rugcheck.xyz/v1';
 
+// Define a specific type for risk levels
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
 export interface TokenRiskReport {
   score: number;
   score_normalised: number;
@@ -32,9 +35,71 @@ export interface TokenRiskReport {
   totalMarketLiquidity?: number;
 }
 
-export async function getTokenRiskReport(tokenMint: string): Promise<TokenRiskReport | null> {
+// Cache mechanism to store token risk reports and reduce API calls
+interface Cache {
+  [key: string]: {
+    data: TokenRiskReport;
+    timestamp: number;
+  };
+}
+
+// In-memory cache with a 1-hour expiration
+const cache: Cache = {};
+const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour in milliseconds
+
+// Queue for throttling API requests
+let requestQueue: Array<{
+  mint: string;
+  resolve: (value: TokenRiskReport | null) => void;
+  reject: (reason?: any) => void;
+}> = [];
+let isProcessingQueue = false;
+const THROTTLE_DELAY = 500; // milliseconds between API requests
+
+/**
+ * Process the queue of API requests to prevent rate limiting
+ */
+async function processQueue() {
+  if (isProcessingQueue || requestQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  
   try {
-    console.log(`[RugCheck] Fetching risk report for token: ${tokenMint}`);
+    const request = requestQueue.shift();
+    if (!request) {
+      isProcessingQueue = false;
+      return;
+    }
+    
+    console.log(`[RugCheck] Processing queued request for ${request.mint}`);
+    
+    try {
+      const result = await fetchTokenRiskReportFromAPI(request.mint);
+      request.resolve(result);
+    } catch (error) {
+      console.error(`[RugCheck] Error in queued request for ${request.mint}:`, error);
+      request.reject(error);
+    }
+    
+    // Wait before processing the next request
+    setTimeout(() => {
+      isProcessingQueue = false;
+      processQueue();
+    }, THROTTLE_DELAY);
+  } catch (error) {
+    console.error('[RugCheck] Error processing queue:', error);
+    isProcessingQueue = false;
+  }
+}
+
+/**
+ * Raw API call function for RugCheck API
+ * @param tokenMint The mint address of the token
+ * @returns The token risk report or null on error
+ */
+async function fetchTokenRiskReportFromAPI(tokenMint: string): Promise<TokenRiskReport | null> {
+  try {
+    console.log(`[RugCheck] Fetching risk report from API for token: ${tokenMint}`);
     
     const endpoint = `${RUGCHECK_BASE_URL}/tokens/${tokenMint}/report`;
     console.log(`[RugCheck] API endpoint: ${endpoint}`);
@@ -65,6 +130,13 @@ export async function getTokenRiskReport(tokenMint: string): Promise<TokenRiskRe
 
     const data = await response.json();
     console.log(`[RugCheck] Successfully retrieved data for ${tokenMint}`);
+
+    // Save to cache
+    cache[tokenMint] = {
+      data,
+      timestamp: Date.now()
+    };
+    
     return data;
   } catch (error) {
     console.error('[RugCheck] Error fetching token risk report:', error);
@@ -72,15 +144,57 @@ export async function getTokenRiskReport(tokenMint: string): Promise<TokenRiskRe
   }
 }
 
-// Helper function to determine risk level based on normalized score
-export function getRiskLevel(score: number): 'low' | 'medium' | 'high' | 'critical' {
+/**
+ * Fetches the token risk report using caching and request throttling
+ * to prevent rate limiting issues.
+ * 
+ * @param tokenMint The mint address of the token.
+ * @param priority Whether this request should be processed with priority
+ * @returns A promise that resolves with the TokenRiskReport or null if an error occurs.
+ */
+export async function getTokenRiskReport(
+  tokenMint: string, 
+  priority: boolean = false
+): Promise<TokenRiskReport | null> {
+  // Check cache first
+  if (cache[tokenMint] && (Date.now() - cache[tokenMint].timestamp) < CACHE_EXPIRY) {
+    console.log(`[RugCheck] Using cached data for ${tokenMint}`);
+    return cache[tokenMint].data;
+  }
+  
+  // Return a new promise that will be resolved when the request is processed
+  return new Promise<TokenRiskReport | null>((resolve, reject) => {
+    // Add the request to the queue
+    if (priority) {
+      // Add to front of queue for priority requests (e.g., from token details view)
+      requestQueue.unshift({ mint: tokenMint, resolve, reject });
+    } else {
+      // Add to end of queue for normal requests
+      requestQueue.push({ mint: tokenMint, resolve, reject });
+    }
+    
+    // Start processing the queue if it's not already being processed
+    processQueue();
+  });
+}
+
+/**
+ * Determines the risk level category based on the normalized score.
+ * @param score The normalized risk score (0-100).
+ * @returns The risk level category.
+ */
+export function getRiskLevel(score: number): RiskLevel {
   if (score < 30) return 'low';
   if (score < 60) return 'medium';
   if (score < 80) return 'high';
   return 'critical';
 }
 
-// Helper function to get color for risk score
+/**
+ * Gets the display color associated with a risk score.
+ * @param score The normalized risk score (0-100).
+ * @returns A hex color code string.
+ */
 export function getRiskScoreColor(score: number): string {
   if (score < 30) return '#4CAF50'; // Low risk - green
   if (score < 60) return '#FFC107'; // Medium risk - yellow
@@ -88,9 +202,13 @@ export function getRiskScoreColor(score: number): string {
   return '#F44336'; // Critical risk - red
 }
 
-// Helper function to get color for risk level
-export function getRiskLevelColor(level: string): string {
-  switch (level.toLowerCase()) {
+/**
+ * Gets the display color associated with a risk level category.
+ * @param level The risk level category.
+ * @returns A hex color code string.
+ */
+export function getRiskLevelColor(level: RiskLevel): string {
+  switch (level) {
     case 'low':
       return '#4CAF50';
     case 'medium':

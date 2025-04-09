@@ -17,7 +17,7 @@ import { styles } from './TokenDetailsDrawer.styles';
 import { fetchUserAssets } from '../../utils/fetch';
 import { Timeframe, useCoingecko } from '../../hooks/useCoingecko';
 import { fetchJupiterTokenData } from '../../utils/tokenUtils';
-import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevel, getRiskLevelColor } from '../../../../services/rugCheckService';
+import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevel, getRiskLevelColor, RiskLevel } from '../../../../services/rugCheckService';
 
 const { width } = Dimensions.get('window');
 
@@ -873,7 +873,7 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
                       <Text style={styles.riskFactorName}>{risk.name}</Text>
                       <View style={[
                         styles.riskLevelBadge,
-                        { backgroundColor: getRiskLevelColor(risk.level) }
+                        { backgroundColor: getRiskLevelColor(risk.level.toLowerCase() as RiskLevel) }
                       ]}>
                         <Text style={styles.riskLevelText}>
                           {risk.level.toUpperCase()}
