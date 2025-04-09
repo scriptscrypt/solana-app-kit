@@ -6,27 +6,19 @@ import {
   Connection,
   PublicKey,
   Keypair,
-  Transaction,
-  clusterApiUrl,
-  SystemProgram,
-  TransactionInstruction,
 } from '@solana/web3.js';
-import TokenMillIDL from '../../idl/token_mill.json';
+import TokenMillIDL from './idl/token_mill.json';
 import BN from 'bn.js';
 import {
-  TokenParams,
   StakingParams,
   VestingParams,
   TokenMillResponse,
   SwapParams,
 } from '../../types/interfaces';
-import {TokenMillType} from '../../idl/token_mill';
-import axios from 'axios';
-import {LAMPORTS_PER_SOL} from '@solana/web3.js';
+import {TokenMillType} from './idl/token_mill';
 import {
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
-  createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
 
 dotenv.config();

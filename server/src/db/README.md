@@ -1,120 +1,142 @@
 # Database Directory
 
-This directory contains the database configuration, connection setup, and migration files for the Solana Social Starter backend.
+This directory contains the database configuration, connection setup, and migration files for the Solana App Kit server. We use PostgreSQL as our database system and Knex.js as the query builder and migration tool.
 
-## Overview
+## Structure
 
-The application uses PostgreSQL as its primary database, with Knex.js as the query builder and migration tool. This enables:
+- `knex.ts`: Database connection configuration
+- `knexfile.ts`: Knex.js configuration for different environments
+- `migrations/`: Directory containing all database migration files
 
-- Structured SQL queries with TypeScript support
-- Database schema versioning through migrations
-- Cross-platform compatibility
-- Connection pooling
+## Database Configuration
 
-## Files
-
-### `knex.ts`
-
-The main database connection instance that is used throughout the application. It:
-
-- Imports configuration from `knexfile.ts`
-- Creates and exports a configured Knex instance
-- Sets up logging and connection pooling
-
-### `knexfile.ts`
-
-Contains environment-specific database configuration:
-
-- Connection parameters (pulled from environment variables)
-- Migration settings
-- Pool configuration
-- SSL settings
-
-## Migrations
-
-The `migrations` directory contains all database schema migrations, which:
-
-- Are executed in sequential order based on timestamp prefixes
-- Use the Knex.js migration API to create, alter, and drop tables
-- Support both "up" (apply) and "down" (rollback) operations
-
-## Database Schema
-
-The database schema includes tables for:
-
-1. **Users**: Profile information and authentication data
-2. **Threads**: Social media post content
-3. **Thread Interactions**: Likes, reposts, and replies
-4. **User Wallets**: Connected Solana wallets
-5. **Images**: Metadata for uploaded images
-
-## Connection
-
-The database connection is established using the `DATABASE_URL` environment variable, which should be in the format:
-
-```
-postgresql://username:password@hostname:port/database_name
-```
-
-## Usage
-
-The Knex instance is imported where database access is needed:
+The database connection is configured in `knex.ts` using environment variables:
 
 ```typescript
-import knex from '../db/knex';
+import Knex from 'knex';
+import config from './knexfile';
 
-async function getUser(userId: string) {
-  return await knex('users').where({id: userId}).first();
-}
+const environment = process.env.NODE_ENV || 'development';
+const knexConfig = config[environment];
+const knex = Knex(knexConfig);
+
+export default knex;
 ```
 
 ## Migrations
 
-To create a new migration:
+Database migrations are managed through Knex.js migration files in the `migrations/` directory. Migrations allow for version-controlled changes to the database schema.
 
-```bash
-npx knex migrate:make migration_name
-```
+### Migration Files
 
-This will create a new file in the `migrations` directory with the structure:
+Migration files are named with a timestamp prefix, followed by a descriptive name:
+- `20230101000000_create_users_table.ts`
+- `20230201000000_add_profile_fields.ts`
+
+Each migration file exports `up` and `down` functions:
+- `up`: Applies the migration (creates tables, adds columns, etc.)
+- `down`: Reverts the migration (drops tables, removes columns, etc.)
+
+Example migration file:
 
 ```typescript
-import {Knex} from 'knex';
+import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
-  // Create or modify tables
-  return knex.schema.createTable('table_name', table => {
-    table.increments('id').primary();
-    table.string('name').notNullable();
+  return knex.schema.createTable('users', (table) => {
+    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.string('username').unique().notNullable();
+    table.string('wallet_address').unique().notNullable();
     table.timestamps(true, true);
   });
 }
 
 export async function down(knex: Knex): Promise<void> {
-  // Undo the changes
-  return knex.schema.dropTable('table_name');
+  return knex.schema.dropTable('users');
 }
 ```
 
-## Running Migrations
+### Running Migrations
 
-Migrations are automatically run when the server starts through the `runMigrationsAndStartServer` function in `index.ts`. They can also be run manually:
+Migrations can be run using the following commands:
 
 ```bash
-# Run all pending migrations
+# Apply all pending migrations
 npx knex migrate:latest
 
-# Roll back the last batch of migrations
+# Rollback the last batch of migrations
 npx knex migrate:rollback
 
-# Roll back all migrations
-npx knex migrate:rollback --all
+# Run a specific migration
+npx knex migrate:up 20230101000000_create_users_table.ts
+
+# Create a new migration file
+npx knex migrate:make create_new_table
 ```
+
+## Database Schema
+
+The database includes tables for:
+
+### Users and Profiles
+- `users`: User account information
+- `profiles`: User profile details
+- `follows`: User following relationships
+
+### Social Features
+- `threads`: Social media posts/threads
+- `thread_likes`: Thread like interactions
+- `thread_images`: Images attached to threads
+- `comments`: Comments on threads
+
+### Token Management
+- `tokens`: Token information
+- `markets`: Trading market information
+- `stakes`: User staking positions
+- `vesting_plans`: Token vesting schedules
+
+## Query Patterns
+
+When working with the database:
+
+1. Import the knex instance:
+   ```typescript
+   import knex from '../db/knex';
+   ```
+
+2. Write your queries using the Knex.js query builder:
+   ```typescript
+   // Select query
+   const users = await knex('users')
+     .where({ active: true })
+     .select('id', 'username');
+
+   // Insert query
+   const [userId] = await knex('users')
+     .insert({
+       username: 'newuser',
+       wallet_address: 'solana123',
+     })
+     .returning('id');
+
+   // Update query
+   await knex('users')
+     .where({ id: userId })
+     .update({ username: 'updateduser' });
+
+   // Delete query
+   await knex('users')
+     .where({ id: userId })
+     .delete();
+   ```
 
 ## Best Practices
 
-1. Always create migrations for schema changes, never modify the database directly
-2. Include both "up" and "down" functions in migrations
-3. Keep migrations small and focused on specific changes
-4. Use transactions for complex migrations
-5. Add comments to explain complex or non-obvious schema decisions
+- Use transactions for multi-table operations
+- Create indexes for frequently queried columns
+- Use parameterized queries to prevent SQL injection
+- Keep migrations small and focused
+- Write down migrations for all schema changes
+- Add comments to explain complex migrations
+- Use consistent naming conventions for tables and columns
+- Implement soft deletes where appropriate (using a `deleted_at` timestamp)
