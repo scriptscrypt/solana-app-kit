@@ -17,6 +17,7 @@ import { styles } from './TokenDetailsDrawer.styles';
 import { fetchUserAssets } from '../../utils/fetch';
 import { Timeframe, useCoingecko } from '../../hooks/useCoingecko';
 import { fetchJupiterTokenData } from '../../utils/tokenUtils';
+import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevel, getRiskLevelColor } from '../../../../services/rugCheckService';
 
 const { width } = Dimensions.get('window');
 
@@ -67,6 +68,11 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'market'>('overview');
 
+  // Risk analysis state
+  const [riskReport, setRiskReport] = useState<TokenRiskReport | null>(null);
+  const [loadingRiskReport, setLoadingRiskReport] = useState(false);
+  const [riskReportError, setRiskReportError] = useState<string | null>(null);
+
   const {
     timeframe,
     setTimeframe,
@@ -91,6 +97,7 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
         fetchTokenDetails();
       }
       fetchHeliusData();
+      fetchRiskReport();
     }
   }, [visible, tokenMint, initialData]);
 
@@ -130,6 +137,34 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
       // handle error if needed
     } finally {
       setLoadingHelius(false);
+    }
+  };
+
+  const fetchRiskReport = async () => {
+    // Skip risk check for NFTs and collections
+    if (initialData?.isCollection || initialData?.nftData) {
+      return;
+    }
+
+    setLoadingRiskReport(true);
+    setRiskReportError(null);
+
+    try {
+      console.log('[TokenDetailsDrawer] Fetching risk report for token:', tokenMint);
+      const report = await getTokenRiskReport(tokenMint);
+
+      if (report) {
+        console.log('[TokenDetailsDrawer] Successfully fetched risk report');
+        setRiskReport(report);
+      } else {
+        console.log('[TokenDetailsDrawer] No risk report data available');
+        setRiskReportError('Unable to retrieve risk data');
+      }
+    } catch (error) {
+      console.error('[TokenDetailsDrawer] Error fetching risk report:', error);
+      setRiskReportError('Error loading security data');
+    } finally {
+      setLoadingRiskReport(false);
     }
   };
 
@@ -224,9 +259,9 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
             <Text style={styles.sectionText}>
               {initialData?.isCollection
                 ? initialData?.collectionData?.description ||
-                  'No description available.'
+                'No description available.'
                 : initialData?.nftData?.description ||
-                  'No description available.'}
+                'No description available.'}
             </Text>
           </View>
 
@@ -248,11 +283,11 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
                     <View style={styles.statBox}>
                       <Text style={styles.collectionStatLabel}>Listed</Text>
                       <Text style={styles.collectionStatValue}>
-                        {initialData.collectionData.stats.numListed ? 
+                        {initialData.collectionData.stats.numListed ?
                           initialData.collectionData.stats.numListed.toString() : '0'}
                       </Text>
                       <Text style={styles.statSubValue}>
-                        {initialData.collectionData.stats.pctListed ? 
+                        {initialData.collectionData.stats.pctListed ?
                           initialData.collectionData.stats.pctListed.toFixed(1) : '0'}
                         %
                       </Text>
@@ -260,7 +295,7 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
                     <View style={styles.statBox}>
                       <Text style={styles.collectionStatLabel}>24h Vol</Text>
                       <Text style={styles.collectionStatValue}>
-                        {initialData.collectionData.stats.volume24h ? 
+                        {initialData.collectionData.stats.volume24h ?
                           (parseFloat(initialData.collectionData.stats.volume24h) / 1_000_000_000).toFixed(1) : '0'}{' '}
                         <Text>SOL</Text>
                       </Text>
@@ -292,7 +327,7 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Floor Price</Text>
                     <Text style={styles.detailValue}>
-                      {initialData.collectionData.floorPrice ? 
+                      {initialData.collectionData.floorPrice ?
                         initialData.collectionData.floorPrice.toFixed(2) : '0'} SOL
                     </Text>
                   </View>
@@ -332,9 +367,9 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Listed</Text>
                     <Text style={styles.detailValue}>
-                      {initialData.collectionData.stats.numListed ? 
+                      {initialData.collectionData.stats.numListed ?
                         initialData.collectionData.stats.numListed.toString() : '0'} (
-                      {initialData.collectionData.stats.pctListed ? 
+                      {initialData.collectionData.stats.pctListed ?
                         initialData.collectionData.stats.pctListed.toFixed(2) : '0'}%)
                     </Text>
                   </View>
@@ -344,7 +379,7 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Total Sales</Text>
                     <Text style={styles.detailValue}>
-                      {initialData.collectionData.stats.salesAll ? 
+                      {initialData.collectionData.stats.salesAll ?
                         initialData.collectionData.stats.salesAll.toString() : '0'}
                     </Text>
                   </View>
@@ -621,6 +656,9 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
           )}
         </View>
 
+        {/* Security Analysis Section */}
+        {renderRiskAnalysisSection()}
+
         {timeframePrice > 0 && (
           <View style={styles.statsSummaryContainer}>
             <View style={styles.statItem}>
@@ -768,6 +806,111 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
       </View>
     </ScrollView>
   );
+
+  const renderRiskAnalysisSection = () => {
+    // Don't show risk analysis for NFTs and collections
+    if (initialData?.isCollection || initialData?.nftData) {
+      return null;
+    }
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Security Analysis</Text>
+
+        {loadingRiskReport ? (
+          <View style={styles.riskLoadingContainer}>
+            <ActivityIndicator size="small" color="#32D4DE" />
+            <Text style={styles.riskLoadingText}>Loading security data...</Text>
+          </View>
+        ) : riskReportError ? (
+          <View style={styles.riskErrorContainer}>
+            <Text style={styles.riskErrorText}>{riskReportError}</Text>
+          </View>
+        ) : !riskReport ? (
+          <Text style={styles.sectionText}>No security data available.</Text>
+        ) : (
+          <View style={styles.riskContainer}>
+            {/* Risk Score */}
+            <View style={styles.riskScoreContainer}>
+              <View style={[
+                styles.riskScoreBadge,
+                { backgroundColor: getRiskScoreColor(riskReport.score_normalised) }
+              ]}>
+                <Text style={styles.riskScoreValue}>
+                  {Math.round(riskReport.score_normalised)}
+                </Text>
+              </View>
+
+              <View style={styles.riskLabelContainer}>
+                <Text style={[
+                  styles.riskLabel,
+                  { color: getRiskScoreColor(riskReport.score_normalised) }
+                ]}>
+                  {riskReport.rugged ? 'RUGGED' : getRiskLevelText(riskReport.score_normalised)}
+                </Text>
+                {riskReport.rugged && (
+                  <Text style={styles.ruggedDescription}>
+                    This token has been identified as rugged. Trading is not recommended.
+                  </Text>
+                )}
+              </View>
+            </View>
+
+            {/* Risk description */}
+            {!riskReport.rugged && (
+              <Text style={styles.riskDescription}>
+                {getRiskDescription(riskReport.score_normalised)}
+              </Text>
+            )}
+
+            {/* Risk Factors */}
+            {riskReport.risks && riskReport.risks.length > 0 && (
+              <>
+                <Text style={styles.riskFactorsTitle}>Risk Factors</Text>
+                {riskReport.risks.slice(0, 3).map((risk, index) => (
+                  <View key={index} style={styles.riskFactorItem}>
+                    <View style={styles.riskFactorHeader}>
+                      <Text style={styles.riskFactorName}>{risk.name}</Text>
+                      <View style={[
+                        styles.riskLevelBadge,
+                        { backgroundColor: getRiskLevelColor(risk.level) }
+                      ]}>
+                        <Text style={styles.riskLevelText}>
+                          {risk.level.toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.riskFactorDescription}>{risk.description}</Text>
+                  </View>
+                ))}
+              </>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Helper function to get human-readable risk level
+  const getRiskLevelText = (score: number): string => {
+    if (score < 30) return 'Low Risk';
+    if (score < 60) return 'Medium Risk';
+    if (score < 80) return 'High Risk';
+    return 'Critical Risk';
+  };
+
+  // Helper function to get risk description
+  const getRiskDescription = (score: number): string => {
+    if (score < 30) {
+      return 'This token has a low risk score. It shows strong security indicators and appears to have legitimate tokenomics.';
+    } else if (score < 60) {
+      return 'This token has a medium risk score. While it shows some positive signs, there are potential concerns that should be evaluated.';
+    } else if (score < 80) {
+      return 'This token has a high risk score. Multiple risk factors have been identified that could indicate potential issues.';
+    } else {
+      return 'This token has a critical risk score. Significant red flags have been detected that suggest high risk of loss.';
+    }
+  };
 
   return (
     <Modal

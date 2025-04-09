@@ -392,4 +392,104 @@ export const styles = StyleSheet.create({
     maxWidth: undefined,
     flexWrap: 'nowrap',
   },
+  riskLoadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  riskLoadingText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
+  },
+  riskErrorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  riskErrorText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  riskContainer: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  riskScoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  riskScoreBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  riskScoreValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  riskLabelContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  riskLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  ruggedDescription: {
+    fontSize: 12,
+    color: '#F44336',
+    marginTop: 4,
+  },
+  riskDescription: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  riskFactorsTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  riskFactorItem: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  riskFactorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  riskFactorName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    flex: 1,
+  },
+  riskLevelBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  riskLevelText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  riskFactorDescription: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 18,
+  },
 }); 
