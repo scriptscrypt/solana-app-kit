@@ -289,10 +289,10 @@ const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNam
 
     return (
         <View style={styles.navigationMapContainer}>
-            <Text style={styles.mapTitle}>App Navigation Structure</Text>
+            {/* <Text style={styles.mapTitle}>App Navigation Structure</Text>
             <Text style={styles.mapDescription}>
                 Tap on dropdown arrows to expand sections. Tap "Navigate" to go to screens.
-            </Text>
+            </Text> */}
 
             <View style={styles.treeContainer}>
                 <NavNode id="bottomNav" />
@@ -495,6 +495,40 @@ const DevDrawer = () => {
                     </View>
 
                     <NavigationLegend />
+
+                    <View style={styles.divider} />
+
+                    <Text style={styles.sectionTitle}>Developer Info</Text>
+
+                    <View style={styles.infoCard}>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Environment:</Text>
+                            <Text style={styles.infoValue}>Development</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>App Version:</Text>
+                            <Text style={styles.infoValue}>
+                                {(process.env as any).npm_package_version || '0.1.0'}
+                            </Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Login Status:</Text>
+                            <Text style={[styles.infoValue, { color: isLoggedIn ? '#34C759' : '#FF9500' }]}>
+                                {isLoggedIn ? 'Logged In' : 'Not Logged In'}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {!isLoggedIn && (
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={bypassAuth}
+                        >
+                            <Text style={styles.actionButtonText}>Force Login (For Testing)</Text>
+                        </TouchableOpacity>
+                    )}
                 </ScrollView>
             </SafeAreaView>
         </View>
