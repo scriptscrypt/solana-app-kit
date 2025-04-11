@@ -6,6 +6,8 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  View,
+  Switch,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { usePumpFun } from '../hooks/usePumpFun';
@@ -33,6 +35,11 @@ export const PumpfunLaunchSection: React.FC<PumpfunLaunchSectionProps> = ({
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  // Verification options
+  const [verifyToken, setVerifyToken] = useState(true);
+  const [dataIntegrityAccepted, setDataIntegrityAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -52,6 +59,15 @@ export const PumpfunLaunchSection: React.FC<PumpfunLaunchSectionProps> = ({
       return;
     }
 
+    // Verify that the user has accepted terms if verification is enabled
+    if (verifyToken && (!dataIntegrityAccepted || !termsAccepted)) {
+      Alert.alert(
+        'Verification Terms',
+        'You must accept both data integrity and terms to verify your token.',
+      );
+      return;
+    }
+
     setLoading(true);
     setStatus('Preparing token launch...');
 
@@ -65,6 +81,10 @@ export const PumpfunLaunchSection: React.FC<PumpfunLaunchSectionProps> = ({
         website,
         imageUri,
         solAmount: Number(solAmount),
+        // Add verification options
+        verifyToken,
+        dataIntegrityAccepted,
+        termsAccepted,
         onStatusUpdate: (newStatus) => {
           console.log('Launch token status:', newStatus);
           // Use TransactionService to filter raw error messages
@@ -157,6 +177,56 @@ export const PumpfunLaunchSection: React.FC<PumpfunLaunchSectionProps> = ({
           style={PumpfunLaunchStyles.imagePreview}
         />
       )}
+
+      {/* Token Verification Options */}
+      <View style={PumpfunLaunchStyles.verificationSection}>
+        <Text style={PumpfunLaunchStyles.verificationTitle}>Token Verification</Text>
+
+        <View style={PumpfunLaunchStyles.switchRow}>
+          <Text style={PumpfunLaunchStyles.switchLabel}>Verify on RugCheck</Text>
+          <Switch
+            value={verifyToken}
+            onValueChange={setVerifyToken}
+            disabled={loading}
+            trackColor={{ false: '#d3d3d3', true: '#cce5ff' }}
+            thumbColor={verifyToken ? '#2196F3' : '#f4f3f4'}
+          />
+        </View>
+
+        {verifyToken && (
+          <>
+            <View style={PumpfunLaunchStyles.switchRow}>
+              <Text style={PumpfunLaunchStyles.switchLabel}>
+                I confirm the data provided is accurate
+              </Text>
+              <Switch
+                value={dataIntegrityAccepted}
+                onValueChange={setDataIntegrityAccepted}
+                disabled={loading}
+                trackColor={{ false: '#d3d3d3', true: '#cce5ff' }}
+                thumbColor={dataIntegrityAccepted ? '#2196F3' : '#f4f3f4'}
+              />
+            </View>
+
+            <View style={PumpfunLaunchStyles.switchRow}>
+              <Text style={PumpfunLaunchStyles.switchLabel}>
+                I accept the RugCheck terms of service
+              </Text>
+              <Switch
+                value={termsAccepted}
+                onValueChange={setTermsAccepted}
+                disabled={loading}
+                trackColor={{ false: '#d3d3d3', true: '#cce5ff' }}
+                thumbColor={termsAccepted ? '#2196F3' : '#f4f3f4'}
+              />
+            </View>
+
+            <Text style={PumpfunLaunchStyles.verificationNote}>
+              Verifying your token on RugCheck helps build trust with your community.
+            </Text>
+          </>
+        )}
+      </View>
 
       {status && (
         <Text style={PumpfunLaunchStyles.statusText}>{status}</Text>

@@ -125,6 +125,10 @@ export interface PumpfunLaunchParams {
   solanaWallet: any;
   /** Optional callback for status updates */
   onStatusUpdate?: (status: string) => void;
+  /** Add verification options */
+  verifyToken?: boolean;
+  dataIntegrityAccepted?: boolean;
+  termsAccepted?: boolean;
 }
 
 // Raydium and PumpFun SDK specific types
