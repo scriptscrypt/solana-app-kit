@@ -77,6 +77,9 @@ import DevModeTrigger from './src/components/DevMode/DevModeTrigger';
 import DevDrawer from './src/components/DevMode/DevDrawer';
 import { View } from 'react-native';
 
+// Import Environment Error provider and components
+import { EnvErrorProvider, EnvErrorButton } from './src/context/EnvErrorContext';
+
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {
   const { isDevMode } = useDevMode();
@@ -87,6 +90,7 @@ const DevModeComponents = () => {
     <>
       <DevModeTrigger />
       <DevDrawer />
+      <EnvErrorButton />
     </>
   );
 };
@@ -136,53 +140,55 @@ export default function App() {
     organizationId: config.auth.turnkey.organizationId,
   };
 
-  // Directly use DevModeProvider instead of wrapper for better control
+  // Wrap the app with EnvErrorProvider for global env variable error handling
   return (
     <CustomizationProvider config={config}>
       <SafeAreaProvider>
         <ReduxProvider store={store}>
           <DevModeProvider>
-            <View style={{ flex: 1 }}>
-              {config.auth.provider === 'privy' ? (
-                <PrivyProvider
-                  appId={config.auth.privy.appId}
-                  clientId={config.auth.privy.clientId}
-                  config={{
-                    embedded: {
-                      solana: {
-                        createOnLogin: 'users-without-wallets',
+            <EnvErrorProvider>
+              <View style={{ flex: 1 }}>
+                {config.auth.provider === 'privy' ? (
+                  <PrivyProvider
+                    appId={config.auth.privy.appId}
+                    clientId={config.auth.privy.clientId}
+                    config={{
+                      embedded: {
+                        solana: {
+                          createOnLogin: 'users-without-wallets',
+                        },
                       },
-                    },
-                  }}
-                >
-                  <NavigationContainer ref={navigationRef}>
-                    <RootNavigator />
-                  </NavigationContainer>
-                  {getDynamicWebView()}
-                  <GlobalUIElements />
-                  <PrivyElements />
-                </PrivyProvider>
-              ) : config.auth.provider === 'turnkey' ? (
-                <TurnkeyProvider config={turnkeySessionConfig}>
-                  <NavigationContainer ref={navigationRef}>
-                    <RootNavigator />
-                  </NavigationContainer>
-                  {getDynamicWebView()}
-                  <GlobalUIElements />
-                </TurnkeyProvider>
-              ) : (
-                <>
-                  <NavigationContainer ref={navigationRef}>
-                    <RootNavigator />
-                  </NavigationContainer>
-                  {getDynamicWebView()}
-                  <GlobalUIElements />
-                </>
-              )}
+                    }}
+                  >
+                    <NavigationContainer ref={navigationRef}>
+                      <RootNavigator />
+                    </NavigationContainer>
+                    {getDynamicWebView()}
+                    <GlobalUIElements />
+                    <PrivyElements />
+                  </PrivyProvider>
+                ) : config.auth.provider === 'turnkey' ? (
+                  <TurnkeyProvider config={turnkeySessionConfig}>
+                    <NavigationContainer ref={navigationRef}>
+                      <RootNavigator />
+                    </NavigationContainer>
+                    {getDynamicWebView()}
+                    <GlobalUIElements />
+                  </TurnkeyProvider>
+                ) : (
+                  <>
+                    <NavigationContainer ref={navigationRef}>
+                      <RootNavigator />
+                    </NavigationContainer>
+                    {getDynamicWebView()}
+                    <GlobalUIElements />
+                  </>
+                )}
 
-              {/* DevMode components will only render in dev mode */}
-              <DevModeComponents />
-            </View>
+                {/* DevMode components will only render in dev mode */}
+                <DevModeComponents />
+              </View>
+            </EnvErrorProvider>
           </DevModeProvider>
         </ReduxProvider>
       </SafeAreaProvider>

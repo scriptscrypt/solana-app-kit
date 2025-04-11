@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { useDevMode } from '../../context/DevModeContext';
+import { useEnvError } from '../../context/EnvErrorContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { navigationRef } from '../../hooks/useAppNavigation';
@@ -324,42 +325,9 @@ const NavigationLegend = () => {
 
 // Component to display missing environment variables
 const MissingEnvVars = () => {
-    const [missingVars, setMissingVars] = useState<string[]>([]);
+    const { hasMissingEnvVars, missingEnvVars, toggleErrorModal } = useEnvError();
 
-    useEffect(() => {
-        // Manually check only environment variables used in the frontend
-        const envVars: Record<string, string | undefined> = {
-            PRIVY_APP_ID,
-            PRIVY_CLIENT_ID,
-            CLUSTER,
-            TURNKEY_BASE_URL,
-            TURNKEY_RP_ID,
-            TURNKEY_RP_NAME,
-            TURNKEY_ORGANIZATION_ID,
-            DYNAMIC_ENVIRONMENT_ID,
-            HELIUS_API_KEY,
-            HELIUS_RPC_CLUSTER,
-            SERVER_URL,
-            TENSOR_API_KEY,
-            PARA_API_KEY,
-            COINGECKO_API_KEY,
-            BIRDEYE_API_KEY,
-            HELIUS_STAKED_URL,
-            HELIUS_STAKED_API_KEY
-        };
-
-        // Find missing variables
-        const missing: string[] = [];
-        for (const key in envVars) {
-            const value = envVars[key];
-            if (!value || value.trim() === '') {
-                missing.push(key);
-            }
-        }
-        setMissingVars(missing);
-    }, []);
-
-    if (missingVars.length === 0) {
+    if (!hasMissingEnvVars) {
         return (
             <View style={styles.envContainer}>
                 <Text style={styles.envTitle}>Environment Variables</Text>
@@ -375,13 +343,20 @@ const MissingEnvVars = () => {
                 The following environment variables are missing. The app can continue in dev mode,
                 but certain features may not work correctly.
             </Text>
-            {missingVars.map((varName) => (
+            {missingEnvVars.slice(0, 5).map((varName) => (
                 <View key={varName} style={styles.envVarItem}>
                     <Text style={styles.envVarName}>{varName}</Text>
                 </View>
             ))}
+
+            {missingEnvVars.length > 5 && (
+                <Text style={styles.moreVarsText}>
+                    + {missingEnvVars.length - 5} more...
+                </Text>
+            )}
+
             <Text style={styles.envHelper}>
-                To fix this, add these variables to your .env.local file or enable environment variable mocking.
+                To fix this, add these variables to your .env.local file.
             </Text>
         </View>
     );
@@ -813,6 +788,12 @@ const styles = StyleSheet.create({
         marginTop: 8,
         fontStyle: 'italic',
     },
+    moreVarsText: {
+        fontSize: 13,
+        color: '#666',
+        fontStyle: 'italic',
+        marginVertical: 8,
+    }
 });
 
 export default DevDrawer;

@@ -7,7 +7,6 @@ import { TENSOR_API_KEY, CLUSTER } from '@env';
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 import { CollectionData, NftItem } from '../types';
 import { ENDPOINTS } from '../../../config/constants';
-import { getEnvWithFallback } from '../../../utils/envValidator';
 
 // Constants
 const SOL_TO_LAMPORTS = 1_000_000_000;
@@ -19,9 +18,8 @@ const SOL_TO_LAMPORTS = 1_000_000_000;
  * @returns Detailed NFT metadata
  */
 export async function fetchNftMetadata(mint: string): Promise<any> {
-  const tensorApiKey = getEnvWithFallback('TENSOR_API_KEY', TENSOR_API_KEY, 'NFT Metadata', '');
-  
-  if (!tensorApiKey) {
+  // Check if API key is available
+  if (!TENSOR_API_KEY) {
     // In dev mode, return mock data
     if (global.__DEV_MODE__) {
       console.log('[DEV MODE] Returning mock NFT metadata');
@@ -33,13 +31,13 @@ export async function fetchNftMetadata(mint: string): Promise<any> {
         description: "This is mock NFT data returned in dev mode due to missing API key"
       };
     }
-    throw new Error('TENSOR_API_KEY is not configured');
+    return null;
   }
   
   const url = `https://api.mainnet.tensordev.io/api/v1/mint?mints=${mint}`;
   const resp = await fetch(url, {
     headers: {
-      'x-tensor-api-key': tensorApiKey,
+      'x-tensor-api-key': TENSOR_API_KEY,
     },
   });
   
@@ -62,29 +60,33 @@ export async function fetchNftMetadata(mint: string): Promise<any> {
  * @returns Collection metadata
  */
 export async function fetchCollectionData(collId: string): Promise<CollectionData> {
-  const tensorApiKey = getEnvWithFallback('TENSOR_API_KEY', TENSOR_API_KEY, 'NFT Collection Data', '');
-  
-  if (!tensorApiKey) {
+  // Check if API key is available
+  if (!TENSOR_API_KEY) {
     // In dev mode, return mock data
     if (global.__DEV_MODE__) {
       console.log('[DEV MODE] Returning mock collection data');
       return {
-        id: collId,
+        collId: collId,
         name: "Mock Collection",
         description: "This is mock collection data returned in dev mode due to missing API key",
         floorPrice: 1.5,
-        itemCount: 100,
-        image: "https://placehold.co/400",
+        tokenCount: 100,
+        imageUri: "https://placehold.co/400",
       };
     }
-    throw new Error('TENSOR_API_KEY is not configured');
+    return {
+      collId: collId,
+      name: "Unknown Collection",
+      description: "Collection data not available",
+      imageUri: "https://placehold.co/400",
+    };
   }
   
   // Use the find_collection endpoint to get comprehensive collection data
   const url = `https://api.mainnet.tensordev.io/api/v1/collections/find_collection?filter=${collId}`;
   const resp = await fetch(url, {
     headers: {
-      'x-tensor-api-key': tensorApiKey,
+      'x-tensor-api-key': TENSOR_API_KEY,
     },
   });
 
@@ -99,7 +101,7 @@ export async function fetchCollectionData(collId: string): Promise<CollectionDat
     const floorUrl = `https://api.mainnet.tensordev.io/api/v1/mint/collection?collId=${collId}&sortBy=ListingPriceAsc&limit=1`;
     const floorResp = await fetch(floorUrl, {
       headers: {
-        'x-tensor-api-key': tensorApiKey,
+        'x-tensor-api-key': TENSOR_API_KEY,
       },
     });
 
@@ -129,9 +131,8 @@ export async function fetchCollectionData(collId: string): Promise<CollectionDat
  */
 export async function fetchFloorNFTForCollection(collId: string): Promise<{ mint: string, owner: string, maxPrice: number } | null> {
   try {
-    const tensorApiKey = getEnvWithFallback('TENSOR_API_KEY', TENSOR_API_KEY, 'NFT Floor Price', '');
-    
-    if (!tensorApiKey) {
+    // Check if API key is available
+    if (!TENSOR_API_KEY) {
       // In dev mode, return mock data
       if (global.__DEV_MODE__) {
         console.log('[DEV MODE] Returning mock floor NFT data');
@@ -141,14 +142,14 @@ export async function fetchFloorNFTForCollection(collId: string): Promise<{ mint
           maxPrice: 1.5
         };
       }
-      throw new Error('TENSOR_API_KEY is not configured');
+      return null;
     }
 
     const options = {
       method: 'GET',
       headers: {
         accept: 'application/json',
-        'x-tensor-api-key': tensorApiKey,
+        'x-tensor-api-key': TENSOR_API_KEY,
       },
     };
 
@@ -187,9 +188,8 @@ export async function fetchFloorNFTForCollection(collId: string): Promise<{ mint
 export async function searchCollections(query: string): Promise<any[]> {
   if (!query.trim()) return [];
   
-  const tensorApiKey = getEnvWithFallback('TENSOR_API_KEY', TENSOR_API_KEY, 'NFT Collection Search', '');
-  
-  if (!tensorApiKey) {
+  // Check if API key is available
+  if (!TENSOR_API_KEY) {
     // In dev mode, return mock data
     if (global.__DEV_MODE__) {
       console.log('[DEV MODE] Returning mock collection search results');
@@ -208,7 +208,7 @@ export async function searchCollections(query: string): Promise<any[]> {
         }
       ];
     }
-    throw new Error('TENSOR_API_KEY is not configured');
+    return [];
   }
   
   const url = `https://api.mainnet.tensordev.io/api/v1/collections/search_collections?query=${encodeURIComponent(
@@ -219,7 +219,7 @@ export async function searchCollections(query: string): Promise<any[]> {
     method: 'GET',
     headers: {
       accept: 'application/json',
-      'x-tensor-api-key': tensorApiKey,
+      'x-tensor-api-key': TENSOR_API_KEY,
     },
   });
   
@@ -251,24 +251,22 @@ export async function fetchActiveListings(walletAddress: string): Promise<NftIte
     return [];
   }
   
-  const tensorApiKey = getEnvWithFallback('TENSOR_API_KEY', TENSOR_API_KEY, 'NFT Listings', '');
-  
-  if (!tensorApiKey) {
+  // Check if API key is available
+  if (!TENSOR_API_KEY) {
     // In dev mode, return mock data
     if (global.__DEV_MODE__) {
       console.log('[DEV MODE] Returning mock active listings');
       return [{
-        id: "mock1",
+        mint: "mock123",
         name: "Mock NFT 1",
         description: "Mock listing in dev mode",
-        collectionName: "Mock Collection",
-        price: 1.5,
+        collection: "Mock Collection",
+        priceSol: 1.5,
         image: "https://placehold.co/400",
-        mint: "mock123",
-        owner: walletAddress,
+        isCompressed: false
       }];
     }
-    throw new Error('TENSOR_API_KEY is not configured');
+    return [];
   }
   
   const url = `https://api.mainnet.tensordev.io/api/v1/user/active_listings?wallets=${walletAddress}&sortBy=PriceAsc&limit=50`;
@@ -276,7 +274,7 @@ export async function fetchActiveListings(walletAddress: string): Promise<NftIte
     method: 'GET',
     headers: {
       accept: 'application/json',
-      'x-tensor-api-key': tensorApiKey,
+      'x-tensor-api-key': TENSOR_API_KEY,
     },
   };
 
@@ -338,7 +336,7 @@ export async function buyNft(
   }
   
   if (!TENSOR_API_KEY) {
-    throw new Error('TENSOR_API_KEY is not configured');
+    throw new Error('API key not available');
   }
   
   try {

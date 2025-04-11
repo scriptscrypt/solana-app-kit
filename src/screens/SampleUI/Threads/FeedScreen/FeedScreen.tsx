@@ -15,6 +15,7 @@ import { fetchUserProfile } from '../../../../state/auth/reducer';
 import COLORS from '../../../../assets/colors';
 import { RootStackParamList } from '../../../../navigation/RootNavigator';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
+import HomeEnvErrorBanner from '../../../../components/Common/HomeEnvErrorBanner';
 
 export default function FeedScreen() {
   const dispatch = useAppDispatch();
@@ -127,6 +128,15 @@ export default function FeedScreen() {
     );
   }
 
+  // Custom header render function with environment error banner
+  const renderCustomHeader = () => {
+    return (
+      <View>
+        <HomeEnvErrorBanner />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView
       style={[
@@ -141,6 +151,8 @@ export default function FeedScreen() {
         disableReplies={false}
         refreshing={refreshing}
         onRefresh={onRefresh}
+        // Add custom header with environment error banner
+        ListHeaderComponent={renderCustomHeader}
         // onPressPost navigates to the PostThreadScreen with the post's ID.
         onPressPost={post => {
           // For retweets and quotes, handle navigation correctly:
