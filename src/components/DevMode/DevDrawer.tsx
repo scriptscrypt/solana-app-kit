@@ -307,15 +307,6 @@ const DevDrawer = () => {
     const dispatch = useDispatch();
     const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
 
-    const exitDevMode = async () => {
-        // Remove the dev mode flag from AsyncStorage
-        await AsyncStorage.removeItem('devMode');
-        // Alert the user that they need to restart
-        alert('Dev mode disabled. Please restart the app for changes to take effect.');
-        // Close drawer
-        toggleDevDrawer();
-    };
-
     // Bypass authentication for dev mode
     const bypassAuth = () => {
         if (!isLoggedIn) {
@@ -409,16 +400,19 @@ const DevDrawer = () => {
             <SafeAreaView style={styles.drawerContainer}>
                 <View style={styles.handle} />
                 <View style={styles.header}>
-                    <Text style={styles.title}>App Navigation Map</Text>
-                    <TouchableOpacity onPress={toggleDevDrawer}>
+                    <Text style={styles.title}>App Navigation</Text>
+                    <TouchableOpacity
+                        style={styles.closeButtonContainer}
+                        onPress={toggleDevDrawer}
+                    >
                         <Text style={styles.closeButton}>Close</Text>
                     </TouchableOpacity>
                 </View>
 
                 <ScrollView
                     style={styles.content}
-                    contentContainerStyle={{ paddingVertical: 15 }}
-                    showsVerticalScrollIndicator
+                    contentContainerStyle={{ paddingBottom: 30 }}
+                    showsVerticalScrollIndicator={false}
                 >
                     {/* Navigation Map Component */}
                     <AppNavigationMap onScreenSelect={navigateToScreen} />
@@ -428,22 +422,27 @@ const DevDrawer = () => {
 
                     <View style={styles.divider} />
 
-                    <Text style={styles.sectionTitle}>Development Options</Text>
+                    <Text style={styles.sectionTitle}>Developer Info</Text>
 
-                    <View style={styles.optionItem}>
-                        <Text style={styles.optionText}>Environment: Development</Text>
-                    </View>
+                    <View style={styles.infoCard}>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Environment:</Text>
+                            <Text style={styles.infoValue}>Development</Text>
+                        </View>
 
-                    <View style={styles.optionItem}>
-                        <Text style={styles.optionText}>
-                            App Version: {(process.env as any).npm_package_version || '0.1.0'}
-                        </Text>
-                    </View>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>App Version:</Text>
+                            <Text style={styles.infoValue}>
+                                {(process.env as any).npm_package_version || '0.1.0'}
+                            </Text>
+                        </View>
 
-                    <View style={styles.optionItem}>
-                        <Text style={styles.optionText}>
-                            Login Status: {isLoggedIn ? 'Logged In' : 'Not Logged In'}
-                        </Text>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Login Status:</Text>
+                            <Text style={[styles.infoValue, { color: isLoggedIn ? '#34C759' : '#FF9500' }]}>
+                                {isLoggedIn ? 'Logged In' : 'Not Logged In'}
+                            </Text>
+                        </View>
                     </View>
 
                     {!isLoggedIn && (
@@ -454,13 +453,6 @@ const DevDrawer = () => {
                             <Text style={styles.actionButtonText}>Force Login (For Testing)</Text>
                         </TouchableOpacity>
                     )}
-
-                    <TouchableOpacity
-                        style={styles.exitButton}
-                        onPress={exitDevMode}
-                    >
-                        <Text style={styles.exitButtonText}>Exit Dev Mode</Text>
-                    </TouchableOpacity>
                 </ScrollView>
             </SafeAreaView>
         </View>
@@ -490,80 +482,91 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         backgroundColor: '#FFFFFF',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         paddingTop: 12,
         paddingBottom: 24,
         maxHeight: Dimensions.get('window').height * 0.9,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: -2,
+            height: -3,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 20,
     },
     handle: {
         alignSelf: 'center',
-        width: 40,
+        width: 36,
         height: 4,
-        backgroundColor: '#CCCCCC',
+        backgroundColor: 'rgba(0,0,0,0.2)',
         borderRadius: 2,
-        marginBottom: 12,
+        marginBottom: 16,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        marginBottom: 16,
+        paddingHorizontal: 24,
+        marginBottom: 20,
     },
     title: {
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 22,
+        fontWeight: '700',
         color: '#000000',
     },
+    closeButtonContainer: {
+        padding: 8,
+        borderRadius: 6,
+        backgroundColor: 'rgba(0,122,255,0.1)',
+    },
     closeButton: {
-        fontSize: 16,
+        fontSize: 14,
+        fontWeight: '600',
         color: '#007AFF',
     },
     content: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
     },
     navigationMapContainer: {
-        marginBottom: 20,
+        marginBottom: 24,
     },
     mapTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '700',
-        marginBottom: 6,
+        marginBottom: 8,
         color: '#000',
     },
     mapDescription: {
         fontSize: 14,
         color: '#666',
         marginBottom: 16,
+        lineHeight: 18,
     },
     treeContainer: {
         backgroundColor: '#f8f8f8',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-        padding: 12,
+        borderRadius: 16,
+        borderWidth: 0,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
     },
     navMapNode: {
-        marginVertical: 4,
+        marginVertical: 6,
         paddingVertical: 12,
-        paddingHorizontal: 14,
-        borderRadius: 8,
+        paddingHorizontal: 16,
+        borderRadius: 12,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: 3,
         elevation: 2,
     },
     nodeContent: {
@@ -573,51 +576,59 @@ const styles = StyleSheet.create({
     },
     nodeArrow: {
         fontSize: 10,
-        marginRight: 8,
+        marginRight: 10,
     },
     nodeLabel: {
         fontWeight: '600',
-        fontSize: 14,
+        fontSize: 15,
     },
     navButton: {
         backgroundColor: 'rgba(255,255,255,0.3)',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.1)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        borderWidth: 0,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
     },
     navButtonText: {
         fontSize: 12,
+        fontWeight: '600',
         color: '#333',
-        fontWeight: '500',
     },
     childrenContainer: {
-        marginTop: 2,
-        marginBottom: 4,
+        marginTop: 4,
+        marginBottom: 6,
     },
     legendContainer: {
         backgroundColor: '#f8f8f8',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 16,
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
     },
     legendTitle: {
         fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 8,
+        fontWeight: '700',
+        marginBottom: 12,
         color: '#333',
     },
     legendRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 8,
     },
     legendIcon: {
         width: 16,
         height: 16,
-        borderRadius: 4,
-        marginRight: 8,
+        borderRadius: 6,
+        marginRight: 10,
     },
     legendText: {
         fontSize: 14,
@@ -625,50 +636,60 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: '#EEEEEE',
-        marginVertical: 16,
+        backgroundColor: 'rgba(0,0,0,0.06)',
+        marginVertical: 20,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 18,
+        fontWeight: '700',
         color: '#333333',
-        marginBottom: 12,
+        marginBottom: 16,
     },
-    optionItem: {
-        paddingVertical: 12,
+    infoCard: {
+        backgroundColor: '#f8f8f8',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
+        borderBottomColor: 'rgba(0,0,0,0.04)',
     },
-    optionText: {
+    infoLabel: {
         fontSize: 14,
-        color: '#333333',
+        fontWeight: '600',
+        color: '#555',
+    },
+    infoValue: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#333',
     },
     actionButton: {
-        marginTop: 16,
         backgroundColor: '#007AFF',
-        paddingVertical: 12,
+        paddingVertical: 14,
         paddingHorizontal: 20,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: 'center',
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
     },
     actionButtonText: {
         color: '#FFFFFF',
         fontWeight: '600',
-        fontSize: 14,
-    },
-    exitButton: {
-        marginTop: 20,
-        marginBottom: 20,
-        backgroundColor: '#FF3B30',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    exitButtonText: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-        fontSize: 16,
+        fontSize: 15,
     },
 });
 

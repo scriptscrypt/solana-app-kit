@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Platform, Text, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDevMode } from '../../context/DevModeContext';
+import Svg, { Rect, LinearGradient, Stop, Defs } from 'react-native-svg';
 
 const DevModeTrigger = () => {
     const { isDevMode, toggleDevDrawer } = useDevMode();
@@ -20,10 +21,10 @@ const DevModeTrigger = () => {
 
     console.log('DevModeTrigger - Rendering dev mode indicator');
 
-    // Position the indicator at the very bottom, accounting for home indicator
+    // Position the indicator directly above the home indicator
     const bottomPadding = Platform.OS === 'ios'
-        ? Math.max(insets.bottom - 20, 0) // Lower on iOS, almost at the home indicator
-        : 0; // At the very bottom on Android
+        ? insets.bottom // Position it just above the home indicator on iOS
+        : 8; // Close to the bottom on Android
 
     return (
         <TouchableOpacity
@@ -34,8 +35,23 @@ const DevModeTrigger = () => {
             activeOpacity={0.8}
             onPress={toggleDevDrawer}
         >
-            <View style={styles.line}>
-                <Text style={styles.text}>DEV MODE</Text>
+            <View style={styles.button}>
+                {/* Background Gradient */}
+                <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+                    <Defs>
+                        <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                            <Stop offset="0" stopColor="#34C759" stopOpacity="0.9" />
+                            <Stop offset="1" stopColor="#30B350" stopOpacity="0.9" />
+                        </LinearGradient>
+                    </Defs>
+                    <Rect width="100%" height="100%" rx={16} ry={16} fill="url(#grad)" />
+                </Svg>
+
+                {/* Button Content */}
+                <View style={styles.buttonContent}>
+                    <View style={styles.indicator} />
+                    <Text style={styles.text}>DEV MODE</Text>
+                </View>
             </View>
         </TouchableOpacity>
     );
@@ -45,33 +61,46 @@ const styles = StyleSheet.create({
     container: {
         position: 'absolute',
         alignSelf: 'center',
-        width: '60%',
-        height: 20,
+        width: 120,
+        height: 32,
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999, // Ensure it's above everything
+        zIndex: 9999,
         elevation: 9999,
     },
-    line: {
+    button: {
         width: '100%',
-        height: 20,
-        backgroundColor: 'rgba(0, 230, 118, 0.85)',
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 10,
+        borderRadius: 16,
+        overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 3,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 8,
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    indicator: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#FFFFFF',
+        marginRight: 6,
     },
     text: {
-        fontSize: 10,
-        color: '#000',
-        fontWeight: 'bold',
+        fontSize: 12,
+        color: '#FFFFFF',
+        fontWeight: '600',
+        letterSpacing: 0.5,
     }
 });
 
