@@ -4,8 +4,6 @@ import { useDevMode } from '../../context/DevModeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { navigationRef } from '../../hooks/useAppNavigation';
-import { NavigationContainerRef } from '@react-navigation/native';
-import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
@@ -37,21 +35,85 @@ const DUMMY_POST = {
     transactionHash: '4vJ6p8onCZeUQBPJqrXXGJRSkLTdYvPTL9zGwDdvwSbEeKJdf6C4MQhTccCrxP8ZbpWJkzhGQhFVmUG3Qgpj8j7y'
 };
 
-// Screen mapping for direct navigation
-const SCREEN_MAP = [
-    { name: 'Feed Screen (Threads)', route: 'MainTabs', params: {} },
-    // { name: 'Login', route: 'LoginOptions', params: {} },
-    // { name: 'Intro Screen', route: 'IntroScreen', params: {} },
-    // { name: 'Blink', route: 'Blink', params: {} },
-    // { name: 'Coin Detail', route: 'CoinDetailPage', params: {} },
-    { name: 'Chat', route: 'ChatScreen', params: {} },
-    { name: 'NFT Screen', route: 'NftScreen', params: {} },
-    { name: 'Pumpfun', route: 'Pumpfun', params: {} },
-    { name: 'Token Mill', route: 'TokenMill', params: {} },
-    { name: 'Pump Swap', route: 'PumpSwap', params: {} },
-    { name: 'Profile', route: 'ProfileScreen', params: {} },
+// Screen nodes for the visual tree map
+const SCREEN_NODES = [
+    // Main nav - this is the root node
     {
-        name: 'Profile (Other User)',
+        id: 'bottomNav',
+        label: 'Bottom Navigation',
+        type: 'root',
+        route: null,
+        params: {},
+        children: ['modules', 'feed', 'search', 'profile', 'otherScreens']
+    },
+
+    // Other Screens
+    {
+        id: 'otherScreens',
+        label: 'Other Screens',
+        type: 'category',
+        route: null,
+        params: {},
+        children: ['thread', 'otherProfile']
+    },
+
+    // Main level nodes
+    {
+        id: 'modules',
+        label: 'Modules',
+        type: 'category',
+        route: null,
+        params: {},
+        children: ['pumpFun', 'pumpSwap', 'tokenMill', 'nft']
+    },
+    {
+        id: 'feed',
+        label: 'Feed',
+        type: 'screen',
+        route: 'MainTabs',
+        params: { screen: 'Feed' },
+        children: ['chat']
+    },
+    {
+        id: 'search',
+        label: 'Search',
+        type: 'screen',
+        route: 'MainTabs',
+        params: { screen: 'Search' },
+        children: []
+    },
+    {
+        id: 'profile',
+        label: 'Profile',
+        type: 'screen',
+        route: 'ProfileScreen',
+        params: {},
+        children: []
+    },
+
+    // Feed children
+    {
+        id: 'chat',
+        label: 'Chat Screen',
+        type: 'screen',
+        route: 'ChatScreen',
+        params: {},
+        children: []
+    },
+
+    // Other screens children
+    {
+        id: 'thread',
+        label: 'Thread Screen',
+        type: 'screen',
+        route: 'MainTabs',
+        params: {},
+        children: []
+    },
+    {
+        id: 'otherProfile',
+        label: 'Other Profile Screen',
+        type: 'screen',
         route: 'OtherProfile',
         params: {
             userId: DUMMY_USER.userId,
@@ -62,27 +124,183 @@ const SCREEN_MAP = [
             followerCount: DUMMY_USER.followerCount,
             followingCount: DUMMY_USER.followingCount,
             isVerified: DUMMY_USER.isVerified
-        }
+        },
+        children: []
+    },
+
+    // Modules' children
+    {
+        id: 'pumpFun',
+        label: 'Pump Fun',
+        type: 'screen',
+        route: 'Pumpfun',
+        params: {},
+        children: []
     },
     {
-        name: 'Post Thread',
-        route: 'PostThread',
-        params: {
-            postId: DUMMY_POST.postId,
-            content: DUMMY_POST.content,
-            user: DUMMY_USER,
-            imageUrl: DUMMY_POST.imageUrl,
-            timestamp: DUMMY_POST.timestamp,
-            likeCount: DUMMY_POST.likeCount,
-            commentCount: DUMMY_POST.commentCount,
-            hashtags: DUMMY_POST.hashtags
-        }
+        id: 'pumpSwap',
+        label: 'Pump Swap',
+        type: 'screen',
+        route: 'PumpSwap',
+        params: {},
+        children: []
     },
-    // { name: 'Followers/Following', route: 'FollowersFollowingList', params: {} },
-] as const;
+    {
+        id: 'tokenMill',
+        label: 'Token Mill',
+        type: 'screen',
+        route: 'TokenMill',
+        params: {},
+        children: []
+    },
+    {
+        id: 'nft',
+        label: 'NFT Screen',
+        type: 'screen',
+        route: 'NftScreen',
+        params: {},
+        children: []
+    }
+];
 
-// Type for the route names
-type RouteNames = typeof SCREEN_MAP[number]['route'];
+type RouteNames = string;
+
+// Navigation Map Component
+const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNames, params: Record<string, unknown>) => void }) => {
+    // Track which sections are expanded
+    const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({
+        bottomNav: true,
+        modules: false,
+        feed: false,
+        otherScreens: false
+    });
+
+    // Toggle a section's expanded state
+    const toggleSection = (sectionId: string) => {
+        setExpandedSections(prev => ({
+            ...prev,
+            [sectionId]: !prev[sectionId]
+        }));
+    };
+
+    // Node component for the navigation map
+    const NavNode = ({
+        id,
+        indentLevel = 0,
+        isChild = false
+    }: {
+        id: string,
+        indentLevel?: number,
+        isChild?: boolean
+    }) => {
+        const node = SCREEN_NODES.find(n => n.id === id);
+        if (!node) return null;
+
+        const nodeType = node.type;
+        const hasChildren = node.children && node.children.length > 0;
+        const isExpanded = expandedSections[id];
+
+        // Determine background color based on node type
+        const bgColor =
+            nodeType === 'root' ? '#5d85c3' :  // Blue for bottom nav
+                nodeType === 'category' ? '#ff7a7a' : // Red for categories
+                    '#4ECDC4'; // Teal for screens
+
+        // Determine text color based on background
+        const textColor = (nodeType === 'root' || nodeType === 'category') ? '#fff' : '#333';
+
+        return (
+            <View style={{ marginBottom: isChild ? 0 : 10 }}>
+                <TouchableOpacity
+                    style={[
+                        styles.navMapNode,
+                        { marginLeft: indentLevel * 20 },
+                        { backgroundColor: bgColor }
+                    ]}
+                    onPress={() => {
+                        if (hasChildren) {
+                            toggleSection(id);
+                        } else if (node.route) {
+                            onScreenSelect(node.route, node.params);
+                        }
+                    }}
+                >
+                    <View style={styles.nodeContent}>
+                        {/* Show arrow only for nodes that have children */}
+                        {hasChildren && (
+                            <Text style={[styles.nodeArrow, { color: textColor }]}>
+                                {isExpanded ? '▼' : '▶'}
+                            </Text>
+                        )}
+
+                        {/* Node Label */}
+                        <Text style={[styles.nodeLabel, { color: textColor }]}>
+                            {node.label}
+                        </Text>
+                    </View>
+
+                    {/* Show nav indicator for screens that can be navigated to */}
+                    {node.route && (
+                        <TouchableOpacity
+                            style={styles.navButton}
+                            onPress={() => onScreenSelect(node.route, node.params)}
+                        >
+                            <Text style={styles.navButtonText}>Navigate</Text>
+                        </TouchableOpacity>
+                    )}
+                </TouchableOpacity>
+
+                {/* Render children when section is expanded */}
+                {hasChildren && isExpanded && (
+                    <View style={styles.childrenContainer}>
+                        {node.children.map(childId => (
+                            <NavNode
+                                key={childId}
+                                id={childId}
+                                indentLevel={indentLevel + 1}
+                                isChild={true}
+                            />
+                        ))}
+                    </View>
+                )}
+            </View>
+        );
+    };
+
+    return (
+        <View style={styles.navigationMapContainer}>
+            <Text style={styles.mapTitle}>App Navigation Structure</Text>
+            <Text style={styles.mapDescription}>
+                Tap on dropdown arrows to expand sections. Tap "Navigate" to go to screens.
+            </Text>
+
+            <View style={styles.treeContainer}>
+                <NavNode id="bottomNav" />
+            </View>
+        </View>
+    );
+};
+
+// Legend component for explaining node colors
+const NavigationLegend = () => {
+    return (
+        <View style={styles.legendContainer}>
+            <Text style={styles.legendTitle}>Legend</Text>
+            <View style={styles.legendRow}>
+                <View style={[styles.legendIcon, { backgroundColor: '#5d85c3' }]} />
+                <Text style={styles.legendText}>Bottom Navigation</Text>
+            </View>
+            <View style={styles.legendRow}>
+                <View style={[styles.legendIcon, { backgroundColor: '#ff7a7a' }]} />
+                <Text style={styles.legendText}>Navigation Categories</Text>
+            </View>
+            <View style={styles.legendRow}>
+                <View style={[styles.legendIcon, { backgroundColor: '#4ECDC4' }]} />
+                <Text style={styles.legendText}>App Screens</Text>
+            </View>
+        </View>
+    );
+};
 
 const DevDrawer = () => {
     const { isDevDrawerOpen, toggleDevDrawer } = useDevMode();
@@ -120,6 +338,8 @@ const DevDrawer = () => {
 
     const navigateToScreen = (route: RouteNames, params: Record<string, unknown> = {}) => {
         try {
+            if (!route) return; // Skip navigation for category nodes
+
             // First close the drawer
             toggleDevDrawer();
 
@@ -150,13 +370,13 @@ const DevDrawer = () => {
                                     // Add another delay before navigating to the target screen
                                     setTimeout(() => {
                                         if (nav) {
-                                            nav.navigate(route as keyof RootStackParamList, params as any);
+                                            nav.navigate(route as any, params as any);
                                             console.log(`Navigating to: ${route}`, params);
                                         }
                                     }, 300);
                                 } else {
                                     // Normal navigation when already logged in
-                                    nav.navigate(route as keyof RootStackParamList, params as any);
+                                    nav.navigate(route as any, params as any);
                                     console.log(`Navigating to: ${route}`, params);
                                 }
                             } catch (navError) {
@@ -189,27 +409,24 @@ const DevDrawer = () => {
             <SafeAreaView style={styles.drawerContainer}>
                 <View style={styles.handle} />
                 <View style={styles.header}>
-                    <Text style={styles.title}>Developer Tools</Text>
+                    <Text style={styles.title}>App Navigation Map</Text>
                     <TouchableOpacity onPress={toggleDevDrawer}>
                         <Text style={styles.closeButton}>Close</Text>
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView style={styles.content}>
-                    <Text style={styles.sectionTitle}>Screen Navigator</Text>
+                <ScrollView
+                    style={styles.content}
+                    contentContainerStyle={{ paddingVertical: 15 }}
+                    showsVerticalScrollIndicator
+                >
+                    {/* Navigation Map Component */}
+                    <AppNavigationMap onScreenSelect={navigateToScreen} />
 
-                    <View style={styles.screenList}>
-                        {SCREEN_MAP.map((screen, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={styles.screenItem}
-                                onPress={() => navigateToScreen(screen.route, screen.params)}
-                            >
-                                <Text style={styles.screenName}>{screen.name}</Text>
-                                <Text style={styles.screenRoute}>{screen.route}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                    {/* Legend */}
+                    <NavigationLegend />
+
+                    <View style={styles.divider} />
 
                     <Text style={styles.sectionTitle}>Development Options</Text>
 
@@ -218,14 +435,17 @@ const DevDrawer = () => {
                     </View>
 
                     <View style={styles.optionItem}>
-                        <Text style={styles.optionText}>App Version: {(process.env as any).npm_package_version || '0.1.0'}</Text>
+                        <Text style={styles.optionText}>
+                            App Version: {(process.env as any).npm_package_version || '0.1.0'}
+                        </Text>
                     </View>
 
                     <View style={styles.optionItem}>
-                        <Text style={styles.optionText}>Login Status: {isLoggedIn ? 'Logged In' : 'Not Logged In'}</Text>
+                        <Text style={styles.optionText}>
+                            Login Status: {isLoggedIn ? 'Logged In' : 'Not Logged In'}
+                        </Text>
                     </View>
 
-                    {/* Force login button */}
                     {!isLoggedIn && (
                         <TouchableOpacity
                             style={styles.actionButton}
@@ -235,7 +455,6 @@ const DevDrawer = () => {
                         </TouchableOpacity>
                     )}
 
-                    {/* Exit dev mode button */}
                     <TouchableOpacity
                         style={styles.exitButton}
                         onPress={exitDevMode}
@@ -275,7 +494,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 16,
         paddingTop: 12,
         paddingBottom: 24,
-        maxHeight: Dimensions.get('window').height * 0.8,
+        maxHeight: Dimensions.get('window').height * 0.9,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -312,34 +531,108 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: 20,
     },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginTop: 16,
-        marginBottom: 12,
-        color: '#333333',
-    },
-    screenList: {
+    navigationMapContainer: {
         marginBottom: 20,
     },
-    screenItem: {
+    mapTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 6,
+        color: '#000',
+    },
+    mapDescription: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 16,
+    },
+    treeContainer: {
+        backgroundColor: '#f8f8f8',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        padding: 12,
+    },
+    navMapNode: {
+        marginVertical: 4,
         paddingVertical: 12,
-        paddingHorizontal: 16,
-        backgroundColor: '#f5f5f5',
-        marginBottom: 8,
+        paddingHorizontal: 14,
         borderRadius: 8,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
-    screenName: {
+    nodeContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    nodeArrow: {
+        fontSize: 10,
+        marginRight: 8,
+    },
+    nodeLabel: {
+        fontWeight: '600',
         fontSize: 14,
-        fontWeight: '500',
-        color: '#333333',
     },
-    screenRoute: {
+    navButton: {
+        backgroundColor: 'rgba(255,255,255,0.3)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.1)',
+    },
+    navButtonText: {
         fontSize: 12,
-        color: '#666666',
+        color: '#333',
+        fontWeight: '500',
+    },
+    childrenContainer: {
+        marginTop: 2,
+        marginBottom: 4,
+    },
+    legendContainer: {
+        backgroundColor: '#f8f8f8',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 16,
+    },
+    legendTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 8,
+        color: '#333',
+    },
+    legendRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    legendIcon: {
+        width: 16,
+        height: 16,
+        borderRadius: 4,
+        marginRight: 8,
+    },
+    legendText: {
+        fontSize: 14,
+        color: '#333',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#EEEEEE',
+        marginVertical: 16,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333333',
+        marginBottom: 12,
     },
     optionItem: {
         paddingVertical: 12,
@@ -379,4 +672,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default DevDrawer; 
+export default DevDrawer;
