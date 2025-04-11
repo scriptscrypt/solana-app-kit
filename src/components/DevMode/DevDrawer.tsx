@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { useDevMode } from '../../context/DevModeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +7,26 @@ import { navigationRef } from '../../hooks/useAppNavigation';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
+// Import specific environment variables needed for the frontend
+import {
+    PRIVY_APP_ID,
+    PRIVY_CLIENT_ID,
+    CLUSTER,
+    TURNKEY_BASE_URL,
+    TURNKEY_RP_ID,
+    TURNKEY_RP_NAME,
+    TURNKEY_ORGANIZATION_ID,
+    DYNAMIC_ENVIRONMENT_ID,
+    HELIUS_API_KEY,
+    HELIUS_RPC_CLUSTER,
+    SERVER_URL,
+    TENSOR_API_KEY,
+    PARA_API_KEY,
+    COINGECKO_API_KEY,
+    BIRDEYE_API_KEY,
+    HELIUS_STAKED_URL,
+    HELIUS_STAKED_API_KEY
+} from '@env';
 
 // Sample dummy data for profile and posts
 const DUMMY_USER = {
@@ -302,6 +322,71 @@ const NavigationLegend = () => {
     );
 };
 
+// Component to display missing environment variables
+const MissingEnvVars = () => {
+    const [missingVars, setMissingVars] = useState<string[]>([]);
+
+    useEffect(() => {
+        // Manually check only environment variables used in the frontend
+        const envVars: Record<string, string | undefined> = {
+            PRIVY_APP_ID,
+            PRIVY_CLIENT_ID,
+            CLUSTER,
+            TURNKEY_BASE_URL,
+            TURNKEY_RP_ID,
+            TURNKEY_RP_NAME,
+            TURNKEY_ORGANIZATION_ID,
+            DYNAMIC_ENVIRONMENT_ID,
+            HELIUS_API_KEY,
+            HELIUS_RPC_CLUSTER,
+            SERVER_URL,
+            TENSOR_API_KEY,
+            PARA_API_KEY,
+            COINGECKO_API_KEY,
+            BIRDEYE_API_KEY,
+            HELIUS_STAKED_URL,
+            HELIUS_STAKED_API_KEY
+        };
+
+        // Find missing variables
+        const missing: string[] = [];
+        for (const key in envVars) {
+            const value = envVars[key];
+            if (!value || value.trim() === '') {
+                missing.push(key);
+            }
+        }
+        setMissingVars(missing);
+    }, []);
+
+    if (missingVars.length === 0) {
+        return (
+            <View style={styles.envContainer}>
+                <Text style={styles.envTitle}>Environment Variables</Text>
+                <Text style={styles.envComplete}>All environment variables are set correctly.</Text>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.envContainer}>
+            <Text style={styles.envTitle}>Missing Environment Variables</Text>
+            <Text style={styles.envDescription}>
+                The following environment variables are missing. The app can continue in dev mode,
+                but certain features may not work correctly.
+            </Text>
+            {missingVars.map((varName) => (
+                <View key={varName} style={styles.envVarItem}>
+                    <Text style={styles.envVarName}>{varName}</Text>
+                </View>
+            ))}
+            <Text style={styles.envHelper}>
+                To fix this, add these variables to your .env.local file or enable environment variable mocking.
+            </Text>
+        </View>
+    );
+};
+
 const DevDrawer = () => {
     const { isDevDrawerOpen, toggleDevDrawer } = useDevMode();
     const dispatch = useDispatch();
@@ -349,38 +434,26 @@ const DevDrawer = () => {
                     const navigationDelay = didBypass ? 500 : 100;
 
                     setTimeout(() => {
-                        if (nav) {
-                            try {
-                                // Try to reset navigation to MainTabs first if we're bypassing auth
-                                if (didBypass) {
-                                    nav.reset({
-                                        index: 0,
-                                        routes: [{ name: 'MainTabs' }],
-                                    });
-
-                                    // Add another delay before navigating to the target screen
-                                    setTimeout(() => {
-                                        if (nav) {
-                                            nav.navigate(route as any, params as any);
-                                            console.log(`Navigating to: ${route}`, params);
-                                        }
-                                    }, 300);
-                                } else {
-                                    // Normal navigation when already logged in
+                        try {
+                            if (nav) {
+                                // Handle nested navigation
+                                if (typeof params.screen === 'string') {
                                     nav.navigate(route as any, params as any);
-                                    console.log(`Navigating to: ${route}`, params);
+                                } else {
+                                    nav.navigate(route as any, params as any);
                                 }
-                            } catch (navError) {
-                                console.error('Navigation error:', navError);
-                                alert(`Navigation failed. Try again or restart the app.`);
+                                console.log(`Navigated to ${route} with params`, params);
                             }
+                        } catch (navError) {
+                            console.error('Inner navigation error:', navError);
+                            alert(`Failed to navigate to ${route}`);
                         }
                     }, navigationDelay);
                 } else {
-                    console.error('Navigation reference is not ready');
-                    alert('Navigation system is not ready. Please try again.');
+                    console.error('Navigation is not ready');
+                    alert('Navigation is not ready. Try again in a moment.');
                 }
-            }, 300);
+            }, 100);
         } catch (error: unknown) {
             console.error('Navigation error:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -400,7 +473,7 @@ const DevDrawer = () => {
             <SafeAreaView style={styles.drawerContainer}>
                 <View style={styles.handle} />
                 <View style={styles.header}>
-                    <Text style={styles.title}>App Navigation</Text>
+                    <Text style={styles.title}>Developer Tools</Text>
                     <TouchableOpacity
                         style={styles.closeButtonContainer}
                         onPress={toggleDevDrawer}
@@ -408,51 +481,20 @@ const DevDrawer = () => {
                         <Text style={styles.closeButton}>Close</Text>
                     </TouchableOpacity>
                 </View>
+                <ScrollView style={styles.content}>
+                    {/* Show missing environment variables */}
+                    <MissingEnvVars />
 
-                <ScrollView
-                    style={styles.content}
-                    contentContainerStyle={{ paddingBottom: 30 }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {/* Navigation Map Component */}
-                    <AppNavigationMap onScreenSelect={navigateToScreen} />
-
-                    {/* Legend */}
-                    <NavigationLegend />
-
-                    <View style={styles.divider} />
-
-                    <Text style={styles.sectionTitle}>Developer Info</Text>
-
-                    <View style={styles.infoCard}>
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Environment:</Text>
-                            <Text style={styles.infoValue}>Development</Text>
-                        </View>
-
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>App Version:</Text>
-                            <Text style={styles.infoValue}>
-                                {(process.env as any).npm_package_version || '0.1.0'}
-                            </Text>
-                        </View>
-
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Login Status:</Text>
-                            <Text style={[styles.infoValue, { color: isLoggedIn ? '#34C759' : '#FF9500' }]}>
-                                {isLoggedIn ? 'Logged In' : 'Not Logged In'}
-                            </Text>
-                        </View>
+                    <View style={styles.navigationMapContainer}>
+                        <Text style={styles.mapTitle}>App Navigation</Text>
+                        <Text style={styles.mapDescription}>
+                            Use this map to navigate directly to different screens in the app
+                            without having to go through the normal flow.
+                        </Text>
+                        <AppNavigationMap onScreenSelect={navigateToScreen} />
                     </View>
 
-                    {!isLoggedIn && (
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={bypassAuth}
-                        >
-                            <Text style={styles.actionButtonText}>Force Login (For Testing)</Text>
-                        </TouchableOpacity>
-                    )}
+                    <NavigationLegend />
                 </ScrollView>
             </SafeAreaView>
         </View>
@@ -690,6 +732,52 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: '600',
         fontSize: 15,
+    },
+    envContainer: {
+        backgroundColor: '#f8f8f8',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    envTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 8,
+        color: '#000',
+    },
+    envDescription: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 16,
+        lineHeight: 18,
+    },
+    envComplete: {
+        fontSize: 14,
+        color: '#2ecc71',
+        fontWeight: '500',
+    },
+    envVarItem: {
+        backgroundColor: 'rgba(255,76,76,0.1)',
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 8,
+        borderLeftWidth: 3,
+        borderLeftColor: '#ff4c4c',
+    },
+    envVarName: {
+        fontWeight: '600',
+        color: '#ff4c4c',
+    },
+    envHelper: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 8,
+        fontStyle: 'italic',
     },
 });
 

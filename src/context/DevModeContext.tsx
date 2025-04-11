@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { validateEnv } from '../utils/envValidator';
 
 // Declare global __DEV_MODE__ to avoid TypeScript errors
 declare global {
@@ -11,6 +12,7 @@ interface DevModeContextType {
     isDevMode: boolean;
     toggleDevDrawer: () => void;
     isDevDrawerOpen: boolean;
+    checkEnv: (key: string, value: string | undefined, featureName: string) => string | undefined;
 }
 
 const DevModeContext = createContext<DevModeContextType | undefined>(undefined);
@@ -64,12 +66,22 @@ export function DevModeProvider({ children }: DevModeProviderProps) {
         setIsDevDrawerOpen((prev) => !prev);
     };
 
+    /**
+     * Checks if the environment variable is valid.
+     * In dev mode, missing variables will show a warning but return undefined
+     * In production mode, missing variables will throw an error
+     */
+    const checkEnv = (key: string, value: string | undefined, featureName: string): string | undefined => {
+        return validateEnv(key, value, featureName);
+    };
+
     return (
         <DevModeContext.Provider
             value={{
                 isDevMode,
                 toggleDevDrawer,
                 isDevDrawerOpen,
+                checkEnv,
             }}
         >
             {children}
