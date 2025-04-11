@@ -1,6 +1,6 @@
 import { Connection, clusterApiUrl, Cluster, PublicKey } from '@solana/web3.js';
 import { ENDPOINTS } from '../../../config/constants';
-import { CLUSTER } from '@env';
+import { CLUSTER, HELIUS_STAKED_URL } from '@env';
 import { TokenInfo } from '../types/tokenTypes';
 
 /**
@@ -30,7 +30,7 @@ export async function fetchTokenBalance(
   tokenInfo: TokenInfo
 ): Promise<number | null> {
   try {
-    const rpcUrl = ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
+    const rpcUrl = HELIUS_STAKED_URL || ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
     const connection = new Connection(rpcUrl, 'confirmed');
 
     if (
