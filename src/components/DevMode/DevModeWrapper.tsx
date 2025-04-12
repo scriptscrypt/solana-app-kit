@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { DevModeProvider, useDevMode } from '../../context/DevModeContext';
-import DevModeTrigger from './DevModeTrigger';
+import DevModeStatusBar from './DevModeStatusBar';
 import DevDrawer from './DevDrawer';
 
 interface DevModeContainerProps {
@@ -17,8 +17,8 @@ const DevModeContainer = ({ children }: DevModeContainerProps) => {
         <View style={styles.container}>
             {children}
 
-            {/* The DevModeTrigger will only render if in dev mode */}
-            <DevModeTrigger />
+            {/* The DevModeStatusBar will only render if in dev mode */}
+            <DevModeStatusBar />
 
             {/* The DevDrawer will handle its own visibility */}
             {isDevMode && <DevDrawer />}

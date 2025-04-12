@@ -186,7 +186,7 @@ const SCREEN_NODES = [
 
 type RouteNames = string;
 
-// Navigation Map Component
+// Navigation Map Component - Redesigned to be more modern and sleek
 const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNames, params: Record<string, unknown>) => void }) => {
     // Track which sections are expanded
     const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({
@@ -204,7 +204,7 @@ const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNam
         }));
     };
 
-    // Node component for the navigation map
+    // Modern node component for the navigation map
     const NavNode = ({
         id,
         indentLevel = 0,
@@ -221,22 +221,22 @@ const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNam
         const hasChildren = node.children && node.children.length > 0;
         const isExpanded = expandedSections[id];
 
-        // Determine background color based on node type
-        const bgColor =
-            nodeType === 'root' ? '#5d85c3' :  // Blue for bottom nav
-                nodeType === 'category' ? '#ff7a7a' : // Red for categories
-                    '#4ECDC4'; // Teal for screens
-
-        // Determine text color based on background
-        const textColor = (nodeType === 'root' || nodeType === 'category') ? '#fff' : '#333';
+        // Icons for different types of nodes
+        const getNodeIcon = () => {
+            if (nodeType === 'root') return '•••';
+            if (nodeType === 'category') return '•';
+            return '→';
+        };
 
         return (
-            <View style={{ marginBottom: isChild ? 0 : 10 }}>
+            <View style={{ marginBottom: isChild ? 6 : 4 }}>
                 <TouchableOpacity
                     style={[
                         styles.navMapNode,
-                        { marginLeft: indentLevel * 20 },
-                        { backgroundColor: bgColor }
+                        { marginLeft: indentLevel * 16 },
+                        nodeType === 'root' ? styles.rootNode :
+                            nodeType === 'category' ? styles.categoryNode :
+                                styles.screenNode
                     ]}
                     onPress={() => {
                         if (hasChildren) {
@@ -247,31 +247,38 @@ const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNam
                     }}
                 >
                     <View style={styles.nodeContent}>
-                        {/* Show arrow only for nodes that have children */}
                         {hasChildren && (
-                            <Text style={[styles.nodeArrow, { color: textColor }]}>
-                                {isExpanded ? '▼' : '▶'}
+                            <Text style={[
+                                styles.nodeArrow,
+                                nodeType === 'root' ? styles.rootText :
+                                    nodeType === 'category' ? styles.categoryText :
+                                        styles.screenText
+                            ]}>
+                                {isExpanded ? '−' : '+'}
                             </Text>
                         )}
 
-                        {/* Node Label */}
-                        <Text style={[styles.nodeLabel, { color: textColor }]}>
+                        <Text style={[
+                            styles.nodeLabel,
+                            nodeType === 'root' ? styles.rootText :
+                                nodeType === 'category' ? styles.categoryText :
+                                    styles.screenText
+                        ]}>
                             {node.label}
                         </Text>
                     </View>
 
-                    {/* Show nav indicator for screens that can be navigated to */}
                     {node.route && (
                         <TouchableOpacity
                             style={styles.navButton}
                             onPress={() => onScreenSelect(node.route, node.params)}
                         >
-                            <Text style={styles.navButtonText}>Navigate</Text>
+                            <Text style={styles.navButtonText}>Open</Text>
                         </TouchableOpacity>
                     )}
                 </TouchableOpacity>
 
-                {/* Render children when section is expanded */}
+                {/* Render children when section is expanded with connecting lines */}
                 {hasChildren && isExpanded && (
                     <View style={styles.childrenContainer}>
                         {node.children.map(childId => (
@@ -290,35 +297,7 @@ const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNam
 
     return (
         <View style={styles.navigationMapContainer}>
-            {/* <Text style={styles.mapTitle}>App Navigation Structure</Text>
-            <Text style={styles.mapDescription}>
-                Tap on dropdown arrows to expand sections. Tap "Navigate" to go to screens.
-            </Text> */}
-
-            <View style={styles.treeContainer}>
-                <NavNode id="bottomNav" />
-            </View>
-        </View>
-    );
-};
-
-// Legend component for explaining node colors
-const NavigationLegend = () => {
-    return (
-        <View style={styles.legendContainer}>
-            <Text style={styles.legendTitle}>Legend</Text>
-            <View style={styles.legendRow}>
-                <View style={[styles.legendIcon, { backgroundColor: '#5d85c3' }]} />
-                <Text style={styles.legendText}>Bottom Navigation</Text>
-            </View>
-            <View style={styles.legendRow}>
-                <View style={[styles.legendIcon, { backgroundColor: '#ff7a7a' }]} />
-                <Text style={styles.legendText}>Navigation Categories</Text>
-            </View>
-            <View style={styles.legendRow}>
-                <View style={[styles.legendIcon, { backgroundColor: '#4ECDC4' }]} />
-                <Text style={styles.legendText}>App Screens</Text>
-            </View>
+            <NavNode id="bottomNav" />
         </View>
     );
 };
@@ -338,7 +317,7 @@ const MissingEnvVars = () => {
 
     return (
         <View style={styles.envContainer}>
-            <Text style={styles.envTitle}>Missing Environment Variables</Text>
+            <Text style={styles.envTitle}>Environment Variables</Text>
             <Text style={styles.envDescription}>
                 The following environment variables are missing. The app can continue in dev mode,
                 but certain features may not work correctly.
@@ -445,8 +424,7 @@ const DevDrawer = () => {
                 onPress={toggleDevDrawer}
                 activeOpacity={1}
             />
-            <SafeAreaView style={styles.drawerContainer}>
-                <View style={styles.handle} />
+            <SafeAreaView style={styles.drawerContainer} edges={['bottom', 'left', 'right']}>
                 <View style={styles.header}>
                     <Text style={styles.title}>Developer Tools</Text>
                     <TouchableOpacity
@@ -468,8 +446,6 @@ const DevDrawer = () => {
                         </Text>
                         <AppNavigationMap onScreenSelect={navigateToScreen} />
                     </View>
-
-                    <NavigationLegend />
 
                     <View style={styles.divider} />
 
@@ -535,8 +511,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        paddingTop: 12,
-        paddingBottom: 24,
         maxHeight: Dimensions.get('window').height * 0.9,
         shadowColor: '#000',
         shadowOffset: {
@@ -547,23 +521,18 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 20,
     },
-    handle: {
-        alignSelf: 'center',
-        width: 36,
-        height: 4,
-        backgroundColor: 'rgba(0,0,0,0.2)',
-        borderRadius: 2,
-        marginBottom: 16,
-    },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 24,
-        marginBottom: 20,
+        paddingTop: 14,
+        paddingBottom: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
     },
     title: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: '700',
         color: '#000000',
     },
@@ -579,12 +548,13 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: 24,
+        paddingTop: 16,
     },
     navigationMapContainer: {
-        marginBottom: 24,
+        marginBottom: 5,
     },
     mapTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '700',
         marginBottom: 8,
         color: '#000',
@@ -593,32 +563,40 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         marginBottom: 16,
-        lineHeight: 18,
-    },
-    treeContainer: {
-        backgroundColor: '#f8f8f8',
-        borderRadius: 16,
-        borderWidth: 0,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3,
+        lineHeight: 20,
     },
     navMapNode: {
-        marginVertical: 6,
+        marginVertical: 4,
         paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 12,
+        paddingHorizontal: 14,
+        borderRadius: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+    },
+    rootNode: {
+        backgroundColor: '#F5F5F7',
+        borderLeftWidth: 3,
+        borderLeftColor: '#007AFF',
+    },
+    categoryNode: {
+        backgroundColor: '#F5F5F7',
+        borderLeftWidth: 3,
+        borderLeftColor: '#FF9500',
+    },
+    screenNode: {
+        backgroundColor: '#F5F5F7',
+        borderLeftWidth: 3,
+        borderLeftColor: '#32D74B',
+    },
+    rootText: {
+        color: '#007AFF',
+    },
+    categoryText: {
+        color: '#FF9500',
+    },
+    screenText: {
+        color: '#32D74B',
     },
     nodeContent: {
         flexDirection: 'row',
@@ -626,69 +604,32 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     nodeArrow: {
-        fontSize: 10,
-        marginRight: 10,
+        fontSize: 16,
+        marginRight: 8,
+        fontWeight: '600',
     },
     nodeLabel: {
-        fontWeight: '600',
+        fontWeight: '500',
         fontSize: 15,
     },
     navButton: {
-        backgroundColor: 'rgba(255,255,255,0.3)',
+        backgroundColor: 'rgba(0,0,0,0.05)',
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 8,
-        borderWidth: 0,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        borderRadius: 6,
     },
     navButtonText: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 13,
+        fontWeight: '500',
         color: '#333',
     },
     childrenContainer: {
-        marginTop: 4,
-        marginBottom: 6,
-    },
-    legendContainer: {
-        backgroundColor: '#f8f8f8',
-        padding: 16,
-        borderRadius: 16,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3,
-    },
-    legendTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        marginBottom: 12,
-        color: '#333',
-    },
-    legendRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    legendIcon: {
-        width: 16,
-        height: 16,
-        borderRadius: 6,
-        marginRight: 10,
-    },
-    legendText: {
-        fontSize: 14,
-        color: '#333',
+        marginTop: 2,
     },
     divider: {
         height: 1,
         backgroundColor: 'rgba(0,0,0,0.06)',
-        marginVertical: 20,
+        marginVertical: 16,
     },
     sectionTitle: {
         fontSize: 18,
@@ -697,15 +638,10 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     infoCard: {
-        backgroundColor: '#f8f8f8',
-        borderRadius: 16,
+        backgroundColor: '#F5F5F7',
+        borderRadius: 12,
         padding: 16,
         marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3,
     },
     infoRow: {
         flexDirection: 'row',
@@ -731,11 +667,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 12,
         alignItems: 'center',
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        marginBottom: 30,
     },
     actionButtonText: {
         color: '#FFFFFF',
@@ -743,18 +675,13 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
     envContainer: {
-        backgroundColor: '#f8f8f8',
-        borderRadius: 16,
+        backgroundColor: '#F5F5F7',
+        borderRadius: 12,
         padding: 16,
         marginBottom: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 3,
     },
     envTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '700',
         marginBottom: 8,
         color: '#000',
@@ -767,7 +694,7 @@ const styles = StyleSheet.create({
     },
     envComplete: {
         fontSize: 14,
-        color: '#2ecc71',
+        color: '#34C759',
         fontWeight: '500',
     },
     envVarItem: {

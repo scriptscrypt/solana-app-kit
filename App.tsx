@@ -73,12 +73,12 @@ import TransactionNotification from './src/core/sharedUI/Common/TransactionNotif
 
 // Import DevMode components
 import { DevModeProvider, useDevMode } from './src/context/DevModeContext';
-import DevModeTrigger from './src/components/DevMode/DevModeTrigger';
 import DevDrawer from './src/components/DevMode/DevDrawer';
 import { View } from 'react-native';
 
-// Import Environment Error provider and components
-import { EnvErrorProvider, EnvErrorButton } from './src/context/EnvErrorContext';
+// Import Environment Error provider and new components
+import { EnvErrorProvider } from './src/context/EnvErrorContext';
+import DevModeStatusBar from './src/components/DevMode/DevModeStatusBar';
 
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {
@@ -88,9 +88,8 @@ const DevModeComponents = () => {
 
   return (
     <>
-      <DevModeTrigger />
+      <DevModeStatusBar />
       <DevDrawer />
-      <EnvErrorButton />
     </>
   );
 };
