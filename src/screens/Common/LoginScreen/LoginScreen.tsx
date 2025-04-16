@@ -21,37 +21,36 @@ const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
 // SVG animation configurations
 const SVG_CONFIG = {
   circle: {
-    initialPosition: { top: SCREEN_HEIGHT * 0.15, left: SCREEN_WIDTH * 0.05 },
-    size: { width: 50, height: 50 },
+    initialPosition: { top: SCREEN_HEIGHT * 0.51, left: SCREEN_WIDTH * 0.06 },
+    size: { width: 80, height: 80 },
     animation: { type: 'rotate', duration: 10000 },
   },
-  leftStart: {
-    initialPosition: { top: SCREEN_HEIGHT * 0.25, left: -20 },
-    size: { width: 80, height: 80 },
+  leftStar: {
+    initialPosition: { top: SCREEN_HEIGHT * 0.42, left: 80 },
+    size: { width: 24, height: 24 },
     animation: { type: 'fadeInOut', duration: 3000 },
   },
   leftEllipse: {
-    initialPosition: { top: SCREEN_HEIGHT * 0.25, left: -SCREEN_WIDTH * 0.44 },
-    size: { width: 300, height: 300 },
+    initialPosition: { top: SCREEN_HEIGHT * 0.23, left: -SCREEN_WIDTH * 0.55 },
+    size: { width: 340, height: 340 },
   },
   plus: {
-    initialPosition: { top: SCREEN_HEIGHT * 0.5, left: SCREEN_WIDTH * 0.2 },
-    size: { width: 30, height: 30 },
-    animation: { type: 'translate', duration: 4000, offsetY: 20 },
+    initialPosition: { top: SCREEN_HEIGHT * 0.3, left: SCREEN_WIDTH * 0.13 },
+    size: { width: 80, height: 80 },
   },
   rect: {
-    initialPosition: { top: SCREEN_HEIGHT * 0.65, left: SCREEN_WIDTH * 0.05 },
-    size: { width: 40, height: 40 },
+    initialPosition: { top: SCREEN_HEIGHT * 0.34, left: SCREEN_WIDTH * 0.34 },
+    size: { width: 58, height: 58 },
     animation: { type: 'rotate', duration: 6000 },
   },
   yellowBoomerang: {
-    initialPosition: { top: SCREEN_HEIGHT * 0.75, left: SCREEN_WIDTH * 0.15 },
-    size: { width: 70, height: 70 },
+    initialPosition: { top: SCREEN_HEIGHT * 0.43, left: SCREEN_WIDTH * 0.27 },
+    size: { width: 80, height: 80 },
     animation: { type: 'fadeInOut', duration: 5000 },
   },
-  leftUnion: {
-    initialPosition: { top: SCREEN_HEIGHT * 0.35, left: -10 },
-    size: { width: 120, height: 120 },
+  setting: {
+    initialPosition: { top: SCREEN_HEIGHT * 0.36, left: -63 },
+    size: { width: 130, height: 130 },
     animation: { type: 'none' },
   },
 };
@@ -94,28 +93,12 @@ export default function LoginScreen() {
       Animated.sequence([
         Animated.timing(leftStartAnim, {
           toValue: 1,
-          duration: SVG_CONFIG.leftStart.animation.duration / 2,
+          duration: SVG_CONFIG.leftStar.animation.duration / 2,
           useNativeDriver: true,
         }),
         Animated.timing(leftStartAnim, {
           toValue: 0.3,
-          duration: SVG_CONFIG.leftStart.animation.duration / 2,
-          useNativeDriver: true,
-        })
-      ])
-    ).start();
-
-    // Plus translation animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(plusAnim, {
-          toValue: SVG_CONFIG.plus.animation.offsetY,
-          duration: SVG_CONFIG.plus.animation.duration / 2,
-          useNativeDriver: true,
-        }),
-        Animated.timing(plusAnim, {
-          toValue: 0,
-          duration: SVG_CONFIG.plus.animation.duration / 2,
+          duration: SVG_CONFIG.leftStar.animation.duration / 2,
           useNativeDriver: true,
         })
       ])
@@ -215,15 +198,15 @@ export default function LoginScreen() {
         style={[
           {
             position: 'absolute',
-            top: SVG_CONFIG.leftStart.initialPosition.top,
-            left: SVG_CONFIG.leftStart.initialPosition.left,
-            width: SVG_CONFIG.leftStart.size.width,
-            height: SVG_CONFIG.leftStart.size.height,
+            top: SVG_CONFIG.leftStar.initialPosition.top,
+            left: SVG_CONFIG.leftStar.initialPosition.left,
+            width: SVG_CONFIG.leftStar.size.width,
+            height: SVG_CONFIG.leftStar.size.height,
             opacity: leftStartAnim,
           },
         ]}
       >
-        <Icons.LeftStart width="100%" height="100%" />
+        <Icons.LeftStar width="100%" height="100%" />
       </Animated.View>
 
       {/* LeftEllipse SVG with scale animation */}
@@ -296,19 +279,19 @@ export default function LoginScreen() {
         <Icons.YellowBoomerang width="100%" height="100%" />
       </Animated.View>
 
-      {/* LeftUnion SVG without animation */}
+      {/* Setting SVG without animation */}
       <View
         style={[
           {
             position: 'absolute',
-            top: SVG_CONFIG.leftUnion.initialPosition.top,
-            left: SVG_CONFIG.leftUnion.initialPosition.left,
-            width: SVG_CONFIG.leftUnion.size.width,
-            height: SVG_CONFIG.leftUnion.size.height,
+            top: SVG_CONFIG.setting.initialPosition.top,
+            left: SVG_CONFIG.setting.initialPosition.left,
+            width: SVG_CONFIG.setting.size.width,
+            height: SVG_CONFIG.setting.size.height,
           },
         ]}
       >
-        <Icons.LeftUnion width="100%" height="100%" />
+        <Icons.Setting width="100%" height="100%" />
       </View>
     </View>
   );

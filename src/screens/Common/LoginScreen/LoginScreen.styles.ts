@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.15,
+    top: SCREEN_HEIGHT * 0.14,
     alignItems: 'center',
   },
   welcomeText: {
@@ -24,7 +24,6 @@ const styles = StyleSheet.create({
     lineHeight: TYPOGRAPHY.lineHeight.heading,
     letterSpacing: TYPOGRAPHY.letterSpacing,
     color: COLORS.white,
-    marginBottom: 8,
   },
   subtitleText: {
     fontFamily: TYPOGRAPHY.fontFamily,
@@ -32,7 +31,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: TYPOGRAPHY.lineHeight.xl,
     letterSpacing: TYPOGRAPHY.letterSpacing,
-    color: COLORS.greyMid,
+    color: COLORS.accessoryDarkColor,
   },
   gradient: {
     position: 'absolute',

@@ -17,7 +17,7 @@ const TYPOGRAPHY = {
     xl: 18,
     xxl: 24,
     xxxl: 32,
-    heading: 42,
+    heading: 38,
   },
 
   // Line heights (based on 150% line height)

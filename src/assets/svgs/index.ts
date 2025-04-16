@@ -48,12 +48,12 @@ import cross from "./Close.svg"
 import arrowRIght from "./Back.svg"
 // Login elements left
 import LeftCircle from './login-elements-left/circle.svg';
-import LeftStart from './login-elements-left/left-start.svg';
+import LeftStar from './login-elements-left/left-star.svg';
 import LeftEllipse from './login-elements-left/left-ellipse.svg';
 import LeftPlus from './login-elements-left/plus.svg';
 import LeftRect from './login-elements-left/rect.svg';
 import YellowBoomerang from './login-elements-left/yellow-boomerang.svg';
-import LeftUnion from './login-elements-left/Union.svg';
+import Setting from './login-elements-left/setting.svg';
 
 export default {
   SolanaDot,
@@ -106,10 +106,10 @@ export default {
   arrowRIght,
   // Login elements left
   LeftCircle,
-  LeftStart,
+  LeftStar,
   LeftEllipse,
   LeftPlus,
   LeftRect,
   YellowBoomerang,
-  LeftUnion
+  Setting
 };
