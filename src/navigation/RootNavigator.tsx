@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useSelector } from 'react-redux';
 import { RootState } from '../state/store';
@@ -7,8 +7,8 @@ import ChatScreen from '../screens/SampleUI/Chat/ChatScreen/ChatScreen';
 import CoinDetailPage from '../screens/SampleUI/Threads/CoinDetailPage/CoinDetailPage';
 import BlinkScreen from '../screens/Common/BlinkScreen';
 import NftScreen from '../modules/nft/screens/NftScreen';
-import IntroScreen from '../screens/Common/IntroScreen/IntroScreen';
 import LoginScreen from '../screens/Common/LoginScreen/LoginScreen';
+import IntroScreen from '../screens/Common/IntroScreen/IntroScreen';
 
 // NEW IMPORT
 import OtherProfileScreen from '../screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen';
@@ -20,11 +20,11 @@ import { PumpfunScreen } from '../modules/pumpFun';
 import PumpSwapScreen from '../modules/pumpSwap/screens/PumpSwapScreen';
 
 export type RootStackParamList = {
+  IntroScreen: undefined;
   LoginOptions: undefined;
   MainTabs: undefined;
   CoinDetailPage: undefined;
   Blink: undefined;
-  IntroScreen: undefined;
   Pumpfun: undefined;
   TokenMill: undefined;
   NftScreen: undefined;
@@ -41,6 +41,10 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+
+  useEffect(() => {
+    console.log(`[RootNavigator] isLoggedIn state changed: ${isLoggedIn}`);
+  }, [isLoggedIn]);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -69,6 +73,7 @@ export default function RootNavigator() {
         <>
           <Stack.Screen name="IntroScreen" component={IntroScreen} />
           <Stack.Screen name="LoginOptions" component={LoginScreen} />
+          <Stack.Screen name="MainTabs" component={MainTabs} />
         </>
       )}
     </Stack.Navigator>

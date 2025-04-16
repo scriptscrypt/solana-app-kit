@@ -235,6 +235,7 @@ const authSlice = createSlice({
       }
     },
     logoutSuccess(state) {
+      console.log('[AuthReducer] logoutSuccess: Resetting state.');
       state.provider = null;
       state.address = null;
       state.isLoggedIn = false;
@@ -242,6 +243,7 @@ const authSlice = createSlice({
       state.username = null;
       state.description = null;
       state.attachmentData = {};
+      console.log('[AuthReducer] State after logoutSuccess:', JSON.stringify(state));
     },
     updateProfilePic(state, action: PayloadAction<string>) {
       state.profilePicUrl = action.payload;

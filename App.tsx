@@ -12,6 +12,11 @@ import { Alert } from 'react-native';
 
 // Declare global type for TypeScript
 declare global {
+  namespace NodeJS {
+    interface Global {
+      __DEV_MODE__: boolean;
+    }
+  }
   var __DEV_MODE__: boolean;
 }
 
@@ -61,6 +66,8 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef } from './src/hooks/useAppNavigation';
 import { store } from './src/state/store';
 import './src/utils/polyfills';
+import COLORS from './src/assets/colors';
+import { View } from 'react-native';
 
 import { PrivyProvider, PrivyElements } from '@privy-io/expo';
 import { TurnkeyProvider } from '@turnkey/sdk-react-native';
@@ -74,7 +81,6 @@ import TransactionNotification from './src/core/sharedUI/Common/TransactionNotif
 // Import DevMode components
 import { DevModeProvider, useDevMode } from './src/context/DevModeContext';
 import DevDrawer from './src/components/DevMode/DevDrawer';
-import { View } from 'react-native';
 
 // Import Environment Error provider and new components
 import { EnvErrorProvider } from './src/context/EnvErrorContext';
@@ -146,7 +152,7 @@ export default function App() {
         <ReduxProvider store={store}>
           <DevModeProvider>
             <EnvErrorProvider>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: COLORS.background }}>
                 {config.auth.provider === 'privy' ? (
                   <PrivyProvider
                     appId={config.auth.privy.appId}
