@@ -18,6 +18,7 @@ import ProfileScreen from '../screens/SampleUI/Threads/ProfileScreen/ProfileScre
 import { TokenMillScreen } from '../modules/tokenMill';
 import { PumpfunScreen } from '../modules/pumpFun';
 import PumpSwapScreen from '../modules/pumpSwap/screens/PumpSwapScreen';
+import { MercuroScreen } from '../modules/mercuro';
 
 export type RootStackParamList = {
   LoginOptions: undefined;
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   NftScreen: undefined;
   ChatScreen: undefined;
   PumpSwap: undefined;
+  MercuroScreen: undefined;
   // NEW ROUTE
   OtherProfile: { userId: string };
   PostThread: { postId: string };
@@ -54,6 +56,7 @@ export default function RootNavigator() {
           <Stack.Screen name="NftScreen" component={NftScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
           <Stack.Screen name="PumpSwap" component={PumpSwapScreen} />
+          <Stack.Screen name="MercuroScreen" component={MercuroScreen} />
 
           {/* NEW SCREEN for viewing other user's profile */}
           <Stack.Screen name="OtherProfile" component={OtherProfileScreen} />

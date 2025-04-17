@@ -1,9 +1,16 @@
 <div align="center">
 
+![Solana App Kit Cover](src/assets/images/Cover.png)
+
+<!-- Stats badges; using SendArcade/solana-app-kit -->
+
+![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=flat-square)
+![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=flat-square)
+![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&message=Apache-2.0&color=brightgreen&style=flat-square)
+
 # Solana App Kit
 
 A modern React Native social application built on the Solana blockchain, providing a complete starter kit for building decentralized social experiences.
-
 
 </div>
 
@@ -15,7 +22,7 @@ A modern React Native social application built on the Solana blockchain, providi
 - **Authentication**: Multiple auth options with Privy integration
 - **Cryptocurrency Tracking**: View and track coin details and performance
 - **Modern UI**: Beautiful, responsive interface with tab-based navigation
-- **Token Management**: 
+- **Token Management**:
   - Token creation and launching
   - Bonding curve configuration
   - Token trading functionality
@@ -55,18 +62,21 @@ A modern React Native social application built on the Solana blockchain, providi
 ## Getting Started
 
 This project consists of two main parts:
+
 1. React Native mobile application (in the root directory)
 2. Backend server (in the `server` directory)
 
 ### Mobile App Installation
 
 1. Clone the repository:
+
    ```sh
-   git clone https://github.com/yourusername/solana-app-kit.git
+   git clone https://github.com/SendArcade/solana-app-kit.git
    cd solana-app-kit
    ```
 
 2. Install dependencies:
+
    ```sh
    yarn install
    # or
@@ -93,19 +103,23 @@ This project consists of two main parts:
 ### Server Installation
 
 1. Navigate to the server directory:
+
    ```sh
    cd server
    ```
 
 2. Install server dependencies:
+
    ```sh
    yarn install
    ```
 
 3. Set up server environment variables:
+
    ```sh
    cp .env.example .env
    ```
+
    Edit the `.env` file to include your specific credentials and configuration.
 
 4. Start the development server:
@@ -205,6 +219,7 @@ solana-app-kit/
 ## Key Features
 
 ### Wallet Integration
+
 - Multiple wallet connection methods
 - Embedded wallet support via Privy
 - External wallet connections
@@ -213,6 +228,7 @@ solana-app-kit/
 - Turnkey wallet management
 
 ### Token Management
+
 - Token creation and launching
 - Bonding curve configuration
 - Price curve visualization
@@ -221,6 +237,7 @@ solana-app-kit/
 - TokenMill integration
 
 ### Social Features
+
 - User profiles and following system
 - Social feed with posts and interactions
 - Messaging via Dialect Blinks
@@ -229,6 +246,7 @@ solana-app-kit/
 - IPFS storage for metadata
 
 ### Backend Features
+
 - RESTful API for token operations
 - Social data storage and retrieval
 - Token market creation and management
@@ -237,6 +255,7 @@ solana-app-kit/
 - Image upload and storage
 
 ### UI/UX
+
 - Modern, responsive design
 - Tab-based navigation
 - Interactive charts and visualizations

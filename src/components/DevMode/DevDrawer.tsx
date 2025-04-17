@@ -83,9 +83,9 @@ const SCREEN_NODES = [
         id: 'modules',
         label: 'Modules',
         type: 'category',
-        route: null,
-        params: {},
-        children: ['pumpFun', 'pumpSwap', 'tokenMill', 'nft']
+        route: 'MainTabs',
+        params: { screen: 'Modules' },
+        children: ['pumpFun', 'pumpSwap', 'tokenMill', 'nft', 'mercuro']
     },
     {
         id: 'feed',
@@ -179,6 +179,14 @@ const SCREEN_NODES = [
         label: 'NFT Screen',
         type: 'screen',
         route: 'NftScreen',
+        params: {},
+        children: []
+    },
+    {
+        id: 'mercuro',
+        label: 'Mercuro Onramp/Offramp',
+        type: 'screen',
+        route: 'MercuroScreen',
         params: {},
         children: []
     }
