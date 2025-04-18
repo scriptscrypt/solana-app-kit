@@ -7,10 +7,10 @@ import { useCustomization } from '../../../../CustomizationProvider';
 import { useAppNavigation } from '../../../../hooks/useAppNavigation';
 import { useAppDispatch } from '../../../../hooks/useReduxHooks';
 import { loginSuccess } from '../../../../state/auth/reducer';
+import COLORS from '../../../../assets/colors';
 
 import type { Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import type { Cluster, PublicKey as SolanaPublicKey } from '@solana/web3.js';
-import { CLUSTER } from '@env';
 
 type TransactFunction = <T>(
   callback: (wallet: Web3MobileWallet) => Promise<T>
@@ -210,28 +210,47 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
     }
   };
 
+  // Arrow component for the right side of buttons
+  const ArrowIcon = () => (
+    <View style={styles.arrowCircle}>
+      <Text style={styles.arrowText}>›</Text>
+    </View>
+  );
+
   return (
     <View style={styles.bottomButtonsContainer}>
       {Platform.OS === 'android' && transact && PublicKey && Buffer && (
         <TouchableOpacity style={styles.loginButton} onPress={loginWithMWA}>
-          <Icons.Google width={24} height={24} />
-          <Text style={styles.buttonText}>Continue with MWA</Text>
+          <View style={styles.buttonContent}>
+            <Icons.Google width={24} height={24} />
+            <Text style={styles.buttonText}>Continue with MWA</Text>
+          </View>
+          <ArrowIcon />
         </TouchableOpacity>
       )}
 
       <TouchableOpacity style={styles.loginButton} onPress={handleGoogleLogin}>
-        <Icons.Google width={24} height={24} />
-        <Text style={styles.buttonText}>Continue with Google</Text>
+        <View style={styles.buttonContent}>
+          <Icons.Google width={24} height={24} />
+          <Text style={styles.buttonText}>Continue with Google</Text>
+        </View>
+        <ArrowIcon />
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.loginButton} onPress={handleAppleLogin}>
-        <Icons.Apple width={24} height={24} />
-        <Text style={styles.buttonText}>Continue with Apple</Text>
+        <View style={styles.buttonContent}>
+          <Icons.Apple width={24} height={24} fill={COLORS.white} />
+          <Text style={styles.buttonText}>Continue with Apple</Text>
+        </View>
+        <ArrowIcon />
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.loginButton]} onPress={handleEmailLogin}>
-        <Icons.Device width={24} height={24} />
-        <Text style={[styles.buttonText]}>Continue with Email</Text>
+      <TouchableOpacity style={styles.loginButton} onPress={handleEmailLogin}>
+        <View style={styles.buttonContent}>
+          <Icons.Device width={24} height={24} stroke={COLORS.white} />
+          <Text style={styles.buttonText}>Continue with Email</Text>
+        </View>
+        <ArrowIcon />
       </TouchableOpacity>
     </View>
   );

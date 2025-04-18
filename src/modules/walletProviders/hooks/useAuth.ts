@@ -115,9 +115,21 @@ export function useAuth() {
     }, [handlePrivyLogin, monitorSolanaWallet, dispatch, navigation]);
 
     const logout = useCallback(async () => {
-      await handlePrivyLogout(() => {});
-      dispatch(logoutSuccess());
-    }, [handlePrivyLogout, dispatch]);
+      console.log('[useAuth] Attempting Privy logout...');
+      try {
+        await handlePrivyLogout(() => {});
+        console.log('[useAuth] Privy SDK logout successful. Dispatching logoutSuccess.');
+        dispatch(logoutSuccess());
+        console.log('[useAuth] Redux logout dispatched. Resetting navigation.');
+        // Reset navigation to the initial route of the logged-out stack
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'IntroScreen' }],
+        });
+      } catch (error) {
+        console.error('[useAuth] Error during Privy logout:', error);
+      }
+    }, [handlePrivyLogout, dispatch, navigation]);
 
     return {
       status: '',
@@ -131,6 +143,7 @@ export function useAuth() {
     };
   } else if (selectedProvider === 'dynamic') {
     /** DYNAMIC CASE */
+    console.log('[useAuth] Using Dynamic logic.');
     const {
       handleDynamicLogin,
       handleDynamicLogout,
@@ -449,9 +462,21 @@ export function useAuth() {
     }, [handleDynamicLogin, handleSuccessfulLogin, navigation]);
 
     const logout = useCallback(async () => {
-      await handleDynamicLogout(() => {});
-      dispatch(logoutSuccess());
-    }, [handleDynamicLogout, dispatch]);
+      console.log('[useAuth] Attempting Dynamic logout...');
+      try {
+        await handleDynamicLogout(() => {});
+        console.log('[useAuth] Dynamic SDK logout successful. Dispatching logoutSuccess.');
+        dispatch(logoutSuccess());
+        console.log('[useAuth] Redux logout dispatched. Resetting navigation.');
+        // Reset navigation to the initial route of the logged-out stack
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'IntroScreen' }],
+        });
+      } catch (error) {
+        console.error('[useAuth] Error during Dynamic logout:', error);
+      }
+    }, [handleDynamicLogout, dispatch, navigation]);
 
     // Create a solanaWallet object that mimics the Privy structure for compatibility
     const solanaWallet = standardWallet ? {
@@ -475,6 +500,7 @@ export function useAuth() {
     };
   } else if (selectedProvider === 'turnkey') {
     /** TURNKEY CASE */
+    console.log('[useAuth] Using Turnkey logic.');
     const {
       user,
       walletAddress,
@@ -601,9 +627,21 @@ export function useAuth() {
     }, [handleVerifyOtp, dispatch, navigation]);
 
     const logout = useCallback(async () => {
-      await handleTurnkeyLogout(() => {});
-      dispatch(logoutSuccess());
-    }, [handleTurnkeyLogout, dispatch]);
+      console.log('[useAuth] Attempting Turnkey logout...');
+      try {
+        await handleTurnkeyLogout(() => {});
+        console.log('[useAuth] Turnkey SDK logout successful. Dispatching logoutSuccess.');
+        dispatch(logoutSuccess());
+        console.log('[useAuth] Redux logout dispatched. Resetting navigation.');
+        // Reset navigation to the initial route of the logged-out stack
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'IntroScreen' }],
+        });
+      } catch (error) {
+        console.error('[useAuth] Error during Turnkey logout:', error);
+      }
+    }, [handleTurnkeyLogout, dispatch, navigation]);
 
     return {
       status: isAuthenticated ? 'authenticated' : '',
@@ -623,6 +661,7 @@ export function useAuth() {
 
   // ADDED: If we're here, check for MWA wallet in Redux state
   if (storedProvider === 'mwa' && storedAddress) {
+    console.log('[useAuth] Using MWA logic.');
     // Create standardized wallet object for MWA
     const mwaWallet: StandardWallet = {
       provider: 'mwa',
@@ -650,11 +689,24 @@ export function useAuth() {
       getProvider: mwaWallet.getProvider
     };
 
+    const logout = useCallback(async () => {
+      console.log('[useAuth] Attempting MWA logout (dispatching Redux action only)...');
+      try {
+        dispatch(logoutSuccess());
+        console.log('[useAuth] Redux logout dispatched for MWA. Resetting navigation.');
+        // Reset navigation to the initial route of the logged-out stack
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'IntroScreen' }],
+        });
+      } catch (error) {
+        console.error('[useAuth] Error during MWA logout dispatch:', error);
+      }
+    }, [dispatch, navigation]);
+
     return {
       status: 'authenticated',
-      logout: async () => {
-        dispatch(logoutSuccess());
-      },
+      logout,
       user: { id: storedAddress },
       solanaWallet,
       wallet: mwaWallet,
@@ -662,9 +714,10 @@ export function useAuth() {
   }
 
   // If no recognized provider, just return empties
+  console.warn('[useAuth] No recognized provider found or MWA not stored. Returning empty auth methods.');
   return {
     status: '', 
-    logout: async () => {},
+    logout: async () => { console.warn('[useAuth] Logout called but no provider active.') },
     solanaWallet: null,
     wallet: null
   };
