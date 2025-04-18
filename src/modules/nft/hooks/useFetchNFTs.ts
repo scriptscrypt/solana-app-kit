@@ -1,6 +1,6 @@
 // FILE: src/modules/nft/hooks/useFetchNFTs.ts
 import { useState, useEffect } from 'react';
-import { fetchWithRetries } from '../../onChainData/utils/fetch';
+import { fetchWithRetries } from '../../dataModule/utils/fetch';
 import { TENSOR_API_KEY } from '@env';
 import { ENDPOINTS } from '../../../config/constants';
 import { NftItem, FetchNFTsOptions } from '../types';

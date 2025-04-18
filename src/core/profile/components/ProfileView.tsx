@@ -8,7 +8,12 @@ import { styles as profileStyles } from './profile.style';
 import COLORS from '../../../assets/colors';
 import { UserProfileData, ProfileViewProps } from '../types';
 import { ThreadPost } from '@/core/thread/types';
-import { PortfolioData, AssetItem } from '@/modules/onChainData';
+import { PortfolioData, AssetItem } from '@/modules/dataModule';
+
+// If TypeScript still complains, explicitly extend the imported type
+interface ExtendedProfileViewProps extends ProfileViewProps {
+  onEditPost?: (post: ThreadPost) => void;
+}
 
 // Define Action type locally if not exported
 interface WalletAction {
@@ -56,16 +61,16 @@ function ProfileViewComponent({
   onAssetPress,
   isLoading = false,
   onEditPost,
-}: ProfileViewProps) {
+}: ExtendedProfileViewProps) {
   // Ensure attachmentData is always defined
   const attachmentData = useMemo(() => user.attachmentData || {}, [user.attachmentData]);
 
   // Memoize props for the UserProfileInfo component to prevent re-renders
   const profileInfoProps = useMemo(() => ({
-    profilePicUrl: user.profilePicUrl,
-    username: user.username,
+    profilePicUrl: user.profilePicUrl || '',
+    username: user.username || '',
     userWallet: user.address,
-    bioText: user.description,
+    bioText: user.description || undefined,
     isOwnProfile,
     onAvatarPress,
     onEditProfile,
@@ -162,7 +167,7 @@ function ProfileViewComponent({
 /**
  * Custom comparison function to prevent unnecessary re-renders
  */
-function arePropsEqual(prev: ProfileViewProps, next: ProfileViewProps) {
+function arePropsEqual(prev: ExtendedProfileViewProps, next: ExtendedProfileViewProps) {
   // Loading state comparison
   if (prev.isLoading !== next.isLoading) return false;
 

@@ -21,8 +21,8 @@ import {
 } from '@/shared/state/auth/reducer';
 import { tokenModalStyles } from './profileInfoTokenModal.style';
 import COLORS from '../../../../assets/colors';
-import { UserProfileInfoProps } from '../../types';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { UserProfileInfoProps } from '../../types/index';
 
 /**
  * TokenAttachModal - Component for the token attachment modal

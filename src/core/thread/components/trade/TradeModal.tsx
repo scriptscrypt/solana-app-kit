@@ -33,11 +33,11 @@ import {
 } from '@/shared/state/thread/reducer';
 import styles from './tradeModal.style';
 import PastSwapItem from './PastSwapItem';
-import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '@/modules/onChainData/services/swapTransactions';
+import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '@/modules/dataModule/services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
-import { TradeService } from '@/modules/onChainData/services/tradeService';
-import { TokenInfo } from '@/modules/onChainData/types/tokenTypes';
+import { TradeService } from '@/modules/dataModule/services/tradeService';
+import { TokenInfo } from '@/modules/dataModule/types/tokenTypes';
 import { 
   DEFAULT_SOL_TOKEN, 
   DEFAULT_USDC_TOKEN, 
@@ -45,7 +45,7 @@ import {
   fetchTokenPrice as fetchTokenPriceFromModule,
   estimateTokenUsdValue,
   ensureCompleteTokenInfo
-} from '../../../../modules/onChainData';
+} from '../../../../modules/dataModule';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 
 /**

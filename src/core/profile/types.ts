@@ -1,6 +1,6 @@
 import { ThreadPost } from '@/core/thread/types';
 import { NftItem } from '@/modules/nft/types';
-import { PortfolioData, AssetItem } from '@/modules/onChainData';
+import { PortfolioData, AssetItem } from '@/modules/dataModule';
 // import { WalletAction } from '@/shared/state/profile/reducer'; // Keep commented out
 
 /**

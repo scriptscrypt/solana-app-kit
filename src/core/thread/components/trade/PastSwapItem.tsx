@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import {format} from 'date-fns';
 import {FontAwesome5} from '@expo/vector-icons';
-import { SwapTransaction, TokenMetadata } from '../../../../modules/onChainData/services/swapTransactions';
+import { SwapTransaction, TokenMetadata } from '../../../../modules/dataModule/services/swapTransactions';
 
 const {width} = Dimensions.get('window');
 

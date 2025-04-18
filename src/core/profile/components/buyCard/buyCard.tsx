@@ -19,17 +19,17 @@ import Icons from '../../../../assets/svgs/index';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 
-import { useFetchPortfolio, fixImageUrl } from '@/modules/onChainData/hooks/useFetchTokens';
+import { useFetchPortfolio, fixImageUrl } from '@/modules/dataModule/hooks/useFetchTokens';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import TradeModal from '../../../thread/components/trade/TradeModal';
-import TokenDetailsDrawer from '@/modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
+import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
 
 // Import collection search functionality
 import { searchCollections } from '@/modules/nft/services/nftService';
 import { CollectionResult } from '@/modules/nft/types';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
-import { AssetItem } from '@/modules/onChainData/types/assetTypes';
+import { AssetItem } from '@/modules/dataModule/types/assetTypes';
 import NFTCollectionDrawer from '@/core/sharedUI/NFTCollectionDrawer/NFTCollectionDrawer';
 
 /**

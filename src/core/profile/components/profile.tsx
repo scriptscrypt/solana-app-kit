@@ -53,8 +53,8 @@ import {
   editNameModalStyles,
 } from './profile.style';
 import { ThreadPost } from '@/core/thread/types';
-import { useFetchPortfolio } from '@/modules/onChainData/hooks/useFetchTokens';
-import { AssetItem } from '@/modules/onChainData/types/assetTypes';
+import { useFetchPortfolio } from '@/modules/dataModule/hooks/useFetchTokens';
+import { AssetItem } from '@/modules/dataModule/types/assetTypes';
 import EditPostModal from '@/core/thread/components/EditPostModal';
 
 export default function Profile({

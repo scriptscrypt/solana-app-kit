@@ -26,7 +26,7 @@ import { ThreadPost } from '../../../thread/types';
 import PostHeader from '../../../thread/components/post/PostHeader';
 import PostBody from '../../../thread/components/post/PostBody';
 import PostFooter from '../../../thread/components/post/PostFooter';
-import { AssetItem, PortfolioData } from '@/modules/onChainData';
+import { AssetItem, PortfolioData } from '@/modules/dataModule';
 
 
 // Loading placeholder for lazy-loaded tabs
@@ -295,7 +295,6 @@ function ProfileTabs({
   onRefreshPortfolio,
   refreshingPortfolio,
   onAssetPress,
-  onEditPost,
 }: ProfileTabsProps) {
   // Tab navigation state
   const [index, setIndex] = useState<number>(0);
