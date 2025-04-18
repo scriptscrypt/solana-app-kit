@@ -141,7 +141,7 @@ npm install solana-app-kit
       </td>
       <td align="center" width="100">
         <a href="https://privy.io/" target="_blank" rel="noopener noreferrer">
-          <img src="https://assets.privy.io/public-assets/Privy_Logomark_Circle_Purple.svg" width="50" height="50" alt="Privy" />
+          <img src="https://avatars.githubusercontent.com/u/81824329?s=200&v=4" width="50" height="50" alt="Privy" />
           <br />Privy
         </a>
       </td>
@@ -167,13 +167,13 @@ npm install solana-app-kit
       </td>
       <td align="center" width="100">
         <a href="https://turnkey.io/" target="_blank" rel="noopener noreferrer">
-          <img src="https://turnkey.io/assets/img/icons/apple-icon.png" width="50" height="50" alt="Turnkey" />
+          <img src="https://avatars.githubusercontent.com/u/104513330?s=200&v=4" width="50" height="50" alt="Turnkey" />
           <br />Turnkey
         </a>
       </td>
       <td align="center" width="100">
         <a href="https://dynamic.xyz/" target="_blank" rel="noopener noreferrer">
-          <img src="https://dynamic.xyz/images/dynamic-icon.svg" width="50" height="50" alt="Dynamic" />
+          <img src="https://avatars.githubusercontent.com/u/96269716?s=200&v=4" width="50" height="50" alt="Dynamic" />
           <br />Dynamic
         </a>
       </td>
@@ -199,13 +199,13 @@ npm install solana-app-kit
       </td>
       <td align="center" width="100">
         <a href="https://github.com/SendArcade/TokenMill" target="_blank" rel="noopener noreferrer">
-          <img src="https://cryptologos.cc/logos/token-token-logo.png" width="50" height="50" alt="TokenMill" />
+          <img src="https://avatars.githubusercontent.com/u/82165905?s=48&v=4" width="50" height="50" alt="TokenMill" />
           <br />TokenMill
         </a>
       </td>
       <td align="center" width="100">
         <a href="https://www.pinata.cloud/" target="_blank" rel="noopener noreferrer">
-          <img src="https://pinata.cloud/icons/pinnie-animated.png" width="50" height="50" alt="Pinata" />
+          <img src="https://avatars.githubusercontent.com/u/43088506?s=200&v=4" width="50" height="50" alt="Pinata" />
           <br />Pinata
         </a>
       </td>
