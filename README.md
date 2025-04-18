@@ -141,7 +141,7 @@ npm install solana-app-kit
       </td>
       <td align="center" width="100">
         <a href="https://privy.io/" target="_blank" rel="noopener noreferrer">
-          <img src="https://assets-global.website-files.com/61f2c2da010337077e0cea08/620eca3052f8aa1dcb6d15f8_Open%20Graph%20Icon.png" width="50" height="50" alt="Privy" />
+          <img src="https://assets.privy.io/public-assets/Privy_Logomark_Circle_Purple.svg" width="50" height="50" alt="Privy" />
           <br />Privy
         </a>
       </td>
@@ -166,15 +166,15 @@ npm install solana-app-kit
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://github.com/indutny/bn.js/" target="_blank" rel="noopener noreferrer">
-          <img src="https://user-images.githubusercontent.com/3481514/35353572-e3171388-00fa-11e8-9590-abb3c0fa4cbb.png" width="50" height="50" alt="BN.js" />
-          <br />BN.js
+        <a href="https://turnkey.io/" target="_blank" rel="noopener noreferrer">
+          <img src="https://turnkey.io/assets/img/icons/apple-icon.png" width="50" height="50" alt="Turnkey" />
+          <br />Turnkey
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://github.com/indiespirit/react-native-chart-kit" target="_blank" rel="noopener noreferrer">
-          <img src="https://raw.githubusercontent.com/indiespirit/react-native-chart-kit/master/logo.png" width="50" height="50" alt="Chart Kit" />
-          <br />Chart Kit
+        <a href="https://dynamic.xyz/" target="_blank" rel="noopener noreferrer">
+          <img src="https://dynamic.xyz/images/dynamic-icon.svg" width="50" height="50" alt="Dynamic" />
+          <br />Dynamic
         </a>
       </td>
       <td align="center" width="100">
@@ -199,13 +199,13 @@ npm install solana-app-kit
       </td>
       <td align="center" width="100">
         <a href="https://github.com/SendArcade/TokenMill" target="_blank" rel="noopener noreferrer">
-          <img src="https://user-images.githubusercontent.com/39682866/156170514-3a28ebbd-5e3f-4a1f-a834-2c2ae07416a8.png" width="50" height="50" alt="TokenMill" />
+          <img src="https://cryptologos.cc/logos/token-token-logo.png" width="50" height="50" alt="TokenMill" />
           <br />TokenMill
         </a>
       </td>
       <td align="center" width="100">
         <a href="https://www.pinata.cloud/" target="_blank" rel="noopener noreferrer">
-          <img src="https://www.gitbook.com/cdn-cgi/image/width=40,dpr=2,height=40,fit=contain,format=auto/https%3A%2F%2F4031390532-files.gitbook.io%2F~%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fspaces%252F-LX2wpUXI1eWMPJ3lcfr%252Favatar-1613988195216.png%3Fgeneration%3D1613988195510147%26alt%3Dmedia" width="50" height="50" alt="Pinata" />
+          <img src="https://pinata.cloud/icons/pinnie-animated.png" width="50" height="50" alt="Pinata" />
           <br />Pinata
         </a>
       </td>
