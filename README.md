@@ -41,33 +41,132 @@ Anyone—whether a seasoned React Native developer or a newcomer—can bring the
 
 ## Core Blockchain Features
 
-### Token Operations
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin: 20px 0;">
+  <!-- Token Operations Card -->
+  <div style="flex: 1; min-width: 280px; max-width: 350px; background: linear-gradient(145deg, #14F195 0%, #9945FF 100%); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden; margin-bottom: 20px; color: white;">
+    <div style="padding: 24px 20px; background: rgba(0, 0, 0, 0.2);">
+      <div style="display: flex; align-items: center; margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 12px;">
+          <path d="M0 5a5.002 5.002 0 0 0 4.027 4.905 6.46 6.46 0 0 1 .544-2.073C3.695 7.536 3.132 6.864 3 5.91h-.5v-.426h.466V5.05c0-.046 0-.093.004-.135H2.5v-.427h.511C3.236 3.24 4.213 2.5 5.681 2.5c.316 0 .59.031.819.085v.733a3.46 3.46 0 0 0-.815-.082c-.919 0-1.538.466-1.734 1.252h1.917v.427h-1.98c-.003.046-.003.097-.003.147v.422h1.983v.427H3.93c.118.602.468 1.03 1.005 1.229a6.5 6.5 0 0 1 4.97-3.113A5.002 5.002 0 0 0 0 5zm16 5.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0zm-7.75 1.322c.069.835.746 1.485 1.964 1.562V14h.54v-.62c1.259-.086 1.996-.74 1.996-1.69 0-.865-.563-1.31-1.57-1.54l-.426-.1V8.374c.54.06.884.347.966.745h.948c-.07-.804-.779-1.433-1.914-1.502V7h-.54v.629c-1.076.103-1.808.732-1.808 1.622 0 .787.544 1.288 1.45 1.493l.358.085v1.78c-.554-.08-.92-.376-1.003-.787H8.25zm1.96-1.895c-.532-.12-.82-.364-.82-.732 0-.41.311-.719.824-.809v1.54h-.005zm.622 1.044c.645.145.943.38.943.796 0 .474-.37.8-1.02.86v-1.674l.077.018z"/>
+        </svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700;">Token Operations</h3>
+      </div>
+    </div>
+    <div style="padding: 16px 20px 24px;">
+      <ul style="list-style-type: none; padding: 0; margin: 0;">
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Token creation and launching with TokenMill
+        </li>
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Token trading through PumpSwap SDK
+        </li>
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Token balances and transaction history
+        </li>
+        <li style="display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Bonding curve configuration and visualization
+        </li>
+      </ul>
+    </div>
+  </div>
 
-- Token creation and launching with TokenMill
-- Token trading through PumpSwap SDK
-- Token balances and transaction history
-- Bonding curve configuration and visualization
+  <!-- NFT Integration Card -->
+  <div style="flex: 1; min-width: 280px; max-width: 350px; background: linear-gradient(145deg, #00C2FF 0%, #8A2BE2 100%); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden; margin-bottom: 20px; color: white;">
+    <div style="padding: 24px 20px; background: rgba(0, 0, 0, 0.2);">
+      <div style="display: flex; align-items: center; margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 12px;">
+          <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+        </svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700;">NFT Integration</h3>
+      </div>
+    </div>
+    <div style="padding: 16px 20px 24px;">
+      <ul style="list-style-type: none; padding: 0; margin: 0;">
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          NFT fetching and display
+        </li>
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          NFT listing and purchase
+        </li>
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Collection viewing with floor prices
+        </li>
+        <li style="display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Compressed NFT support
+        </li>
+      </ul>
+    </div>
+  </div>
 
-### NFT Integration
+  <!-- DeFi Capabilities Card -->
+  <div style="flex: 1; min-width: 280px; max-width: 350px; background: linear-gradient(145deg, #FF9900 0%, #FF3B30 100%); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden; margin-bottom: 20px; color: white;">
+    <div style="padding: 24px 20px; background: rgba(0, 0, 0, 0.2);">
+      <div style="display: flex; align-items: center; margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 12px;">
+          <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+          <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/>
+        </svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700;">DeFi Capabilities</h3>
+      </div>
+    </div>
+    <div style="padding: 16px 20px 24px;">
+      <ul style="list-style-type: none; padding: 0; margin: 0;">
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Token swapping via PumpSwap
+        </li>
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Liquidity pool creation and management
+        </li>
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Staking and vesting functionality
+        </li>
+        <li style="display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Fund management for users and markets
+        </li>
+      </ul>
+    </div>
+  </div>
 
-- NFT fetching and display
-- NFT listing and purchase
-- Collection viewing with floor prices
-- Compressed NFT support
-
-### DeFi Capabilities
-
-- Token swapping via PumpSwap
-- Liquidity pool creation and management
-- Staking and vesting functionality
-- Market data integration
-- Fund management for users and markets
-
-### Market Data
-
-- Real-time price charts
-- Portfolio tracking
-- Integration with CoinGecko, BirdEye, and CoinMarketCap
+  <!-- Market Data Card -->
+  <div style="flex: 1; min-width: 280px; max-width: 350px; background: linear-gradient(145deg, #03A9F4 0%, #00E676 100%); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); overflow: hidden; margin-bottom: 20px; color: white;">
+    <div style="padding: 24px 20px; background: rgba(0, 0, 0, 0.2);">
+      <div style="display: flex; align-items: center; margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 12px;">
+          <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+        </svg>
+        <h3 style="margin: 0; font-size: 22px; font-weight: 700;">Market Data</h3>
+      </div>
+    </div>
+    <div style="padding: 16px 20px 24px;">
+      <ul style="list-style-type: none; padding: 0; margin: 0;">
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Real-time price charts
+        </li>
+        <li style="margin-bottom: 10px; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Portfolio tracking
+        </li>
+        <li style="display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-right: 10px;"></span>
+          Integration with CoinGecko, BirdEye, and CoinMarketCap
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
 
 ## App Features
 
