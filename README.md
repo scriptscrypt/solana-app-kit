@@ -148,19 +148,13 @@ npm install solana-app-kit
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://pump.fun/">
-          <img src="https://pbs.twimg.com/profile_images/1677356325359681537/I5U3ChZ3_400x400.jpg" width="50" height="50" alt="Pump" />
-          <br />Pump SDK
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" width="100">
         <a href="https://redux-toolkit.js.org/">
           <img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="50" height="50" alt="Redux" />
           <br />Redux
         </a>
       </td>
+    </tr>
+    <tr>
       <td align="center" width="100">
         <a href="https://reactnavigation.org/">
           <img src="https://reactnavigation.org/img/spiro.svg" width="50" height="50" alt="React Navigation" />
@@ -174,6 +168,26 @@ npm install solana-app-kit
         </a>
       </td>
       <td align="center" width="100">
+        <a href="https://github.com/indutny/bn.js/">
+          <img src="https://raw.githubusercontent.com/indutny/bn.js/master/logo.png" width="50" height="50" alt="BN.js" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Node.js_logo.svg/1280px-Node.js_logo.svg.png'; this.style.padding='5px';" />
+          <br />BN.js
+        </a>
+      </td>
+      <td align="center" width="100">
+        <a href="https://github.com/indiespirit/react-native-chart-kit">
+          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTs-GZccRW39Io9rmf28GSJy3dKcOWs5OfIoQ&usqp=CAU" width="50" height="50" alt="Chart Kit" style="border-radius: 10px;" />
+          <br />Chart Kit
+        </a>
+      </td>
+      <td align="center" width="100">
+        <a href="https://docs.expo.dev/versions/latest/sdk/imagepicker/">
+          <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="50" height="50" alt="Image Picker" />
+          <br />Image Picker
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="100">
         <a href="https://expressjs.com/">
           <img src="https://cdn.worldvectorlogo.com/logos/express-109.svg" width="50" height="50" alt="Express" style="background-color: white; border-radius: 10px; padding: 5px;" />
           <br />Express
@@ -185,36 +199,22 @@ npm install solana-app-kit
           <br />PostgreSQL
         </a>
       </td>
-    </tr>
-    <tr>
       <td align="center" width="100">
-        <a href="https://dynamic.xyz/">
-          <img src="https://avatars.githubusercontent.com/u/97303201" width="50" height="50" alt="Dynamic" />
-          <br />Dynamic
+        <a href="https://github.com/SendArcade/TokenMill">
+          <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="50" height="50" alt="TokenMill" />
+          <br />TokenMill
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://turnkey.io/">
-          <img src="https://avatars.githubusercontent.com/u/74845385" width="50" height="50" alt="Turnkey" />
-          <br />Turnkey
+        <a href="https://www.pinata.cloud/">
+          <img src="https://avatars.githubusercontent.com/u/44420206" width="50" height="50" alt="Pinata" />
+          <br />Pinata
         </a>
       </td>
       <td align="center" width="100">
         <a href="https://cloud.google.com/storage">
           <img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-icon.svg" width="50" height="50" alt="Google Cloud" />
           <br />GCP Storage
-        </a>
-      </td>
-      <td align="center" width="100">
-        <a href="https://reanimated2.com/">
-          <img src="https://raw.githubusercontent.com/software-mansion/react-native-reanimated/master/img/logo.svg" width="50" height="50" alt="Reanimated" />
-          <br />Reanimated
-        </a>
-      </td>
-      <td align="center" width="100">
-        <a href="https://anchor-lang.com/">
-          <img src="https://camo.githubusercontent.com/27a0a017ba18aded52e8b0b63c3370cad34b377476a73e157250ad05308ea2aa/68747470733a2f2f63646e2e7261776769742e636f6d2f7a656e6261736963732f676c617373792d6c6f676f732f6d61737465722f706e6773732f616e63686f722e706e67" width="50" height="50" alt="Anchor" />
-          <br />Anchor
         </a>
       </td>
     </tr>
