@@ -18,7 +18,7 @@ import {
 import Icons from '../../../../assets/svgs';
 import { createThreadStyles, getMergedTheme } from '../thread.styles';
 import { ThreadPost, ThreadUser, ThreadSection } from '../thread.types';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import {
   addReactionAsync,
   createRetweetAsync,
@@ -26,9 +26,9 @@ import {
   undoRetweetLocally,
   addRetweetLocally,
   updatePostAsync,
-} from '../../../../state/thread/reducer';
+} from '@/shared/state/thread/reducer';
 import { nanoid } from '@reduxjs/toolkit';
-import { DEFAULT_IMAGES } from '../../../../config/constants';
+import { DEFAULT_IMAGES } from '@/config/constants';
 
 // Get window dimensions for animation
 const { height } = Dimensions.get('window');
@@ -415,7 +415,7 @@ export default function PostFooter({
         {Object.entries(updatedPost.reactions).map(([emoji, count]) => (
           <View key={emoji} style={reactionStyles.reactionBadge}>
             <Text style={reactionStyles.reactionEmoji}>{emoji}</Text>
-            <Text style={reactionStyles.reactionCount}>{count}</Text>
+            <Text style={reactionStyles.reactionCount}>{String(count)}</Text>
           </View>
         ))}
       </View>

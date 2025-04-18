@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { fetchWalletActionsAsync, Action } from '../../core/profile/services/profileActions';
 import { RootState } from '../store';
 import { HELIUS_API_KEY, HELIUS_STAKED_API_KEY } from '@env';
+import { Action, fetchWalletActionsAsync } from '@/core/profile/services/profileActions';
 
 interface ProfileState {
   actions: {

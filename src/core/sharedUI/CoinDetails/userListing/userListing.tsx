@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Image, Text, TouchableOpacity, View, FlatList} from 'react-native';
 import {styles} from './userListing.style';
-import {dummyData, UserItem} from '../../../../mocks/users';
+import {dummyData, UserItem} from '@/shared/mocks/users';
 
 /**
  * A component that displays a scrollable list of users with follow functionality

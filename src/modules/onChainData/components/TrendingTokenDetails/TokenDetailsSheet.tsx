@@ -10,7 +10,6 @@ import {
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
-import LineGraph from '@/core/sharedUI/Common/TradeCard/LineGraph';
 import { styles } from './TokenDetailsSheet.styles';
 import { TokenDetailsSheetProps } from '../../types/tokenDetails.types';
 import { useTokenDetails } from '../../hooks/useTokenDetails';
@@ -19,10 +18,10 @@ import {
     formatNumber,
     formatPrice,
     formatPriceChange,
-    formatTopHolders,
     getGraphData
 } from '../../utils/tokenDetailsFormatters';
 import RiskAnalysisSection from './RiskAnalysisSection';
+import LineGraph from '@/core/sharedUI/TradeCard/LineGraph';
 
 const { width } = Dimensions.get('window');
 

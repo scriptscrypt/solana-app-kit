@@ -8,7 +8,7 @@ import {
   MockDataConfig,
   DefaultCustomizationConfig,
   CustomizationConfig,
-} from './config';
+} from '.';
 
 const defaultCustomization: CustomizationConfig = DefaultCustomizationConfig;
 

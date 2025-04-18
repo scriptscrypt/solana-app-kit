@@ -62,10 +62,10 @@ import React, { useEffect, useState } from 'react';
 import { Provider as ReduxProvider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import RootNavigator from './src/navigation/RootNavigator';
-import { navigationRef } from './src/hooks/useAppNavigation';
-import { store } from './src/state/store';
-import './src/utils/polyfills';
+import RootNavigator from './src/shared/navigation/RootNavigator';
+import { navigationRef } from './src/shared/hooks/useAppNavigation';
+import {store} from './src/shared/state/store';
+import './src/shared/utils/polyfills';
 import COLORS from './src/assets/colors';
 import { View } from 'react-native';
 
@@ -73,18 +73,18 @@ import { PrivyProvider, PrivyElements } from '@privy-io/expo';
 import { TurnkeyProvider } from '@turnkey/sdk-react-native';
 
 // Dynamic client initialization
-import { CustomizationProvider } from './src/CustomizationProvider';
+import { CustomizationProvider } from './src/config/CustomizationProvider';
 import { DefaultCustomizationConfig } from './src/config';
 import { getDynamicClient, initDynamicClient } from './src/modules/walletProviders/services/walletProviders/dynamic';
-import TransactionNotification from './src/core/sharedUI/Common/TransactionNotification';
+import TransactionNotification from './src/core/sharedUI/TransactionNotification';
 
 // Import DevMode components
 import { DevModeProvider, useDevMode } from './src/context/DevModeContext';
-import DevDrawer from './src/components/DevMode/DevDrawer';
+import DevDrawer from './src/core/devMode/DevDrawer';
 
 // Import Environment Error provider and new components
 import { EnvErrorProvider } from './src/context/EnvErrorContext';
-import DevModeStatusBar from './src/components/DevMode/DevModeStatusBar';
+import DevModeStatusBar from './src/core/devMode/DevModeStatusBar';
 
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {

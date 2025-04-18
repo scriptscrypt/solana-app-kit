@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { OtpResponse } from '../../hooks/useTurnkeyWalletLogic';
-import { useAppNavigation } from '../../../../hooks/useAppNavigation';
+import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 
 interface TurnkeyOtpScreenProps {
   otpResponse: OtpResponse;

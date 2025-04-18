@@ -1,9 +1,8 @@
-// FILE: src/components/thread/sections/SectionTrade.tsx
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { View, Text, ImageSourcePropType } from 'react-native';
 import { ThreadUser, TradeData } from '../thread.types';
-import { DEFAULT_IMAGES } from '../../../../config/constants';
-import { TradeCard } from '../../../sharedUI/Common/TradeCard';
+import { DEFAULT_IMAGES } from '@/config/constants';
+import { TradeCard } from '@/core/sharedUI/TradeCard';
 
 interface SectionTradeProps {
   text?: string;

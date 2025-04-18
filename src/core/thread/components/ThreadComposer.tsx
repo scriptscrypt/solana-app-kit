@@ -12,13 +12,16 @@ import {
   Platform,
 } from 'react-native';
 import Icons from '../../../assets/svgs';
-import { useAppDispatch, useAppSelector } from '../../../hooks/useReduxHooks';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '../../../shared/hooks/useReduxHooks';
 import {
   createRootPostAsync,
   createReplyAsync,
   addPostLocally,
   addReplyLocally,
-} from '../../../state/thread/reducer';
+} from '../../../shared/state/thread/reducer';
 import { createThreadStyles, getMergedTheme } from './thread.styles';
 import { ThreadSection, ThreadSectionType, ThreadUser } from '../types';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,8 +30,12 @@ import { useWallet } from '../../../modules/walletProviders/hooks/useWallet';
 import TradeModal from './trade/TradeModal';
 import { DEFAULT_IMAGES } from '../../../config/constants';
 import { NftListingModal, useFetchNFTs, NftItem } from '../../../modules/nft';
-import { uploadThreadImage } from '../../../services/threadImageService';
-import { IPFSAwareImage, getValidImageSource, fixIPFSUrl } from '../../../utils/IPFSImage';
+import { uploadThreadImage } from '../services/threadImageService';
+import {
+  IPFSAwareImage,
+  getValidImageSource,
+  fixIPFSUrl,
+} from '../../../shared/utils/IPFSImage';
 
 /**
  * Props for the ThreadComposer component

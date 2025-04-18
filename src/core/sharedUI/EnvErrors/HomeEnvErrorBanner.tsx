@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useEnvError } from '../../context/EnvErrorContext';
-import { useDevMode } from '../../context/DevModeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDevMode } from '@/context/DevModeContext';
+import { useEnvError } from '@/context/EnvErrorContext';
 
 const BANNER_DISMISS_KEY = 'env_error_banner_dismissed';
 

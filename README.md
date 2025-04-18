@@ -68,9 +68,9 @@ This project consists of two main parts:
 
 2. Install dependencies:
    ```sh
-   yarn install
+   pnpm install
    # or
-   npm install
+   yarn install
    ```
 
 3. Set up environment variables:

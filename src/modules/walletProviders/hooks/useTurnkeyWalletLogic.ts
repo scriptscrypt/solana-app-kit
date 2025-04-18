@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { useCustomization } from '../../../CustomizationProvider';
+import { useCustomization } from '../../../config/CustomizationProvider';
 import { TURNKEY_ORGANIZATION_ID } from '@env';
 import { useTurnkey } from '@turnkey/sdk-react-native'; 
 import { SERVER_URL } from '@env';

@@ -1,5 +1,3 @@
-// FILE: src/utils/transactions/transactionUtils.ts
-
 import {
   Connection,
   Transaction,
@@ -12,10 +10,10 @@ import {
   TransactionMessage,
 } from '@solana/web3.js';
 import {Buffer} from 'buffer';
-import { TransactionService } from '../../modules/walletProviders/services/transaction/transactionService';
-import { store } from '../../state/store';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { store } from '@/shared/state/store';
 import { Platform } from 'react-native';
-import { StandardWallet } from '../../modules/walletProviders/types';
+import { StandardWallet } from '@/modules/walletProviders/types';
 
 /**
  * Fee tier to microLamports mapping for priority transactions
@@ -451,9 +449,9 @@ export async function signAndSendBase64Tx(
 
   // Try to parse as VersionedTransaction; fallback to legacy Transaction.
   try {
-    transaction = VersionedTransaction.deserialize(txBuffer);
+    transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
   } catch {
-    transaction = Transaction.from(txBuffer);
+    transaction = Transaction.from(new Uint8Array(txBuffer));
   }
 
   const {signature} = await provider.request({

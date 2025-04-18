@@ -10,10 +10,10 @@ import {
   TURNKEY_ORGANIZATION_ID,
 } from '@env';
 
-import {dummyProfileData} from '../mocks/profileInfoData';
-import {tweetsData} from '../mocks/tweets';
-import {allposts} from '../mocks/posts';
-import {dummyData} from '../mocks/users';
+import {dummyProfileData} from '../shared/mocks/profileInfoData';
+import {tweetsData} from '../shared/mocks/tweets';
+import {allposts} from '../shared/mocks/posts';
+import {dummyData} from '../shared/mocks/users';
 
 /** Extended config for each auth provider */
 export interface PrivyConfig {

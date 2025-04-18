@@ -8,12 +8,12 @@ import {
 } from '@solana/web3.js';
 import { Buffer } from 'buffer';
 import { getDynamicClient } from '../walletProviders/dynamic';
-import { useAppSelector } from '../../../../hooks/useReduxHooks';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { Platform } from 'react-native';
 import { CLUSTER } from '@env';
-import { store } from '../../../../state/store';
-import { parseTransactionError, getSuccessMessage } from '../../../../utils/transactions/errorParser';
-import { showSuccessNotification, showErrorNotification } from '../../../../state/notification/reducer';
+import { store } from '@/shared/state/store';
+import { parseTransactionError, getSuccessMessage } from '@/shared/utils/transactions/errorParser';
+import { showSuccessNotification, showErrorNotification } from '@/shared/state/notification/reducer';
 import {
   StandardWallet,
   UnifiedWallet,
@@ -98,7 +98,7 @@ export class TransactionService {
       if (txFormat.type === 'base64') {
         const txBuffer = Buffer.from(txFormat.data, 'base64');
         try {
-          transaction = VersionedTransaction.deserialize(txBuffer);
+          transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
         } catch {
           transaction = Transaction.from(txBuffer);
         }
@@ -788,7 +788,7 @@ export class TransactionService {
       
       // Clear any existing signatures to prevent verification issues
       if (transaction instanceof VersionedTransaction) {
-        transaction.signatures.fill(Buffer.alloc(64));
+        transaction.signatures.fill(new Uint8Array(64));
       } else {
         transaction.signatures = [];
       }

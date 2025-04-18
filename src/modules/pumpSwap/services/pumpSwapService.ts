@@ -588,4 +588,56 @@ export async function removeLiquidity({
     TransactionService.showError(error);
     throw error;
   }
+}
+
+/**
+ * Returns the PumpSwap AMM SDK instance
+ * This function provides access to the PumpSwap AMM functionality
+ */
+export function getPumpAmmSdk() {
+  return {
+    createPool,
+    addLiquidity,
+    removeLiquidity,
+    swapTokens,
+    getDepositQuoteFromBase,
+    getDepositQuoteFromQuote,
+    getSwapQuoteFromBase,
+    getSwapQuoteFromQuote,
+    getWithdrawalQuote
+  };
+}
+
+/**
+ * Get swap quote based on specified parameters
+ */
+export function getSwapQuote(
+  pool: string, 
+  amount: number, 
+  direction: Direction, 
+  slippage: number
+): Promise<number> {
+  return direction === Direction.BaseToQuote 
+    ? getSwapQuoteFromBase(pool, amount, slippage)
+    : getSwapQuoteFromQuote(pool, amount, slippage);
+}
+
+/**
+ * Get liquidity quote based on specified parameters
+ */
+export function getLiquidityQuote(
+  pool: string,
+  baseAmount: number | null,
+  quoteAmount: number | null,
+  slippage: number
+): Promise<{ base?: number; quote?: number; lpToken: number }> {
+  if (baseAmount !== null) {
+    return getDepositQuoteFromBase(pool, baseAmount, slippage)
+      .then(result => ({ quote: result.quote, lpToken: result.lpToken }));
+  } else if (quoteAmount !== null) {
+    return getDepositQuoteFromQuote(pool, quoteAmount, slippage)
+      .then(result => ({ base: result.base, lpToken: result.lpToken }));
+  }
+  
+  throw new Error('Either baseAmount or quoteAmount must be provided');
 } 

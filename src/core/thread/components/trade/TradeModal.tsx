@@ -26,19 +26,18 @@ import {
 import SelectTokenModal from './SelectTokenModal';
 import { ENDPOINTS } from '../../../../config/constants';
 import { CLUSTER } from '@env';
-import { useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   addPostLocally,
   createRootPostAsync,
-} from '../../../../state/thread/reducer';
+} from '@/shared/state/thread/reducer';
 import styles from './tradeModal.style';
 import PastSwapItem from './PastSwapItem';
-import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '../../../../modules/onChainData/services/swapTransactions';
+import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '@/modules/onChainData/services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
-import { TradeService } from '../../../../modules/onChainData/services/tradeService';
-import { TokenInfo } from '../../../../modules/onChainData/types/tokenTypes';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { TradeService } from '@/modules/onChainData/services/tradeService';
+import { TokenInfo } from '@/modules/onChainData/types/tokenTypes';
 import { 
   DEFAULT_SOL_TOKEN, 
   DEFAULT_USDC_TOKEN, 
@@ -47,6 +46,7 @@ import {
   estimateTokenUsdValue,
   ensureCompleteTokenInfo
 } from '../../../../modules/onChainData';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 
 /**
  * Available tab options in the TradeModal

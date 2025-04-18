@@ -17,7 +17,7 @@ import StakingCard from '../components/StakingCard';
 import VestingCard from '../components/VestingCard';
 import { ENDPOINTS } from '../../../config/constants';
 import { CLUSTER } from '@env';
-import { useAppSelector } from '../../../hooks/useReduxHooks';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 
 export default function TokenMillScreen() {
   // 1) Auth & Connection

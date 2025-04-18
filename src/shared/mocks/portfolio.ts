@@ -1,4 +1,4 @@
-import { DEFAULT_IMAGES } from "../config/constants";
+import { DEFAULT_IMAGES } from "@/config/constants";
 
 export  const portfolioData = [
     {

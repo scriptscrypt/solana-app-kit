@@ -1,4 +1,4 @@
-import { DEFAULT_IMAGES } from "../config/constants";
+import { DEFAULT_IMAGES } from "@/config/constants";
 
 export type ProfileData = {
     username: string;

@@ -3,19 +3,19 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 
-import { Thread } from '../../../../core/thread/components/Thread';
+import { Thread } from '@/core/thread/components/Thread';
 import {
   ThreadUser,
   ThreadPost,
   ThreadCTAButton,
-} from '../../../../core/thread/components/thread.types';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
-import { fetchAllPosts } from '../../../../state/thread/reducer';
-import { fetchUserProfile } from '../../../../state/auth/reducer';
-import COLORS from '../../../../assets/colors';
-import { RootStackParamList } from '../../../../navigation/RootNavigator';
-import { DEFAULT_IMAGES } from '../../../../config/constants';
-import HomeEnvErrorBanner from '../../../../components/Common/HomeEnvErrorBanner';
+} from '@/core/thread/components/thread.types';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { fetchAllPosts } from '@/shared/state/thread/reducer';
+import { fetchUserProfile } from '@/shared/state/auth/reducer';
+import COLORS from '@/assets/colors';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+import { DEFAULT_IMAGES } from '@/config/constants';
+import HomeEnvErrorBanner from '@/core/sharedUI/EnvErrors/HomeEnvErrorBanner';
 
 export default function FeedScreen() {
   const dispatch = useAppDispatch();
@@ -143,6 +143,7 @@ export default function FeedScreen() {
         styles.container,
         Platform.OS === 'android' && styles.androidContainer,
       ]}>
+      {renderCustomHeader()}
       <Thread
         rootPosts={feedPosts} // Passing all posts (including replies)
         currentUser={currentUser}
@@ -151,8 +152,6 @@ export default function FeedScreen() {
         disableReplies={false}
         refreshing={refreshing}
         onRefresh={onRefresh}
-        // Add custom header with environment error banner
-        ListHeaderComponent={renderCustomHeader}
         // onPressPost navigates to the PostThreadScreen with the post's ID.
         onPressPost={post => {
           // For retweets and quotes, handle navigation correctly:

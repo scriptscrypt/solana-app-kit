@@ -4,10 +4,10 @@ import { useDevMode } from '../../context/DevModeContext';
 import { useEnvError } from '../../context/EnvErrorContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { navigationRef } from '../../hooks/useAppNavigation';
+import {navigationRef} from '../../shared/hooks/useAppNavigation';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../state/store';
+import { RootState } from '../../shared/state/store';
 // Import specific environment variables needed for the frontend
 import {
     PRIVY_APP_ID,

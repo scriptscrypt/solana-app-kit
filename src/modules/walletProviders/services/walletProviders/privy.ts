@@ -8,7 +8,7 @@ import {
   needsRecovery,
 } from '@privy-io/expo';
 import {useCallback} from 'react';
-import {useCustomization} from '../../../../CustomizationProvider';
+import {useCustomization} from '../../../../config/CustomizationProvider';
 
 export function usePrivyWalletLogic() {
   const {login} = useLogin();

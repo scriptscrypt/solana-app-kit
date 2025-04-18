@@ -17,7 +17,7 @@ import { createThreadStyles, getMergedTheme } from '../thread.styles';
 import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
-import { getValidImageSource, IPFSAwareImage } from '../../../../utils/IPFSImage';
+import { IPFSAwareImage } from '@/shared/utils/IPFSImage';
 
 // Always available direct reference to an image in the bundle
 const DEFAULT_AVATAR = require('../../../../assets/images/User.png');
@@ -45,11 +45,6 @@ function ProfileAvatarView({
   style?: any,
   size?: number
 }) {
-  // --- DEBUGGING START ---
-  // console.log('[PostHeader] ProfileAvatarView received user:', JSON.stringify(user));
-  // --- DEBUGGING END ---
-
-  // State to track if image has loaded *successfully*
   const [imageLoaded, setImageLoaded] = useState(false);
   // Track if we should use a fallback gateway after failing with the first one
   const [useBackupGateway, setUseBackupGateway] = useState(false);
@@ -192,7 +187,7 @@ function ProfileAvatarView({
           // console.log('[PostHeader] IPFSAwareImage onLoad triggered for source:', JSON.stringify(source));
           setImageLoaded(true);
         }} // Mark as loaded successfully
-        onError={(error) => {
+        onError={(error: any) => {
           console.error('[PostHeader] IPFSAwareImage onError triggered! Source:', JSON.stringify(source), 'Error:', error?.nativeEvent?.error || 'Unknown error');
           setImageLoaded(false); // Ensure initials show on error
 
@@ -290,7 +285,7 @@ export default React.memo(function PostHeader({
   };
 
   return (
-    <View style={styles.threadItemHeaderRow}>
+    <View style={[styles.threadItemHeaderRow, { zIndex: 1 }]}>
       {/* If the menu is open, a transparent overlay to detect outside clicks */}
       {menuOpen && (
         <TouchableWithoutFeedback onPress={handlePressOutside}>
@@ -352,17 +347,25 @@ export default React.memo(function PostHeader({
       {/* The small drop-down menu if menuOpen */}
       {menuOpen && isMyPost && (
         <View style={localHeaderStyles.menuContainer}>
+          {/* Edit Option - No suitable icon found */}
           <TouchableOpacity
-            style={localHeaderStyles.menuItem}
+            style={localHeaderStyles.menuItem} // Use base style
             onPress={handleEdit}
           >
+            {/* No icon here */}
             <Text style={localHeaderStyles.menuItemText}>Edit</Text>
           </TouchableOpacity>
+
+          {/* Separator */}
+          <View style={localHeaderStyles.separator} />
+
+          {/* Delete Option - Using 'cross' icon */}
           <TouchableOpacity
-            style={localHeaderStyles.menuItem}
+            style={localHeaderStyles.menuItem} // Use base style
             onPress={handleDelete}
           >
-            <Text style={[localHeaderStyles.menuItemText, { color: '#d00' }]}>
+            <Icons.cross width={16} height={16} style={localHeaderStyles.menuIcon} />
+            <Text style={[localHeaderStyles.menuItemText, localHeaderStyles.deleteText]}>
               Delete
             </Text>
           </TouchableOpacity>
@@ -377,35 +380,53 @@ const localHeaderStyles = StyleSheet.create({
     position: 'absolute',
     top: -9999,
     left: -9999,
-    right: 0,
-    bottom: 0,
-    width: '200%',
-    height: '200%',
+    right: -9999, // Extend further to cover more area
+    bottom: -9999,
+    width: '500%', // Larger area to ensure it covers screen taps
+    height: '500%',
     zIndex: 30,
+    // backgroundColor: 'rgba(0,0,0,0.1)', // Optional: slight dimming
   },
   menuContainer: {
     position: 'absolute',
-    top: 24,
-    right: 4,
+    top: 30, // Adjusted position slightly lower
+    right: 10, // Adjusted position slightly more inboard
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    zIndex: 9999,
-    paddingVertical: 4,
-    width: 100,
+    borderColor: '#eee', // Lighter border
+    borderRadius: 8, // Slightly more rounded corners
+    zIndex: 10000, // Increased zIndex slightly, ensure it's above parent row's potential context
+    paddingVertical: 6, // Adjusted vertical padding
+    minWidth: 120, // Ensure minimum width
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 3 }, // Slightly larger shadow
+    shadowOpacity: 0.1, // Softer shadow
+    shadowRadius: 5,
+    elevation: 6,
   },
   menuItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    flexDirection: 'row', // Align icon and text horizontally
+    alignItems: 'center', // Center items vertically
+    paddingVertical: 10, // Increased vertical padding
+    paddingHorizontal: 15, // Increased horizontal padding
+  },
+  menuIcon: {
+    marginRight: 10, // Space between icon and text
+    color: '#d9534f', // Match delete text color for the cross icon
   },
   menuItemText: {
     fontSize: 14,
     color: '#333',
+    flexShrink: 1, // Prevent text from pushing icon out if long
+    // Add specific paddingLeft if no icon is present? Maybe not needed due to flex alignment.
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#eee', // Separator color
+    marginHorizontal: 10, // Indent separator slightly
+  },
+  deleteText: {
+    color: '#d9534f', // Softer red for delete
+    fontWeight: '500', // Slightly bolder delete text
   },
 });

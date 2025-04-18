@@ -1,4 +1,3 @@
-// File: src/components/AddButton/AddButton.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -10,17 +9,16 @@ import {
   Alert,
 } from 'react-native';
 import { styles } from './addButton.style';
-import Icons from '../../../../assets/svgs/index';
-import { useAppSelector, useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { Cluster, Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
-import { sendSOL } from '../../../../utils/transactions/transactionUtils';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
+import { Cluster, Connection, clusterApiUrl } from '@solana/web3.js';
+import { sendSOL } from '@/shared/utils/transactions/transactionUtils';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   setSelectedFeeTier as setFeeTier,
   setTransactionMode as setMode
-} from '../../../../state/transaction/reducer';
+} from '@/shared/state/transaction/reducer';
 import { CLUSTER } from '@env';
-import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 
 export interface AddButtonProps {
   amIFollowing: boolean;

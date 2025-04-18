@@ -1,11 +1,10 @@
 import { useAuth } from './useAuth';
 import { useTransactionService } from '../services/transaction/transactionService';
 import { Connection, Transaction, VersionedTransaction, PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { isDynamicWallet } from '../services/walletProviders/dynamic';
-import { useMemo, useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from '../../../hooks/useReduxHooks';
+import { useMemo, useEffect, useRef } from 'react';
+import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { Platform } from 'react-native';
-import { fetchUserProfile } from '../../../state/auth/reducer';
+import { fetchUserProfile } from '@/shared/state/auth/reducer';
 import { StandardWallet } from '../types';
 
 /**
@@ -17,8 +16,29 @@ export function useWallet() {
   const authState = useAppSelector(state => state.auth);
   const dispatch = useAppDispatch();
   
-  // Get wallet from useAuth
-  const { wallet, solanaWallet } = useAuth();
+  // Use a ref to track mount status
+  const isMounted = useRef(true);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  
+  // Get wallet from useAuth - wrap in try/catch to handle any errors during logout
+  let auth;
+  try {
+    auth = useAuth();
+  } catch (error) {
+    console.warn('[useWallet] Error getting auth:', error);
+    auth = { wallet: null, solanaWallet: null };
+  }
+  
+  const wallet = auth?.wallet || null;
+  const solanaWallet = auth?.solanaWallet || null;
+  
+  // Get transaction service - must be called in all render paths
   const { 
     signAndSendTransaction,
     signAndSendInstructions,
@@ -42,13 +62,16 @@ export function useWallet() {
     
     // Use a timeout to debounce multiple profile fetch requests
     // and avoid multiple fetches during app initialization
-    if (shouldFetch) {
+    if (shouldFetch && isMounted.current) {
       const timer = setTimeout(() => {
-        // Explicitly pass the current user's address to ensure we only fetch their profile
-        // This prevents fetching other users' profiles
-        const userAddress = authState.address;
-        if (userAddress) {
-          dispatch(fetchUserProfile(userAddress));
+        // Check if component is still mounted before dispatching
+        if (isMounted.current) {
+          // Explicitly pass the current user's address to ensure we only fetch their profile
+          // This prevents fetching other users' profiles
+          const userAddress = authState.address;
+          if (userAddress) {
+            dispatch(fetchUserProfile(userAddress));
+          }
         }
       }, 300); // Small delay to allow for auth state to stabilize
       
@@ -57,11 +80,11 @@ export function useWallet() {
   }, [authState.isLoggedIn, authState.address, authState.username, authState.profilePicUrl, dispatch]);
 
   // Create a standardized wallet object for MWA if needed
-  const mwaWallet: StandardWallet | null = useMemo(() => {
+  const mwaWallet = useMemo(() => {
     // Only create MWA wallet on Android
     if (authState.provider === 'mwa' && authState.address && Platform.OS === 'android') {
       return {
-        provider: 'mwa',
+        provider: 'mwa' as const,
         address: authState.address,
         publicKey: authState.address,
         rawWallet: { address: authState.address },
@@ -80,7 +103,7 @@ export function useWallet() {
             isMWAProvider: true
           };
         }
-      };
+      } as StandardWallet;
     }
     return null;
   }, [authState.provider, authState.address]);
@@ -106,6 +129,12 @@ export function useWallet() {
     connection: Connection,
     options?: { confirmTransaction?: boolean; statusCallback?: (status: string) => void }
   ): Promise<string> => {
+    // Check if component is still mounted
+    if (!isMounted.current) {
+      console.warn('[useWallet] sendTransaction called after component unmounted');
+      throw new Error('Component unmounted');
+    }
+    
     const availableWallet = getWallet();
     if (!availableWallet) {
       throw new Error('No wallet connected');
@@ -127,6 +156,12 @@ export function useWallet() {
     connection: Connection,
     options?: { confirmTransaction?: boolean; statusCallback?: (status: string) => void }
   ): Promise<string> => {
+    // Check if component is still mounted
+    if (!isMounted.current) {
+      console.warn('[useWallet] sendInstructions called after component unmounted');
+      throw new Error('Component unmounted');
+    }
+    
     const availableWallet = getWallet();
     if (!availableWallet) {
       throw new Error('No wallet connected');
@@ -149,6 +184,12 @@ export function useWallet() {
     connection: Connection,
     options?: { confirmTransaction?: boolean; statusCallback?: (status: string) => void }
   ): Promise<string> => {
+    // Check if component is still mounted
+    if (!isMounted.current) {
+      console.warn('[useWallet] sendBase64Transaction called after component unmounted');
+      throw new Error('Component unmounted');
+    }
+    
     const availableWallet = getWallet();
     if (!availableWallet) {
       throw new Error('No wallet connected');

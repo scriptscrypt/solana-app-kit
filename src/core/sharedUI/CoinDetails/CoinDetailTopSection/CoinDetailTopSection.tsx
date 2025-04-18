@@ -14,17 +14,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {FlatList} from 'react-native-gesture-handler';
-import Icons from '../../../../assets/svgs/index';
+import Icons from '@/assets/svgs/index';
 import {defaultTopSectionStyles} from './CoinDetailTopSection.style';
 import SuggestionsCard from '../suggestionsCard/suggestionsCard';
 import Tweet from '../tweet/tweet';
-import LineGraph from '../../Common/TradeCard/LineGraph';
-import {useCoingecko, Timeframe} from '../../../../modules/onChainData/hooks/useCoingecko';
+import {useCoingecko, Timeframe} from '@/modules/onChainData/hooks/useCoingecko';
 import {
   formatAmount,
   formatLiquidityAsPercentage,
-} from '../../../../utils/common/format';
+} from '@/shared/utils/common/format';
 import {CoinDetailSearchBar} from '../CoinDetailSearchBar/CoinDetailSearchBar';
+import LineGraph from '../../TradeCard/LineGraph';
 
 export interface CoinDetailTopSectionCustomStyles {
   container?: StyleProp<ViewStyle>;
@@ -327,11 +327,11 @@ export const CoinDetailTopSection: React.FC<CoinDetailTopSectionProps> = ({
                       />
                     )}
                     <Image
-                      source={require('../../../../assets/images/thread-avatar-1.png')}
+                      source={require('@/assets/images/thread-avatar-1.png')}
                       style={styles.modalStackAvatar2}
                     />
                     <Image
-                      source={require('../../../../assets/images/thread-avatar-2.png')}
+                      source={require('@/assets/images/thread-avatar-2.png')}
                       style={styles.modalStackAvatar3}
                     />
                   </View>

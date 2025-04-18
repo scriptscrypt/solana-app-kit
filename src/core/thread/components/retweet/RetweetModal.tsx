@@ -19,9 +19,9 @@ import {
   createRetweetAsync,
   addRetweetLocally,
   updatePostAsync,
-} from '../../../../state/thread/reducer';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
-import { useAuth } from '../../../../modules/walletProviders/hooks/useAuth';
+} from '@/shared/state/thread/reducer';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
 import retweetModalStyles from './RetweetModal.styles';
 import { nanoid } from '@reduxjs/toolkit';
 
@@ -91,7 +91,7 @@ export default function RetweetModal({
   // Set initial text if editing an existing quote retweet
   useEffect(() => {
     if (visible && existingRetweet && existingRetweet.sections && existingRetweet.sections.length > 0) {
-      const quoteSection = existingRetweet.sections.find(s => s.type === 'TEXT_ONLY');
+      const quoteSection = existingRetweet.sections.find((s: ThreadSection) => s.type === 'TEXT_ONLY');
       if (quoteSection && quoteSection.text) {
         setRetweetText(quoteSection.text);
       } else {

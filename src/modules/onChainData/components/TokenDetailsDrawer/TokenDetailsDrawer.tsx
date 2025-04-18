@@ -12,12 +12,12 @@ import {
   Dimensions,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import LineGraph from '../../../../core/sharedUI/Common/TradeCard/LineGraph';
 import { styles } from './TokenDetailsDrawer.styles';
 import { fetchUserAssets } from '../../utils/fetch';
 import { Timeframe, useCoingecko } from '../../hooks/useCoingecko';
 import { fetchJupiterTokenData } from '../../utils/tokenUtils';
 import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevel, getRiskLevelColor, RiskLevel } from '../../../../services/rugCheckService';
+import LineGraph from '@/core/sharedUI/TradeCard/LineGraph';
 
 const { width } = Dimensions.get('window');
 

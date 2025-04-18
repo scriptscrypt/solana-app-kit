@@ -1,6 +1,6 @@
+import { DEFAULT_IMAGES } from '@/config/constants';
 import React, { useState, useEffect, useRef } from 'react';
 import { Image, Platform, ImageProps } from 'react-native';
-import { DEFAULT_IMAGES } from '../config/constants';
 
 /**
  * A React component that handles IPFS images with fallback gateways for Android

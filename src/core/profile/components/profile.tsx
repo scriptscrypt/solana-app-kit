@@ -16,34 +16,33 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { useAppSelector, useAppDispatch } from '../../../hooks/useReduxHooks';
+import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import {
   fetchUserProfile,
   updateProfilePic,
   updateUsername,
   updateDescription,
-} from '../../../state/auth/reducer';
-import { fetchAllPosts } from '../../../state/thread/reducer';
+} from '@/shared/state/auth/reducer';
+import { fetchAllPosts } from '@/shared/state/thread/reducer';
 
-import { useFetchNFTs } from '../../../modules/nft';
-import { NftItem } from '../../../modules/nft/types';
-import { useWallet } from '../../../modules/walletProviders/hooks/useWallet';
+import { useFetchNFTs } from '@/modules/nft';
+import { NftItem } from '@/modules/nft/types';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   uploadProfileAvatar,
   fetchFollowers,
   fetchFollowing,
   checkIfUserFollowsMe,
 } from '../services/profileService';
-import { fetchWalletActionsWithCache, pruneOldActionData } from '../../../state/profile/reducer';
+import { fetchWalletActionsWithCache, pruneOldActionData } from '@/shared/state/profile/reducer';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { followUser, unfollowUser } from '../../../state/users/reducer';
-import COLORS from '../../../assets/colors';
+import { followUser, unfollowUser } from '@/shared/state/users/reducer';
+import COLORS from '@/assets/colors';
 
 // Import hooks, utils, and types from the modular structure
-import { useProfileFollow, useProfileActions, useProfileManagement } from '../hooks';
-import { flattenPosts, isUserWalletOwner } from '../utils/profileUtils';
-import { ProfileProps, UserProfileData } from '../types';
+import { flattenPosts, isUserWalletOwner } from '@/core/profile/utils/profileUtils';
+import { ProfileProps, UserProfileData } from '@/core/profile/types';
 
 import ProfileView from './ProfileView';
 import {
@@ -53,9 +52,10 @@ import {
   inlineConfirmStyles,
   editNameModalStyles,
 } from './profile.style';
-import { ThreadPost } from '../../thread/types';
-import { useFetchPortfolio } from '../../../modules/onChainData/hooks/useFetchTokens';
-import { AssetItem } from '../../../modules/onChainData/types/assetTypes';
+import { ThreadPost } from '@/core/thread/types';
+import { useFetchPortfolio } from '@/modules/onChainData/hooks/useFetchTokens';
+import { AssetItem } from '@/modules/onChainData/types/assetTypes';
+import EditPostModal from '@/core/thread/components/EditPostModal';
 
 export default function Profile({
   isOwnProfile = false,
@@ -97,6 +97,7 @@ export default function Profile({
   const [isFollowingLoading, setIsFollowingLoading] = useState(true);
   const [isFollowStatusLoading, setIsFollowStatusLoading] = useState(!isOwnProfile);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  const [editingPost, setEditingPost] = useState<ThreadPost | null>(null); // State for post being edited
 
   // NFT fetch hook - use it only when nfts are not provided via props
   const {
@@ -544,6 +545,15 @@ export default function Profile({
     setEditNameModalVisible(true);
   }, [isOwnProfile, localUsername, localDescription]);
 
+  // --- Post edit handler ---
+  const handleEditPost = useCallback((postToEdit: ThreadPost) => {
+    if (isOwnProfile || postToEdit.user.id === currentUserWallet) {
+        setEditingPost(postToEdit);
+    } else {
+        Alert.alert("Permission Denied", "You cannot edit this post.");
+    }
+  }, [isOwnProfile, currentUserWallet]);
+
   const handleSaveName = useCallback(async () => {
     if (!isOwnProfile || !userWallet) {
       setEditNameModalVisible(false);
@@ -688,6 +698,14 @@ export default function Profile({
         refreshingPortfolio={refreshingPortfolio}
         onAssetPress={handleAssetPress}
         isLoading={isLoading}
+        onEditPost={handleEditPost}
+      />
+
+      {/* Edit Post Modal */}
+      <EditPostModal
+        isVisible={!!editingPost}
+        onClose={() => setEditingPost(null)}
+        post={editingPost}
       />
 
       {/* Avatar Option Modal */}

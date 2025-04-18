@@ -2,15 +2,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, Platform, Alert, ActivityIndicator, Text } from 'react-native';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
-import { RootStackParamList } from '../../../../navigation/RootNavigator';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
-import Profile from '../../../../core/profile/components/profile';
-import { ThreadPost } from '../../../../core/thread/components/thread.types';
-import { fetchAllPosts } from '../../../../state/thread/reducer';
-import COLORS from '../../../../assets/colors';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import Profile from '@/core/profile/components/profile';
+import { ThreadPost } from '@/core/thread/components/thread.types';
+import { fetchAllPosts } from '@/shared/state/thread/reducer';
+import COLORS from '@/assets/colors';
 import { SERVER_URL } from '@env';
-import { flattenPosts } from '../../../../core/thread/components/thread.utils';
-import { useFetchNFTs } from '../../../../modules/nft';
+import { flattenPosts } from '@/core/thread/components/thread.utils';
+import { useFetchNFTs } from '@/modules/nft';
 
 const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
 

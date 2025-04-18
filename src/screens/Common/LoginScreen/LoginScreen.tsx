@@ -1,16 +1,14 @@
-// File: src/screens/LoginScreen/LoginScreen.tsx
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, Text, Dimensions, Alert } from 'react-native';
-import Icons from '../../../assets/svgs/index';
+import Icons from '@/assets/svgs/index';
 import styles from './LoginScreen.styles';
 import { useDispatch, useSelector } from 'react-redux';
-import { useAppNavigation } from '../../../hooks/useAppNavigation';
-import COLORS from '../../../assets/colors';
-import EmbeddedWalletAuth from '../../../modules/walletProviders/components/wallet/EmbeddedWallet';
-import TurnkeyWalletAuth from '../../../modules/walletProviders/components/turnkey/TurnkeyWallet';
-import { loginSuccess } from '../../../state/auth/reducer';
-import { RootState } from '../../../state/store';
-import { useCustomization } from '../../../CustomizationProvider';
+import {useAppNavigation} from '@/shared/hooks/useAppNavigation';
+import EmbeddedWalletAuth from '@/modules/walletProviders/components/wallet/EmbeddedWallet';
+import TurnkeyWalletAuth from '@/modules/walletProviders/components/turnkey/TurnkeyWallet';
+import {loginSuccess} from '@/shared/state/auth/reducer';
+import {RootState} from '@/shared/state/store';
+import { useCustomization } from '@/config/CustomizationProvider';
 import axios from 'axios';
 import { SERVER_URL } from '@env';
 

@@ -3,10 +3,10 @@ import { View, Text, TouchableOpacity, Alert, Platform } from 'react-native';
 import Icons from '../../../../assets/svgs';
 import { useAuth } from '../../hooks/useAuth';
 import styles from '../../../../screens/Common/LoginScreen/LoginScreen.styles';
-import { useCustomization } from '../../../../CustomizationProvider';
-import { useAppNavigation } from '../../../../hooks/useAppNavigation';
-import { useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { loginSuccess } from '../../../../state/auth/reducer';
+import { useCustomization } from '../../../../config/CustomizationProvider';
+import {useAppNavigation} from '../../../../shared/hooks/useAppNavigation';
+import {useAppDispatch} from '../../../../shared/hooks/useReduxHooks';
+import { loginSuccess } from '../../../../shared/state/auth/reducer';
 import COLORS from '../../../../assets/colors';
 
 import type { Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';

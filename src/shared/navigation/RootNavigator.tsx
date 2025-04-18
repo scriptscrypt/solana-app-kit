@@ -3,21 +3,18 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useSelector } from 'react-redux';
 import { RootState } from '../state/store';
 import MainTabs from './MainTabs';
-import ChatScreen from '../screens/SampleUI/Chat/ChatScreen/ChatScreen';
-import CoinDetailPage from '../screens/SampleUI/Threads/CoinDetailPage/CoinDetailPage';
-import BlinkScreen from '../screens/Common/BlinkScreen';
-import NftScreen from '../modules/nft/screens/NftScreen';
-import LoginScreen from '../screens/Common/LoginScreen/LoginScreen';
-import IntroScreen from '../screens/Common/IntroScreen/IntroScreen';
-
-// NEW IMPORT
-import OtherProfileScreen from '../screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen';
-import PostThreadScreen from '../screens/SampleUI/Threads/PostThreadScreen/PostthreadScreen';
-import FollowersFollowingListScreen from '../core/thread/components/FollowersFollowingListScreen/FollowersFollowingListScreen';
-import ProfileScreen from '../screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
-import { TokenMillScreen } from '../modules/tokenMill';
-import { PumpfunScreen } from '../modules/pumpFun';
-import PumpSwapScreen from '../modules/pumpSwap/screens/PumpSwapScreen';
+import CoinDetailPage from '@/screens/SampleUI/Threads/CoinDetailPage/CoinDetailPage';
+import { PumpfunScreen } from '@/modules/pumpFun';
+import { TokenMillScreen } from '@/modules/tokenMill';
+import { NftScreen } from '@/modules/nft';
+import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
+import { PumpSwapScreen } from '@/modules/pumpSwap';
+import OtherProfileScreen from '@/screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen';
+import PostThreadScreen from '@/screens/SampleUI/Threads/PostThreadScreen/PostthreadScreen';
+import FollowersFollowingListScreen from '@/core/thread/components/FollowersFollowingListScreen/FollowersFollowingListScreen';
+import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
+import IntroScreen from '@/screens/Common/IntroScreen/IntroScreen';
+import LoginScreen from '@/screens/Common/LoginScreen/LoginScreen';
 
 export type RootStackParamList = {
   IntroScreen: undefined;
@@ -52,7 +49,6 @@ export default function RootNavigator() {
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="CoinDetailPage" component={CoinDetailPage} />
-          <Stack.Screen name="Blink" component={BlinkScreen} />
           <Stack.Screen name="Pumpfun" component={PumpfunScreen} />
           <Stack.Screen name="TokenMill" component={TokenMillScreen} />
           <Stack.Screen name="NftScreen" component={NftScreen} />

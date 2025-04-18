@@ -17,7 +17,7 @@ import { fetchSolBalance, fetchTokenAccounts } from '../../onChainData/utils/fet
 import PumpfunBuySection from '../components/PumpfunBuySection';
 import PumpfunSellSection from '../components/PumpfunSellSection';
 import PumpfunLaunchSection from '../components/PumpfunLaunchSection';
-import { useAppSelector } from '../../../hooks/useReduxHooks';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { TokenEntry } from '../../onChainData/types/tokenTypes';
 
 const customStyles = StyleSheet.create({

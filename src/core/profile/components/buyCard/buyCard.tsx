@@ -17,22 +17,20 @@ import {
 import { styles } from './buyCard.style';
 import Icons from '../../../../assets/svgs/index';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
-import { IPFSAwareImage, getValidImageSource } from '../../../../utils/IPFSImage';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 
-import { useFetchPortfolio, fixImageUrl } from '../../../../modules/onChainData/hooks/useFetchTokens';
-import { useAppSelector } from '../../../../hooks/useReduxHooks';
+import { useFetchPortfolio, fixImageUrl } from '@/modules/onChainData/hooks/useFetchTokens';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import TradeModal from '../../../thread/components/trade/TradeModal';
-import TokenDetailsDrawer from '../../../../modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
-import NFTCollectionDrawer from '../../../../core/sharedUI/Common/NFTCollectionDrawer/NFTCollectionDrawer';
+import TokenDetailsDrawer from '@/modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
 
 // Import collection search functionality
-import { searchCollections } from '../../../../modules/nft/services/nftService';
-import { CollectionResult } from '../../../../modules/nft/types';
-import { buyCollectionFloor } from '../../../../modules/nft';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
-import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
-import { useAuth } from '../../../../modules/walletProviders/hooks/useAuth';
-import { AssetItem } from '../../../../modules/onChainData/types/assetTypes';
+import { searchCollections } from '@/modules/nft/services/nftService';
+import { CollectionResult } from '@/modules/nft/types';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
+import { AssetItem } from '@/modules/onChainData/types/assetTypes';
+import NFTCollectionDrawer from '@/core/sharedUI/NFTCollectionDrawer/NFTCollectionDrawer';
 
 /**
  * Define props for the BuyCard
@@ -263,24 +261,35 @@ const BuyCard: React.FC<BuyCardProps> = ({
   onRemoveToken,
   assetType: assetTypeHint, // Get the asset type hint
 }) => {
+  // Move all hooks to the top level - IMPORTANT: No conditional hook calls
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showPortfolioModal, setShowPortfolioModal] = useState(false);
   const [showTokenDetailsDrawer, setShowTokenDetailsDrawer] = useState(false);
   const [drawerLoading, setDrawerLoading] = useState(false);
-
+  const [showNftCollectionDrawer, setShowNftCollectionDrawer] = useState(false);
+  const [nftLoading, setNftLoading] = useState(false);
+  const [nftStatusMsg, setNftStatusMsg] = useState('');
+  
   // States for NFT collection search and selection
   const [collectionName, setCollectionName] = useState('');
   const [searchResults, setSearchResults] = useState<CollectionResult[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<CollectionResult | null>(null);
-  const [showNftCollectionDrawer, setShowNftCollectionDrawer] = useState(false);
-  const [nftLoading, setNftLoading] = useState(false);
-  const [nftStatusMsg, setNftStatusMsg] = useState('');
 
+  // Get Redux state and hooks BEFORE any conditional logic
   const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
   const userName = useAppSelector(state => state.auth.username);
-  const { solanaWallet } = useAuth();
-  const { wallet, address, publicKey, sendTransaction } = useWallet();
+  
+  // Get auth and wallet hooks - these must be at the top level
+  const auth = useAuth();  // Store the whole auth object to avoid destructuring issues
+  const walletUtils = useWallet();  // Store the whole wallet object
+  
+  // Extract values from auth and wallet objects safely
+  const solanaWallet = auth?.solanaWallet;
+  const { wallet, address, publicKey, sendTransaction } = walletUtils;
+
+  // Is this a "Pin your coin" state? (No token attached yet)
+  const isPinYourCoin = tokenName === 'Pin your coin' || !tokenMint;
 
   // For simplicity, using the first connected wallet
   const userPublicKey = address || (solanaWallet?.wallets?.[0]?.publicKey?.toString() || '');
@@ -291,7 +300,7 @@ const BuyCard: React.FC<BuyCardProps> = ({
     showPortfolioModal ? effectiveWalletAddress : undefined
   );
 
-  const currentUser = {
+  const currentUser = useMemo(() => ({
     id: userPublicKey || 'anonymous-user',
     username: userName || 'Anonymous',
     handle: userPublicKey
@@ -299,20 +308,18 @@ const BuyCard: React.FC<BuyCardProps> = ({
       : '@anonymous',
     verified: true,
     avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
-  };
+  }), [userPublicKey, userName, storedProfilePic]);
 
   // --- Asset Type Determination ---
   const determinedAssetType = useMemo(() => {
     // Priority 1: Use the provided hint if available
     if (assetTypeHint) {
-      console.log(`Asset type determined by hint: ${assetTypeHint}`);
       return assetTypeHint;
     }
 
     // Priority 2: Check tokenMint format
     // Tensor collection IDs often look like UUIDs
     if (tokenMint && tokenMint.includes('-')) {
-      console.log('Asset type determined as collection (UUID mint)');
       return 'collection';
     }
 
@@ -329,15 +336,12 @@ const BuyCard: React.FC<BuyCardProps> = ({
     ) {
       // If it includes "collection", assume collection, otherwise assume individual NFT
       if (lowerDesc.includes('collection') || lowerName.includes('collection') || lowerTokenDesc.includes('collection')) {
-        console.log('Asset type determined as collection (text indicator)');
         return 'collection';
       }
-      console.log('Asset type determined as nft (text indicator)');
       return 'nft';
     }
 
     // Default to token if no NFT indicators found
-    console.log('Asset type determined as token (default)');
     return 'token';
   }, [assetTypeHint, tokenMint, description, tokenName, tokenDesc]);
 
@@ -346,8 +350,72 @@ const BuyCard: React.FC<BuyCardProps> = ({
   const isCollection = determinedAssetType === 'collection';
   const isToken = determinedAssetType === 'token';
 
-  // Debug logs
-  console.log(`[BuyCard] Asset Type: ${determinedAssetType}, Mint: ${tokenMint}, Name: ${tokenName}, Desc: ${description}`);
+  // Group portfolio items by type - memoize to prevent unnecessary recalculations
+  const portfolioItems = useMemo(() => {
+    const tokens = portfolio.items?.filter(item => item.assetType === 'token') || [];
+    const regularNfts = portfolio.items?.filter(item => item.assetType === 'nft') || [];
+    const compressedNfts = portfolio.items?.filter(item => item.assetType === 'cnft') || [];
+    const solBalance = portfolio.nativeBalance ? (portfolio.nativeBalance.lamports / 1000000000).toFixed(4) : '0';
+    
+    return { tokens, regularNfts, compressedNfts, solBalance };
+  }, [portfolio]);
+
+  // Extract values from memoized portfolioItems
+  const { tokens, regularNfts, compressedNfts, solBalance } = portfolioItems;
+
+  // Determine button text and action based on asset type
+  const actionButtonText = isToken ? 'Buy' : 'View';
+
+  // Memoize data for modals/drawers to prevent recreating on each render
+  const tokenDetailsData = useMemo(() => {
+    const cleanTokenName = tokenName.startsWith('$') ? tokenName.substring(1) : tokenName;
+    
+    return {
+      symbol: cleanTokenName || '',
+      name: tokenName || description || '', 
+      logoURI: typeof tokenImage === 'string' ? (tokenImage ? fixImageUrl(tokenImage) : undefined) : undefined,
+      isCollection: isCollection,
+      nftData: isNftOrCollection && !isCollection ? {
+        name: tokenName || description,
+        description: tokenDesc || 'NFT Details',
+      } : undefined,
+      collectionData: isCollection ? {
+        name: tokenName || description || 'NFT Collection',
+        description: tokenDesc || 'Collection Details',
+        imageUri: typeof tokenImage === 'string' ? (tokenImage ? fixImageUrl(tokenImage) : undefined) : undefined,
+      } : undefined,
+    };
+  }, [tokenName, description, tokenImage, isCollection, isNftOrCollection, tokenDesc]);
+
+  const nftCollectionData = useMemo(() => ({
+    collId: tokenMint || '',
+    name: tokenName || description || 'NFT Asset',
+    image: typeof tokenImage === 'string'
+      ? fixImageUrl(tokenImage)
+      : tokenImage || require('../../../../assets/images/SENDlogo.png'),
+    description: tokenDesc || `Asset: ${tokenName || description}`,
+  }), [tokenMint, tokenName, description, tokenImage, tokenDesc]);
+
+  const tradeModalData = useMemo(() => {
+    const cleanTokenName = tokenName.startsWith('$') ? tokenName.substring(1) : tokenName;
+    
+    return {
+      initialInputToken: {
+        address: 'So11111111111111111111111111111111111111112', // SOL mint address
+        symbol: 'SOL',
+        name: 'Solana',
+        decimals: 9,
+        logoURI: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
+      },
+      initialOutputToken: {
+        address: tokenMint || '',
+        symbol: cleanTokenName,
+        name: description || cleanTokenName,
+        decimals: 6,
+        logoURI: typeof tokenImage === 'string' ? fixImageUrl(tokenImage) : '',
+      }
+    };
+  }, [tokenMint, tokenName, description, tokenImage]);
 
   // Search collections functionality
   const handleSearchCollections = async () => {
@@ -395,16 +463,6 @@ const BuyCard: React.FC<BuyCardProps> = ({
   };
 
   const handleActionPress = () => {
-    console.log(`Action button pressed for ${determinedAssetType}`);
-    console.log(`Current state - tokenMint: ${tokenMint}, isNftOrCollection: ${isNftOrCollection}, isCollection: ${isCollection}`);
-
-    // If external handler provided, use that instead
-    // if (onBuyPress) {
-    //   console.log('Calling external onBuyPress handler');
-    //   onBuyPress();
-    //   return;
-    // }
-
     // Reset modals
     setShowTradeModal(false);
     setShowTokenDetailsDrawer(false);
@@ -412,17 +470,10 @@ const BuyCard: React.FC<BuyCardProps> = ({
 
     // Open the appropriate modal/drawer based on asset type
     if (isToken) {
-      console.log('Opening Trade Modal for token');
       setShowTradeModal(true);
     } else {
       // For both NFTs and Collections, open the NFTCollectionDrawer
-      console.log('Opening NFT Collection Drawer for NFT/Collection');
       setShowNftCollectionDrawer(true);
-      
-      // Add a debug timeout to check if the state was updated
-      setTimeout(() => {
-        console.log(`After 50ms: showNftCollectionDrawer = ${showNftCollectionDrawer}`);
-      }, 50);
     }
   };
 
@@ -447,17 +498,12 @@ const BuyCard: React.FC<BuyCardProps> = ({
     } else {
       // Default behavior (for normal BuyCard usage)
       console.log('Selected asset:', asset);
-      // If it's a token, you could open the trade modal with this token
-      if (asset.token_info) {
-        // You could implement this logic based on your requirements
-      }
     }
   };
 
   // Handle click on token image or name to view details
   const handleTokenDetailsPress = () => {
     if (tokenMint && !isPinYourCoin) {
-      console.log(`Opening details drawer for ${determinedAssetType} with mint: ${tokenMint}`);
       setShowTradeModal(false);
       setShowNftCollectionDrawer(false);
       setShowTokenDetailsDrawer(true);
@@ -503,34 +549,6 @@ const BuyCard: React.FC<BuyCardProps> = ({
       return null; // Don't show any image if no tokenImage is provided
     }
   };
-
-  // Clean the token name to remove $ if present
-  const cleanTokenName = tokenName.startsWith('$')
-    ? tokenName.substring(1)
-    : tokenName;
-
-  // Group portfolio items by type
-  const tokens = portfolio.items?.filter(item =>
-    item.assetType === 'token'
-  ) || [];
-
-  const regularNfts = portfolio.items?.filter(item =>
-    item.assetType === 'nft'
-  ) || [];
-
-  const compressedNfts = portfolio.items?.filter(item =>
-    item.assetType === 'cnft'
-  ) || [];
-
-  const solBalance = portfolio.nativeBalance
-    ? (portfolio.nativeBalance.lamports / 1000000000).toFixed(4)
-    : '0';
-
-  // Is this a "Pin your coin" state? (No token attached yet)
-  const isPinYourCoin = tokenName === 'Pin your coin' || !tokenMint;
-
-  // Determine button text and action based on asset type
-  const actionButtonText = isToken ? 'Buy' : 'View';
 
   return (
     <View style={[
@@ -616,9 +634,7 @@ const BuyCard: React.FC<BuyCardProps> = ({
             onPress={handleArrowPress}
           >
             {isPinYourCoin ? (
-              <>
-                <Text style={styles.pinButtonText}>Add Asset</Text> {/* Updated text */}
-              </>
+              <Text style={styles.pinButtonText}>Add Asset</Text>
             ) : (
               <Icons.Arrow />
             )}
@@ -626,31 +642,19 @@ const BuyCard: React.FC<BuyCardProps> = ({
         )}
       </View>
 
-      {/* Trade Modal (Only for tokens) */}
-      {showTradeModal && isToken && (
-        <TradeModal
-          visible={showTradeModal}
-          onClose={() => setShowTradeModal(false)}
-          currentUser={currentUser}
-          disableTabs={true}
-          initialInputToken={{
-            address: 'So11111111111111111111111111111111111111112', // SOL mint address
-            symbol: 'SOL',
-            name: 'Solana',
-            decimals: 9,
-            logoURI:
-              'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',
-          }}
-          initialOutputToken={{
-            address: tokenMint || '',
-            symbol: cleanTokenName,
-            name: description || cleanTokenName, // Use appropriate name/desc
-            decimals: 6, // TODO: Ideally fetch decimals, default 6
-            logoURI: typeof tokenImage === 'string' ? fixImageUrl(tokenImage) : '',
-          }}
-          initialActiveTab="TRADE_AND_SHARE"
-        />
-      )}
+      {/* IMPORTANT: Always render these components, but control visibility with their props
+          This ensures consistent hook calls regardless of state changes during logout */}
+      
+      {/* Trade Modal (Always render but control visibility with visible prop) */}
+      <TradeModal
+        visible={showTradeModal && isToken}
+        onClose={() => setShowTradeModal(false)}
+        currentUser={currentUser}
+        disableTabs={true}
+        initialInputToken={tradeModalData.initialInputToken}
+        initialOutputToken={tradeModalData.initialOutputToken}
+        initialActiveTab="TRADE_AND_SHARE"
+      />
 
       {/* Portfolio Modal */}
       <Modal
@@ -711,7 +715,7 @@ const BuyCard: React.FC<BuyCardProps> = ({
                   <Text style={styles.retryText}>Retry</Text>
                 </TouchableOpacity>
               </View>
-            ) : portfolio.items.length === 0 ? (
+            ) : portfolio.items?.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No assets found in this wallet.</Text>
               </View>
@@ -815,51 +819,21 @@ const BuyCard: React.FC<BuyCardProps> = ({
         </View>
       </Modal>
 
-      {/* Token Details Drawer (Adjust initialData based on type) */}
-      {tokenMint && !isPinYourCoin && (
-        <TokenDetailsDrawer
-          visible={showTokenDetailsDrawer}
-          onClose={() => setShowTokenDetailsDrawer(false)}
-          tokenMint={tokenMint}
-          initialData={useMemo(() => ({ // Use useMemo for stability
-            symbol: cleanTokenName || '',
-            name: tokenName || description || '', // Prioritize tokenName
-            logoURI: typeof tokenImage === 'string' ? (tokenImage ? fixImageUrl(tokenImage) : undefined) : undefined,
-            isCollection: isCollection, // Pass the flag for collections
-            nftData: isNftOrCollection && !isCollection ? { // Pass nftData for individual NFTs
-              name: tokenName || description,
-              description: tokenDesc || 'NFT Details',
-              // Add other known NFT fields if available from props, otherwise let drawer fetch
-            } : undefined,
-            collectionData: isCollection ? { // Pass collectionData for collections
-              name: tokenName || description || 'NFT Collection',
-              description: tokenDesc || 'Collection Details',
-              imageUri: typeof tokenImage === 'string' ? (tokenImage ? fixImageUrl(tokenImage) : undefined) : undefined,
-              // Add other known collection fields if available from props
-            } : undefined,
-          }), [tokenMint, cleanTokenName, tokenName, description, tokenImage, isCollection, isNftOrCollection, tokenDesc])}
-          loading={drawerLoading} // Pass loading state if needed for drawer-side fetching
-        />
-      )}
+      {/* Token Details Drawer - Always render with controlled visibility */}
+      <TokenDetailsDrawer
+        visible={showTokenDetailsDrawer && !!tokenMint && !isPinYourCoin}
+        onClose={() => setShowTokenDetailsDrawer(false)}
+        tokenMint={tokenMint || ''}
+        initialData={tokenDetailsData}
+        loading={drawerLoading}
+      />
 
-      {/* NFT Collection Drawer (Only for NFTs/Collections) */}
-      {isNftOrCollection && showNftCollectionDrawer && (
-          <NFTCollectionDrawer
-            visible={true} /* Always set to true when rendered, since we're already conditionally rendering */
-            onClose={() => {
-              console.log('NFT Collection Drawer closed from parent');
-              setShowNftCollectionDrawer(false);
-            }}
-            collection={{ // Pass data assuming it might be a collection or single NFT
-              collId: tokenMint || '', // Use tokenMint as identifier
-              name: tokenName || description || 'NFT Asset',
-              image: typeof tokenImage === 'string'
-                ? fixImageUrl(tokenImage)
-                : tokenImage || require('../../../../assets/images/SENDlogo.png'),
-              description: tokenDesc || `Asset: ${tokenName || description}`,
-            }}
-        />
-      )}
+      {/* NFT Collection Drawer - Always render with controlled visibility */}
+      <NFTCollectionDrawer
+        visible={showNftCollectionDrawer && isNftOrCollection}
+        onClose={() => setShowNftCollectionDrawer(false)}
+        collection={nftCollectionData}
+      />
     </View>
   );
 };

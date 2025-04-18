@@ -9,20 +9,20 @@ import {
   TextInput,
   Platform,
 } from 'react-native';
-import { findMentioned } from '../../../../utils/common/findMentioned';
+import { findMentioned } from '@/shared/utils/common/findMentioned';
 import AddButton from '../addButton/addButton';
 import BuyCard from '../buyCard/buyCard';
 import ProfileIcons from '../../../../assets/svgs/index';
 import { styles } from './UserProfileInfo.style';
-import { useAppDispatch } from '../../../../hooks/useReduxHooks';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import {
   attachCoinToProfile,
   removeAttachedCoin,
-} from '../../../../state/auth/reducer';
+} from '@/shared/state/auth/reducer';
 import { tokenModalStyles } from './profileInfoTokenModal.style';
 import COLORS from '../../../../assets/colors';
 import { UserProfileInfoProps } from '../../types';
-import { IPFSAwareImage, getValidImageSource } from '../../../../utils/IPFSImage';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 
 /**
  * TokenAttachModal - Component for the token attachment modal

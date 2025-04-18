@@ -10,8 +10,8 @@ import {
     Platform,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../../state/store';
-import { clearNotification } from '../../../state/notification/reducer';
+import { RootState } from '@/shared/state/store';
+import { clearNotification } from '@/shared/state/notification/reducer';
 
 const { width } = Dimensions.get('window');
 

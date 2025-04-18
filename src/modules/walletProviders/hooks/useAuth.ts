@@ -1,11 +1,11 @@
 import {useCallback} from 'react';
 import {useDispatch} from 'react-redux';
-import {loginSuccess, logoutSuccess} from '../../../state/auth/reducer';
+import {loginSuccess, logoutSuccess} from '../../../shared/state/auth/reducer';
 import {usePrivyWalletLogic} from '../services/walletProviders/privy';
-import {useCustomization} from '../../../CustomizationProvider';
-import {useAppNavigation} from '../../../hooks/useAppNavigation';
+import {useCustomization} from '../../../config/CustomizationProvider';
+import {useAppNavigation} from '../../../shared/hooks/useAppNavigation';
 import {getDynamicClient} from '../services/walletProviders/dynamic';
-import {useAppSelector} from '../../../hooks/useReduxHooks';
+import {useAppSelector} from '../../../shared/hooks/useReduxHooks';
 import {VersionedTransaction, PublicKey} from '@solana/web3.js';
 import {useLoginWithOAuth} from '@privy-io/expo';
 import { useDynamicWalletLogic } from './useDynamicWalletLogic';
@@ -117,15 +117,32 @@ export function useAuth() {
     const logout = useCallback(async () => {
       console.log('[useAuth] Attempting Privy logout...');
       try {
-        await handlePrivyLogout(() => {});
-        console.log('[useAuth] Privy SDK logout successful. Dispatching logoutSuccess.');
+        // Wrap the SDK call in a try/catch
+        try {
+          await handlePrivyLogout(() => {});
+          console.log('[useAuth] Privy SDK logout successful.');
+        } catch (sdkError) {
+          console.error('[useAuth] Error during Privy SDK logout (continuing anyway):', sdkError);
+          // Continue with Redux state cleanup even if SDK logout fails
+        }
+        
+        // Always clean up Redux state
+        console.log('[useAuth] Dispatching logoutSuccess.');
         dispatch(logoutSuccess());
         console.log('[useAuth] Redux logout dispatched. Resetting navigation.');
-        // Reset navigation to the initial route of the logged-out stack
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'IntroScreen' }],
-        });
+        
+        // Use setTimeout to allow React to process state changes before navigation
+        setTimeout(() => {
+          try {
+            // Reset navigation to the initial route of the logged-out stack
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'IntroScreen' }],
+            });
+          } catch (navError) {
+            console.error('[useAuth] Error during navigation reset:', navError);
+          }
+        }, 50);
       } catch (error) {
         console.error('[useAuth] Error during Privy logout:', error);
       }
@@ -464,15 +481,32 @@ export function useAuth() {
     const logout = useCallback(async () => {
       console.log('[useAuth] Attempting Dynamic logout...');
       try {
-        await handleDynamicLogout(() => {});
-        console.log('[useAuth] Dynamic SDK logout successful. Dispatching logoutSuccess.');
+        // Wrap the SDK call in a try/catch
+        try {
+          await handleDynamicLogout(() => {});
+          console.log('[useAuth] Dynamic SDK logout successful.');
+        } catch (sdkError) {
+          console.error('[useAuth] Error during Dynamic SDK logout (continuing anyway):', sdkError);
+          // Continue with Redux state cleanup even if SDK logout fails
+        }
+        
+        // Always clean up Redux state
+        console.log('[useAuth] Dispatching logoutSuccess.');
         dispatch(logoutSuccess());
         console.log('[useAuth] Redux logout dispatched. Resetting navigation.');
-        // Reset navigation to the initial route of the logged-out stack
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'IntroScreen' }],
-        });
+        
+        // Use setTimeout to allow React to process state changes before navigation
+        setTimeout(() => {
+          try {
+            // Reset navigation to the initial route of the logged-out stack
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'IntroScreen' }],
+            });
+          } catch (navError) {
+            console.error('[useAuth] Error during navigation reset:', navError);
+          }
+        }, 50);
       } catch (error) {
         console.error('[useAuth] Error during Dynamic logout:', error);
       }
@@ -629,15 +663,32 @@ export function useAuth() {
     const logout = useCallback(async () => {
       console.log('[useAuth] Attempting Turnkey logout...');
       try {
-        await handleTurnkeyLogout(() => {});
-        console.log('[useAuth] Turnkey SDK logout successful. Dispatching logoutSuccess.');
+        // Wrap the SDK call in a try/catch
+        try {
+          await handleTurnkeyLogout(() => {});
+          console.log('[useAuth] Turnkey SDK logout successful.');
+        } catch (sdkError) {
+          console.error('[useAuth] Error during Turnkey SDK logout (continuing anyway):', sdkError);
+          // Continue with Redux state cleanup even if SDK logout fails
+        }
+        
+        // Always clean up Redux state
+        console.log('[useAuth] Dispatching logoutSuccess.');
         dispatch(logoutSuccess());
         console.log('[useAuth] Redux logout dispatched. Resetting navigation.');
-        // Reset navigation to the initial route of the logged-out stack
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'IntroScreen' }],
-        });
+        
+        // Use setTimeout to allow React to process state changes before navigation
+        setTimeout(() => {
+          try {
+            // Reset navigation to the initial route of the logged-out stack
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'IntroScreen' }],
+            });
+          } catch (navError) {
+            console.error('[useAuth] Error during navigation reset:', navError);
+          }
+        }, 50);
       } catch (error) {
         console.error('[useAuth] Error during Turnkey logout:', error);
       }
@@ -692,13 +743,23 @@ export function useAuth() {
     const logout = useCallback(async () => {
       console.log('[useAuth] Attempting MWA logout (dispatching Redux action only)...');
       try {
+        // For MWA, just clean up Redux state since there's no SDK to log out from
+        console.log('[useAuth] Dispatching logoutSuccess for MWA.');
         dispatch(logoutSuccess());
         console.log('[useAuth] Redux logout dispatched for MWA. Resetting navigation.');
-        // Reset navigation to the initial route of the logged-out stack
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'IntroScreen' }],
-        });
+        
+        // Use setTimeout to allow React to process state changes before navigation
+        setTimeout(() => {
+          try {
+            // Reset navigation to the initial route of the logged-out stack
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'IntroScreen' }],
+            });
+          } catch (navError) {
+            console.error('[useAuth] Error during navigation reset:', navError);
+          }
+        }, 50);
       } catch (error) {
         console.error('[useAuth] Error during MWA logout dispatch:', error);
       }
@@ -713,12 +774,46 @@ export function useAuth() {
     };
   }
 
-  // If no recognized provider, just return empties
+  // If no recognized provider, just return empties with complete API signature
   console.warn('[useAuth] No recognized provider found or MWA not stored. Returning empty auth methods.');
+  
+  const safeLogout = async () => { 
+    console.warn('[useAuth] Logout called but no provider active.');
+    // Still dispatch logout action to ensure clean state
+    dispatch(logoutSuccess());
+    // Navigate to intro screen for safety
+    setTimeout(() => {
+      try {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'IntroScreen' }],
+        });
+      } catch (navError) {
+        console.error('[useAuth] Error during navigation reset:', navError);
+      }
+    }, 50);
+  };
+  
+  // Create a complete empty interface with all methods that
+  // could be called from any component
   return {
     status: '', 
-    logout: async () => { console.warn('[useAuth] Logout called but no provider active.') },
+    logout: safeLogout,
+    // Auth methods
+    loginWithGoogle: async () => {},
+    loginWithApple: async () => {},
+    loginWithEmail: async () => {},
+    loginWithSMS: async () => {},
+    initEmailOtpLogin: async () => {},
+    verifyEmailOtp: async () => {},
+    // Data
+    user: null,
     solanaWallet: null,
-    wallet: null
+    wallet: null,
+    // State
+    loading: false,
+    otpResponse: null,
+    isAuthenticated: false,
+    connected: false
   };
 }

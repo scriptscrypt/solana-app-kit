@@ -7,9 +7,9 @@ import PostFooter from './post/PostFooter';
 import PostCTA from './post/PostCTA';
 import { createThreadStyles, getMergedTheme } from './thread.styles';
 import { ThreadItemProps, ThreadPost } from '../types';
-import { useAppDispatch } from '../../../hooks/useReduxHooks';
-import { deletePostAsync } from '../../../state/thread/reducer';
-import { EditPostModal } from './EditPostModal';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
+import { deletePostAsync } from '@/shared/state/thread/reducer';
+import EditPostModal from './EditPostModal';
 import Icons from '../../../assets/svgs';
 
 // Styles for retweets within ThreadItem
@@ -233,7 +233,7 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
       {showEditModal && (
         <EditPostModal
           post={post}
-          visible={showEditModal}
+          isVisible={showEditModal}
           onClose={() => setShowEditModal(false)}
         />
       )}

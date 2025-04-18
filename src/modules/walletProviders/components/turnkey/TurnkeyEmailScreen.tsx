@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useAppNavigation } from '../../../../hooks/useAppNavigation';
+import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 
 interface TurnkeyEmailScreenProps {
   onSubmit: (email: string) => Promise<void>;

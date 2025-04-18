@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, TouchableOpacity, View, StyleSheet, Animated, Dimensions, Image, Text, findNodeHandle, UIManager } from 'react-native';
-import HomeScreen from '../screens/SampleUI/Threads/HomeScreen';
 import { useNavigation, ParamListBase } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
-import Icons from '../assets/svgs';
+import Icons from '@/assets/svgs';
 
 import AnimatedTabIcon from './AnimatedTabIcon';
-import FeedScreen from '../screens/SampleUI/Threads/FeedScreen/FeedScreen';
-import SearchScreen from '../screens/SampleUI/Threads/SearchScreen';
-import ProfileScreen from '../screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
-import ModuleScreen from '../screens/Common/ModulesScreen/Modules';
-import ChatScreen from '../screens/SampleUI/Chat/ChatScreen/ChatScreen';
+import FeedScreen from '@/screens/SampleUI/Threads/FeedScreen/FeedScreen';
+import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
+import ModuleScreen from '@/screens/Common/ModulesScreen/Modules';
+import SearchScreen from '@/screens/SampleUI/Threads/SearchScreen';
+import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
+
 
 const Tab = createBottomTabNavigator();
 const { width } = Dimensions.get('window');

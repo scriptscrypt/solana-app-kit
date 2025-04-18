@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { useAppNavigation } from '../../../hooks/useAppNavigation';
-import COLORS from '../../../assets/colors';
-import Logo from '../../../assets/svgs/logo.svg';
+import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
+import COLORS from '@/assets/colors';
+import Logo from '@/assets/svgs/logo.svg';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../../state/store';
-import { getDynamicClient } from '../../../modules/walletProviders/services/walletProviders/dynamic';
+import { RootState } from '@/shared/state/store';
+import { getDynamicClient } from '@/modules/walletProviders/services/walletProviders/dynamic';
 
 export default function IntroScreen() {
   const navigation = useAppNavigation();

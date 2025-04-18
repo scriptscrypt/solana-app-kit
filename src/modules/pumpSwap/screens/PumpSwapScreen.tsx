@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Connection } from '@solana/web3.js';
 import { useWallet } from '../../walletProviders/hooks/useWallet';
 import { useAuth } from '../../walletProviders/hooks/useAuth';
-import { useAppSelector } from '../../../hooks/useReduxHooks';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import {
     SwapSection,
     LiquidityAddSection,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -11,10 +11,10 @@ import {
     Dimensions,
     Alert,
 } from 'react-native';
-import Icons from '../../../../assets/svgs';
-import { TransactionService } from '../../../../modules/walletProviders/services/transaction/transactionService';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
-import { buyCollectionFloor } from '../../../../modules/nft';
+import Icons from '@/assets/svgs';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { buyCollectionFloor } from '@/modules/nft';
 
 interface NFTCollectionDrawerProps {
     visible: boolean;
@@ -33,7 +33,8 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
     collection,
 }) => {
     console.log('NFTCollectionDrawer render, visible:', visible);
-
+    
+    const isMounted = useRef(true);
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState('');
     const { address, sendTransaction } = useWallet();
@@ -59,12 +60,16 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
         console.warn('NFTCollectionDrawer: Collection missing name');
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
         console.log('NFTCollectionDrawer mounted with collection:', collection.name);
-        return () => console.log('NFTCollectionDrawer unmounted');
+        
+        return () => {
+            console.log('NFTCollectionDrawer unmounted');
+            isMounted.current = false;
+        };
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
         console.log('NFTCollectionDrawer visibility changed to:', visible);
     }, [visible]);
 
@@ -87,18 +92,28 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
                 address,
                 collection.collId,
                 sendTransaction,
-                status => setStatusMsg(status)
+                status => {
+                    if (isMounted.current) {
+                        setStatusMsg(status);
+                    }
+                }
             );
 
-            // Show success notification
-            TransactionService.showSuccess(signature, 'nft');
-            onClose();
+            // Show success notification only if component is still mounted
+            if (isMounted.current) {
+                TransactionService.showSuccess(signature, 'nft');
+                onClose();
+            }
         } catch (err: any) {
             console.error('Error during buy transaction:', err);
-            TransactionService.showError(err);
+            if (isMounted.current) {
+                TransactionService.showError(err);
+            }
         } finally {
-            setLoading(false);
-            setStatusMsg('');
+            if (isMounted.current) {
+                setLoading(false);
+                setStatusMsg('');
+            }
         }
     };
 

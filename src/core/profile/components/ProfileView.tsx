@@ -7,6 +7,17 @@ import ProfileTabs from './ProfileTabs/ProfileTabs';
 import { styles as profileStyles } from './profile.style';
 import COLORS from '../../../assets/colors';
 import { UserProfileData, ProfileViewProps } from '../types';
+import { ThreadPost } from '@/core/thread/types';
+import { PortfolioData, AssetItem } from '@/modules/onChainData';
+
+// Define Action type locally if not exported
+interface WalletAction {
+  type: string;
+  timestamp: string;
+  // Add other expected fields based on usage in ActionsPage
+  data?: any;
+  metadata?: any;
+}
 
 // Pure component that only renders when props actually change
 const ProfileInfoMemo = memo(UserProfileInfo);
@@ -44,6 +55,7 @@ function ProfileViewComponent({
   refreshingPortfolio,
   onAssetPress,
   isLoading = false,
+  onEditPost,
 }: ProfileViewProps) {
   // Ensure attachmentData is always defined
   const attachmentData = useMemo(() => user.attachmentData || {}, [user.attachmentData]);
@@ -93,14 +105,15 @@ function ProfileViewComponent({
     myNFTs,
     loadingNfts,
     fetchNftsError,
-    onPressPost,
-    myActions,
+    myActions: myActions as WalletAction[],
     loadingActions,
     fetchActionsError,
+    onPressPost,
     portfolioData,
     onRefreshPortfolio,
     refreshingPortfolio,
     onAssetPress,
+    onEditPost,
   }), [
     // Content-related dependencies grouped together
     myPosts,
@@ -118,6 +131,7 @@ function ProfileViewComponent({
     onPressPost,
     onRefreshPortfolio,
     onAssetPress,
+    onEditPost,
   ]);
 
   // Memoize container style to prevent re-renders

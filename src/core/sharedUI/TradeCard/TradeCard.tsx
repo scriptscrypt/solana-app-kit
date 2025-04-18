@@ -12,13 +12,13 @@ import {
   ViewStyle,
   ImageSourcePropType,
 } from 'react-native';
-import Icon from '../../../../assets/svgs/index';
-import { getMergedTheme } from '../../../../core/thread/components/thread.styles';
+import Icon from '@/assets/svgs/index';
+import { getMergedTheme } from '@/core/thread/components/thread.styles';
 import styles from './TradeCard.style';
-import { useCoingecko, Timeframe } from '../../../../modules/onChainData/hooks/useCoingecko';
+import { useCoingecko, Timeframe } from '@/modules/onChainData/hooks/useCoingecko';
 import LineGraph from './LineGraph';
-import TokenDetailsDrawer from '../../../../modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
-import { fetchJupiterTokenData } from '../../../../modules/onChainData/utils/tokenUtils';
+import TokenDetailsDrawer from '@/modules/onChainData/components/TokenDetailsDrawer/TokenDetailsDrawer';
+import { fetchJupiterTokenData } from '@/modules/onChainData/utils/tokenUtils';
 
 export interface TradeData {
   inputMint: string;
@@ -471,7 +471,7 @@ function TradeCard({
                 source={
                   fallbackOutLogo
                     ? { uri: fallbackOutLogo }
-                    : require('../../../../assets/images/SENDlogo.png')
+                    : require('@/assets/images/SENDlogo.png')
                 }
                 style={styles.tradeCardTokenImage}
               />
@@ -645,7 +645,7 @@ function TradeCard({
                     source={
                       fallbackInLogo
                         ? { uri: fallbackInLogo }
-                        : require('../../../../assets/images/SENDlogo.png')
+                        : require('@/assets/images/SENDlogo.png')
                     }
                     style={styles.tradeCardTokenImage}
                   />
@@ -687,7 +687,7 @@ function TradeCard({
                     source={
                       fallbackOutLogo
                         ? { uri: fallbackOutLogo }
-                        : require('../../../../assets/images/SENDlogo.png')
+                        : require('@/assets/images/SENDlogo.png')
                     }
                     style={styles.tradeCardTokenImage}
                   />

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { validateEnv } from '../utils/envValidator';
+import { validateEnv } from '../shared/utils/envValidator';
 
 // Declare global __DEV_MODE__ to avoid TypeScript errors
 declare global {

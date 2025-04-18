@@ -1,6 +1,6 @@
 import {useState, useCallback, useEffect} from 'react';
 import {getDynamicClient} from '../services/walletProviders/dynamic';
-import {useCustomization} from '../../../CustomizationProvider';
+import {useCustomization} from '../../../config/CustomizationProvider';
 
 export function useDynamicWalletLogic() {
   const [user, setUser] = useState<any>(null);

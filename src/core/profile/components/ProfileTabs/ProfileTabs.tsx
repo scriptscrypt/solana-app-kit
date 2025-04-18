@@ -18,15 +18,15 @@ import { styles, tabBarStyles, retweetStyles } from './ProfileTabs.style';
 import ActionsPage from '../actions/ActionsPage';
 
 import Icons from '../../../../assets/svgs';
-import { AssetItem, PortfolioData } from '../../../../hooks/useFetchTokens';
 
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
-import { deletePostAsync } from '../../../../state/thread/reducer';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { deletePostAsync } from '@/shared/state/thread/reducer';
 import { ProfileTabsProps } from '../../types';
 import { ThreadPost } from '../../../thread/types';
 import PostHeader from '../../../thread/components/post/PostHeader';
 import PostBody from '../../../thread/components/post/PostBody';
 import PostFooter from '../../../thread/components/post/PostFooter';
+import { AssetItem, PortfolioData } from '@/modules/onChainData';
 
 
 // Loading placeholder for lazy-loaded tabs
@@ -295,6 +295,7 @@ function ProfileTabs({
   onRefreshPortfolio,
   refreshingPortfolio,
   onAssetPress,
+  onEditPost,
 }: ProfileTabsProps) {
   // Tab navigation state
   const [index, setIndex] = useState<number>(0);
