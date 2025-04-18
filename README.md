@@ -6,9 +6,12 @@
 
 <!-- Stats badges; using SendArcade/solana-app-kit -->
 
-![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=flat-square)
-![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=flat-square)
-![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&message=Apache-2.0&color=brightgreen&style=flat-square)
+[![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=flat-square)](https://github.com/SendArcade/solana-app-kit/releases)
+[![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=flat-square)](https://github.com/SendArcade/solana-app-kit/network/members)
+[![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&message=Apache-2.0&color=brightgreen&style=flat-square)](https://github.com/SendArcade/solana-app-kit/blob/main/LICENSE)
+[![App Store](https://img.shields.io/badge/App_Store-0D96F6?style=flat-square&logo=app-store&logoColor=white)](https://apps.apple.com/app/send-arcade/id1)
+[![Play Store](https://img.shields.io/badge/Play_Store-414141?style=flat-square&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.sendarcade)
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=flat-square&logo=twitter&logoColor=white)](https://twitter.com/sendarcade)
 
 A modern React Native social application built on the Solana blockchain, providing a complete starter kit for building decentralized social experiences.
 
@@ -34,6 +37,7 @@ Anyone—whether a seasoned React Native developer or a newcomer—can bring the
 - [Production Deployment](#production-deployment)
 - [Dependencies](#dependencies)
 - [Contributing](#contributing)
+- [Contributors](#contributors)
 - [License](#license)
 - [Troubleshooting](#troubleshooting)
 - [Security](#security)
@@ -554,11 +558,11 @@ solana-app-kit/
     <li><strong>Community engagement</strong> tools</li>
   </ul>
 
-  <h3 style="color: white;">💸 mercuro</h3>
+  <!-- <h3 style="color: white;">💸 mercuro</h3>
   <ul style="padding-left: 20px;">
     <li><strong>Advanced financial</strong> transaction utilities</li>
     <li><strong>Custom financial</strong> operations</li>
-  </ul>
+  </ul> -->
 </div>
 
 ## Contributing
@@ -566,6 +570,14 @@ solana-app-kit/
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 For detailed guidelines on how to contribute to this project, see our [Contributing Guide](CONTRIBUTING.md).
+
+## Contributors
+
+<div align="center">
+  <a href="https://github.com/SendArcade/solana-app-kit/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=SendArcade/solana-app-kit" alt="Contributors" />
+  </a>
+</div>
 
 ## Security
 
