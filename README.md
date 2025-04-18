@@ -500,57 +500,66 @@ solana-app-kit/
 
 ## Modules
 
-The Solana App Kit provides several modular features that can be used independently:
+<div style="background: linear-gradient(to right, #00C08B, #00E599); border-radius: 8px; padding: 15px; margin-bottom: 20px; color: white;">
+  <p style="font-size: 1.1em; margin-top: 0;">The Solana App Kit provides several modular features that can be used independently:</p>
 
-### walletProviders
+  <h3 style="color: white;">🔐 walletProviders</h3>
+  <ul style="padding-left: 20px;">
+    <li><strong>Multiple wallet connection methods</strong> (Privy, Dynamic, Mobile Wallet Adapter)</li>
+    <li><strong>Standardized wallet interface</strong></li>
+    <li><strong>Transaction handling</strong> across providers</li>
+    <li><strong>Support for embedded wallets</strong>, social login, and external wallets</li>
+  </ul>
 
-- Multiple wallet connection methods (Privy, Dynamic, Mobile Wallet Adapter)
-- Standardized wallet interface
-- Transaction handling across providers
-- Support for embedded wallets, social login, and external wallets
+  <h3 style="color: white;">🪙 tokenMill</h3>
+  <ul style="padding-left: 20px;">
+    <li><strong>Token creation</strong> with configurable parameters</li>
+    <li><strong>Bonding curve configuration</strong> for token pricing</li>
+    <li><strong>Token swapping</strong> (buy/sell) functionality</li>
+    <li><strong>Staking tokens</strong> for rewards</li>
+    <li><strong>Creating and releasing</strong> vesting plans</li>
+    <li><strong>Fund management</strong> for users and markets</li>
+  </ul>
 
-### tokenMill
+  <h3 style="color: white;">📊 onChainData</h3>
+  <ul style="padding-left: 20px;">
+    <li><strong>Fetching on-chain data</strong> with optimized RPC calls</li>
+    <li><strong>Token balance tracking</strong></li>
+    <li><strong>Transaction history</strong> display</li>
+    <li><strong>Real-time data</strong> synchronization</li>
+  </ul>
 
-- Token creation with configurable parameters
-- Bonding curve configuration for token pricing
-- Token swapping (buy/sell) functionality
-- Staking tokens for rewards
-- Creating and releasing vesting plans
-- Fund management for users and markets
+  <h3 style="color: white;">🖼️ nft</h3>
+  <ul style="padding-left: 20px;">
+    <li><strong>NFT display, management</strong>, and trading</li>
+    <li><strong>Collection viewing</strong> with floor prices</li>
+    <li><strong>Compressed NFT</strong> support</li>
+    <li><strong>Integration</strong> with threads and posts</li>
+  </ul>
 
-### onChainData
+  <h3 style="color: white;">💱 pumpSwap</h3>
+  <ul style="padding-left: 20px;">
+    <li><strong>Token swapping</strong> using PumpSwap SDK</li>
+    <li><strong>Liquidity pool creation</strong> with custom token pairs</li>
+    <li><strong>Liquidity management</strong> (add and remove liquidity)</li>
+    <li><strong>Pool creation</strong> with custom parameters</li>
+    <li><strong>Real-time quotes</strong> and price impact estimates</li>
+    <li><strong>Transaction status</strong> monitoring</li>
+  </ul>
 
-- Fetching on-chain data with optimized RPC calls
-- Token balance tracking
-- Transaction history display
-- Real-time data synchronization
+  <h3 style="color: white;">🚀 pumpFun</h3>
+  <ul style="padding-left: 20px;">
+    <li><strong>Integration</strong> with the Pump.fun ecosystem</li>
+    <li><strong>Meme token creation</strong> and management</li>
+    <li><strong>Community engagement</strong> tools</li>
+  </ul>
 
-### nft
-
-- NFT display, management, and trading
-- Collection viewing with floor prices
-- Compressed NFT support
-- Integration with threads and posts
-
-### pumpSwap
-
-- Token swapping using PumpSwap SDK
-- Liquidity pool creation with custom token pairs
-- Liquidity management (add and remove liquidity)
-- Pool creation with custom parameters
-- Real-time quotes and price impact estimates
-- Transaction status monitoring
-
-### pumpFun
-
-- Integration with the Pump.fun ecosystem
-- Meme token creation and management
-- Community engagement tools
-
-### mercuro
-
-- Advanced financial transaction utilities
-- Custom financial operations
+  <h3 style="color: white;">💸 mercuro</h3>
+  <ul style="padding-left: 20px;">
+    <li><strong>Advanced financial</strong> transaction utilities</li>
+    <li><strong>Custom financial</strong> operations</li>
+  </ul>
+</div>
 
 ## Contributing
 
