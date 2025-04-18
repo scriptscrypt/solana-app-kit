@@ -118,101 +118,101 @@ npm install solana-app-kit
 
 ## Tech Stack
 
-<div align="center">
-  <table>
+<div align="center" style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+  <table style="border-collapse: separate; border-spacing: 10px; width: 100%; max-width: 800px;">
     <tr>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://reactnative.dev/" target="_blank" rel="noopener noreferrer">
-          <img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="50" height="50" alt="React Native" />
-          <br />React Native
+          <img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="60" height="60" alt="React Native" />
+          <br /><span style="font-weight: 500; color: #333;">React Native</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://expo.dev/" target="_blank" rel="noopener noreferrer">
-          <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="50" height="50" alt="Expo" />
-          <br />Expo
+          <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="60" height="60" alt="Expo" />
+          <br /><span style="font-weight: 500; color: #333;">Expo</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://solana.com/" target="_blank" rel="noopener noreferrer">
-          <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" width="50" height="50" alt="Solana" />
-          <br />Solana
+          <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" width="60" height="60" alt="Solana" />
+          <br /><span style="font-weight: 500; color: #333;">Solana</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://privy.io/" target="_blank" rel="noopener noreferrer">
-          <img src="https://avatars.githubusercontent.com/u/81824329?s=200&v=4" width="50" height="50" alt="Privy" />
-          <br />Privy
+          <img src="https://avatars.githubusercontent.com/u/81824329?s=200&v=4" width="60" height="60" alt="Privy" />
+          <br /><span style="font-weight: 500; color: #333;">Privy</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://redux-toolkit.js.org/" target="_blank" rel="noopener noreferrer">
-          <img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="50" height="50" alt="Redux" />
-          <br />Redux
+          <img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="60" height="60" alt="Redux" />
+          <br /><span style="font-weight: 500; color: #333;">Redux</span>
         </a>
       </td>
     </tr>
     <tr>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://reactnavigation.org/" target="_blank" rel="noopener noreferrer">
-          <img src="https://reactnavigation.org/img/spiro.svg" width="50" height="50" alt="React Navigation" />
-          <br />React Nav
+          <img src="https://reactnavigation.org/img/spiro.svg" width="60" height="60" alt="React Navigation" />
+          <br /><span style="font-weight: 500; color: #333;">React Nav</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">
-          <img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="50" height="50" alt="TypeScript" />
-          <br />TypeScript
+          <img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="60" height="60" alt="TypeScript" />
+          <br /><span style="font-weight: 500; color: #333;">TypeScript</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://turnkey.io/" target="_blank" rel="noopener noreferrer">
-          <img src="https://avatars.githubusercontent.com/u/104513330?s=200&v=4" width="50" height="50" alt="Turnkey" />
-          <br />Turnkey
+          <img src="https://avatars.githubusercontent.com/u/104513330?s=200&v=4" width="60" height="60" alt="Turnkey" />
+          <br /><span style="font-weight: 500; color: #333;">Turnkey</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://dynamic.xyz/" target="_blank" rel="noopener noreferrer">
-          <img src="https://avatars.githubusercontent.com/u/96269716?s=200&v=4" width="50" height="50" alt="Dynamic" />
-          <br />Dynamic
+          <img src="https://avatars.githubusercontent.com/u/96269716?s=200&v=4" width="60" height="60" alt="Dynamic" />
+          <br /><span style="font-weight: 500; color: #333;">Dynamic</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://docs.expo.dev/versions/latest/sdk/imagepicker/" target="_blank" rel="noopener noreferrer">
-          <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="50" height="50" alt="Image Picker" />
-          <br />Image Picker
+          <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="60" height="60" alt="Image Picker" />
+          <br /><span style="font-weight: 500; color: #333;">Image Picker</span>
         </a>
       </td>
     </tr>
     <tr>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://expressjs.com/" target="_blank" rel="noopener noreferrer">
-          <img src="https://expressjs.com/images/favicon.png" width="50" height="50" alt="Express" style="background-color: white; border-radius: 10px; padding: 5px;" />
-          <br />Express
+          <img src="https://expressjs.com/images/favicon.png" width="60" height="60" alt="Express" style="background-color: white; border-radius: 10px; padding: 5px;" />
+          <br /><span style="font-weight: 500; color: #333;">Express</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://www.postgresql.org/" target="_blank" rel="noopener noreferrer">
-          <img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="50" height="50" alt="PostgreSQL" />
-          <br />PostgreSQL
+          <img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="60" height="60" alt="PostgreSQL" />
+          <br /><span style="font-weight: 500; color: #333;">PostgreSQL</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://github.com/SendArcade/TokenMill" target="_blank" rel="noopener noreferrer">
-          <img src="https://avatars.githubusercontent.com/u/82165905?s=48&v=4" width="50" height="50" alt="TokenMill" />
-          <br />TokenMill
+          <img src="https://avatars.githubusercontent.com/u/82165905?s=48&v=4" width="60" height="60" alt="TokenMill" />
+          <br /><span style="font-weight: 500; color: #333;">TokenMill</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://www.pinata.cloud/" target="_blank" rel="noopener noreferrer">
-          <img src="https://avatars.githubusercontent.com/u/43088506?s=200&v=4" width="50" height="50" alt="Pinata" />
-          <br />Pinata
+          <img src="https://avatars.githubusercontent.com/u/43088506?s=200&v=4" width="60" height="60" alt="Pinata" />
+          <br /><span style="font-weight: 500; color: #333;">Pinata</span>
         </a>
       </td>
-      <td align="center" width="100">
+      <td align="center" style="width: 120px; height: 120px; background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s; padding: 15px;">
         <a href="https://cloud.google.com/storage" target="_blank" rel="noopener noreferrer">
-          <img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-icon.svg" width="50" height="50" alt="Google Cloud" />
-          <br />GCP Storage
+          <img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-icon.svg" width="60" height="60" alt="Google Cloud" />
+          <br /><span style="font-weight: 500; color: #333;">GCP Storage</span>
         </a>
       </td>
     </tr>
