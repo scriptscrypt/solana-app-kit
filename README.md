@@ -113,8 +113,6 @@ You can view the full documentation of the kit at: [https://docs.1doma.in/docs/i
 ## Core Installation
 
 ```sh
-pnpm install solana-app-kit
-# or
 npm install solana-app-kit
 ```
 
@@ -124,31 +122,31 @@ npm install solana-app-kit
   <table>
     <tr>
       <td align="center" width="100">
-        <a href="https://reactnative.dev/">
+        <a href="https://reactnative.dev/" target="_blank" rel="noopener noreferrer">
           <img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="50" height="50" alt="React Native" />
           <br />React Native
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://expo.dev/">
+        <a href="https://expo.dev/" target="_blank" rel="noopener noreferrer">
           <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="50" height="50" alt="Expo" />
           <br />Expo
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://solana.com/">
-          <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="50" height="50" alt="Solana" />
+        <a href="https://solana.com/" target="_blank" rel="noopener noreferrer">
+          <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" width="50" height="50" alt="Solana" />
           <br />Solana
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://privy.io/">
-          <img src="https://avatars.githubusercontent.com/u/102452710" width="50" height="50" alt="Privy" />
+        <a href="https://privy.io/" target="_blank" rel="noopener noreferrer">
+          <img src="https://assets-global.website-files.com/61f2c2da010337077e0cea08/620eca3052f8aa1dcb6d15f8_Open%20Graph%20Icon.png" width="50" height="50" alt="Privy" />
           <br />Privy
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://redux-toolkit.js.org/">
+        <a href="https://redux-toolkit.js.org/" target="_blank" rel="noopener noreferrer">
           <img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="50" height="50" alt="Redux" />
           <br />Redux
         </a>
@@ -156,31 +154,31 @@ npm install solana-app-kit
     </tr>
     <tr>
       <td align="center" width="100">
-        <a href="https://reactnavigation.org/">
+        <a href="https://reactnavigation.org/" target="_blank" rel="noopener noreferrer">
           <img src="https://reactnavigation.org/img/spiro.svg" width="50" height="50" alt="React Navigation" />
           <br />React Nav
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://www.typescriptlang.org/">
+        <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">
           <img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="50" height="50" alt="TypeScript" />
           <br />TypeScript
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://github.com/indutny/bn.js/">
-          <img src="https://raw.githubusercontent.com/indutny/bn.js/master/logo.png" width="50" height="50" alt="BN.js" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Node.js_logo.svg/1280px-Node.js_logo.svg.png'; this.style.padding='5px';" />
+        <a href="https://github.com/indutny/bn.js/" target="_blank" rel="noopener noreferrer">
+          <img src="https://user-images.githubusercontent.com/3481514/35353572-e3171388-00fa-11e8-9590-abb3c0fa4cbb.png" width="50" height="50" alt="BN.js" />
           <br />BN.js
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://github.com/indiespirit/react-native-chart-kit">
-          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTs-GZccRW39Io9rmf28GSJy3dKcOWs5OfIoQ&usqp=CAU" width="50" height="50" alt="Chart Kit" style="border-radius: 10px;" />
+        <a href="https://github.com/indiespirit/react-native-chart-kit" target="_blank" rel="noopener noreferrer">
+          <img src="https://raw.githubusercontent.com/indiespirit/react-native-chart-kit/master/logo.png" width="50" height="50" alt="Chart Kit" />
           <br />Chart Kit
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://docs.expo.dev/versions/latest/sdk/imagepicker/">
+        <a href="https://docs.expo.dev/versions/latest/sdk/imagepicker/" target="_blank" rel="noopener noreferrer">
           <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="50" height="50" alt="Image Picker" />
           <br />Image Picker
         </a>
@@ -188,31 +186,31 @@ npm install solana-app-kit
     </tr>
     <tr>
       <td align="center" width="100">
-        <a href="https://expressjs.com/">
-          <img src="https://cdn.worldvectorlogo.com/logos/express-109.svg" width="50" height="50" alt="Express" style="background-color: white; border-radius: 10px; padding: 5px;" />
+        <a href="https://expressjs.com/" target="_blank" rel="noopener noreferrer">
+          <img src="https://expressjs.com/images/favicon.png" width="50" height="50" alt="Express" style="background-color: white; border-radius: 10px; padding: 5px;" />
           <br />Express
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://www.postgresql.org/">
+        <a href="https://www.postgresql.org/" target="_blank" rel="noopener noreferrer">
           <img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="50" height="50" alt="PostgreSQL" />
           <br />PostgreSQL
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://github.com/SendArcade/TokenMill">
-          <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="50" height="50" alt="TokenMill" />
+        <a href="https://github.com/SendArcade/TokenMill" target="_blank" rel="noopener noreferrer">
+          <img src="https://user-images.githubusercontent.com/39682866/156170514-3a28ebbd-5e3f-4a1f-a834-2c2ae07416a8.png" width="50" height="50" alt="TokenMill" />
           <br />TokenMill
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://www.pinata.cloud/">
-          <img src="https://avatars.githubusercontent.com/u/44420206" width="50" height="50" alt="Pinata" />
+        <a href="https://www.pinata.cloud/" target="_blank" rel="noopener noreferrer">
+          <img src="https://www.gitbook.com/cdn-cgi/image/width=40,dpr=2,height=40,fit=contain,format=auto/https%3A%2F%2F4031390532-files.gitbook.io%2F~%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fspaces%252F-LX2wpUXI1eWMPJ3lcfr%252Favatar-1613988195216.png%3Fgeneration%3D1613988195510147%26alt%3Dmedia" width="50" height="50" alt="Pinata" />
           <br />Pinata
         </a>
       </td>
       <td align="center" width="100">
-        <a href="https://cloud.google.com/storage">
+        <a href="https://cloud.google.com/storage" target="_blank" rel="noopener noreferrer">
           <img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-icon.svg" width="50" height="50" alt="Google Cloud" />
           <br />GCP Storage
         </a>
