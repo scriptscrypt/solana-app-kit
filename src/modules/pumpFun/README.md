@@ -80,6 +80,17 @@ import { PumpfunCard } from '@solana-app-kit/pumpfun';
 </PumpfunCard>
 ```
 
+### PumpSwapScreen
+
+A dedicated screen for the PumpSwap AMM, offering tabs for swapping tokens, adding/removing liquidity, and creating new pools.
+
+```tsx
+import { PumpSwapScreen } from '@solana-app-kit/pumpfun';
+
+// Usage
+<PumpSwapScreen />
+```
+
 ## Screen
 
 ### PumpfunScreen
@@ -131,6 +142,19 @@ The module provides services for direct interaction with the Pump.fun platform:
 - `sellTokenViaPumpfun`: Sell tokens through Pump.fun or Raydium
 - `createAndBuyTokenViaPumpfun`: Create a new token and make an initial purchase
 
+It also includes services for interacting with the PumpSwap AMM:
+
+- `PumpSwapServices.swapTokens`: Perform a token swap.
+- `PumpSwapServices.addLiquidity`: Add liquidity to a pool.
+- `PumpSwapServices.removeLiquidity`: Remove liquidity from a pool.
+- `PumpSwapServices.createPool`: Create a new liquidity pool.
+- `PumpSwapServices.getSwapQuote`: Get a quote for a token swap.
+- `PumpSwapServices.getDepositQuoteFromBase`: Get a quote for adding liquidity (base token).
+- `PumpSwapServices.getDepositQuoteFromQuote`: Get a quote for adding liquidity (quote token).
+- `PumpSwapServices.getWithdrawalQuote`: Get a quote for removing liquidity.
+- `PumpSwapServices.getPools`: Fetch available liquidity pools.
+- `PumpSwapServices.getPumpAmmSdk`: Access the underlying PumpSwap AMM SDK functions.
+
 ## Utilities
 
 Various utilities for working with the Pump.fun platform:
@@ -143,6 +167,10 @@ Various utilities for working with the Pump.fun platform:
 - `buildPumpFunBuyTransaction`: Build a transaction for buying on Pump.fun
 - `buildPumpFunSellTransaction`: Build a transaction for selling on Pump.fun
 
+Utilities for PumpSwap operations:
+
+- `PumpSwapUtils.DEFAULT_SLIPPAGE`: Default slippage tolerance for swaps.
+
 ## Types
 
 The module exports a comprehensive set of TypeScript interfaces for type safety:
@@ -152,6 +180,22 @@ The module exports a comprehensive set of TypeScript interfaces for type safety:
 - `PumpfunSellSectionProps`
 - `PumpfunLaunchSectionProps`
 - `SelectedToken`
+- `BasePumpSwapProps`
+- `PumpSwapCardProps`
+- `PumpSwapSectionProps`
+- `AddLiquiditySectionProps`
+- `RemoveLiquiditySectionProps`
+- `PoolCreationSectionProps`
+- `SwapParams`
+- `AddLiquidityParams`
+- `RemoveLiquidityParams`
+- `CreatePoolParams`
+- `SwapQuoteParams`
+- `LiquidityQuoteParams`
+- `LiquidityQuoteResult`
+- `Pool` (re-exported from SDK)
+- `Direction` (re-exported from SDK)
+- `PumpSwapContextType`
 - And more...
 
 ## Integration

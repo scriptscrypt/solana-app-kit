@@ -20,7 +20,7 @@ import {
   extractAmountFromDescription,
   getTransactionTypeInfo
 } from '../../utils/profileActionsUtils';
-import { ActionsPageProps } from '../../types';
+import { ActionsPageProps } from '../../types/index';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchWalletActionsWithCache } from '@/shared/state/profile/reducer';
 

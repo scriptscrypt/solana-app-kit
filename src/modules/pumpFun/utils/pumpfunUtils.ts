@@ -15,12 +15,14 @@ import {
   PumpFunBondingBuyParams, 
   PumpFunBondingSellParams 
 } from '../types';
+import { HELIUS_STAKED_URL } from '@env';
 
 /**
  * Setup: a standard AnchorProvider.
  */
 export function getProvider(): AnchorProvider {
-  const connection = new Connection(ENDPOINTS.helius, 'confirmed');
+  const RPC_URL = HELIUS_STAKED_URL || ENDPOINTS.helius;
+  const connection = new Connection(RPC_URL, 'confirmed');
   // Dummy wallet (no signing needed here).
   const dummyWallet = {
     publicKey: new PublicKey('11111111111111111111111111111111'),
@@ -29,6 +31,8 @@ export function getProvider(): AnchorProvider {
   };
   return new AnchorProvider(connection, dummyWallet, {
     commitment: 'confirmed',
+    // Disable NodeWallet for React Native
+    skipPreflight: true,
   });
 }
 
@@ -140,7 +144,7 @@ export function parseRaydiumVersionedTransaction(
   base64Tx: string,
 ): VersionedTransaction {
   const rawTx = Buffer.from(base64Tx, 'base64');
-  return VersionedTransaction.deserialize(rawTx);
+  return VersionedTransaction.deserialize(Uint8Array.from(rawTx));
 }
 
 /* ------------------------------------------------------------------

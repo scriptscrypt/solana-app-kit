@@ -32,6 +32,7 @@ export default function OtherProfileScreen() {
   const [username, setUsername] = useState('Loading...');
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [attachmentData, setAttachmentData] = useState<any>({});
+  const [description, setDescription] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Track the current profile ID to handle navigation between profiles
@@ -105,6 +106,9 @@ export default function OtherProfileScreen() {
         }
         if (data.attachmentData) {
           setAttachmentData(data.attachmentData);
+        }
+        if (data.description) {
+          setDescription(data.description);
         }
       } else {
         throw new Error(data.error || 'Failed to fetch user profile');
@@ -195,6 +199,7 @@ export default function OtherProfileScreen() {
           address: userId,
           profilePicUrl: profilePicUrl || '',
           username: username,
+          description: description,
           attachmentData: attachmentData,
         }}
         posts={myPosts}

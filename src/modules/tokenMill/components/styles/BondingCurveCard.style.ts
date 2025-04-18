@@ -216,4 +216,21 @@ export const BondingCurveCardStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+  mainContainer: {
+    width: '100%',
+    flexDirection: 'column',
+  },
+  chartContainer: {
+    padding: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  configuratorContainer: {
+    width: '100%',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 10,
+  },
 }); 
