@@ -1,8 +1,8 @@
 <div align="center">
 
-# Solana App Kit
+# Solana App Kit'
 
-![Solana App Kit Cover](src/assets/images/Cover.png)
+![Solana App Kit Cover]([src/assets/images/Cover.png](https://github.com/user-attachments/assets/997a54b3-989a-42f4-af76-1d69d41422a4))
 
 <!-- Stats badges; using SendArcade/solana-app-kit -->
 
