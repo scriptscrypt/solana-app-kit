@@ -15,6 +15,7 @@ import FollowersFollowingListScreen from '@/core/thread/components/FollowersFoll
 import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
 import IntroScreen from '@/screens/Common/IntroScreen/IntroScreen';
 import LoginScreen from '@/screens/Common/LoginScreen/LoginScreen';
+import { MercuroScreen } from '@/modules/mercuro';
 
 export type RootStackParamList = {
   IntroScreen: undefined;
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   NftScreen: undefined;
   ChatScreen: undefined;
   PumpSwap: undefined;
+  MercuroScreen: undefined;
   // NEW ROUTE
   OtherProfile: { userId: string };
   PostThread: { postId: string };
@@ -54,6 +56,7 @@ export default function RootNavigator() {
           <Stack.Screen name="NftScreen" component={NftScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
           <Stack.Screen name="PumpSwap" component={PumpSwapScreen} />
+          <Stack.Screen name="MercuroScreen" component={MercuroScreen} />
 
           {/* NEW SCREEN for viewing other user's profile */}
           <Stack.Screen name="OtherProfile" component={OtherProfileScreen} />

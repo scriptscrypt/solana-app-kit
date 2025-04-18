@@ -47,6 +47,14 @@ const sections = [
     backgroundColor: '#E1BEE7', // light purple
     navigateTo: 'NftScreen',
   },
+  // {
+  //   key: 'mercuro',
+  //   title: 'Mercuro Onramp/Offramp',
+  //   description:
+  //     'Easily convert between fiat and crypto with secure on-ramp and off-ramp services.',
+  //   backgroundColor: '#B3E5FC', // light sky blue
+  //   navigateTo: 'MercuroScreen',
+  // },
 ];
 
 // Define additional Android-specific styles
