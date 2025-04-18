@@ -113,6 +113,8 @@ You can view the full documentation of the kit at: [https://docs.1doma.in/docs/i
 ## Core Installation
 
 ```sh
+pnpm install solana-app-kit
+# or
 npm install solana-app-kit
 ```
 
@@ -121,47 +123,99 @@ npm install solana-app-kit
 <div align="center">
   <table>
     <tr>
-      <td align="center" width="96">
-        <img src="https://cdn.worldvectorlogo.com/logos/react-native-1.svg" width="48" height="48" alt="React Native" />
-        <br>React Native
+      <td align="center" width="100">
+        <a href="https://reactnative.dev/">
+          <img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="50" height="50" alt="React Native" />
+          <br />React Native
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://cdn.worldvectorlogo.com/logos/expo-1.svg" width="48" height="48" alt="Expo" />
-        <br>Expo
+      <td align="center" width="100">
+        <a href="https://expo.dev/">
+          <img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="50" height="50" alt="Expo" />
+          <br />Expo
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="48" height="48" alt="Solana" />
-        <br>Solana
+      <td align="center" width="100">
+        <a href="https://solana.com/">
+          <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="50" height="50" alt="Solana" />
+          <br />Solana
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://user-images.githubusercontent.com/6201287/229218887-297ac61e-c0ed-4f5e-b9f4-23ca4d06ca22.png" width="48" height="48" alt="Dialect" />
-        <br>Dialect
+      <td align="center" width="100">
+        <a href="https://privy.io/">
+          <img src="https://avatars.githubusercontent.com/u/102452710" width="50" height="50" alt="Privy" />
+          <br />Privy
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://privy.io/logo-dark.svg" width="48" height="48" alt="Privy" />
-        <br>Privy
+      <td align="center" width="100">
+        <a href="https://pump.fun/">
+          <img src="https://pbs.twimg.com/profile_images/1677356325359681537/I5U3ChZ3_400x400.jpg" width="50" height="50" alt="Pump" />
+          <br />Pump SDK
+        </a>
       </td>
     </tr>
     <tr>
-      <td align="center" width="96">
-        <img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="48" height="48" alt="Redux" />
-        <br>Redux
+      <td align="center" width="100">
+        <a href="https://redux-toolkit.js.org/">
+          <img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="50" height="50" alt="Redux" />
+          <br />Redux
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://reactnavigation.org/img/spiro.svg" width="48" height="48" alt="React Navigation" />
-        <br>React Nav
+      <td align="center" width="100">
+        <a href="https://reactnavigation.org/">
+          <img src="https://reactnavigation.org/img/spiro.svg" width="50" height="50" alt="React Navigation" />
+          <br />React Nav
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="48" height="48" alt="TypeScript" />
-        <br>TypeScript
+      <td align="center" width="100">
+        <a href="https://www.typescriptlang.org/">
+          <img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="50" height="50" alt="TypeScript" />
+          <br />TypeScript
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://cdn.worldvectorlogo.com/logos/nodejs-icon.svg" width="48" height="48" alt="Node.js" />
-        <br>Node.js
+      <td align="center" width="100">
+        <a href="https://expressjs.com/">
+          <img src="https://cdn.worldvectorlogo.com/logos/express-109.svg" width="50" height="50" alt="Express" style="background-color: white; border-radius: 10px; padding: 5px;" />
+          <br />Express
+        </a>
       </td>
-      <td align="center" width="96">
-        <img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="48" height="48" alt="PostgreSQL" />
-        <br>PostgreSQL
+      <td align="center" width="100">
+        <a href="https://www.postgresql.org/">
+          <img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="50" height="50" alt="PostgreSQL" />
+          <br />PostgreSQL
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="100">
+        <a href="https://dynamic.xyz/">
+          <img src="https://avatars.githubusercontent.com/u/97303201" width="50" height="50" alt="Dynamic" />
+          <br />Dynamic
+        </a>
+      </td>
+      <td align="center" width="100">
+        <a href="https://turnkey.io/">
+          <img src="https://avatars.githubusercontent.com/u/74845385" width="50" height="50" alt="Turnkey" />
+          <br />Turnkey
+        </a>
+      </td>
+      <td align="center" width="100">
+        <a href="https://cloud.google.com/storage">
+          <img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-icon.svg" width="50" height="50" alt="Google Cloud" />
+          <br />GCP Storage
+        </a>
+      </td>
+      <td align="center" width="100">
+        <a href="https://reanimated2.com/">
+          <img src="https://raw.githubusercontent.com/software-mansion/react-native-reanimated/master/img/logo.svg" width="50" height="50" alt="Reanimated" />
+          <br />Reanimated
+        </a>
+      </td>
+      <td align="center" width="100">
+        <a href="https://anchor-lang.com/">
+          <img src="https://camo.githubusercontent.com/27a0a017ba18aded52e8b0b63c3370cad34b377476a73e157250ad05308ea2aa/68747470733a2f2f63646e2e7261776769742e636f6d2f7a656e6261736963732f676c617373792d6c6f676f732f6d61737465722f706e6773732f616e63686f722e706e67" width="50" height="50" alt="Anchor" />
+          <br />Anchor
+        </a>
       </td>
     </tr>
   </table>
@@ -226,6 +280,8 @@ When running the Expo development server:
 
 ## Development Mode Guide
 
+For details on running the app in development mode, including environment variable handling and troubleshooting, please refer to the [Development Mode Guide](docs/DEV_MODE.md).
+
 ## Getting Started
 
 This project consists of two main parts:
@@ -245,8 +301,6 @@ This project consists of two main parts:
 2. Install dependencies:
 
    ```sh
-   yarn install
-   # or
    pnpm install
    ```
 
@@ -332,6 +386,8 @@ This project consists of two main parts:
 
 4. Start the development server:
    ```sh
+   pnpm dev
+   # or
    yarn dev
    ```
 
@@ -353,6 +409,8 @@ The configuration in `eas.json` specifies the `.env.local` file for each build p
 #### Start Metro Bundler
 
 ```sh
+pnpm start
+# or
 yarn start
 # or
 npm start
@@ -373,6 +431,8 @@ bundle exec pod install
 Then run the app:
 
 ```sh
+pnpm ios
+# or
 yarn ios
 # or
 npm run ios
@@ -381,6 +441,8 @@ npm run ios
 #### Android
 
 ```sh
+pnpm android
+# or
 yarn android
 # or
 npm run android
