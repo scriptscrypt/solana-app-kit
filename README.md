@@ -9,9 +9,9 @@
 [![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=flat-square)](https://github.com/SendArcade/solana-app-kit/releases)
 [![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=flat-square)](https://github.com/SendArcade/solana-app-kit/network/members)
 [![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&message=Apache-2.0&color=brightgreen&style=flat-square)](https://github.com/SendArcade/solana-app-kit/blob/main/LICENSE)
-[![App Store](https://img.shields.io/badge/App_Store-0D96F6?style=flat-square&logo=app-store&logoColor=white)](https://apps.apple.com/app/send-arcade/id1)
-[![Play Store](https://img.shields.io/badge/Play_Store-414141?style=flat-square&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.sendarcade)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=flat-square&logo=twitter&logoColor=white)](https://twitter.com/sendarcade)
+<!-- [![App Store](https://img.shields.io/badge/App_Store-0D96F6?style=flat-square&logo=app-store&logoColor=white)](https://apps.apple.com/app/send-arcade/id1)
+[![Play Store](https://img.shields.io/badge/Play_Store-414141?style=flat-square&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.sendarcade) -->
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=flat-square&logo=twitter&logoColor=white)](https://x.com/sendarcadefun)
 
 A modern React Native social application built on the Solana blockchain, providing a complete starter kit for building decentralized social experiences.
 
@@ -596,7 +596,7 @@ Common issues and their solutions:
 Join our community to get help, share your projects, and contribute:
 
 - [Discord](https://discord.gg/sendarcade)
-- [Twitter](https://twitter.com/sendarcade)
+- [Twitter](https://x.com/sendarcadefun)
 
 ## License
 
