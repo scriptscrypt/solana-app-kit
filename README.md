@@ -1,5 +1,7 @@
 <div align="center">
 
+# Solana App Kit
+
 ![Solana App Kit Cover](src/assets/images/Cover.png)
 
 <!-- Stats badges; using SendArcade/solana-app-kit -->
@@ -8,56 +10,221 @@
 ![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=flat-square)
 ![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&message=Apache-2.0&color=brightgreen&style=flat-square)
 
-# Solana App Kit
-
 A modern React Native social application built on the Solana blockchain, providing a complete starter kit for building decentralized social experiences.
+
+Anyone—whether a seasoned React Native developer or a newcomer—can bring their ideas and seamlessly integrate them with Solana protocols.
 
 </div>
 
-## Features
+## Table of Contents
 
-- **Blockchain Integration**: Built on Solana for fast, low-cost transactions
-- **Wallet Management**: Multiple wallet connection options including embedded wallets
-- **Social Features**: Feed, profiles, messaging via Dialect Blinks
-- **Authentication**: Multiple auth options with Privy integration
-- **Cryptocurrency Tracking**: View and track coin details and performance
-- **Modern UI**: Beautiful, responsive interface with tab-based navigation
-- **Token Management**:
-  - Token creation and launching
-  - Bonding curve configuration
-  - Token trading functionality
-- **NFT Support**: Display and manage NFT collectibles
-- **Portfolio Management**: Track and manage token holdings
-- **Community Features**: User profiles, following system, and social interactions
-- **Backend Server**: Full-featured Express.js server for blockchain interactions
+- [Core Blockchain Features](#core-blockchain-features)
+- [App Features](#app-features)
+- [Documentation](#documentation)
+- [Core Installation](#core-installation)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Hotkeys](#hotkeys)
+- [Development Mode Guide](#development-mode-guide)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Modules](#modules)
+- [Examples](#examples)
+- [Production Deployment](#production-deployment)
+- [Dependencies](#dependencies)
+- [Contributing](#contributing)
+- [License](#license)
+- [Troubleshooting](#troubleshooting)
+- [Security](#security)
+- [Community](#community)
+
+## Core Blockchain Features
+
+### Token Operations
+
+- Token creation and launching with TokenMill
+- Token trading through PumpSwap SDK
+- Token balances and transaction history
+- Bonding curve configuration and visualization
+
+### NFT Integration
+
+- NFT fetching and display
+- NFT listing and purchase
+- Collection viewing with floor prices
+- Compressed NFT support
+
+### DeFi Capabilities
+
+- Token swapping via PumpSwap
+- Liquidity pool creation and management
+- Staking and vesting functionality
+- Market data integration
+- Fund management for users and markets
+
+### Market Data
+
+- Real-time price charts
+- Portfolio tracking
+- Integration with CoinGecko, BirdEye, and CoinMarketCap
+
+## App Features
+
+### Wallet Integration
+
+- Multiple wallet connection methods
+- Embedded wallet support via Privy
+- External wallet connections
+- Dynamic wallet integration
+- Transaction signing and management
+- Turnkey wallet management
+
+### Social Features
+
+- User profiles and following system
+- Social feed with posts and interactions
+- Messaging via Dialect Blinks
+- Community engagement features
+- NFT display and management
+- IPFS storage for metadata
+
+### UI/UX
+
+- Modern, responsive design
+- Tab-based navigation
+- Interactive charts and visualizations
+- Loading states and error handling
+- Platform-specific optimizations
+
+### Backend Features
+
+- RESTful API for token operations
+- Social data storage and retrieval
+- Token market creation and management
+- Swapping tokens via Jupiter and PumpSwap
+- Staking and vesting functionality
+- Image upload and storage
+
+## Documentation
+
+You can view the full documentation of the kit at: [https://docs.1doma.in/docs/introduction](https://docs.1doma.in/docs/introduction)
+
+## Core Installation
+
+```sh
+npm install solana-app-kit
+```
 
 ## Tech Stack
 
-- **React Native**: Cross-platform mobile development
-- **Expo**: Simplified React Native development and deployment
-- **Solana**: Fast, secure, and censorship-resistant blockchain
-- **Dialect**: Native Blinks Integration
-- **Privy**: Authentication and wallet management
-- **Redux**: State management with Redux Toolkit
-- **React Navigation**: Tab and stack-based navigation
-- **TypeScript**: Type-safe development
-- **BN.js**: Big number handling for blockchain operations
-- **React Native Chart Kit**: Data visualization
-- **Expo Image Picker**: Image handling for NFTs and profiles
-- **Express.js**: Backend server framework
-- **PostgreSQL**: Database for user data and social features
-- **TokenMill**: Solana program for token management
-- **Pinata**: IPFS storage integration
-- **Google Cloud Storage**: Image and file storage
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="96">
+        <img src="https://cdn.worldvectorlogo.com/logos/react-native-1.svg" width="48" height="48" alt="React Native" />
+        <br>React Native
+      </td>
+      <td align="center" width="96">
+        <img src="https://cdn.worldvectorlogo.com/logos/expo-1.svg" width="48" height="48" alt="Expo" />
+        <br>Expo
+      </td>
+      <td align="center" width="96">
+        <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="48" height="48" alt="Solana" />
+        <br>Solana
+      </td>
+      <td align="center" width="96">
+        <img src="https://user-images.githubusercontent.com/6201287/229218887-297ac61e-c0ed-4f5e-b9f4-23ca4d06ca22.png" width="48" height="48" alt="Dialect" />
+        <br>Dialect
+      </td>
+      <td align="center" width="96">
+        <img src="https://privy.io/logo-dark.svg" width="48" height="48" alt="Privy" />
+        <br>Privy
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="96">
+        <img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="48" height="48" alt="Redux" />
+        <br>Redux
+      </td>
+      <td align="center" width="96">
+        <img src="https://reactnavigation.org/img/spiro.svg" width="48" height="48" alt="React Navigation" />
+        <br>React Nav
+      </td>
+      <td align="center" width="96">
+        <img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="48" height="48" alt="TypeScript" />
+        <br>TypeScript
+      </td>
+      <td align="center" width="96">
+        <img src="https://cdn.worldvectorlogo.com/logos/nodejs-icon.svg" width="48" height="48" alt="Node.js" />
+        <br>Node.js
+      </td>
+      <td align="center" width="96">
+        <img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="48" height="48" alt="PostgreSQL" />
+        <br>PostgreSQL
+      </td>
+    </tr>
+  </table>
+</div>
 
 ## Prerequisites
 
 - Node.js >= 18
-- Yarn or npm
+- pnpm or yarn or npm
 - iOS: XCode and CocoaPods
 - Android: Android Studio and Android SDK
 - [Expo CLI](https://docs.expo.dev/get-started/installation/)
 - PostgreSQL database (for the server)
+
+## Quick Start
+
+1. Clone the repository:
+
+   ```sh
+   git clone https://github.com/SendArcade/solana-app-kit.git
+   cd solana-app-kit
+   ```
+
+2. Install dependencies:
+
+   ```sh
+   pnpm install
+   ```
+
+3. Start the Expo development server:
+
+   ```sh
+   pnpm start
+   ```
+
+4. Run on a specific platform:
+
+   ```sh
+   # For iOS
+   npx expo run:ios
+
+   # For Android
+   npx expo run:android
+   ```
+
+To run in development mode with cache clearing:
+
+```sh
+pnpm start --dev --clear
+```
+
+## Hotkeys
+
+When running the Expo development server:
+
+- Press `i` to open on iOS simulator
+- Press `a` to open on Android emulator
+- Press `w` to open in web browser
+- Press `r` to reload the app
+- Press `m` to toggle the menu
+- Press `d` to open developer tools
+
+## Development Mode Guide
 
 ## Getting Started
 
@@ -80,24 +247,40 @@ This project consists of two main parts:
    ```sh
    yarn install
    # or
-   npm install
+   pnpm install
    ```
 
 3. Set up environment variables:
    Create a `.env.local` file in the root directory with the necessary variables as shown in the example below:
+
    ```
+   # Blockchain
+   CLUSTER=mainnet-beta
+
+   # Authentication
    PRIVY_APP_ID=your_privy_app_id
    PRIVY_CLIENT_ID=your_privy_client_id
+   DYNAMIC_ENVIRONMENT_ID=your_dynamic_env_id
+
+   # Turnkey wallet
    TURNKEY_BASE_URL=https://api.turnkey.com
    TURNKEY_RP_ID=host.exp.exponent
    TURNKEY_RP_NAME=send-fi
-   DYNAMIC_ENVIRONMENT_ID=your_dynamic_env_id
+   TURNKEY_ORGANIZATION_ID=your_turnkey_organization_id
+   TURNKEY_API_PUBLIC_KEY=your_turnkey_public_key
+   TURNKEY_API_PRIVATE_KEY=your_turnkey_private_key
+
+   # APIs
    HELIUS_API_KEY=your_helius_api_key
+   HELIUS_RPC_CLUSTER=mainnet
+   HELIUS_STAKED_URL=your_helius_staked_url
+   HELIUS_STAKED_API_KEY=your_helius_staked_api_key
    SERVER_URL=your_server_url
    TENSOR_API_KEY=your_tensor_api_key
-   CLUSTER=mainnet-beta
    PARA_API_KEY=your_para_api_key
    COINGECKO_API_KEY=your_coingecko_api_key
+   BIRDEYE_API_KEY=your_birdeye_api_key
+   COIN_MARKE_CAPAPI_KEY=your_coinmarketcap_api_key
    ```
 
 ### Server Installation
@@ -111,7 +294,7 @@ This project consists of two main parts:
 2. Install server dependencies:
 
    ```sh
-   yarn install
+   pnpm install
    ```
 
 3. Set up server environment variables:
@@ -120,7 +303,32 @@ This project consists of two main parts:
    cp .env.example .env
    ```
 
-   Edit the `.env` file to include your specific credentials and configuration.
+   Required server environment variables:
+
+   ```
+   WALLET_PRIVATE_KEY=your_wallet_private_key
+   RPC_URL=your_helius_rpc_url
+   TOKEN_MILL_PROGRAMID=your_token_mill_program_id
+   TOKEN_MILL_CONFIG_PDA=your_token_mill_config_pda
+   SWAP_AUTHORITY_KEY=your_swap_authority_key
+
+   # Pinata for IPFS
+   PINATA_JWT=your_pinata_jwt
+   PINATA_GATEWAY=your_pinata_gateway
+   PINATA_SECRET=your_pinata_secret
+   PINATA_API_KEY=your_pinata_api_key
+
+   # Database and Storage
+   DATABASE_URL=your_postgresql_url
+   GCS_BUCKET_NAME=your_gcs_bucket_name
+   SERVICE_ACCOUNT_EMAIL=your_service_account_email
+
+   # Turnkey
+   TURNKEY_API_URL=https://api.turnkey.com
+   TURNKEY_ORGANIZATION_ID=your_turnkey_organization_id
+   TURNKEY_API_PUBLIC_KEY=your_turnkey_api_public_key
+   TURNKEY_API_PRIVATE_KEY=your_turnkey_api_private_key
+   ```
 
 4. Start the development server:
    ```sh
@@ -185,21 +393,22 @@ solana-app-kit/
 ├── src/                # Mobile app source code
 │   ├── assets/         # Images, icons, and other static assets
 │   ├── components/     # Reusable UI components
-│   │   ├── actions/    # Action-related components
-│   │   ├── wallet/     # Wallet-related components
-│   │   ├── thread/     # Social thread components
-│   │   ├── tokenMill/  # Token management components
-│   │   └── ...         # Other UI components
+│   ├── context/        # React context providers
 │   ├── hooks/          # Custom React hooks
+│   ├── modules/        # Feature modules (core functionality)
+│   │   ├── mercuro/    # Advanced financial utilities
+│   │   ├── nft/        # NFT display and management
+│   │   ├── onChainData/ # On-chain data fetching and display
+│   │   ├── pumpFun/    # Pump.fun integration
+│   │   ├── pumpSwap/   # Token swapping and liquidity pools
+│   │   ├── tokenMill/  # Token creation and management
+│   │   └── walletProviders/ # Wallet connection adapters
 │   ├── navigation/     # Navigation configuration
-│   ├── screens/        # App screens
-│   ├── services/       # API and service integrations
-│   │   ├── pumpfun/    # Pump.fun integration
-│   │   ├── tokenMill/  # Token mill service
-│   │   └── walletProviders/ # Wallet provider integrations
+│   ├── screens/        # App screens and UI flows
+│   ├── services/       # API integrations and business logic
 │   ├── state/          # Redux store and slices
 │   ├── types/          # TypeScript type definitions
-│   └── utils/          # Utility functions
+│   └── utils/          # Utility functions and helpers
 ├── server/             # Backend server code
 │   ├── src/            # Server source code
 │   │   ├── controllers/ # Controller functions
@@ -212,71 +421,93 @@ solana-app-kit/
 │   └── README.md       # Server documentation
 ├── App.tsx             # Main application component
 ├── index.js            # Entry point
+├── docs/               # Documentation files
 ├── CONTRIBUTING.md     # Contribution guidelines
 └── package.json        # Dependencies and scripts
 ```
 
-## Key Features
+## Modules
 
-### Wallet Integration
+The Solana App Kit provides several modular features that can be used independently:
 
-- Multiple wallet connection methods
-- Embedded wallet support via Privy
-- External wallet connections
-- Dynamic wallet integration
-- Transaction signing and management
-- Turnkey wallet management
+### walletProviders
 
-### Token Management
+- Multiple wallet connection methods (Privy, Dynamic, Mobile Wallet Adapter)
+- Standardized wallet interface
+- Transaction handling across providers
+- Support for embedded wallets, social login, and external wallets
 
-- Token creation and launching
-- Bonding curve configuration
-- Price curve visualization
-- Token trading functionality
-- Portfolio tracking
-- TokenMill integration
+### tokenMill
 
-### Social Features
+- Token creation with configurable parameters
+- Bonding curve configuration for token pricing
+- Token swapping (buy/sell) functionality
+- Staking tokens for rewards
+- Creating and releasing vesting plans
+- Fund management for users and markets
 
-- User profiles and following system
-- Social feed with posts and interactions
-- Messaging via Dialect Blinks
-- Community engagement features
-- NFT display and management
-- IPFS storage for metadata
+### onChainData
 
-### Backend Features
+- Fetching on-chain data with optimized RPC calls
+- Token balance tracking
+- Transaction history display
+- Real-time data synchronization
 
-- RESTful API for token operations
-- Social data storage and retrieval
-- Token market creation and management
-- Swapping tokens via Jupiter and PumpSwap
-- Staking and vesting functionality
-- Image upload and storage
+### nft
 
-### UI/UX
+- NFT display, management, and trading
+- Collection viewing with floor prices
+- Compressed NFT support
+- Integration with threads and posts
 
-- Modern, responsive design
-- Tab-based navigation
-- Interactive charts and visualizations
-- Loading states and error handling
-- Platform-specific optimizations
+### pumpSwap
+
+- Token swapping using PumpSwap SDK
+- Liquidity pool creation with custom token pairs
+- Liquidity management (add and remove liquidity)
+- Pool creation with custom parameters
+- Real-time quotes and price impact estimates
+- Transaction status monitoring
+
+### pumpFun
+
+- Integration with the Pump.fun ecosystem
+- Meme token creation and management
+- Community engagement tools
+
+### mercuro
+
+- Advanced financial transaction utilities
+- Custom financial operations
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+For detailed guidelines on how to contribute to this project, see our [Contributing Guide](CONTRIBUTING.md).
 
-For more details, see our [Contributing Guide](CONTRIBUTING.md) and the [Server Contributing Guide](server/CONTRIBUTING.md).
+## Security
+
+This toolkit handles transaction generation, signing and sending, using provided wallets. Always ensure you're using it in a secure environment and never share your private keys.
+
+## Troubleshooting
+
+Common issues and their solutions:
+
+- **Expo build errors**: Clear your cache with `expo start --clear`
+- **Wallet connection issues**: Ensure you're using the correct provider and have properly configured environment variables
+- **iOS simulator issues**: Try resetting the simulator or running `pod install` in the iOS directory
+
+## Community
+
+Join our community to get help, share your projects, and contribute:
+
+- [Discord](https://discord.gg/sendarcade)
+- [Twitter](https://twitter.com/sendarcade)
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache-2.0 License - see the LICENSE file for details.
 
 ---
 
