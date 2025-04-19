@@ -13,6 +13,7 @@ import { PortfolioData, AssetItem } from '@/modules/dataModule';
 // If TypeScript still complains, explicitly extend the imported type
 interface ExtendedProfileViewProps extends ProfileViewProps {
   onEditPost?: (post: ThreadPost) => void;
+  onShareProfile?: () => void;
 }
 
 // Define Action type locally if not exported
@@ -42,6 +43,7 @@ function ProfileViewComponent({
   fetchNftsError,
   onAvatarPress,
   onEditProfile,
+  onShareProfile,
   amIFollowing,
   areTheyFollowingMe,
   onFollowPress,
@@ -74,6 +76,7 @@ function ProfileViewComponent({
     isOwnProfile,
     onAvatarPress,
     onEditProfile,
+    onShareProfile,
     amIFollowing,
     areTheyFollowingMe,
     onFollowPress,
@@ -98,6 +101,7 @@ function ProfileViewComponent({
     // Callback dependencies
     onAvatarPress,
     onEditProfile,
+    onShareProfile,
     onFollowPress,
     onUnfollowPress,
     onPressFollowers,
@@ -223,6 +227,7 @@ function arePropsEqual(prev: ExtendedProfileViewProps, next: ExtendedProfileView
   if (prev.onPressPost !== next.onPressPost) return false;
   if (prev.onAvatarPress !== next.onAvatarPress) return false;
   if (prev.onEditProfile !== next.onEditProfile) return false;
+  if (prev.onShareProfile !== next.onShareProfile) return false;
   if (prev.onFollowPress !== next.onFollowPress) return false;
   if (prev.onUnfollowPress !== next.onUnfollowPress) return false;
   if (prev.onPressFollowers !== next.onPressFollowers) return false;

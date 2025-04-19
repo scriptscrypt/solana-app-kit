@@ -4,6 +4,7 @@
  */
 
 import { TransactionEvents } from '../types';
+import COLORS from '../../../assets/colors';
 
 /**
  * Action data model representing a wallet transaction/activity
@@ -143,7 +144,7 @@ export function getTransactionTypeInfo(type: string): {
   if (lowerType.includes('transfer')) {
     return {
       icon: 'exchange-alt',
-      color: '#3871DD',
+      color: COLORS.brandBlue,
       label: 'Transfer',
     };
   }
@@ -151,7 +152,7 @@ export function getTransactionTypeInfo(type: string): {
   if (lowerType.includes('swap')) {
     return {
       icon: 'sync-alt',
-      color: '#9945FF',
+      color: COLORS.brandBlue,
       label: 'Swap',
     };
   }
@@ -159,7 +160,7 @@ export function getTransactionTypeInfo(type: string): {
   if (lowerType.includes('buy')) {
     return {
       icon: 'shopping-cart',
-      color: '#14F195',
+      color: COLORS.brandPrimary,
       label: 'Buy',
     };
   }
@@ -167,7 +168,7 @@ export function getTransactionTypeInfo(type: string): {
   if (lowerType.includes('sell')) {
     return {
       icon: 'tag',
-      color: '#F43860',
+      color: COLORS.errorRed,
       label: 'Sell',
     };
   }
@@ -175,7 +176,7 @@ export function getTransactionTypeInfo(type: string): {
   if (lowerType.includes('stake')) {
     return {
       icon: 'certificate',
-      color: '#FF9C2A',
+      color: COLORS.brandBlue,
       label: 'Stake',
     };
   }
@@ -183,7 +184,7 @@ export function getTransactionTypeInfo(type: string): {
   if (lowerType.includes('nft')) {
     return {
       icon: 'image',
-      color: '#673ab7',
+      color: COLORS.brandPurple,
       label: 'NFT',
     };
   }
@@ -191,13 +192,13 @@ export function getTransactionTypeInfo(type: string): {
   if (lowerType.includes('sol') && lowerType.includes('transfer')) {
     return {
       icon: 'exchange-alt',
-      color: '#9945FF',
+      color: COLORS.brandBlue,
       label: 'SOL Transfer',
     };
   } else if (lowerType.includes('token') && lowerType.includes('transfer')) {
     return {
       icon: 'exchange-alt',
-      color: '#8752F3',
+      color: COLORS.brandBlue,
       label: 'Token Transfer',
     };
   }
@@ -205,7 +206,7 @@ export function getTransactionTypeInfo(type: string): {
   // Default case
   return {
     icon: 'receipt',
-    color: '#607d8b',
+    color: COLORS.accessoryDarkColor,
     label: type.charAt(0).toUpperCase() + type.slice(1),
   };
 }

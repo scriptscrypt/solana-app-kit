@@ -10,6 +10,8 @@ import {
   ScrollView,
   Linking,
   Dimensions,
+  ImageStyle,
+  StyleProp,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { styles } from './TokenDetailsDrawer.styles';
@@ -946,9 +948,9 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
                   : require('@/assets/images/SENDlogo.png')
             }
             style={
-              initialData?.isCollection || initialData?.nftData
+              (initialData?.isCollection || initialData?.nftData
                 ? styles.nftImage
-                : styles.tokenImage
+                : styles.tokenImage) as StyleProp<ImageStyle>
             }
             resizeMode="cover"
           />

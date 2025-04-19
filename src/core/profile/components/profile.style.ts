@@ -1,12 +1,13 @@
 /**
  * File: src/components/Profile/profile.style.ts
  */
+import COLORS from '@/assets/colors';
 import {StyleSheet} from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.background,
   },
 });
 

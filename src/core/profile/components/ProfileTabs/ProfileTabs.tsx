@@ -29,6 +29,7 @@ import PostFooter from '../../../thread/components/post/PostFooter';
 import { AssetItem, PortfolioData } from '@/modules/dataModule';
 
 
+
 // Loading placeholder for lazy-loaded tabs
 const LoadingPlaceholder = memo(() => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -77,7 +78,7 @@ const PostItem = memo(({
       {/* Retweet indicator */}
       {isRetweet && (
         <View style={retweetStyles.retweetHeader}>
-          <Icons.RetweetIdle width={12} height={12} color="#657786" />
+          <Icons.RetweetIdle width={12} height={12} />
           <Text style={retweetStyles.retweetHeaderText}>
             {post.user.username} Retweeted
           </Text>
