@@ -1,4 +1,3 @@
-// File: src/screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen.tsx
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, StyleSheet, Platform, Alert, ActivityIndicator, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -12,7 +11,6 @@ import COLORS from '@/assets/colors';
 import { SERVER_URL } from '@env';
 import { flattenPosts } from '@/core/thread/components/thread.utils';
 import { useFetchNFTs } from '@/modules/nft';
-import Icons from '@/assets/svgs';
 
 const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
 
@@ -205,37 +203,22 @@ export default function OtherProfileScreen() {
         styles.container,
         Platform.OS === 'android' && styles.androidSafeArea,
       ]}>
-      {/* Back button header */}
-      <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-        </TouchableOpacity>
-        
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerUsername} numberOfLines={1} ellipsizeMode="tail">
-            {username}
-          </Text>
-          <Text style={styles.postCount}>{myPosts.length} posts</Text>
-        </View>
-      </View>
-
-      <View style={styles.profileWrapper}>
-        <Profile
-          isOwnProfile={false}
-          user={{
-            address: userId,
-            profilePicUrl: profilePicUrl || '',
-            username: username,
-            description: description,
-            attachmentData: attachmentData,
-          }}
-          posts={myPosts}
-          nfts={nfts}
-          loadingNfts={loadingNfts || loading}
-          fetchNftsError={nftsError}
-          containerStyle={styles.profileContainer}
-        />
-      </View>
+      <Profile
+        isOwnProfile={false}
+        user={{
+          address: userId,
+          profilePicUrl: profilePicUrl || '',
+          username: username,
+          description: description,
+          attachmentData: attachmentData,
+        }}
+        posts={myPosts}
+        nfts={nfts}
+        loadingNfts={loadingNfts || loading}
+        fetchNftsError={nftsError}
+        containerStyle={styles.profileContainer}
+        onGoBack={handleGoBack}
+      />
     </SafeAreaView>
   );
 }
@@ -262,43 +245,6 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     padding: 20,
-  },
-  // Header styles
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16, 
-    paddingVertical: 10,
-    backgroundColor: COLORS.background,
-    borderBottomWidth: 0.2,
-    borderBottomColor: COLORS.borderDarkColor,
-    paddingTop: Platform.OS === 'ios' ? 0 : 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  headerTextContainer: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  headerUsername: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-  postCount: {
-    fontSize: 13,
-    color: COLORS.greyMid,
-    marginTop: 2,
-  },
-  profileWrapper: {
-    flex: 1,
-    paddingTop: 8, // Add a small gap between header and profile content
   },
   profileContainer: {
     flex: 1,

@@ -25,6 +25,7 @@ export interface ProfileProps {
   loadingNfts?: boolean;
   fetchNftsError?: string | null;
   containerStyle?: object;
+  onGoBack?: () => void;
 }
 
 /**

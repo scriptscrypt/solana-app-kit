@@ -62,45 +62,29 @@ const TokenAttachModal = memo(({
           </View>
 
           <View style={{ marginVertical: 8 }}>
-            <Text style={{ 
-              fontSize: TYPOGRAPHY.size.sm, 
-              fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
-              color: COLORS.textDark
-            }}>
+            <Text style={tokenModalStyles.descriptionLabel}>
               Description:
             </Text>
             <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: COLORS.greyBorder,
-                borderRadius: 8,
-                padding: 8,
-                marginTop: 4,
-                color: COLORS.textDark
-              }}
+              style={tokenModalStyles.descriptionInput}
               placeholder="Write a short token description"
+              placeholderTextColor={COLORS.greyMid}
               value={tokenDescription}
               onChangeText={onChangeDescription}
               multiline
             />
           </View>
 
-          <View style={{ flexDirection: 'row', marginTop: 16 }}>
+          <View style={tokenModalStyles.actionButtonContainer}>
             <TouchableOpacity
-              style={[
-                tokenModalStyles.closeButton,
-                { backgroundColor: COLORS.greyMid, marginRight: 8 },
-              ]}
+              style={[tokenModalStyles.actionButton, tokenModalStyles.cancelButton]}
               onPress={onClose}>
-              <Text style={tokenModalStyles.closeButtonText}>Cancel</Text>
+              <Text style={tokenModalStyles.actionButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                tokenModalStyles.closeButton,
-                { backgroundColor: COLORS.brandPrimary },
-              ]}
+              style={[tokenModalStyles.actionButton, tokenModalStyles.saveButton]}
               onPress={onConfirm}>
-              <Text style={tokenModalStyles.closeButtonText}>Save</Text>
+              <Text style={tokenModalStyles.actionButtonText}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -374,6 +358,8 @@ function UserProfileInfo({
     name?: string;
     imageUrl?: string;
     symbol?: string;
+    description?: string;
+    assetType?: 'token' | 'nft' | 'cnft' | 'collection';
   } | null>(null);
 
   // Profile edit drawer state
@@ -408,27 +394,58 @@ function UserProfileInfo({
       name: token.name || 'Unknown',
       imageUrl: token.image || '',
       symbol: token.symbol || token.token_info?.symbol,
+      description: token.assetType === 'collection' ? token.metadata?.description : '',
+      assetType: token.assetType,
     });
-    setTokenDescription('');
-    setShowAttachDetailsModal(true);
+    setTokenDescription(token.assetType === 'collection' ? (token.metadata?.description || '') : '');
+    console.log('LOG Setting selected token data:', token);
   }, []); // No external dependencies needed
 
   /**
-   * Confirm token attachment and dispatch to Redux
+   * Use effect to show the modal *after* the selectedToken state is updated
+   * and the previous modal (portfolio modal) has presumably closed.
    */
-  const handleAttachCoinConfirm = useCallback(async () => {
+  useEffect(() => {
+    if (selectedToken && !showAttachDetailsModal) {
+      // Check if assetType is token or collection (attach modal is relevant for these)
+      if (selectedToken.assetType === 'token' || selectedToken.assetType === 'collection') {
+        console.log('Selected token updated, scheduling attach details modal.');
+        // Add a small delay to allow the previous modal to fully dismiss
+        const timer = setTimeout(() => {
+          setShowAttachDetailsModal(true);
+        }, 100); // 100ms delay
+        return () => clearTimeout(timer); // Clear timeout if component unmounts or effect re-runs
+      } else {
+        // If it's an individual NFT, we might not need the description modal.
+        // For now, just attach it directly without asking for description.
+        console.log('Individual NFT selected, attempting direct attach.');
+        handleAttachCoinConfirm(true); // Pass a flag to indicate direct attach
+      }
+    }
+  }, [selectedToken, showAttachDetailsModal]); // Re-run when selectedToken changes
+
+  /**
+   * Confirm token attachment and dispatch to Redux
+   * Added skipModal parameter for direct NFT attachment
+   */
+  const handleAttachCoinConfirm = useCallback(async (skipModal = false) => {
     if (!selectedToken || !isOwnProfile) {
-      setShowAttachDetailsModal(false);
+      if (!skipModal) setShowAttachDetailsModal(false);
+      setSelectedToken(null); // Reset selected token if confirmation fails or is skipped
       return;
     }
-    const { mintPubkey, name, imageUrl, symbol } = selectedToken;
+    const { mintPubkey, name, imageUrl, symbol, assetType } = selectedToken;
+
+    // Use the state description if the modal was shown, otherwise use the one from selectedToken (for collections)
+    const finalDescription = skipModal ? (selectedToken.description || '') : tokenDescription.trim();
 
     const coinData = {
       mint: mintPubkey,
-      symbol: symbol || name || 'MyToken',
-      name: name || 'MyToken',
+      symbol: symbol || name || 'Unknown Asset',
+      name: name || 'Unknown Asset',
       image: imageUrl || '',
-      description: tokenDescription.trim(),
+      description: finalDescription,
+      assetType: assetType || 'token', // Default to token if not set
     };
 
     try {
@@ -440,14 +457,16 @@ function UserProfileInfo({
       ).unwrap();
       Alert.alert(
         'Success',
-        'Token attached/updated with fetched image + your description!',
+        `${assetType === 'collection' ? 'Collection' : assetType === 'nft' ? 'NFT' : 'Token'} attached successfully!`,
       );
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to attach coin');
+      Alert.alert('Error', err.message || `Failed to attach ${assetType}`);
     } finally {
-      setShowAttachDetailsModal(false);
+      if (!skipModal) setShowAttachDetailsModal(false);
+      setSelectedToken(null); // Reset selected token after attempt
+      setTokenDescription(''); // Reset description field
     }
-  }, [selectedToken, isOwnProfile, tokenDescription, userWallet]); // dispatch is stable
+  }, [selectedToken, isOwnProfile, tokenDescription, userWallet, dispatch]); // dispatch is stable
 
   /**
    * Handle removing an attached coin
@@ -484,7 +503,11 @@ function UserProfileInfo({
   }, [isOwnProfile, userWallet]); // dispatch is stable
 
   // Modal handlers with no dependencies
-  const handleCloseModal = useCallback(() => setShowAttachDetailsModal(false), []);
+  const handleCloseModal = useCallback(() => {
+    setShowAttachDetailsModal(false);
+    setSelectedToken(null); // Reset selected token when modal is closed
+    setTokenDescription(''); // Reset description field
+  }, []);
   const handleDescriptionChange = useCallback((text: string) => setTokenDescription(text), []);
 
   return (
@@ -542,7 +565,7 @@ function UserProfileInfo({
       <TokenAttachModal
         visible={showAttachDetailsModal}
         onClose={handleCloseModal}
-        onConfirm={handleAttachCoinConfirm}
+        onConfirm={() => handleAttachCoinConfirm(false)}
         tokenDescription={tokenDescription}
         onChangeDescription={handleDescriptionChange}
       />

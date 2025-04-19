@@ -4,11 +4,12 @@ import Profile from '@/core/profile/components/profile';
 import { ThreadPost } from '@/core/thread/components/thread.types';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import { flattenPosts } from '@/core/thread/components/thread.utils';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { fetchFollowers, fetchFollowing } from '@/core/profile/services/profileService';
 import { useFetchNFTs } from '@/modules/nft';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import COLORS from '@/assets/colors';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function ProfileScreen() {
   // Get user data from Redux
@@ -16,6 +17,8 @@ export default function ProfileScreen() {
   const storedUsername = useAppSelector(state => state.auth.username);
   const storedDescription = useAppSelector(state => state.auth.description);
   const attachmentData = useAppSelector(state => state.auth.attachmentData || {});
+  
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
   // Use the wallet hook to get the user's address
   const { address: userWallet } = useWallet();
@@ -66,6 +69,11 @@ export default function ProfileScreen() {
     attachmentData,
   };
 
+  // Handle go back for the profile
+  const handleGoBack = () => {
+    navigation.goBack();
+  };
+
   // Refresh follower/following counts when the profile screen is focused
   useFocusEffect(
     React.useCallback(() => {
@@ -100,6 +108,7 @@ export default function ProfileScreen() {
           loadingNfts={loadingNfts}
           fetchNftsError={fetchNftsError}
           key={`profile-${followersCount}-${followingCount}`} // Force refresh when counts change
+          onGoBack={handleGoBack}
         />
       </SafeAreaView>
     </>
