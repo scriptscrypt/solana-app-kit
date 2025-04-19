@@ -1,10 +1,12 @@
+import COLORS from "@/assets/colors";
+
 export const THREAD_DEFAULT_THEME = {
   // Core background colors
   '--thread-bg-primary': '#FFFFFF',
   '--thread-bg-secondary': '#F2F3F5',
 
   // Text colors
-  '--thread-text-primary': '#232324',
+  '--thread-text-primary': COLORS.white,
   '--thread-text-secondary': '#434445',
   '--thread-text-placeholder': '#737373',
 

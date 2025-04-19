@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useReduxHooks';
 import { fetchWalletActionsWithCache, pruneOldActionData } from '../../../state/profile/reducer';
-import { Action } from '../services/profileActions';
+import { Action } from '../utils/profileActionsUtils';
 
 /**
  * Hook that manages profile actions/transactions

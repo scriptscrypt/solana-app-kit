@@ -7,6 +7,23 @@ import ProfileTabs from './ProfileTabs/ProfileTabs';
 import { styles as profileStyles } from './profile.style';
 import COLORS from '../../../assets/colors';
 import { UserProfileData, ProfileViewProps } from '../types';
+import { ThreadPost } from '@/core/thread/types';
+import { PortfolioData, AssetItem } from '@/modules/dataModule';
+
+// If TypeScript still complains, explicitly extend the imported type
+interface ExtendedProfileViewProps extends ProfileViewProps {
+  onEditPost?: (post: ThreadPost) => void;
+  onShareProfile?: () => void;
+}
+
+// Define Action type locally if not exported
+interface WalletAction {
+  type: string;
+  timestamp: string;
+  // Add other expected fields based on usage in ActionsPage
+  data?: any;
+  metadata?: any;
+}
 
 // Pure component that only renders when props actually change
 const ProfileInfoMemo = memo(UserProfileInfo);
@@ -26,6 +43,7 @@ function ProfileViewComponent({
   fetchNftsError,
   onAvatarPress,
   onEditProfile,
+  onShareProfile,
   amIFollowing,
   areTheyFollowingMe,
   onFollowPress,
@@ -44,19 +62,21 @@ function ProfileViewComponent({
   refreshingPortfolio,
   onAssetPress,
   isLoading = false,
-}: ProfileViewProps) {
+  onEditPost,
+}: ExtendedProfileViewProps) {
   // Ensure attachmentData is always defined
   const attachmentData = useMemo(() => user.attachmentData || {}, [user.attachmentData]);
 
   // Memoize props for the UserProfileInfo component to prevent re-renders
   const profileInfoProps = useMemo(() => ({
-    profilePicUrl: user.profilePicUrl,
-    username: user.username,
+    profilePicUrl: user.profilePicUrl || '',
+    username: user.username || '',
     userWallet: user.address,
-    bioText: user.description,
+    bioText: user.description || undefined,
     isOwnProfile,
     onAvatarPress,
     onEditProfile,
+    onShareProfile,
     amIFollowing,
     areTheyFollowingMe,
     onFollowPress,
@@ -81,6 +101,7 @@ function ProfileViewComponent({
     // Callback dependencies
     onAvatarPress,
     onEditProfile,
+    onShareProfile,
     onFollowPress,
     onUnfollowPress,
     onPressFollowers,
@@ -93,14 +114,15 @@ function ProfileViewComponent({
     myNFTs,
     loadingNfts,
     fetchNftsError,
-    onPressPost,
-    myActions,
+    myActions: myActions as WalletAction[],
     loadingActions,
     fetchActionsError,
+    onPressPost,
     portfolioData,
     onRefreshPortfolio,
     refreshingPortfolio,
     onAssetPress,
+    onEditPost,
   }), [
     // Content-related dependencies grouped together
     myPosts,
@@ -118,6 +140,7 @@ function ProfileViewComponent({
     onPressPost,
     onRefreshPortfolio,
     onAssetPress,
+    onEditPost,
   ]);
 
   // Memoize container style to prevent re-renders
@@ -148,7 +171,7 @@ function ProfileViewComponent({
 /**
  * Custom comparison function to prevent unnecessary re-renders
  */
-function arePropsEqual(prev: ProfileViewProps, next: ProfileViewProps) {
+function arePropsEqual(prev: ExtendedProfileViewProps, next: ExtendedProfileViewProps) {
   // Loading state comparison
   if (prev.isLoading !== next.isLoading) return false;
 
@@ -204,6 +227,7 @@ function arePropsEqual(prev: ProfileViewProps, next: ProfileViewProps) {
   if (prev.onPressPost !== next.onPressPost) return false;
   if (prev.onAvatarPress !== next.onAvatarPress) return false;
   if (prev.onEditProfile !== next.onEditProfile) return false;
+  if (prev.onShareProfile !== next.onShareProfile) return false;
   if (prev.onFollowPress !== next.onFollowPress) return false;
   if (prev.onUnfollowPress !== next.onUnfollowPress) return false;
   if (prev.onPressFollowers !== next.onPressFollowers) return false;

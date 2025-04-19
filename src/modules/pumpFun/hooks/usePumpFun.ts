@@ -2,15 +2,16 @@
 
 import {useCallback} from 'react';
 import {Alert} from 'react-native';
-import {useWallet} from '../../embeddedWalletProviders/hooks/useWallet';
+import {useWallet} from '../../walletProviders/hooks/useWallet';
 import {
   buyTokenViaPumpfun,
   sellTokenViaPumpfun,
   createAndBuyTokenViaPumpfun,
 } from '../services/pumpfunService';
-import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 import { PumpfunBuyParams, PumpfunSellParams, PumpfunLaunchParams } from '../types';
-import { useAuth } from '../../embeddedWalletProviders/hooks/useAuth';
+import { useAuth } from '../../walletProviders/hooks/useAuth';
+import { verifyToken, VerifyTokenParams } from '../../../services/rugCheckService';
 
 /**
  * Hook for interacting with Pump.fun platform
@@ -134,6 +135,70 @@ export function usePumpFun() {
   );
 
   /**
+   * Submit token for verification on RugCheck
+   * @param tokenMint The token mint address to verify
+   * @param description Token description
+   * @param links Social links object
+   * @param dataIntegrityAccepted Whether data integrity is accepted
+   * @param termsAccepted Whether terms are accepted
+   * @returns Success status
+   */
+  const submitTokenForVerification = useCallback(
+    async (
+      tokenMint: string,
+      description: string,
+      links: { [key: string]: string } = {},
+      dataIntegrityAccepted: boolean = true,
+      termsAccepted: boolean = true,
+      onStatusUpdate?: (status: string) => void
+    ) => {
+      try {
+        onStatusUpdate?.('Preparing token verification...');
+        
+        // Current user's wallet info
+        const userPublicKey = address || solanaWallet?.wallets?.[0]?.publicKey || '';
+        if (!userPublicKey) {
+          throw new Error('No wallet public key available for verification');
+        }
+        
+        // We need a signature for verification
+        // In a production app, this would be handled properly with signing
+        // For this demo, we'll use a placeholder
+        const signature = 'PLACEHOLDER_SIGNATURE';
+        
+        const verifyParams: VerifyTokenParams = {
+          mint: tokenMint,
+          payer: userPublicKey,
+          signature: signature,
+          data: {
+            description,
+            dataIntegrityAccepted,
+            termsAccepted,
+            links
+          }
+        };
+        
+        onStatusUpdate?.('Submitting token verification...');
+        
+        const result = await verifyToken(verifyParams);
+        
+        if (result && result.ok) {
+          onStatusUpdate?.('Token verification submitted successfully!');
+          return true;
+        } else {
+          onStatusUpdate?.('Token verification failed');
+          return false;
+        }
+      } catch (error) {
+        console.error('[usePumpfun.submitTokenForVerification] Error:', error);
+        onStatusUpdate?.('Token verification failed');
+        return false;
+      }
+    },
+    [address, solanaWallet]
+  );
+
+  /**
    * Launch a new token on Pump.fun
    * @param params Parameters for the token launch
    */
@@ -147,6 +212,9 @@ export function usePumpFun() {
       website = '',
       imageUri,
       solAmount,
+      verifyToken = false,
+      dataIntegrityAccepted = false,
+      termsAccepted = false,
       onStatusUpdate,
     }: {
       tokenName: string;
@@ -157,6 +225,9 @@ export function usePumpFun() {
       website?: string;
       imageUri: string;
       solAmount: number;
+      verifyToken?: boolean;
+      dataIntegrityAccepted?: boolean;
+      termsAccepted?: boolean;
       onStatusUpdate?: (status: string) => void;
     }) => {
       // Use the best available wallet - prefer StandardWallet
@@ -180,6 +251,7 @@ export function usePumpFun() {
           website,
           imageUri,
           solAmount,
+          verifyToken,
           walletProvider: wallet?.provider || 'privy' // Default to privy for legacy wallet
         });
         
@@ -197,6 +269,9 @@ export function usePumpFun() {
           solAmount,
           solanaWallet: availableWallet,
           onStatusUpdate,
+          verifyToken,
+          dataIntegrityAccepted,
+          termsAccepted
         };
         
         const result = await createAndBuyTokenViaPumpfun(launchParams);
@@ -204,6 +279,29 @@ export function usePumpFun() {
         if (result) {
           // Show success notification via TransactionService
           TransactionService.showSuccess(result.txSignature, 'token');
+          
+          // If verification was requested, submit the token for verification
+          if (verifyToken && dataIntegrityAccepted && termsAccepted) {
+            onStatusUpdate?.('Token launched, submitting for verification...');
+            
+            // Prepare social links for verification
+            const links: { [key: string]: string } = {};
+            if (website) links.website = website;
+            if (twitter) links.twitter = twitter;
+            if (telegram) links.telegram = telegram;
+            
+            // Submit the token for verification
+            await submitTokenForVerification(
+              result.mint,
+              description,
+              links,
+              dataIntegrityAccepted,
+              termsAccepted,
+              onStatusUpdate
+            );
+          }
+          
+          return result;
         }
       } catch (error: any) {
         console.error('[usePumpfun.launchToken] Error:', error);
@@ -212,12 +310,13 @@ export function usePumpFun() {
         throw error; // Re-throw for component-level handling
       }
     },
-    [wallet, solanaWallet, address],
+    [wallet, solanaWallet, address, submitTokenForVerification],
   );
 
   return {
     buyToken,
     sellToken,
     launchToken,
+    submitTokenForVerification,
   };
 }

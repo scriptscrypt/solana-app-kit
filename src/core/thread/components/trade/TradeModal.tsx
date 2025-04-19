@@ -26,19 +26,27 @@ import {
 import SelectTokenModal from './SelectTokenModal';
 import { ENDPOINTS } from '../../../../config/constants';
 import { CLUSTER } from '@env';
-import { useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   addPostLocally,
   createRootPostAsync,
-} from '../../../../state/thread/reducer';
+} from '@/shared/state/thread/reducer';
 import styles from './tradeModal.style';
 import PastSwapItem from './PastSwapItem';
-import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '../../../../services/swapTransactions';
+import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '@/modules/dataModule/services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { TransactionService } from '../../../../modules/embeddedWalletProviders/services/transaction/transactionService';
-import { TokenInfo, TokenService } from '../../../../services/token/tokenService';
-import { TradeService } from '../../../../services/trade/tradeService';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { TradeService } from '@/modules/dataModule/services/tradeService';
+import { TokenInfo } from '@/modules/dataModule/types/tokenTypes';
+import { 
+  DEFAULT_SOL_TOKEN, 
+  DEFAULT_USDC_TOKEN, 
+  fetchTokenBalance, 
+  fetchTokenPrice as fetchTokenPriceFromModule,
+  estimateTokenUsdValue,
+  ensureCompleteTokenInfo
+} from '../../../../modules/dataModule';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 
 /**
  * Available tab options in the TradeModal
@@ -93,8 +101,8 @@ export default function TradeModal({
   );
 
   // Initialize tokens with pending flag until we have complete data
-  const [inputToken, setInputToken] = useState<TokenInfo>(TokenService.DEFAULT_SOL_TOKEN);
-  const [outputToken, setOutputToken] = useState<TokenInfo>(TokenService.DEFAULT_USDC_TOKEN);
+  const [inputToken, setInputToken] = useState<TokenInfo>(DEFAULT_SOL_TOKEN);
+  const [outputToken, setOutputToken] = useState<TokenInfo>(DEFAULT_USDC_TOKEN);
 
   // Track token initialization status
   const [tokensInitialized, setTokensInitialized] = useState(false);
@@ -164,7 +172,7 @@ export default function TradeModal({
   /**
    * Fetches the user's balance for the current input token
    */
-  const fetchTokenBalance = useCallback(async (tokenToUse?: TokenInfo) => {
+  const fetchBalance = useCallback(async (tokenToUse?: TokenInfo) => {
     if (!connected || !userPublicKey) {
       console.log("[TradeModal] No wallet connected, cannot fetch balance");
       return null;
@@ -174,7 +182,7 @@ export default function TradeModal({
 
     try {
       console.log(`[TradeModal] Fetching balance for ${tokenForBalance.symbol}...`);
-      const balance = await TokenService.fetchTokenBalance(userPublicKey, tokenForBalance);
+      const balance = await fetchTokenBalance(userPublicKey, tokenForBalance);
 
       // Only update state if component is still mounted and balance is non-null
       if (isMounted.current) {
@@ -198,12 +206,12 @@ export default function TradeModal({
   /**
    * Fetches current price of the input token
    */
-  const fetchTokenPrice = useCallback(async (tokenToUse?: TokenInfo) => {
+  const fetchTokenPrice = useCallback(async (tokenToUse?: TokenInfo): Promise<number | null> => {
     const tokenForPrice = tokenToUse || inputToken;
 
     try {
       console.log(`[TradeModal] Fetching price for ${tokenForPrice.symbol}...`);
-      const price = await TokenService.fetchTokenPrice(tokenForPrice);
+      const price: number | null = await fetchTokenPriceFromModule(tokenForPrice);
       if (isMounted.current) {
         console.log(`[TradeModal] Token price fetched for ${tokenForPrice.symbol}: ${price}`);
         setCurrentTokenPrice(price);
@@ -239,20 +247,20 @@ export default function TradeModal({
 
       // If initialInputToken is provided, ensure it's a complete TokenInfo
       if (initialInputToken?.address) {
-        completeInputToken = await TokenService.ensureCompleteTokenInfo(initialInputToken);
+        completeInputToken = await ensureCompleteTokenInfo(initialInputToken);
         console.log('[TradeModal] Initialized input token:', completeInputToken.symbol);
       } else {
         // Default to SOL
-        completeInputToken = TokenService.DEFAULT_SOL_TOKEN;
+        completeInputToken = DEFAULT_SOL_TOKEN;
       }
 
       // Initialize output token
       if (initialOutputToken?.address) {
-        completeOutputToken = await TokenService.ensureCompleteTokenInfo(initialOutputToken);
+        completeOutputToken = await ensureCompleteTokenInfo(initialOutputToken);
         console.log('[TradeModal] Initialized output token:', completeOutputToken.symbol);
       } else {
         // Default to USDC
-        completeOutputToken = TokenService.DEFAULT_USDC_TOKEN;
+        completeOutputToken = DEFAULT_USDC_TOKEN;
       }
 
       if (isMounted.current) {
@@ -269,11 +277,13 @@ export default function TradeModal({
         // Only fetch balance if tokens actually changed or we don't have a balance yet
         if (tokensChanged || currentBalance === null) {
           console.log('[TradeModal] Tokens changed or no balance, fetching balance and price');
-          fetchTokenBalance(completeInputToken).then(() => {
-            if (isMounted.current) {
-              fetchTokenPrice(completeInputToken);
-            }
-          });
+          if (userPublicKey) {
+            fetchTokenBalance(userPublicKey, completeInputToken).then(() => {
+              if (isMounted.current) {
+                fetchTokenPrice(completeInputToken);
+              }
+            });
+          }
         }
       }
     } catch (error) {
@@ -283,11 +293,11 @@ export default function TradeModal({
   }, [
     initialInputToken,
     initialOutputToken,
-    fetchTokenBalance,
     fetchTokenPrice,
     inputToken.address,
     outputToken.address,
-    currentBalance
+    currentBalance,
+    userPublicKey
   ]);
 
   /**
@@ -312,9 +322,9 @@ export default function TradeModal({
         // Use a small timeout to avoid state updates colliding
         const timer = setTimeout(() => {
           if (isMounted.current) {
-            fetchTokenBalance().then(() => {
+            fetchTokenBalance(userPublicKey, inputToken).then(() => {
               if (isMounted.current) {
-                fetchTokenPrice();
+                fetchTokenPrice(inputToken);
               }
             });
           }
@@ -323,7 +333,7 @@ export default function TradeModal({
         return () => clearTimeout(timer);
       }
     }
-  }, [visible, tokensInitialized, initializeTokens, connected, userPublicKey, fetchTokenBalance, fetchTokenPrice]);
+  }, [visible, tokensInitialized, initializeTokens, connected, userPublicKey, fetchTokenBalance, fetchTokenPrice, inputToken]);
 
   /**
    * Resets states and closes the entire modal
@@ -454,14 +464,14 @@ export default function TradeModal({
         const localOutputQty = outputLamports / Math.pow(10, outputTokenInfo.decimals);
 
         // Estimate USD values
-        const inputUsdValue = await TokenService.estimateTokenUsdValue(
+        const inputUsdValue = await estimateTokenUsdValue(
           inputLamports,
           inputTokenInfo.decimals,
           inputTokenInfo.address,
           inputTokenInfo.symbol
         );
 
-        const outputUsdValue = await TokenService.estimateTokenUsdValue(
+        const outputUsdValue = await estimateTokenUsdValue(
           outputLamports,
           outputTokenInfo.decimals,
           outputTokenInfo.address,
@@ -560,14 +570,14 @@ export default function TradeModal({
           : swap.timestamp;
 
         // Estimate USD values
-        const inputUsdValue = await TokenService.estimateTokenUsdValue(
+        const inputUsdValue = await estimateTokenUsdValue(
           swap.inputToken.amount,
           swap.inputToken.decimals,
           swap.inputToken.mint,
           swap.inputToken.symbol
         );
 
-        const outputUsdValue = await TokenService.estimateTokenUsdValue(
+        const outputUsdValue = await estimateTokenUsdValue(
           swap.outputToken.amount,
           swap.outputToken.decimals,
           swap.outputToken.mint,
@@ -770,9 +780,11 @@ export default function TradeModal({
       hasLoadedInitialDataRef.current = true;
 
       // Always fetch balance when swaps are loaded, as a fallback
-      fetchTokenBalance();
+      if (userPublicKey) {
+        fetchTokenBalance(userPublicKey, inputToken);
+      }
     }
-  }, [walletAddress, selectedPastSwap, fetchTokenBalance]);
+  }, [walletAddress, selectedPastSwap, fetchTokenBalance, userPublicKey, inputToken]);
 
   // Fetch past swaps when modal becomes visible - only once
   useEffect(() => {
@@ -838,7 +850,7 @@ export default function TradeModal({
     }
 
     try {
-      const balance = await fetchTokenBalance();
+      const balance = await fetchTokenBalance(userPublicKey, inputToken);
 
       if (isMounted.current) {
         setResultMsg("");
@@ -915,7 +927,7 @@ export default function TradeModal({
       }
 
       // Ensure we have complete token info
-      const completeToken = await TokenService.ensureCompleteTokenInfo(token);
+      const completeToken = await ensureCompleteTokenInfo(token);
 
       if (!isMounted.current) return;
 
@@ -932,9 +944,9 @@ export default function TradeModal({
 
         // Fetch balance and price for new token with small delay
         setTimeout(async () => {
-          if (isMounted.current) {
+          if (isMounted.current && userPublicKey) {
             try {
-              const newBalance = await fetchTokenBalance(completeToken);
+              const newBalance = await fetchTokenBalance(userPublicKey, completeToken);
               if (isMounted.current && newBalance !== null) {
                 await fetchTokenPrice(completeToken);
               }
@@ -964,7 +976,7 @@ export default function TradeModal({
         setTimeout(() => isMounted.current && setErrorMsg(''), 3000);
       }
     }
-  }, [selectingWhichSide, fetchTokenBalance, fetchTokenPrice]);
+  }, [selectingWhichSide, fetchTokenBalance, fetchTokenPrice, userPublicKey]);
 
   /**
    * Render the content of the selected tab

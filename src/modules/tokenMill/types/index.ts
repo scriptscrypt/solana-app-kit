@@ -1,23 +1,21 @@
 import { Connection } from '@solana/web3.js';
 import { StyleSheet } from 'react-native';
 import BN from 'bn.js';
-import { StandardWallet } from '../../embeddedWalletProviders/hooks/useAuth';
 
 // Component props types
 export interface BondingCurveCardProps {
   marketAddress: string;
   connection: Connection;
   publicKey: string;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   setLoading: (val: boolean) => void;
   styleOverrides?: Partial<typeof StyleSheet.create>;
 }
 
 export interface BondingCurveConfiguratorProps {
-  /** Callback function that receives updated ask and bid prices */
+  /** Callback function that receives updated price points */
   onCurveChange: (
-    askPrices: BN[], 
-    bidPrices: BN[], 
+    pricePoints: BN[], 
     parameters?: {
       curveType?: string;
       basePrice?: number;
@@ -46,21 +44,21 @@ export interface FundMarketCardProps {
   marketAddress: string;
   connection: Connection;
   publicKey: string;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   setLoading: (val: boolean) => void;
 }
 
 export interface FundUserCardProps {
   connection: Connection;
   publicKey: string;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   setLoading: (val: boolean) => void;
 }
 
 export interface MarketCreationCardProps {
   connection: Connection;
   publicKey: string;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   setLoading: (val: boolean) => void;
   onMarketCreated: (marketAddr: string, baseMint: string) => void;
 }
@@ -69,7 +67,7 @@ export interface StakingCardProps {
   marketAddress: string;
   connection: Connection;
   publicKey: string;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   setLoading: (val: boolean) => void;
 }
 
@@ -77,7 +75,7 @@ export interface SwapCardProps {
   marketAddress: string;
   connection: Connection;
   publicKey: string;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   setLoading: (val: boolean) => void;
 }
 
@@ -88,7 +86,7 @@ export interface VestingCardProps {
   setVestingPlanAddress: (addr: string) => void;
   connection: Connection;
   publicKey: string;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   setLoading: (val: boolean) => void;
 }
 
@@ -98,7 +96,7 @@ export type SwapType = 'buy' | 'sell';
 
 export interface TokenMillServiceParams {
   connection: Connection;
-  solanaWallet: StandardWallet | any;
+  solanaWallet: any;
   onStatusUpdate?: (status: string) => void;
 }
 

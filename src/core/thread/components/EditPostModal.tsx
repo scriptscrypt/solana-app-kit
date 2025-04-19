@@ -8,16 +8,21 @@ import {
     StyleSheet,
     ScrollView,
     Image,
-    ActivityIndicator
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    Alert
 } from 'react-native';
 import { ThreadPost, ThreadSection } from './thread.types';
-import { useAppDispatch } from '../../../hooks/useReduxHooks';
-import { updatePostAsync } from '../../../state/thread/reducer';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
+import { updatePostAsync } from '@/shared/state/thread/reducer';
+import COLORS from '@/assets/colors'; // Import colors
+import Icons from '@/assets/svgs'; // Import icons if needed for section headers
 
 interface EditPostModalProps {
     isVisible: boolean;
     onClose: () => void;
-    post: ThreadPost;
+    post: ThreadPost | null; // Allow null for conditional rendering
 }
 
 const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
@@ -26,111 +31,141 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Initialize sections from post when modal opens
+    // Initialize sections from post when modal opens or post changes
     useEffect(() => {
-        if (post && post.sections) {
+        if (isVisible && post && post.sections) {
             // Deep copy to avoid mutating the original post
             setSections([...post.sections]);
+            setError(null); // Clear previous errors
+        } else if (!isVisible) {
+            // Reset state when modal closes
+            setSections([]);
+            setError(null);
         }
-    }, [post]);
+    }, [isVisible, post]);
+
+    // Bail out early if no post is provided
+    if (!post) {
+        return null;
+    }
 
     // Update section text 
-    const updateSectionText = (index: number, text: string) => {
-        const updatedSections = [...sections];
+    const updateSectionText = (uniqueIndex: number, text: string) => {
+        const uniqueEditableSections = getUniqueEditableSections();
+        if (uniqueIndex >= uniqueEditableSections.length) return;
 
-        // Find the section in our filtered list
-        const sectionToUpdate = getUniqueEditableSections()[index];
-        const sectionType = sectionToUpdate.type;
-        const sectionToUpdateId = sectionToUpdate.id || '';
+        const sectionToUpdateInfo = uniqueEditableSections[uniqueIndex];
+        const { type: sectionType, id: sectionId } = sectionToUpdateInfo;
 
-        // Update all instances of this section in the original array
-        sections.forEach((section, i) => {
-            // For TEXT_IMAGE, update all sections of this type
-            if (section.type === 'TEXT_IMAGE' && sectionType === 'TEXT_IMAGE') {
-                updatedSections[i] = { ...updatedSections[i], text };
-            }
-            // For other special types, update all of the same type
-            else if ((section.type === 'TEXT_VIDEO' || section.type === 'TEXT_TRADE')
-                && section.type === sectionType) {
-                updatedSections[i] = { ...updatedSections[i], text };
-            }
-            // For TEXT_ONLY, only update the exact section
-            else if (section.id === sectionToUpdateId) {
-                updatedSections[i] = { ...updatedSections[i], text };
-            }
+        setSections(prevSections => {
+            // Create a new array based on previous state
+            return prevSections.map(section => {
+                // For TEXT_IMAGE, update all sections of this type (usually just one)
+                if (section.type === 'TEXT_IMAGE' && sectionType === 'TEXT_IMAGE') {
+                    return { ...section, text };
+                }
+                // For other special types, update all of the same type (again, usually one)
+                else if ((section.type === 'TEXT_VIDEO' || section.type === 'TEXT_TRADE') && section.type === sectionType) {
+                    return { ...section, text };
+                }
+                // For TEXT_ONLY, only update the exact section by ID
+                else if (section.type === 'TEXT_ONLY' && section.id === sectionId) {
+                    return { ...section, text };
+                }
+                // Otherwise, return the section unchanged
+                return section;
+            });
         });
-
-        setSections(updatedSections);
     };
+
 
     // Handle save
     const handleSave = async () => {
-        if (!post.id) return;
+        if (!post || !post.id) return;
 
         setIsLoading(true);
         setError(null);
 
         try {
+            // Filter out empty text sections before saving, unless it's the only section
+             const sectionsToSave = sections.filter((s, index, arr) => {
+                if (s.type === 'TEXT_ONLY') {
+                    return s.text?.trim() !== '' || arr.length === 1;
+                }
+                // Keep non-text sections (like images, videos etc.)
+                return true;
+            });
+
+             // Prevent saving if all text sections are now empty (and there were multiple originally)
+            if (sectionsToSave.length === 0 && sections.length > 0) {
+                 Alert.alert("Cannot Save", "Post content cannot be empty.");
+                 setIsLoading(false);
+                 return;
+            }
+
+
             await dispatch(updatePostAsync({
                 postId: post.id,
-                sections
+                sections: sectionsToSave // Save the potentially filtered sections
             })).unwrap();
-            onClose();
+            onClose(); // Close modal on success
         } catch (err: any) {
             setError(err.message || 'Failed to update post');
+            console.error("Update post error:", err);
         } finally {
             setIsLoading(false);
         }
     };
 
     // Get unique sections for display in the UI, removing any duplicates
-    const getUniqueEditableSections = () => {
-        // Create a map to identify unique sections
-        const uniqueSections: ThreadSection[] = [];
-        const addedIds = new Set<string>();
-        const addedTypes = new Set<string>();
+    const getUniqueEditableSections = (): ThreadSection[] => {
+        if (!sections || sections.length === 0) return [];
 
-        // Filter sections to keep only unique ones
+        // Create a map to identify unique sections based on type or ID
+        const uniqueSectionsMap = new Map<string, ThreadSection>();
+
         sections.forEach(section => {
-            const sectionId = section.id || `temp-${Math.random()}`; // Ensure we have a string ID
+            const sectionId = section.id || `temp-${Math.random()}`; // Ensure ID
 
-            // For TEXT_IMAGE, only include the first one we encounter
-            if (section.type === 'TEXT_IMAGE') {
-                if (!addedTypes.has('TEXT_IMAGE')) {
-                    uniqueSections.push(section);
-                    addedIds.add(sectionId);
-                    addedTypes.add('TEXT_IMAGE');
-                }
-            }
-            // For other special types, only include one per type
-            else if (section.type === 'TEXT_VIDEO' ||
-                section.type === 'TEXT_TRADE' || section.type === 'NFT_LISTING' ||
-                section.type === 'POLL') {
-                if (!addedTypes.has(section.type)) {
-                    uniqueSections.push(section);
-                    addedIds.add(sectionId);
-                    addedTypes.add(section.type);
-                }
-            }
-            // For TEXT_ONLY, include all unique instances
-            else if (!addedIds.has(sectionId)) {
-                uniqueSections.push(section);
-                addedIds.add(sectionId);
+            switch (section.type) {
+                // Types where we only show/edit the *first* instance encountered
+                case 'TEXT_IMAGE':
+                case 'TEXT_VIDEO':
+                case 'TEXT_TRADE':
+                case 'NFT_LISTING':
+                case 'POLL':
+                    if (!uniqueSectionsMap.has(section.type)) {
+                        uniqueSectionsMap.set(section.type, section);
+                    }
+                    break;
+                 // Types where each instance is unique (by ID)
+                case 'TEXT_ONLY':
+                    if (!uniqueSectionsMap.has(sectionId)) {
+                        uniqueSectionsMap.set(sectionId, section);
+                    }
+                    break;
+                default:
+                    // Handle potential unknown types gracefully
+                     if (!uniqueSectionsMap.has(sectionId)) {
+                        uniqueSectionsMap.set(sectionId, section);
+                    }
+                    break;
             }
         });
 
-        return uniqueSections;
+        return Array.from(uniqueSectionsMap.values());
     };
 
     // Renders appropriate editor based on section type
     const renderSectionEditor = (section: ThreadSection, index: number) => {
         // Common text input for all sections that have text
-        const renderTextEditor = () => (
+        const renderTextEditor = (placeholder: string) => (
             <TextInput
                 value={section.text || ''}
                 onChangeText={(text) => updateSectionText(index, text)}
                 style={styles.textInput}
-                placeholder="Edit text..."
+                placeholder={placeholder}
+                placeholderTextColor={COLORS.greyMid}
                 multiline
             />
         );
@@ -139,20 +174,21 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
             case 'TEXT_ONLY':
                 return (
                     <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Text</Text>
-                        {renderTextEditor()}
+                        {/* No title needed for simple text */}
+                        {renderTextEditor("Edit your post...")}
                     </View>
                 );
 
             case 'TEXT_IMAGE':
                 return (
                     <View style={styles.sectionContainer}>
-                        {/* <Text style={styles.sectionTitle}>Text</Text> */}
-                        {/* {renderTextEditor()} */}
+                        {/* Only show text input if original post had text */}
+                        {post.sections.find(s => s.type === 'TEXT_IMAGE')?.text !== undefined &&
+                            renderTextEditor("Edit image caption...")}
                         {section.imageUrl && (
-                            <View style={styles.imagePreviewContainer}>
+                            <View style={styles.mediaPreviewContainer}>
                                 <Image
-                                    source={section.imageUrl}
+                                    source={typeof section.imageUrl === 'string' ? { uri: section.imageUrl } : section.imageUrl}
                                     style={styles.imagePreview}
                                     resizeMode="cover"
                                 />
@@ -165,53 +201,78 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                 );
 
             case 'TEXT_VIDEO':
+                 // Assuming video URL is stored similarly to imageUrl
+                const videoUrl = (section as any).videoUrl || 'Video Preview Unavailable';
                 return (
                     <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Video Caption</Text>
-                        {renderTextEditor()}
-                        <Text style={styles.helperText}>
-                            Video cannot be changed
-                        </Text>
+                        {renderTextEditor("Edit video caption...")}
+                         <View style={styles.mediaPreviewContainer}>
+                             {/* Basic Video Placeholder */}
+                             <View style={styles.videoPlaceholder}>
+                                 <Text style={styles.videoPlaceholderText}>Video</Text>
+                             </View>
+                            <Text style={styles.helperText}>
+                                Video cannot be changed
+                            </Text>
+                        </View>
                     </View>
                 );
 
-            case 'TEXT_TRADE':
-                return (
+             case 'TEXT_TRADE':
+                 const tradeInfo = (section as any).tradeInfo || {}; // Assuming trade data exists
+                 return (
                     <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Trade Caption</Text>
-                        {renderTextEditor()}
-                        <Text style={styles.helperText}>
-                            Trade data cannot be changed
-                        </Text>
+                        {renderTextEditor("Edit trade caption...")}
+                        <View style={styles.mediaPreviewContainer}>
+                            <View style={styles.tradePlaceholder}>
+                                <Text style={styles.tradePlaceholderText}>Trade Details</Text>
+                                {/* Optionally display some basic trade info if available */}
+                                {/* <Text style={styles.helperText}>{`Token: ${tradeInfo.tokenSymbol}`}</Text> */}
+                            </View>
+                            <Text style={styles.helperText}>
+                                Trade data cannot be changed
+                            </Text>
+                        </View>
                     </View>
                 );
 
-            case 'NFT_LISTING':
+
+             case 'NFT_LISTING':
+                 const nftInfo = (section as any).nftInfo || {}; // Assuming NFT data exists
                 return (
-                    <View style={styles.sectionContainer}>
+                    <View style={[styles.sectionContainer, styles.nonEditableSection]}>
                         <Text style={styles.sectionTitle}>NFT Listing</Text>
-                        <Text style={styles.helperText}>
+                         {nftInfo.imageUrl && (
+                            <Image source={{ uri: nftInfo.imageUrl }} style={styles.nftPreview} resizeMode="contain" />
+                        )}
+                        <Text style={styles.helperTextBold}>
                             NFT listing data cannot be edited
                         </Text>
                     </View>
                 );
 
-            case 'POLL':
+             case 'POLL':
+                 const pollOptions = (section as any).pollOptions || [];
                 return (
-                    <View style={styles.sectionContainer}>
+                    <View style={[styles.sectionContainer, styles.nonEditableSection]}>
                         <Text style={styles.sectionTitle}>Poll</Text>
-                        <Text style={styles.helperText}>
+                         {pollOptions.map((opt: string, i: number) => (
+                            <Text key={i} style={styles.pollOptionText}>{`- ${opt}`}</Text>
+                        ))}
+                        <Text style={styles.helperTextBold}>
                             Poll data cannot be edited
                         </Text>
                     </View>
                 );
 
+
             default:
+                 // Render a generic non-editable state for unknown types
                 return (
-                    <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Unknown Section</Text>
-                        <Text style={styles.helperText}>
-                            This section type cannot be edited
+                    <View style={[styles.sectionContainer, styles.nonEditableSection]}>
+                        <Text style={styles.sectionTitle}>Unsupported Section</Text>
+                        <Text style={styles.helperTextBold}>
+                             This section type cannot be edited.
                         </Text>
                     </View>
                 );
@@ -219,179 +280,265 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
     };
 
     // Get unique sections for the UI
-    const uniqueSections = getUniqueEditableSections();
+    const uniqueDisplaySections = getUniqueEditableSections();
 
     return (
         <Modal
             visible={isVisible}
             animationType="slide"
             transparent={true}
-            onRequestClose={onClose}
+            onRequestClose={() => !isLoading && onClose()} // Prevent closing while loading
         >
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Edit Post</Text>
-                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <Text style={styles.closeButtonText}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                style={styles.keyboardAvoidingView}
+            >
+                <View style={styles.modalOverlay}>
+                    {/* Touchable overlay to close modal */}
+                     <TouchableOpacity
+                        style={StyleSheet.absoluteFill}
+                        activeOpacity={1}
+                        onPress={() => !isLoading && onClose()}
+                    />
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Edit Post</Text>
+                            <TouchableOpacity onPress={() => !isLoading && onClose()} style={styles.closeButton} disabled={isLoading}>
+                                <Text style={styles.closeButtonText}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
 
-                    <ScrollView style={styles.scrollView}>
-                        {uniqueSections.map((section, index) => (
-                            <View key={section.id || `section-${index}`}>
-                                {renderSectionEditor(section, index)}
-                            </View>
-                        ))}
-
-                        {error && (
-                            <Text style={styles.errorText}>{error}</Text>
-                        )}
-                    </ScrollView>
-
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={[styles.button, styles.cancelButton]}
-                            onPress={onClose}
-                            disabled={isLoading}
-                        >
-                            <Text style={styles.buttonText}>Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.button, styles.saveButton]}
-                            onPress={handleSave}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                            ) : (
-                                <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
+                        <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+                            {uniqueDisplaySections.length === 0 && !isLoading && (
+                                <Text style={styles.helperText}>No editable content found.</Text>
                             )}
-                        </TouchableOpacity>
+                            {uniqueDisplaySections.map((section, index) => (
+                                <View key={section.id || `section-${index}`}>
+                                    {renderSectionEditor(section, index)}
+                                </View>
+                            ))}
+
+                            {error && (
+                                <Text style={styles.errorText}>{error}</Text>
+                            )}
+                        </ScrollView>
+
+                        {/* Footer with buttons */}
+                        <View style={styles.footer}>
+                             <TouchableOpacity
+                                style={[styles.button, styles.cancelButton]}
+                                onPress={onClose}
+                                disabled={isLoading}
+                            >
+                                <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, styles.saveButton, isLoading && styles.buttonDisabled]}
+                                onPress={handleSave}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator size="small" color={COLORS.white} />
+                                ) : (
+                                    <Text style={[styles.buttonText, styles.saveButtonText]}>Save Changes</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
 
+// --- Styles ---
 const styles = StyleSheet.create({
+    keyboardAvoidingView: {
+        flex: 1,
+    },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker overlay
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContent: {
-        width: '90%',
-        maxHeight: '80%',
-        backgroundColor: 'white',
-        borderRadius: 12,
+        width: '92%', // Slightly wider
+        maxHeight: '85%', // Allow more height
+        backgroundColor: COLORS.white,
+        borderRadius: 16, // More rounded corners
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+        elevation: 8, // Android shadow
+        shadowColor: '#000', // iOS shadow
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        borderBottomColor: COLORS.greyBorder, // Use existing border color
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '600', // Slightly bolder
+        color: COLORS.black,
     },
     closeButton: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: '#f0f0f0',
-        justifyContent: 'center',
-        alignItems: 'center',
+        padding: 8, // Easier to tap
     },
     closeButtonText: {
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#555',
+        color: COLORS.greyDark,
     },
     scrollView: {
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 8, // Add padding at the bottom
     },
     sectionContainer: {
-        marginBottom: 20,
+        marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: COLORS.greyBorder, // Use existing border color
         borderRadius: 8,
         padding: 12,
+        backgroundColor: COLORS.background, // Subtle background difference
+    },
+     nonEditableSection: {
+        backgroundColor: COLORS.greyLight, // Different background for non-editable
+        borderColor: COLORS.greyMid,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#333',
+        fontSize: 14, // Smaller title
+        fontWeight: '600',
+        marginBottom: 10,
+        color: COLORS.greyDark, // Use existing grey color
     },
     textInput: {
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 6,
-        padding: 10,
-        minHeight: 80,
+        borderColor: COLORS.greyBorder, // Use existing border color
+        borderRadius: 8, // More rounded
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        minHeight: 100, // Slightly taller
         fontSize: 16,
-        backgroundColor: '#f9f9f9',
+        color: COLORS.black, // Use black for primary text
+        backgroundColor: COLORS.white,
+        textAlignVertical: 'top', // Align text top on Android
     },
-    imagePreviewContainer: {
-        marginTop: 10,
+    mediaPreviewContainer: {
+        marginTop: 12,
         alignItems: 'center',
-    },
-    imagePreview: {
-        width: 200,
-        height: 120,
+        padding: 8,
+        backgroundColor: COLORS.greyLight, // Background for media
         borderRadius: 8,
     },
-    helperText: {
-        marginTop: 8,
-        fontSize: 12,
-        color: '#888',
-        fontStyle: 'italic',
+    imagePreview: {
+        width: '100%',
+        aspectRatio: 16 / 9, // Standard aspect ratio
+        borderRadius: 6,
+        marginBottom: 8,
     },
-    buttonContainer: {
+    nftPreview: {
+        width: 100,
+        height: 100,
+        borderRadius: 6,
+        marginBottom: 8,
+        alignSelf: 'center',
+    },
+     videoPlaceholder: {
+        width: '100%',
+        aspectRatio: 16 / 9,
+        borderRadius: 6,
+        backgroundColor: COLORS.black,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    videoPlaceholderText: {
+        color: COLORS.white,
+        fontWeight: 'bold',
+    },
+     tradePlaceholder: {
+        width: '100%',
+        paddingVertical: 20,
+        borderRadius: 6,
+        backgroundColor: COLORS.greyLight, // Fallback to greyLight
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    tradePlaceholderText: {
+        color: COLORS.brandPrimary, // Use primary brand color
+        fontWeight: 'bold',
+    },
+    pollOptionText: {
+        fontSize: 14,
+        color: COLORS.greyDark, // Use existing grey color
+        marginBottom: 4,
+    },
+    helperText: {
+        fontSize: 13, // Slightly larger helper text
+        color: COLORS.greyDark, // Use existing grey color
+        fontStyle: 'italic',
+        textAlign: 'center',
+        marginTop: 4,
+    },
+    helperTextBold: {
+        fontSize: 13,
+        color: COLORS.greyDark, // Use existing grey color
+        fontWeight: '600', // Bolder for non-editable
+        textAlign: 'center',
+        marginTop: 8,
+    },
+    footer: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
         padding: 16,
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
+        borderTopColor: COLORS.greyBorder, // Use existing border color
+        backgroundColor: COLORS.white, // Ensure footer background
     },
     button: {
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 6,
-        marginLeft: 10,
+        paddingVertical: 12, // Taller buttons
+        paddingHorizontal: 24, // Wider buttons
+        borderRadius: 25, // Pill shape
+        marginLeft: 12,
         justifyContent: 'center',
         alignItems: 'center',
+        minWidth: 100, // Minimum width
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
     cancelButton: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: COLORS.greyLight, // Lighter cancel
+        borderWidth: 1,
+        borderColor: COLORS.greyBorder, // Use existing border color
     },
     saveButton: {
-        backgroundColor: '#1d9bf0',
+        backgroundColor: COLORS.brandPrimary, // Use theme primary
     },
     buttonText: {
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#555',
+        fontWeight: '600', // Bolder text
+    },
+    cancelButtonText: {
+         color: COLORS.greyDark, // Use existing grey color
     },
     saveButtonText: {
-        color: 'white',
+        color: COLORS.white,
     },
     errorText: {
-        color: 'red',
+        color: '#FF3B30', // Standard iOS red for errors
         marginVertical: 10,
         textAlign: 'center',
+        fontWeight: '600',
     },
 });
 

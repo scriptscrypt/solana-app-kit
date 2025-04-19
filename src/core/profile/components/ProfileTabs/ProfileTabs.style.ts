@@ -4,7 +4,7 @@ import COLORS from '../../../../assets/colors';
 export const styles = StyleSheet.create({
   tabView: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   tabContent: {
     flex: 1,
@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   postCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -50,26 +50,41 @@ export const styles = StyleSheet.create({
   },
 });
 
-export const tabBarStyles = {
-  container: {
-    backgroundColor: COLORS.white,
+export const tabBarStyles = StyleSheet.create({
+  gradientContainer: {
+    // Container to hold both the TabBar and the gradient
+    backgroundColor: COLORS.background,
+  },
+  tabBarContainer: {
+    backgroundColor: 'transparent',
     height: 50,
-    elevation: 4,
+    // Removed elevation, border, and shadow properties
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     textTransform: 'none',
+    color: COLORS.white, // Use activeColor directly here as default
   },
   indicator: {
-    backgroundColor: COLORS.black,
+    backgroundColor: COLORS.brandBlue,
     height: 3,
     borderRadius: 2,
-    marginBottom: 1,
+    marginBottom: -1,
   },
-  activeColor: COLORS.black,
-  inactiveColor: COLORS.greyMid,
-};
+  bottomGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 50, // Adjust height for desired gradient size
+    zIndex: -1, // Ensure it's behind the TabBar content
+  },
+});
+
+// Active/inactive colors remain outside StyleSheet as they are direct values used in the component
+export const tabBarActiveColor = COLORS.white;
+export const tabBarInactiveColor = COLORS.greyMid;
 
 // Retweet specific styles
 export const retweetStyles = StyleSheet.create({
@@ -93,10 +108,8 @@ export const retweetStyles = StyleSheet.create({
   originalPostContainer: {
     width: '100%',
     borderRadius: 12,
-    backgroundColor: COLORS.greyLight,
+    backgroundColor: COLORS.lighterBackground,
     padding: 10,
-    borderWidth: 1,
-    borderColor: COLORS.greyBorder,
   },
   retweetIndicator: {
     flexDirection: 'row',

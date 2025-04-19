@@ -5,6 +5,9 @@ import '@ethersproject/shims';
 import {Buffer} from 'buffer';
 global.Buffer = Buffer;
 
+// Import polyfills early
+import './src/shared/utils/polyfills';
+
 if (typeof Settings === 'undefined') {
   global.Settings = {};
 }

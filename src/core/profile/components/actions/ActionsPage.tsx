@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  SectionList,
 } from 'react-native';
 import ActionDetailModal from './ActionDetailModal';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -19,8 +20,14 @@ import {
   getTimeAgo,
   extractAmountFromDescription,
   getTransactionTypeInfo
-} from '../../services/profileActions';
-import { ActionsPageProps } from '../../types';
+} from '../../utils/profileActionsUtils';
+import { ActionsPageProps } from '../../types/index';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
+import { fetchWalletActionsWithCache } from '@/shared/state/profile/reducer';
+import COLORS from '@/assets/colors';
+import { styles } from './actions.style';
+import { format, isToday, isThisWeek, isThisMonth, isAfter, startOfMonth, endOfMonth } from 'date-fns';
+
 
 interface RawTokenAmount {
   tokenAmount: string;
@@ -67,6 +74,12 @@ interface TransactionEvents {
   compressed?: any;
   distributeCompressionRewards?: { amount: number };
   setAuthority?: any;
+}
+
+// Extend the Action interface to include blockTime and timeAgo properties
+interface ExtendedAction extends Action {
+  blockTime?: number;
+  timeAgo?: string;
 }
 
 /**
@@ -436,7 +449,7 @@ function displayAmount(action: Action): {
   // Default values
   let amount = '0';
   let symbol = 'SOL';
-  let color = '#333'; // Neutral color
+  let color = COLORS.white; // Neutral color
 
   // Check for enriched data
   if (action.enrichedData) {
@@ -444,7 +457,7 @@ function displayAmount(action: Action): {
 
     // Set color based on direction
     color =
-      direction === 'IN' ? '#14F195' : direction === 'OUT' ? '#F43860' : '#333';
+      direction === 'IN' ? COLORS.brandPrimary : direction === 'OUT' ? COLORS.errorRed : COLORS.white;
 
     // For swap transactions
     if (action.enrichedType === 'SWAP') {
@@ -558,12 +571,204 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
   fetchActionsError,
   walletAddress,
 }) => {
+  const dispatch = useAppDispatch();
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  if (loadingActions) {
+  const handleRefresh = useCallback(async () => {
+    if (!walletAddress) return;
+    setIsRefreshing(true);
+    try {
+      await dispatch(fetchWalletActionsWithCache({
+        walletAddress,
+        forceRefresh: true
+      })).unwrap();
+    } catch (err) {
+      console.error('Error refreshing actions:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [walletAddress, dispatch]);
+
+  // Group actions by date periods
+  const groupedActions = useMemo(() => {
+    if (!myActions || myActions.length === 0) return [];
+
+    // Create date groups
+    const today: Action[] = [];
+    const thisWeek: Action[] = [];
+    const thisMonth: Action[] = [];
+    const previousMonths: { [key: string]: Action[] } = {};
+
+    // Sort actions by timestamp (newest first)
+    const sortedActions = [...myActions].sort((a, b) => {
+      // Extract timestamps - handle different possible formats
+      let timestampA: number;
+      let timestampB: number;
+
+      // The timestamp might be a string date, unix timestamp, or already a Date object
+      if (a.timestamp) {
+        if (typeof a.timestamp === 'string') {
+          // Try to parse as a date string
+          timestampA = new Date(a.timestamp).getTime();
+          // If invalid date, try as a unix timestamp (seconds)
+          if (isNaN(timestampA)) {
+            timestampA = parseFloat(a.timestamp) * 1000;
+          }
+        } else if (typeof a.timestamp === 'number') {
+          // If it's already a number, ensure it's in milliseconds
+          timestampA = a.timestamp < 10000000000 ? a.timestamp * 1000 : a.timestamp;
+        } else {
+          timestampA = 0;
+        }
+      } else if ((a as ExtendedAction).blockTime) {
+        // Fallback to blockTime if available (usually unix timestamp in seconds)
+        timestampA = (a as ExtendedAction).blockTime! * 1000;
+      } else {
+        timestampA = 0;
+      }
+
+      if (b.timestamp) {
+        if (typeof b.timestamp === 'string') {
+          timestampB = new Date(b.timestamp).getTime();
+          if (isNaN(timestampB)) {
+            timestampB = parseFloat(b.timestamp) * 1000;
+          }
+        } else if (typeof b.timestamp === 'number') {
+          timestampB = b.timestamp < 10000000000 ? b.timestamp * 1000 : b.timestamp;
+        } else {
+          timestampB = 0;
+        }
+      } else if ((b as ExtendedAction).blockTime) {
+        timestampB = (b as ExtendedAction).blockTime! * 1000;
+      } else {
+        timestampB = 0;
+      }
+
+      return timestampB - timestampA;
+    });
+
+    // Helper function to extract date from action
+    const getActionDate = (action: Action): Date => {
+      let timestamp: number;
+
+      if (action.timestamp) {
+        if (typeof action.timestamp === 'string') {
+          timestamp = new Date(action.timestamp).getTime();
+          if (isNaN(timestamp)) {
+            timestamp = parseFloat(action.timestamp) * 1000;
+          }
+        } else if (typeof action.timestamp === 'number') {
+          timestamp = action.timestamp < 10000000000 ? action.timestamp * 1000 : action.timestamp;
+        } else {
+          timestamp = 0;
+        }
+      } else if ((action as ExtendedAction).blockTime) {
+        timestamp = (action as ExtendedAction).blockTime! * 1000;
+      } else {
+        // Fallback - use current time minus the relative time from timeAgo if possible
+        const timeAgoText = (action as ExtendedAction).timeAgo || getTimeAgo(0); // use function for consistency
+        if (timeAgoText.includes('days ago')) {
+          const days = parseInt(timeAgoText.split(' ')[0]);
+          timestamp = Date.now() - (days * 24 * 60 * 60 * 1000);
+        } else if (timeAgoText.includes('hours ago')) {
+          const hours = parseInt(timeAgoText.split(' ')[0]);
+          timestamp = Date.now() - (hours * 60 * 60 * 1000);
+        } else if (timeAgoText.includes('minutes ago')) {
+          const minutes = parseInt(timeAgoText.split(' ')[0]);
+          timestamp = Date.now() - (minutes * 60 * 1000);
+        } else {
+          timestamp = Date.now();
+        }
+      }
+
+      return new Date(timestamp);
+    };
+
+    // Function to check if date is today
+    const isDateToday = (date: Date): boolean => {
+      const today = new Date();
+      return date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
+    };
+
+    // Function to check if date is within this week
+    const isDateThisWeek = (date: Date): boolean => {
+      const now = new Date();
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      return date >= startOfWeek && !isDateToday(date);
+    };
+
+    // Function to check if date is within this month
+    const isDateThisMonth = (date: Date): boolean => {
+      const now = new Date();
+      return date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear() &&
+        !isDateToday(date) &&
+        !isDateThisWeek(date);
+    };
+
+    // Group actions by date periods
+    sortedActions.forEach(action => {
+      const actionDate = getActionDate(action);
+
+      if (isDateToday(actionDate)) {
+        today.push(action);
+      } else if (isDateThisWeek(actionDate)) {
+        thisWeek.push(action);
+      } else if (isDateThisMonth(actionDate)) {
+        thisMonth.push(action);
+      } else {
+        // Group by month name
+        const monthYear = format(actionDate, 'MMMM yyyy');
+        if (!previousMonths[monthYear]) {
+          previousMonths[monthYear] = [];
+        }
+        previousMonths[monthYear].push(action);
+      }
+    });
+
+    // Convert to sections for SectionList
+    const sections = [];
+
+    if (today.length > 0) {
+      sections.push({ title: 'Today', data: today });
+    }
+
+    if (thisWeek.length > 0) {
+      sections.push({ title: 'This Week', data: thisWeek });
+    }
+
+    if (thisMonth.length > 0) {
+      sections.push({ title: 'This Month', data: thisMonth });
+    }
+
+    // Add previous months in chronological order (newest first)
+    const monthKeys = Object.keys(previousMonths).sort((a, b) => {
+      const [monthA, yearA] = a.split(' ');
+      const [monthB, yearB] = b.split(' ');
+      const dateA = new Date(`${monthA} 1, ${yearA}`);
+      const dateB = new Date(`${monthB} 1, ${yearB}`);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    monthKeys.forEach(month => {
+      if (previousMonths[month].length > 0) {
+        sections.push({ title: month, data: previousMonths[month] });
+      }
+    });
+
+    return sections;
+  }, [myActions]);
+
+  if (loadingActions && !isRefreshing) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#3871DD" />
+        <ActivityIndicator size="large" color={COLORS.brandBlue} />
         <Text style={styles.emptyText}>Loading transactions...</Text>
       </View>
     );
@@ -572,8 +777,14 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
   if (fetchActionsError) {
     return (
       <View style={styles.centered}>
-        <FontAwesome5 name="exclamation-circle" size={32} color="#F43860" />
+        <FontAwesome5 name="exclamation-circle" size={32} color={COLORS.errorRed} />
         <Text style={styles.errorText}>{fetchActionsError}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={handleRefresh}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -582,17 +793,23 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
     return (
       <View style={styles.centered}>
         <View style={styles.emptyStateIcon}>
-          <FontAwesome5 name="history" size={26} color="#FFF" />
+          <FontAwesome5 name="history" size={26} color={COLORS.white} />
         </View>
         <Text style={styles.emptyText}>No transactions yet</Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+        >
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={myActions}
+      <SectionList
+        sections={groupedActions}
         keyExtractor={(item, index) => item.signature || `action-${index}`}
         renderItem={({ item }) => (
           <ActionItem
@@ -601,8 +818,16 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
             walletAddress={walletAddress}
           />
         )}
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{title}</Text>
+          </View>
+        )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        stickySectionHeadersEnabled={false}
       />
 
       <ActionDetailModal
@@ -614,112 +839,5 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F7F9FC',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F7F9FC',
-  },
-  emptyStateIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#9945FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#9945FF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  emptyText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#6E7191',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  errorText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#F43860',
-    fontWeight: '500',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginVertical: 6,
-    ...Platform.select({
-      ios: {
-        shadowColor: 'rgba(0,0,0,0.05)',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  txInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  description: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#14142B',
-    marginBottom: 4,
-  },
-  timeAgo: {
-    fontSize: 13,
-    color: '#6E7191',
-  },
-  amountContainer: {
-    alignItems: 'flex-end',
-  },
-  amount: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  symbol: {
-    fontSize: 13,
-    color: '#6E7191',
-    marginTop: 2,
-  },
-});
 
 export default ActionsPage;

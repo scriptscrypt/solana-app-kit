@@ -1,167 +1,143 @@
 /**
- * Profile service
- * Handles profile-related API operations and data management
+ * File: src/services/profileService.ts
+ *
+ * Handles profile-related server requests and logic.
  */
 
+import {SERVER_URL} from '@env';
+
 /**
- * Upload profile avatar to storage
- * @param userId - User ID or wallet address
- * @param imageUri - Local URI of the selected image
- * @returns Promise with the uploaded image URL
+ * Upload a profile avatar image for a given user.
+ *
+ * @param userWallet   The user's wallet address (unique ID)
+ * @param localFileUri Local file URI of the image
+ * @returns New remote avatar URL
+ * @throws Error on failure
  */
 export async function uploadProfileAvatar(
-  userId: string,
-  imageUri: string
+  userWallet: string,
+  localFileUri: string,
 ): Promise<string> {
-  try {
-    // Convert image to blob for upload
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
-    
-    // Upload to storage (implementation details handled in the actual function)
-    // This is just a placeholder for the interface
-    
-    // Return the URL of the uploaded image
-    return `https://example.com/profile/${userId}/avatar.jpg`;
-  } catch (error) {
-    console.error('Error uploading profile avatar:', error);
-    throw new Error('Failed to upload profile image');
+  if (!userWallet || !localFileUri || !SERVER_URL) {
+    throw new Error('Missing data to upload avatar');
   }
+
+  const formData = new FormData();
+  formData.append('userId', userWallet);
+  // Append the image under "profilePic"
+  formData.append('profilePic', {
+    uri: localFileUri,
+    type: 'image/jpeg',
+    name: `profile_${Date.now()}.jpg`,
+  } as any);
+
+  const response = await fetch(`${SERVER_URL}/api/profile/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Upload avatar request failed.');
+  }
+
+  return data.url as string;
 }
 
 /**
- * Fetch user followers
- * @param userId - User ID or wallet address
- * @returns Promise with array of follower data
+ * Fetch a user's followers from the server.
+ * @param userId The user's wallet address or ID
+ * @returns An array of follower objects
  */
 export async function fetchFollowers(userId: string): Promise<any[]> {
-  try {
-    // Fetch followers from API
-    // Implementation details handled in the actual function
+  if (!SERVER_URL) {
+    console.warn('SERVER_URL not set. Returning empty followers array.');
     return [];
-  } catch (error) {
-    console.error('Error fetching followers:', error);
-    throw new Error('Failed to fetch followers');
+  }
+  try {
+    const res = await fetch(
+      `${SERVER_URL}/api/profile/followers?userId=${userId}`,
+    );
+    const data = await res.json();
+    if (data.success && Array.isArray(data.followers)) {
+      return data.followers;
+    }
+    return [];
+  } catch (err) {
+    console.warn('Error fetching followers:', err);
+    return [];
   }
 }
 
 /**
- * Fetch users that the specified user is following
- * @param userId - User ID or wallet address
- * @returns Promise with array of following data
+ * Fetch a user's following list from the server.
+ * @param userId The user's wallet address or ID
+ * @returns An array of following objects
  */
 export async function fetchFollowing(userId: string): Promise<any[]> {
-  try {
-    // Fetch following from API
-    // Implementation details handled in the actual function
+  if (!SERVER_URL) {
+    console.warn('SERVER_URL not set. Returning empty following array.');
     return [];
-  } catch (error) {
-    console.error('Error fetching following:', error);
-    throw new Error('Failed to fetch following');
+  }
+  try {
+    const res = await fetch(
+      `${SERVER_URL}/api/profile/following?userId=${userId}`,
+    );
+    const data = await res.json();
+    if (data.success && Array.isArray(data.following)) {
+      return data.following;
+    }
+    return [];
+  } catch (err) {
+    console.warn('Error fetching following:', err);
+    return [];
   }
 }
 
 /**
- * Check if specified user follows the current user
- * @param userId - User ID or wallet address to check
- * @param currentUserId - Current user's ID or wallet
- * @returns Promise with boolean indicating if the user follows the current user
+ * Checks if a target user is in *my* followers list => do they follow me?
+ * @param myWallet  My own wallet ID
+ * @param userWallet The target user's ID
+ * @returns boolean (true => they follow me)
  */
 export async function checkIfUserFollowsMe(
-  userId: string, 
-  currentUserId: string
+  myWallet: string,
+  userWallet: string,
 ): Promise<boolean> {
-  try {
-    // Implementation details handled in the actual function
+  if (!SERVER_URL) {
+    console.warn(
+      'SERVER_URL not set. Returning false for checkIfUserFollowsMe.',
+    );
     return false;
-  } catch (error) {
-    console.error('Error checking follow status:', error);
-    throw new Error('Failed to check if user follows me');
+  }
+  try {
+    const res = await fetch(
+      `${SERVER_URL}/api/profile/followers?userId=${myWallet}`,
+    );
+    const data = await res.json();
+    if (data.success && Array.isArray(data.followers)) {
+      return data.followers.some((f: any) => f.id === userWallet);
+    }
+    return false;
+  } catch (err) {
+    console.warn('Error in checkIfUserFollowsMe:', err);
+    return false;
   }
 }
 
-/**
- * Follow a user
- * @param targetUserId - ID of the user to follow
- * @param currentUserId - Current user's ID or wallet
- * @returns Promise with success status
- */
-export async function followUser(
-  targetUserId: string,
-  currentUserId: string
-): Promise<{success: boolean}> {
+export const fetchUserProfile = async (userId: string) => {
   try {
-    // Implementation details handled in the actual function
-    return {success: true};
-  } catch (error) {
-    console.error('Error following user:', error);
-    throw new Error('Failed to follow user');
-  }
-}
-
-/**
- * Unfollow a user
- * @param targetUserId - ID of the user to unfollow
- * @param currentUserId - Current user's ID or wallet
- * @returns Promise with success status
- */
-export async function unfollowUser(
-  targetUserId: string,
-  currentUserId: string
-): Promise<{success: boolean}> {
-  try {
-    // Implementation details handled in the actual function
-    return {success: true};
-  } catch (error) {
-    console.error('Error unfollowing user:', error);
-    throw new Error('Failed to unfollow user');
-  }
-}
-
-/**
- * Update user profile data
- * @param userId - User ID or wallet address
- * @param data - Updated profile data
- * @returns Promise with updated profile data
- */
-export async function updateUserProfile(
-  userId: string,
-  data: {
-    username?: string;
-    description?: string;
-    profilePicUrl?: string;
-    attachmentData?: any;
-  }
-): Promise<any> {
-  try {
-    // Implementation details handled in the actual function
+    const response = await fetch(`YOUR_API_URL/profile?userId=${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch profile');
+    const data = await response.json();
+    
     return {
-      address: userId,
-      ...data
-    };
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    throw new Error('Failed to update profile');
-  }
-}
-
-/**
- * Fetch user profile data
- * @param userId - User ID or wallet address
- * @returns Promise with user profile data
- */
-export async function fetchUserProfile(userId: string): Promise<any> {
-  try {
-    // Implementation details handled in the actual function
-    return {
-      address: userId,
-      username: 'User',
-      description: '',
-      profilePicUrl: '',
-      attachmentData: {}
+      url: data.url,
+      username: data.username,
+      attachmentData: data.attachmentData || {},
     };
   } catch (error) {
     console.error('Error fetching profile:', error);
-    throw new Error('Failed to fetch profile');
+    throw error;
   }
-} 
+};

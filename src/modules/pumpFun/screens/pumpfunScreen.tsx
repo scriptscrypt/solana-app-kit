@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 
 import { styles } from './pumpfunScreen.style';
-import { useAuth } from '../../embeddedWalletProviders/hooks/useAuth';
-import { fetchSolBalance, fetchTokenAccounts, TokenEntry } from '../../../utils/common/fetch';
+import { useAuth } from '../../walletProviders/hooks/useAuth';
+import { fetchSolBalance, fetchTokenAccounts } from '../../dataModule/utils/fetch';
 import PumpfunBuySection from '../components/PumpfunBuySection';
 import PumpfunSellSection from '../components/PumpfunSellSection';
 import PumpfunLaunchSection from '../components/PumpfunLaunchSection';
-import { useAppSelector } from '../../../hooks/useReduxHooks';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { TokenEntry } from '../../dataModule/types/tokenTypes';
 
 const customStyles = StyleSheet.create({
   customCardContainer: {

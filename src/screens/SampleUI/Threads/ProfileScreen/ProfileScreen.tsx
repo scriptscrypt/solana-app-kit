@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, StatusBar, Platform, SafeAreaView } from 'react-native';
-import Profile from '../../../../core/profile/components/profile';
-import { useAppSelector, useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { ThreadPost } from '../../../../core/thread/components/thread.types';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
-import { flattenPosts } from '../../../../core/thread/components/thread.utils';
+import Profile from '@/core/profile/components/profile';
+import { ThreadPost } from '@/core/thread/components/thread.types';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { flattenPosts } from '@/core/thread/components/thread.utils';
 import { useFocusEffect } from '@react-navigation/native';
-import { fetchFollowers, fetchFollowing } from '../../../../services/profileService';
-import { useFetchNFTs } from '../../../../modules/nft';
+import { fetchFollowers, fetchFollowing } from '@/core/profile/services/profileService';
+import { useFetchNFTs } from '@/modules/nft';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
+import COLORS from '@/assets/colors';
 
 export default function ProfileScreen() {
   // Get user data from Redux
@@ -108,7 +109,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
   },
 });
 

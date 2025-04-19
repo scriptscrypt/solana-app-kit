@@ -13,17 +13,17 @@ import {
 import type { ThreadPost, ThreadUser } from '../thread.types';
 import { createThreadStyles, getMergedTheme } from '../thread.styles';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../../state/store';
+import { RootState } from '@/shared/state/store';
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
 import { CLUSTER } from '@env';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import TradeModal from '../trade/TradeModal';
-import { useAppSelector } from '../../../../hooks/useReduxHooks';
-import { DEFAULT_IMAGES, ENDPOINTS } from '../../../../config/constants';
-import { TransactionService } from '../../../../modules/embeddedWalletProviders/services/transaction/transactionService';
+import { useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { DEFAULT_IMAGES, ENDPOINTS } from '@/config/constants';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 
 // Import NFT services
-import { buyNft, buyCollectionFloor } from '../../../../modules/nft';
+import { buyNft, buyCollectionFloor } from '@/modules/nft';
 
 /**
  * Determines the type of CTA to display based on the post's sections

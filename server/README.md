@@ -1,6 +1,6 @@
 # Solana Social Starter - Backend Server
 
-A comprehensive backend server for the Solana Social Starter kit, providing token management, social features, and various API endpoints for interacting with the Solana blockchain.
+A comprehensive backend server for the Solana App kit, providing token management, social features, and various API endpoints for interacting with the Solana blockchain.
 
 ## Overview
 
@@ -13,6 +13,7 @@ This backend server is built with Express.js and TypeScript, offering a robust A
 - Staking and vesting functionality
 - IPFS integration via Pinata
 - Google Cloud Storage integration
+- Turnkey API integration for wallet management
 
 ## Prerequisites
 
@@ -22,6 +23,7 @@ This backend server is built with Express.js and TypeScript, offering a robust A
 - PostgreSQL database
 - Google Cloud Storage account (for image storage)
 - Pinata account (for IPFS storage)
+- Turnkey API access (for wallet management)
 
 ## Installation
 
@@ -38,28 +40,42 @@ cd solana-social-starter/server
 yarn install
 ```
 
-3. Create a `.env` file in the server directory with the following variables:
+3. Set up your environment variables by copying the example file:
+
+```bash
+cp .env.example .env
+```
+
+4. Edit the `.env` file with your own credentials:
 
 ```env
-# Solana Configuration
+# General
 WALLET_PRIVATE_KEY="your-wallet-private-key"
 RPC_URL="your-solana-rpc-url"
+DATABASE_URL="postgresql://username:password@hostname:port/database_name"
+
+# Token Mill
 TOKEN_MILL_PROGRAMID="JoeaRXgtME3jAoz5WuFXGEndfv4NPH9nBxsLq44hk9J"
 TOKEN_MILL_CONFIG_PDA="your-token-mill-config-pda"
+
+# Swap Authority
 SWAP_AUTHORITY_KEY="your-swap-authority-key"
 
-# Pinata Configuration (for IPFS)
+# Pinata IPFS
 PINATA_JWT="your-pinata-jwt"
 PINATA_GATEWAY="your-pinata-gateway"
 PINATA_SECRET="your-pinata-secret"
 PINATA_API_KEY="your-pinata-api-key"
 
-# Database Configuration
-DATABASE_URL="postgresql://username:password@hostname:port/database_name"
-
-# Google Cloud Storage
+# Storage
 GCS_BUCKET_NAME="your-gcs-bucket-name"
 SERVICE_ACCOUNT_EMAIL="your-service-account-email"
+
+# Turnkey API Configuration
+TURNKEY_API_URL="https://api.turnkey.com"
+TURNKEY_ORGANIZATION_ID="your-turnkey-organization-id"
+TURNKEY_API_PUBLIC_KEY="your-turnkey-api-public-key"
+TURNKEY_API_PRIVATE_KEY="your-turnkey-api-private-key"
 ```
 
 ## Development
@@ -86,6 +102,17 @@ Start the production server:
 yarn start
 ```
 
+## Deployment
+
+This project includes configuration for Google Cloud Platform deployment:
+
+```bash
+# Deploy to Google Cloud App Engine
+gcloud app deploy
+```
+
+Make sure to set up the appropriate GCP credentials and project configuration before deploying.
+
 ## Project Structure
 
 ```
@@ -104,8 +131,10 @@ server/
 ├── dist/                  # Compiled JavaScript output
 ├── uploads/               # Temporary upload directory
 ├── .env                   # Environment variables
+├── .env.example           # Example environment variables
 ├── package.json           # Project dependencies
 ├── tsconfig.json          # TypeScript configuration
+├── CONTRIBUTING.md        # Contribution guidelines
 └── README.md              # This file
 ```
 
@@ -175,6 +204,13 @@ Two file storage options are integrated:
 1. **Google Cloud Storage** - For profile images and thread attachments
 2. **IPFS via Pinata** - For decentralized, permanent storage of metadata
 
+### Wallet Management
+
+Turnkey API integration provides secure wallet management capabilities for:
+- Key management
+- Transaction signing
+- Wallet authentication
+
 ## Error Handling
 
 The server implements robust error handling with:
@@ -190,14 +226,11 @@ The server implements robust error handling with:
 - Error messages are sanitized before being sent to clients
 - Sensitive operation details are kept secure
 - Database uses parameterized queries to prevent SQL injection
+- Environment variables for sensitive credentials
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+We welcome contributions to the Solana Social Starter backend server! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed information on how to contribute to this project.
 
 ## License
 

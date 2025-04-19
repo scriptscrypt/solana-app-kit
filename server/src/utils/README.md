@@ -1,103 +1,153 @@
 # Utils Directory
 
-This directory contains utility functions and helper modules used throughout the Solana Social Starter backend.
+This directory contains utility functions and helpers used throughout the Solana App Kit server. These utilities provide reusable functionality for common tasks such as file storage, IPFS integration, and blockchain interactions.
 
-## Overview
-
-Utility functions provide reusable code for common operations, separating shared functionality from business logic. These utilities:
-
-- Perform specific tasks that are needed across multiple parts of the application
-- Encapsulate complex operations into simple function calls
-- Handle cross-cutting concerns like error handling, serialization, and blockchain interactions
-
-## Files
-
-### `tokenMillHelpers.ts`
-
-Provides utility functions for TokenMill operations:
-
-- `parseSwapAmounts`: Parses and validates swap amount parameters
-- `getBlockhashWithFallback`: Retrieves a recent blockhash with fallback mechanisms
-- `serializeTransaction`: Serializes transactions for client-side signing
-- Other TokenMill-specific helper functions
-
-### `ipfs.ts`
-
-Contains utilities for interacting with IPFS via Pinata:
-
-- Uploading files to IPFS
-- Retrieving content from IPFS
-- Managing IPFS pins
-- Generating gateway URLs for IPFS content
+## Available Utilities
 
 ### `gcs.ts`
 
-Provides utilities for Google Cloud Storage operations:
+Google Cloud Storage integration utilities:
 
-- Uploading files to GCS buckets
-- Generating signed URLs for accessing files
-- Managing file metadata
-- Handling permissions
+- `uploadToGCS`: Uploads files to Google Cloud Storage
+- `getGCSPublicUrl`: Generates public URLs for stored files
+- `deleteFromGCS`: Removes files from storage
+- `getGCSBucket`: Retrieves the GCS bucket instance
 
-## Usage
+These functions handle authentication, file uploads, and URL generation for the GCS bucket specified in the environment variables.
 
-Utility functions are imported where needed throughout the codebase:
+### `ipfs.ts`
+
+IPFS integration via Pinata:
+
+- `uploadToIPFS`: Uploads JSON metadata to IPFS
+- `pinFile`: Pins a file to IPFS
+- `getIPFSUrl`: Generates gateway URLs for IPFS content
+- `uploadMetadata`: Specialized function for uploading token metadata
+
+These utilities abstract away the complexities of working with Pinata's API for IPFS storage.
+
+### `tokenMillHelpers.ts`
+
+Helper functions for TokenMill operations:
+
+- `deriveMarketPDA`: Derives program-derived addresses for markets
+- `deriveTokenPositionPDA`: Derives PDAs for token positions
+- `buildFeeStructure`: Creates fee structures for token markets
+- `convertToLamports`: Converts SOL amounts to lamports
+- `convertToTokens`: Converts lamport amounts to token units
+
+These helpers support the TokenMill service by providing common calculations and address derivations.
+
+## Common Patterns
+
+### File Upload Pattern
 
 ```typescript
-import {serializeTransaction} from '../utils/tokenMillHelpers';
-import {uploadToIPFS} from '../utils/ipfs';
+import { uploadToGCS } from '../utils/gcs';
 
-async function processMetadataAndTransaction(metadata, transaction) {
-  // Upload metadata to IPFS
-  const metadataUri = await uploadToIPFS(metadata);
+// In a controller function
+const fileBuffer = req.file.buffer;
+const contentType = req.file.mimetype;
+const fileName = `${uuidv4()}.${req.file.originalname.split('.').pop()}`;
 
-  // Serialize the transaction for client-side signing
-  const serializedTx = serializeTransaction(transaction);
+const publicUrl = await uploadToGCS(
+  fileBuffer,
+  fileName,
+  contentType
+);
 
-  return {metadataUri, serializedTx};
-}
+return publicUrl;
 ```
 
-## Best Practices
+### IPFS Metadata Upload Pattern
 
-1. **Focus on Single Responsibility**: Each utility function should do one thing well
-2. **Document Functions**: Include JSDoc comments for all utility functions
-3. **Error Handling**: Implement proper error handling in utility functions
-4. **Type Safety**: Use TypeScript types for parameters and return values
-5. **Testing**: Write unit tests for utility functions
-6. **Pure Functions**: When possible, make utility functions pure (no side effects)
-7. **Avoid State**: Utility functions should generally be stateless
+```typescript
+import { uploadMetadata } from '../utils/ipfs';
+
+// In a controller function
+const metadata = {
+  name: "Token Name",
+  symbol: "TKN",
+  description: "Token description",
+  image: imageUrl,
+  attributes: [
+    { trait_type: "Category", value: "Social" }
+  ]
+};
+
+const ipfsUrl = await uploadMetadata(metadata);
+return ipfsUrl;
+```
+
+### TokenMill PDA Derivation Pattern
+
+```typescript
+import { deriveMarketPDA } from '../utils/tokenMillHelpers';
+
+// In a service function
+const [marketPda, marketBump] = await deriveMarketPDA(
+  marketIndex,
+  tokenMillProgramId
+);
+```
 
 ## Adding New Utilities
 
 When adding new utility functions:
 
-1. Group related functions in the same file
-2. Use descriptive function and file names
-3. Export all functions that may be useful elsewhere
-4. Document parameters, return values, and usage examples
-5. Add type definitions for complex parameters and return values
+1. Group related functions in a single file with a descriptive name
+2. Document all functions with JSDoc comments
+3. Implement error handling for robust operation
+4. Export all functions that will be used outside the file
+5. Keep functions pure and focused on a single responsibility
+6. Write utility functions to be stateless where possible
+
+## Best Practices
+
+- **Error Handling**: Implement robust error handling in utility functions
+- **Type Safety**: Use TypeScript types for parameters and return values
+- **Documentation**: Document utility functions with JSDoc comments
+- **Testability**: Design utilities to be easily testable
+- **Reusability**: Make utilities generic enough to be used in multiple contexts
+- **Immutability**: Avoid modifying input parameters
+- **Configuration**: Use environment variables for configuration where appropriate
+- **Logging**: Include appropriate logging for errors and operations
 
 ## Example Utility Function
 
 ```typescript
 /**
- * Serializes a transaction for client-side signing.
- *
- * @param transaction - The transaction to serialize
- * @returns Base64 encoded serialized transaction
+ * Uploads a file buffer to Google Cloud Storage and returns the public URL
+ * @param fileBuffer - The buffer containing file data
+ * @param fileName - The desired file name (including extension)
+ * @param contentType - The MIME type of the file
+ * @returns A Promise resolving to the public URL of the uploaded file
+ * @throws Error if the upload fails
  */
-export function serializeTransaction(transaction: Transaction): string {
+export async function uploadToGCS(
+  fileBuffer: Buffer,
+  fileName: string,
+  contentType: string
+): Promise<string> {
   try {
-    const serializedTx = transaction.serialize({
-      requireAllSignatures: false,
-      verifySignatures: false,
+    const bucket = getGCSBucket();
+    const file = bucket.file(fileName);
+    
+    // Upload file
+    await file.save(fileBuffer, {
+      metadata: {
+        contentType,
+      },
     });
-
-    return serializedTx.toString('base64');
+    
+    // Make file publicly accessible
+    await file.makePublic();
+    
+    // Return public URL
+    return `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/${fileName}`;
   } catch (error) {
-    console.error('Error serializing transaction:', error);
-    throw new Error('Failed to serialize transaction');
+    console.error('Error uploading to GCS:', error);
+    throw new Error(`Failed to upload file to Google Cloud Storage: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 ```

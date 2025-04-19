@@ -9,6 +9,7 @@ import SectionTextVideo from '../sections/SectionTextVideo';
 import SectionPoll from '../sections/SectionPoll';
 import SectionTrade from '../sections/SectionTrade';
 import SectionNftListing from '../sections/SectionNftListing';
+import COLORS from '@/assets/colors';
 
 /**
  * Props for the PostBody component
@@ -108,7 +109,11 @@ function PostBody({
   }, [sections, user, createdAt, externalRefreshTrigger, styles.extraContentContainer]);
 
   return (
-    <View style={{ marginTop: 8, padding: 0 }}>
+    <View style={{
+      marginTop: 0,
+      padding: 0,
+      backgroundColor: COLORS.background
+    }}>
       {renderedSections}
     </View>
   );

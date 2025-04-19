@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import {
   Image,
   View,
@@ -9,20 +9,22 @@ import {
   TextInput,
   Platform,
 } from 'react-native';
-import { findMentioned } from '../../../../utils/common/findMentioned';
+import { findMentioned } from '@/shared/utils/common/findMentioned';
 import AddButton from '../addButton/addButton';
 import BuyCard from '../buyCard/buyCard';
 import ProfileIcons from '../../../../assets/svgs/index';
 import { styles } from './UserProfileInfo.style';
-import { useAppDispatch } from '../../../../hooks/useReduxHooks';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import {
   attachCoinToProfile,
   removeAttachedCoin,
-} from '../../../../state/auth/reducer';
+} from '@/shared/state/auth/reducer';
 import { tokenModalStyles } from './profileInfoTokenModal.style';
 import COLORS from '../../../../assets/colors';
-import { UserProfileInfoProps } from '../../types';
-import { IPFSAwareImage, getValidImageSource } from '../../../../utils/IPFSImage';
+import TYPOGRAPHY from '../../../../assets/typography';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { UserProfileInfoProps } from '../../types/index';
+import ProfileEditDrawer from '../ProfileEditDrawer';
 
 /**
  * TokenAttachModal - Component for the token attachment modal
@@ -60,7 +62,11 @@ const TokenAttachModal = memo(({
           </View>
 
           <View style={{ marginVertical: 8 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600' }}>
+            <Text style={{ 
+              fontSize: TYPOGRAPHY.size.sm, 
+              fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+              color: COLORS.textDark
+            }}>
               Description:
             </Text>
             <TextInput
@@ -70,6 +76,7 @@ const TokenAttachModal = memo(({
                 borderRadius: 8,
                 padding: 8,
                 marginTop: 4,
+                color: COLORS.textDark
               }}
               placeholder="Write a short token description"
               value={tokenDescription}
@@ -153,13 +160,19 @@ const StatsSection = memo(({
 /**
  * Edit Profile Button with memoized content
  */
-const EditButton = memo(({ onPress }: { onPress?: () => void }) => (
-  <View style={{ marginTop: 8, flexDirection: 'row', gap: 12 }}>
+const EditButton = memo(({ onPress, onSharePress }: { onPress?: () => void; onSharePress?: () => void }) => (
+  <View style={{ marginTop: 8, width: '100%', flexDirection: 'row', gap: 12 }}>
     <TouchableOpacity
-      style={styles.editProfileBtn}
+      style={[styles.editProfileBtn, { flex: 1 }]}
       onPress={onPress}>
       <Text style={styles.editProfileBtnText}>Edit Profile</Text>
     </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.editProfileBtn, { flex: 1 }]}
+      onPress={onSharePress}>
+      <Text style={styles.editProfileBtnText}>Share Profile</Text>
+    </TouchableOpacity>
+
   </View>
 ));
 
@@ -296,6 +309,7 @@ function UserProfileInfo({
   isOwnProfile,
   onAvatarPress,
   onEditProfile,
+  onShareProfile,
   bioText,
   amIFollowing = false,
   areTheyFollowingMe = false,
@@ -309,6 +323,18 @@ function UserProfileInfo({
 }: UserProfileInfoProps) {
   const dispatch = useAppDispatch();
 
+  // Local state to handle updates
+  const [localProfilePic, setLocalProfilePic] = useState(profilePicUrl);
+  const [localUsername, setLocalUsername] = useState(username);
+  const [localBioText, setLocalBioText] = useState(bioText);
+
+  // Update local state when props change
+  useEffect(() => {
+    setLocalProfilePic(profilePicUrl);
+    setLocalUsername(username);
+    setLocalBioText(bioText);
+  }, [profilePicUrl, username, bioText]);
+
   // Format wallet address as a handle
   const handleString = useMemo(() =>
     userWallet
@@ -319,9 +345,9 @@ function UserProfileInfo({
 
   // Default bio with username if none provided
   const sampleBio = useMemo(() =>
-    bioText ||
-    `Hey folks! I'm ${username} building on Solana. Mention @someone to highlight.`,
-    [bioText, username]
+    localBioText ||
+    `Hey folks! I'm ${localUsername} building on Solana. Mention @someone to highlight.`,
+    [localBioText, localUsername]
   );
 
   // Conditionals for UI elements - memoized to prevent recalculations
@@ -349,6 +375,29 @@ function UserProfileInfo({
     imageUrl?: string;
     symbol?: string;
   } | null>(null);
+
+  // Profile edit drawer state
+  const [showEditProfileDrawer, setShowEditProfileDrawer] = useState(false);
+
+  /**
+   * Combined handler for avatar press and edit profile
+   */
+  const handleEditProfilePress = useCallback(() => {
+    if (!isOwnProfile) return;
+    setShowEditProfileDrawer(true);
+  }, [isOwnProfile]);
+
+  /**
+   * Handle profile updated event
+   */
+  const handleProfileUpdated = useCallback((field: 'image' | 'username' | 'description') => {
+    // Refresh the local state based on the field that was updated
+    if (field === 'image' && onAvatarPress) {
+      onAvatarPress();
+    } else if ((field === 'username' || field === 'description') && onEditProfile) {
+      onEditProfile();
+    }
+  }, [onAvatarPress, onEditProfile]);
 
   /**
    * Handle token selection from the portfolio modal
@@ -442,12 +491,12 @@ function UserProfileInfo({
     <View style={styles.profileInfo}>
       {/* Profile Header with Avatar and Name */}
       <ProfileHeader
-        profilePicUrl={profilePicUrl}
-        username={username}
+        profilePicUrl={localProfilePic}
+        username={localUsername}
         handleString={handleString}
         showFollowsYou={canShowFollowsYou}
         isOwnProfile={isOwnProfile}
-        onAvatarPress={onAvatarPress}
+        onAvatarPress={handleEditProfilePress}
       />
 
       {/* Short bio */}
@@ -461,10 +510,7 @@ function UserProfileInfo({
         onPressFollowing={onPressFollowing}
       />
 
-      {/* Edit profile button (for own profile) */}
-      {isOwnProfile && <EditButton onPress={onEditProfile} />}
 
-      {/* BuyCard for token (own profile or if token is attached) */}
       {showBuyCard && (
         <TokenCard
           attachmentData={attachmentData}
@@ -474,6 +520,12 @@ function UserProfileInfo({
           onRemoveCoin={handleRemoveCoin}
         />
       )}
+
+      {/* Edit profile button (for own profile) */}
+      {isOwnProfile && <EditButton onPress={handleEditProfilePress} onSharePress={onShareProfile} />}
+
+      {/* BuyCard for token (own profile or if token is attached) */}
+
 
       {/* Follow/unfollow button (for other profiles) */}
       {canShowAddButton && (
@@ -494,6 +546,21 @@ function UserProfileInfo({
         tokenDescription={tokenDescription}
         onChangeDescription={handleDescriptionChange}
       />
+
+      {/* Profile Edit Drawer - new unified profile editor */}
+      {isOwnProfile && (
+        <ProfileEditDrawer
+          visible={showEditProfileDrawer}
+          onClose={() => setShowEditProfileDrawer(false)}
+          profileData={{
+            userId: userWallet,
+            profilePicUrl: localProfilePic,
+            username: localUsername,
+            description: localBioText || sampleBio,
+          }}
+          onProfileUpdated={handleProfileUpdated}
+        />
+      )}
     </View>
   );
 }
