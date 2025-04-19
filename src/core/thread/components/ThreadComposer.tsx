@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Animated,
 } from 'react-native';
 import Icons from '../../../assets/svgs';
 import {
@@ -36,6 +37,9 @@ import {
   getValidImageSource,
   fixIPFSUrl,
 } from '../../../shared/utils/IPFSImage';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
+import Svg, { Path } from 'react-native-svg';
 
 /**
  * Props for the ThreadComposer component
@@ -137,6 +141,20 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
     styleOverrides,
     userStyleSheet,
   );
+
+  // Animation for send button
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Update the animation value when content changes
+  useEffect(() => {
+    const hasContent = textValue.trim() || selectedImage || selectedListingNft;
+
+    Animated.timing(fadeAnim, {
+      toValue: hasContent ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [textValue, selectedImage, selectedListingNft, fadeAnim]);
 
   // Add this function to fetch active listings
   const fetchActiveListings = useCallback(async () => {
@@ -405,7 +423,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
           <TextInput
             ref={inputRef}
             style={styles.composerInput}
-            placeholder={parentId ? 'Reply...' : "What's happening?"}
+            placeholder={parentId ? 'Reply...' : "Got something to say?"}
             placeholderTextColor="#999"
             value={textValue}
             onChangeText={setTextValue}
@@ -415,12 +433,10 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
           {/* Selected image preview */}
           {selectedImage && (
             <View style={styles.imagePreviewContainer}>
-              <IPFSAwareImage
-                source={getValidImageSource(selectedImage)}
+              <Image
+                source={{ uri: selectedImage }}
                 style={styles.imagePreview}
                 resizeMode="cover"
-                defaultSource={DEFAULT_IMAGES.user}
-                key={Platform.OS === 'android' ? `preview-${Date.now()}` : 'preview'}
               />
               <TouchableOpacity
                 style={styles.removeImageButton}
@@ -456,48 +472,56 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
           {/* Buttons */}
           <View style={styles.iconsRow}>
             <View style={styles.leftIcons}>
-              <TouchableOpacity onPress={handleMediaPress}>
-                <Icons.MediaIcon width={18} height={18} />
+              <TouchableOpacity
+                onPress={handleMediaPress}
+                style={styles.iconButton}>
+                <Icons.ImageIcon width={22} height={22} />
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleNftListingPress}
-                style={{ marginLeft: 8 }}>
-                <Text style={{ fontSize: 12, color: '#666666' }}>
-                  NFT Listing
-                </Text>
+                style={styles.iconButton}>
+                <Icons.NFTIcon width={22} height={22} />
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => setShowTradeModal(true)}
-                style={{ marginLeft: 8 }}>
-                <Text style={{ fontSize: 12, color: '#333333' }}>
-                  Trade/Share
-                </Text>
+                style={styles.iconButton}>
+                <Icons.TradeShare width={22} height={22} />
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              onPress={handlePost}
-              disabled={isSubmitting}
-              style={{
-                opacity: isSubmitting ? 0.6 : 1,
-                flexDirection: 'row',
-                alignItems: 'center'
-              }}>
-              {isSubmitting ? (
-                <>
-                  <ActivityIndicator size="small" color="#1d9bf0" style={{ marginRight: 5 }} />
-                  <Text style={{ color: '#1d9bf0', fontWeight: '600' }}>
-                    {parentId ? 'Replying...' : 'Posting...'}
-                  </Text>
-                </>
-              ) : (
-                <Text style={{ color: '#1d9bf0', fontWeight: '600' }}>
-                  {parentId ? 'Reply' : 'Post'}
-                </Text>
-              )}
-            </TouchableOpacity>
+            {/* Right side with animated send button */}
+            <Animated.View style={{
+              opacity: fadeAnim,
+              transform: [{
+                scale: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.5, 1]
+                })
+              }]
+            }}>
+              <TouchableOpacity
+                onPress={handlePost}
+                disabled={isSubmitting || !(textValue.trim() || selectedImage || selectedListingNft)}
+                style={styles.sendButton}>
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  // Wider paper plane SVG with proper tilt
+                  <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M3 11l19-7.5-6 18.5-3.5-7L3 11zm0 0l9.5 4"
+                      fill={COLORS.brandBlue}
+                      stroke={COLORS.brandBlue}
+                      strokeWidth={1.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </View>
       </View>

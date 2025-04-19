@@ -18,6 +18,7 @@ import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
 import { IPFSAwareImage } from '@/shared/utils/IPFSImage';
+import COLORS from '@/assets/colors';
 
 // Always available direct reference to an image in the bundle
 const DEFAULT_AVATAR = require('../../../../assets/images/User.png');
@@ -284,6 +285,27 @@ export default React.memo(function PostHeader({
     }
   };
 
+  // Add a function to format relative time
+  const getRelativeTimeString = (date: string) => {
+    const now = new Date();
+    const postDate = new Date(date);
+    const diffMs = now.getTime() - postDate.getTime();
+
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+
+    if (years > 0) return `${years}y`;
+    if (months > 0) return `${months}m`;
+    if (days > 0) return `${days}d`;
+    if (hours > 0) return `${hours}h`;
+    if (minutes > 0) return `${minutes}m`;
+    return `${seconds}s`;
+  };
+
   return (
     <View style={[styles.threadItemHeaderRow, { zIndex: 1 }]}>
       {/* If the menu is open, a transparent overlay to detect outside clicks */}
@@ -302,7 +324,7 @@ export default React.memo(function PostHeader({
             user={user}
             style={styles.threadItemAvatar}
           />
-          <Icons.addUserIcon
+          {/* <Icons.addUserIcon
             style={{
               position: 'absolute',
               bottom: -4,
@@ -314,7 +336,7 @@ export default React.memo(function PostHeader({
               borderWidth: 2,
               borderColor: 'white',
             }}
-          />
+          /> */}
         </TouchableOpacity>
 
         <View style={{ marginLeft: 8 }}>
@@ -337,12 +359,17 @@ export default React.memo(function PostHeader({
         </View>
       </View>
 
-      {/* Only show 3-dot menu if this is the current user's post */}
-      {isMyPost && (
-        <TouchableOpacity onPress={handleToggleMenu}>
-          <Icons.DotsThree width={20} height={20} />
-        </TouchableOpacity>
-      )}
+      {/* Time indicator and menu controls on the right */}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={localHeaderStyles.relativeTime}>{getRelativeTimeString(createdAt)}</Text>
+
+        {/* Only show 3-dot menu if this is the current user's post */}
+        {isMyPost && (
+          <TouchableOpacity onPress={handleToggleMenu}>
+            <Icons.DotsThree width={20} height={20} color={COLORS.greyMid} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* The small drop-down menu if menuOpen */}
       {menuOpen && isMyPost && (
@@ -364,7 +391,6 @@ export default React.memo(function PostHeader({
             style={localHeaderStyles.menuItem} // Use base style
             onPress={handleDelete}
           >
-            <Icons.cross width={16} height={16} style={localHeaderStyles.menuIcon} />
             <Text style={[localHeaderStyles.menuItemText, localHeaderStyles.deleteText]}>
               Delete
             </Text>
@@ -391,9 +417,9 @@ const localHeaderStyles = StyleSheet.create({
     position: 'absolute',
     top: 30, // Adjusted position slightly lower
     right: 10, // Adjusted position slightly more inboard
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.lighterBackground,
     borderWidth: 1,
-    borderColor: '#eee', // Lighter border
+    borderColor: COLORS.borderDarkColor, // Darker border for dark theme
     borderRadius: 8, // Slightly more rounded corners
     zIndex: 10000, // Increased zIndex slightly, ensure it's above parent row's potential context
     paddingVertical: 6, // Adjusted vertical padding
@@ -412,21 +438,25 @@ const localHeaderStyles = StyleSheet.create({
   },
   menuIcon: {
     marginRight: 10, // Space between icon and text
-    color: '#d9534f', // Match delete text color for the cross icon
+    color: COLORS.errorRed, // Match delete text color
   },
   menuItemText: {
     fontSize: 14,
-    color: '#333',
+    color: COLORS.greyMid,
     flexShrink: 1, // Prevent text from pushing icon out if long
-    // Add specific paddingLeft if no icon is present? Maybe not needed due to flex alignment.
   },
   separator: {
     height: 1,
-    backgroundColor: '#eee', // Separator color
+    backgroundColor: COLORS.borderDarkColor, // Darker separator for dark theme
     marginHorizontal: 10, // Indent separator slightly
   },
   deleteText: {
-    color: '#d9534f', // Softer red for delete
+    color: COLORS.errorRed, // Red from colors.ts
     fontWeight: '500', // Slightly bolder delete text
+  },
+  relativeTime: {
+    fontSize: 12,
+    color: COLORS.greyMid,
+    marginRight: 8,
   },
 });

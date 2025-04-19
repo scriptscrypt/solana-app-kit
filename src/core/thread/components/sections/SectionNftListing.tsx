@@ -2,6 +2,8 @@ import React from 'react';
 import { NftListingData as ThreadNftListingData } from '../thread.types';
 import { NftDetailsSection, NftListingData } from '../../../../modules/nft';
 import styles from './SectionNftListing.style';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 interface SectionNftListingProps {
   listingData?: ThreadNftListingData;
@@ -25,9 +27,11 @@ export default function SectionNftListing({ listingData }: SectionNftListingProp
   };
 
   return (
-    <NftDetailsSection 
+    <NftDetailsSection
       listingData={convertedListingData}
       containerStyle={styles.container}
+      themeColors={COLORS}
+      typography={TYPOGRAPHY}
     />
   );
 }
