@@ -4,7 +4,7 @@ import COLORS from '../../../../assets/colors';
 export const styles = StyleSheet.create({
   tabView: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   tabContent: {
     flex: 1,
@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   postCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -52,9 +52,16 @@ export const styles = StyleSheet.create({
 
 export const tabBarStyles = {
   container: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     height: 50,
     elevation: 4,
+    // Add subtle gradient effect to bottom border
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+    shadowColor: '#243050',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
   },
   label: {
     fontSize: 14,
@@ -62,12 +69,12 @@ export const tabBarStyles = {
     textTransform: 'none',
   },
   indicator: {
-    backgroundColor: COLORS.black,
+    backgroundColor: COLORS.brandBlue,
     height: 3,
     borderRadius: 2,
     marginBottom: 1,
   },
-  activeColor: COLORS.black,
+  activeColor: COLORS.white,
   inactiveColor: COLORS.greyMid,
 };
 
@@ -93,10 +100,8 @@ export const retweetStyles = StyleSheet.create({
   originalPostContainer: {
     width: '100%',
     borderRadius: 12,
-    backgroundColor: COLORS.greyLight,
+    backgroundColor: COLORS.lighterBackground,
     padding: 10,
-    borderWidth: 1,
-    borderColor: COLORS.greyBorder,
   },
   retweetIndicator: {
     flexDirection: 'row',

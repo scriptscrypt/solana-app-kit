@@ -153,13 +153,19 @@ const StatsSection = memo(({
 /**
  * Edit Profile Button with memoized content
  */
-const EditButton = memo(({ onPress }: { onPress?: () => void }) => (
-  <View style={{ marginTop: 8, flexDirection: 'row', gap: 12 }}>
+const EditButton = memo(({ onPress, onSharePress }: { onPress?: () => void; onSharePress?: () => void }) => (
+  <View style={{ marginTop: 8, width: '100%', flexDirection: 'row', gap: 12 }}>
     <TouchableOpacity
-      style={styles.editProfileBtn}
+      style={[styles.editProfileBtn, { flex: 1 }]}
       onPress={onPress}>
       <Text style={styles.editProfileBtnText}>Edit Profile</Text>
     </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.editProfileBtn, { flex: 1 }]}
+      onPress={onSharePress}>
+      <Text style={styles.editProfileBtnText}>Share Profile</Text>
+    </TouchableOpacity>
+
   </View>
 ));
 
@@ -296,6 +302,7 @@ function UserProfileInfo({
   isOwnProfile,
   onAvatarPress,
   onEditProfile,
+  onShareProfile,
   bioText,
   amIFollowing = false,
   areTheyFollowingMe = false,
@@ -461,10 +468,7 @@ function UserProfileInfo({
         onPressFollowing={onPressFollowing}
       />
 
-      {/* Edit profile button (for own profile) */}
-      {isOwnProfile && <EditButton onPress={onEditProfile} />}
 
-      {/* BuyCard for token (own profile or if token is attached) */}
       {showBuyCard && (
         <TokenCard
           attachmentData={attachmentData}
@@ -474,6 +478,12 @@ function UserProfileInfo({
           onRemoveCoin={handleRemoveCoin}
         />
       )}
+
+      {/* Edit profile button (for own profile) */}
+      {isOwnProfile && <EditButton onPress={onEditProfile} onSharePress={onShareProfile} />}
+
+      {/* BuyCard for token (own profile or if token is attached) */}
+
 
       {/* Follow/unfollow button (for other profiles) */}
       {canShowAddButton && (

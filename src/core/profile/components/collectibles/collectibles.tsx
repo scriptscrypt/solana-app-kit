@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Image,
@@ -12,12 +12,14 @@ import {
   RefreshControl,
   ImageBackground
 } from 'react-native';
-import { styles } from './collectibles.style';
-import { AssetItem } from '../../../../hooks/useFetchTokens';
+import { styles, portfolioStyles } from './collectibles.style';
+
 import { fixImageUrl, fetchNftMetadata } from '../../../../modules/nft';
 import { TENSOR_API_KEY } from '@env';
 import { NftItem } from '../../../../modules/nft/types';
 import TokenDetailsDrawer from '../../../sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
+import { AssetItem } from '@/modules/dataModule';
+import COLORS from '@/assets/colors';
 
 export interface PortfolioSectionProps {
   sectionTitle: string;
@@ -351,7 +353,7 @@ const Collectibles: React.FC<CollectiblesProps> = ({
     try {
       // Use the centralized fetch function instead of implementing it here
       const nftData = await fetchNftMetadata(mint);
-      
+
       // Cache the result
       nftDataCache.set(mint, nftData);
       return nftData;
@@ -484,8 +486,17 @@ const Collectibles: React.FC<CollectiblesProps> = ({
           <>
             {/* SOL Balance Card */}
             <View style={portfolioStyles.solBalanceContainer}>
-              <Text style={portfolioStyles.solBalanceLabel}>SOL Balance</Text>
-              <Text style={portfolioStyles.solBalanceValue}>{solBalance} SOL</Text>
+              <View style={portfolioStyles.solLogoContainer}>
+                <Image
+                  source={require('../../../../assets/images/SOL_logo.png')}
+                  style={portfolioStyles.solLogo}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={portfolioStyles.solTextContainer}>
+                <Text style={portfolioStyles.solBalanceLabel}>SOL Balance</Text>
+                <Text style={portfolioStyles.solBalanceValue}>{solBalance} SOL</Text>
+              </View>
             </View>
 
             {/* Tokens Section */}
@@ -609,8 +620,8 @@ const Collectibles: React.FC<CollectiblesProps> = ({
           <RefreshControl
             refreshing={refreshing || false}
             onRefresh={onRefresh}
-            colors={['#1d9bf0']}
-            tintColor={'#1d9bf0'}
+            colors={[COLORS.brandBlue]}
+            tintColor={COLORS.brandBlue}
           />
         }
       >
@@ -720,374 +731,5 @@ const Collectibles: React.FC<CollectiblesProps> = ({
     </>
   );
 };
-
-const portfolioStyles = StyleSheet.create({
-  // Main container styles
-  scrollContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-
-  // Tab styles
-  tabContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    paddingHorizontal: 12,
-    backgroundColor: '#f5f8fa',
-    borderRadius: 20,
-    marginHorizontal: 12,
-    marginTop: 12,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#657786',
-    fontWeight: '500',
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#1d9bf0',
-  },
-  activeTabText: {
-    color: '#1d9bf0',
-    fontWeight: '600',
-  },
-  badgeContainer: {
-    backgroundColor: '#1d9bf0',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 4,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-
-  // Token list styles
-  tokenListItem: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  tokenLogoContainer: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    overflow: 'hidden',
-    backgroundColor: '#f0f2f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tokenLogo: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-  },
-  tokenLogoPlaceholder: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#e1e8ed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tokenLogoPlaceholderText: {
-    color: '#657786',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  tokenDetails: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  tokenName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#14171a',
-    marginBottom: 2,
-  },
-  tokenSymbol: {
-    fontSize: 13,
-    color: '#657786',
-  },
-  tokenBalanceContainer: {
-    alignItems: 'flex-end',
-  },
-  tokenBalance: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#14171a',
-  },
-  tokenValue: {
-    fontSize: 13,
-    color: '#1d9bf0',
-    marginTop: 2,
-  },
-  listContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    marginHorizontal: 12,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#f0f2f5',
-    marginLeft: 60,
-  },
-
-  // Section styles
-  sectionContainer: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    color: '#14171a',
-  },
-  gridContainer: {
-    paddingHorizontal: 12,
-  },
-  columnWrapper: {
-    justifyContent: 'space-between',
-  },
-
-  // Item styles
-  itemContainer: {
-    marginBottom: 16,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    overflow: 'hidden',
-    margin: 6,
-  },
-  imageContainer: {
-    height: 150,
-    width: '100%',
-    position: 'relative',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#f0f2f5',
-  },
-  imageWrapper: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-  },
-  fallbackImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    opacity: 0.2,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  placeholderImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#F0F3F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  placeholderText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#AAB8C2',
-  },
-
-  // Badges
-  compressedBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(29, 155, 240, 0.8)',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  compressedText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  priceBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  priceText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-
-  // Item details
-  itemDetails: {
-    padding: 8,
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#14171a',
-    marginBottom: 4,
-  },
-  itemBalance: {
-    fontSize: 12,
-    color: '#657786',
-  },
-  itemCollection: {
-    fontSize: 12,
-    color: '#657786',
-  },
-
-  // SOL Balance
-  solBalanceContainer: {
-    margin: 16,
-    backgroundColor: '#f7fbfe',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e1e8ed',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  solBalanceLabel: {
-    fontSize: 14,
-    color: '#657786',
-    marginBottom: 4,
-  },
-  solBalanceValue: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#14171a',
-  },
-
-  // Loading state
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#657786',
-    textAlign: 'center',
-  },
-
-  // Error state
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#e0245e',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-
-  // Empty states
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#657786',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  emptySection: {
-    padding: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTabContent: {
-    padding: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTabText: {
-    fontSize: 16,
-    color: '#657786',
-    textAlign: 'center',
-  },
-
-  // Buttons
-  retryButton: {
-    backgroundColor: '#1d9bf0',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  retryText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  viewAllButton: {
-    backgroundColor: '#f2f2f2',
-    padding: 12,
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1d9bf0',
-  },
-});
 
 export default Collectibles;

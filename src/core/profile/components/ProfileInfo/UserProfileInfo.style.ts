@@ -1,5 +1,6 @@
 import {StyleSheet} from 'react-native';
 import COLORS from '../../../../assets/colors';
+import TYPOGRAPHY from '../../../../assets/typography';
 
 export const styles = StyleSheet.create({
   profileInfo: {
@@ -22,14 +23,18 @@ export const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   username: {
-    fontSize: 18,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.xl,
     fontWeight: '600',
-    lineHeight: 22,
-    color: COLORS.textDark,
+    lineHeight: TYPOGRAPHY.lineHeight.xl,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
+    color: COLORS.white,
   },
   handleText: {
-    fontSize: 12,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.xs,
     fontWeight: '500',
+    letterSpacing: TYPOGRAPHY.letterSpacing,
     color: COLORS.greyDark,
   },
   followsBadge: {
@@ -37,16 +42,20 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 6,
     paddingVertical: 4,
-    fontSize: 12,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.xs,
     fontWeight: '500',
+    letterSpacing: TYPOGRAPHY.letterSpacing,
     textAlign: 'left',
     color: COLORS.greyDark,
   },
   bioSection: {
-    fontSize: 14,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.sm,
     fontWeight: '400',
+    letterSpacing: TYPOGRAPHY.letterSpacing,
     textAlign: 'left',
-    color: COLORS.textDark,
+    color: COLORS.white,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -58,26 +67,33 @@ export const styles = StyleSheet.create({
     gap: 2,
   },
   statCount: {
-    fontSize: 12,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.xs,
     fontWeight: '600',
-    color: COLORS.textDark,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
+    color: COLORS.white,
   },
   statLabel: {
-    fontSize: 12,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.xs,
     fontWeight: '500',
+    letterSpacing: TYPOGRAPHY.letterSpacing,
     color: COLORS.greyMid,
   },
   editProfileBtn: {
-    borderWidth: 1,
-    borderColor: COLORS.greyBorderdark,
-    borderRadius: 20,
-    paddingVertical: 8,
+    backgroundColor: COLORS.lighterBackground,
+    borderWidth: 0,
+    borderRadius: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    alignSelf: 'flex-start',
+    width: '100%',
+    alignItems: 'center',
   },
   editProfileBtnText: {
-    fontSize: 14,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.sm,
     fontWeight: '600',
-    color: COLORS.black,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
+    color: COLORS.greyMid,
   },
 }); 

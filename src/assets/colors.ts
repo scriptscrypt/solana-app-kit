@@ -14,6 +14,8 @@ const COLORS = {
   brandPrimary: '#32D4DE',
   brandPurple: '#B591FF',
   brandPurpleBg: '#EDECFF',
+  brandBlue: '#00ABE4',
+  errorRed: '#e0245e',
 
   // Other usage
   textDark: '#1E1E1E',
@@ -25,6 +27,7 @@ const COLORS = {
   background: '#0C101A',
   lightBackground: '#141926',
   lighterBackground: '#1D212D',
+  darkerBackground: '#101521',
   accessoryDarkColor: '#818B9A',
   borderDarkColor: 'rgba(255, 255, 255, 0.1)',
   textDarkColor: '#1E1E1E',

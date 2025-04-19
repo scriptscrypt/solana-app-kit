@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { fetchFollowers, fetchFollowing } from '@/core/profile/services/profileService';
 import { useFetchNFTs } from '@/modules/nft';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
+import COLORS from '@/assets/colors';
 
 export default function ProfileScreen() {
   // Get user data from Redux
@@ -108,7 +109,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
   },
 });
 
