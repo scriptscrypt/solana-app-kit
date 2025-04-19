@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   Dimensions,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,9 +20,11 @@ import { TabView, SceneMap, SceneRendererProps, NavigationState } from 'react-na
 import SearchIcon from '../../../assets/svg/SearchIcon';
 import CloseIcon from '../../../assets/svg/CloseIcon';
 import { SERVER_URL, BIRDEYE_API_KEY } from '@env';
-import { RootStackParamList } from '../../../navigation/RootNavigator';
 import TokenDetailsSheet from '../../../core/sharedUI/TrendingTokenDetails/TokenDetailsSheet';
 import { RiskLevel } from '../../../services/rugCheckService';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+import COLORS from '../../../assets/colors';
+import TYPOGRAPHY from '../../../assets/typography';
 
 const { width } = Dimensions.get('window');
 
@@ -50,6 +53,7 @@ type RouteType = {
 export default function SearchScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Tabs state
   const [index, setIndex] = useState(0);
@@ -74,6 +78,15 @@ export default function SearchScreen() {
 
   // Get the status bar height for Android
   const STATUSBAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
+
+  // Fade in animation on component mount
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
 
   // Fetch users and tokens on component mount
   useEffect(() => {
@@ -250,8 +263,8 @@ export default function SearchScreen() {
   // TOKEN TAB COMPONENTS
   const renderTokenItem = ({ item }: { item: Token }) => {
     const priceChangeColor =
-      !item.priceChange24h ? '#999' :
-        item.priceChange24h >= 0 ? '#4CAF50' : '#F44336';
+      !item.priceChange24h ? COLORS.greyMid :
+        item.priceChange24h >= 0 ? '#4CAF50' : COLORS.errorRed;
 
     const formattedPrice = item.price < 0.01
       ? item.price.toFixed(8)
@@ -325,7 +338,7 @@ export default function SearchScreen() {
     <View style={styles.tabContent}>
       {loadingUsers ? (
         <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#0099ff" style={styles.loader} />
+          <ActivityIndicator size="large" color={COLORS.brandPrimary} style={styles.loader} />
           <Text style={styles.loaderText}>Searching for users...</Text>
         </View>
       ) : (
@@ -354,7 +367,7 @@ export default function SearchScreen() {
     <View style={styles.tabContent}>
       {loadingTokens ? (
         <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#0099ff" style={styles.loader} />
+          <ActivityIndicator size="large" color={COLORS.brandPrimary} style={styles.loader} />
           <Text style={styles.loaderText}>Loading trending tokens...</Text>
         </View>
       ) : (
@@ -412,58 +425,61 @@ export default function SearchScreen() {
 
   return (
     <>
-      {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: '#fff' }} />}
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+      {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: COLORS.background }} />}
       <SafeAreaView style={[
         styles.safeArea,
         Platform.OS === 'android' && androidStyles.safeArea
       ]}>
-        <View style={[
-          styles.header,
-          Platform.OS === 'android' && androidStyles.header
-        ]}>
-          <Text style={styles.headerTitle}>Search</Text>
-        </View>
-
-        <View style={styles.searchContainer}>
-          <View style={styles.searchIcon}>
-            <SearchIcon size={20} color="#666" />
+        <Animated.View style={[{ opacity: fadeAnim }, { flex: 1 }]}>
+          <View style={[
+            styles.header,
+            Platform.OS === 'android' && androidStyles.header
+          ]}>
+            <Text style={styles.headerTitle}>Search</Text>
           </View>
-          <TextInput
-            style={styles.searchInput}
-            placeholder={index === 0 ? "Search by username..." : "Search tokens..."}
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+
+          <View style={styles.searchContainer}>
+            <View style={styles.searchIcon}>
+              <SearchIcon size={20} color={COLORS.greyMid} />
+            </View>
+            <TextInput
+              style={styles.searchInput}
+              placeholder={index === 0 ? "Search by username..." : "Search tokens..."}
+              placeholderTextColor={COLORS.greyDark}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => setSearchQuery('')}
+              >
+                <CloseIcon size={18} color={COLORS.greyMid} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <CustomTabBar />
+
+          <TabView
+            navigationState={{ index, routes }}
+            renderScene={renderScene}
+            onIndexChange={setIndex}
+            initialLayout={{ width }}
+            swipeEnabled={true}
+            renderTabBar={() => null}
+            lazy
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={() => setSearchQuery('')}
-            >
-              <CloseIcon size={18} color="#666" />
-            </TouchableOpacity>
+
+          {selectedToken && (
+            <TokenDetailsSheet
+              visible={isTokenDetailsVisible}
+              onClose={() => setIsTokenDetailsVisible(false)}
+              token={selectedToken}
+            />
           )}
-        </View>
-
-        <CustomTabBar />
-
-        <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderScene}
-          onIndexChange={setIndex}
-          initialLayout={{ width }}
-          swipeEnabled={true}
-          renderTabBar={() => null}
-          lazy
-        />
-
-        {selectedToken && (
-          <TokenDetailsSheet
-            visible={isTokenDetailsVisible}
-            onClose={() => setIsTokenDetailsVisible(false)}
-            token={selectedToken}
-          />
-        )}
+        </Animated.View>
       </SafeAreaView>
     </>
   );
@@ -472,25 +488,28 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
   },
   header: {
     paddingTop: 16,
     paddingBottom: 15,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: COLORS.borderDarkColor,
+    backgroundColor: COLORS.background,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: String(TYPOGRAPHY.bold) as any,
+    color: COLORS.white,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   tabBarContainer: {
     flexDirection: 'row',
     height: 48,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: COLORS.borderDarkColor,
+    backgroundColor: COLORS.background,
   },
   tab: {
     flex: 1,
@@ -502,40 +521,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tabText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#888',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: String(TYPOGRAPHY.medium) as any,
+    color: COLORS.greyDark,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   activeTabText: {
-    color: '#000',
-    fontWeight: '600',
+    color: COLORS.white,
+    fontWeight: String(TYPOGRAPHY.semiBold) as any,
   },
   tabIndicator: {
     position: 'absolute',
     bottom: 0,
     height: 3,
-    width: '50%',
-    backgroundColor: '#000',
+    width: '35%',
+    backgroundColor: COLORS.brandPrimary,
     borderTopLeftRadius: 3,
     borderTopRightRadius: 3,
   },
   tabContent: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.lightBackground,
     borderRadius: 12,
     margin: 16,
     paddingHorizontal: 12,
     height: 46,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   searchIcon: {
     marginRight: 8,
@@ -543,13 +565,15 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 46,
-    fontSize: 15,
-    color: '#333',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.white,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   clearButton: {
     padding: 5,
   },
   listContainer: {
+    paddingTop: 8, 
     paddingBottom: 20,
   },
   loaderContainer: {
@@ -561,8 +585,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   loaderText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.greyMid,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   // User Item Styles
   userItem: {
@@ -573,39 +598,43 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    backgroundColor: COLORS.lighterBackground,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.darkerBackground,
   },
   userInfo: {
     marginLeft: 16,
     flex: 1,
   },
   username: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: String(TYPOGRAPHY.semiBold) as any,
+    color: COLORS.white,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   userId: {
-    fontSize: 13,
-    color: '#777',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.accessoryDarkColor,
     marginTop: 2,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   arrowContainer: {
     padding: 8,
   },
   arrow: {
     fontSize: 20,
-    color: '#999',
+    color: COLORS.greyMid,
     fontWeight: '300',
   },
   // Token Item Styles
@@ -617,12 +646,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    backgroundColor: COLORS.lighterBackground,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   tokenLogoContainer: {
     width: 46,
@@ -630,8 +661,10 @@ const styles = StyleSheet.create({
     borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.darkerBackground,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   tokenLogo: {
     width: 46,
@@ -642,41 +675,45 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#ddd',
+    backgroundColor: COLORS.darkerBackground,
     justifyContent: 'center',
     alignItems: 'center',
   },
   tokenLogoText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#666',
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: String(TYPOGRAPHY.bold) as any,
+    color: COLORS.greyMid,
   },
   tokenInfo: {
     marginLeft: 16,
     flex: 1,
   },
   tokenSymbol: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: String(TYPOGRAPHY.semiBold) as any,
+    color: COLORS.white,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   tokenName: {
-    fontSize: 13,
-    color: '#777',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.accessoryDarkColor,
     marginTop: 2,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   tokenPriceContainer: {
     alignItems: 'flex-end',
-    marginRight: 12,
+    marginRight: 8,
   },
   tokenPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: String(TYPOGRAPHY.semiBold) as any,
+    color: COLORS.white,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   tokenPriceChange: {
-    fontSize: 13,
+    fontSize: TYPOGRAPHY.size.xs,
     marginTop: 2,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -685,16 +722,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
   emptyText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#555',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: String(TYPOGRAPHY.semiBold) as any,
+    color: COLORS.white,
     textAlign: 'center',
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   emptySubText: {
     marginTop: 8,
-    fontSize: 14,
-    color: '#888',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.greyMid,
     textAlign: 'center',
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   rankContainer: {
     width: 30,
@@ -706,9 +745,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   rankNumber: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: String(TYPOGRAPHY.semiBold) as any,
+    color: COLORS.accessoryDarkColor,
   },
 });
 

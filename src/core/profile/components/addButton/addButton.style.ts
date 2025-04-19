@@ -1,4 +1,6 @@
 import { StyleSheet } from "react-native";
+import COLORS from "@/assets/colors";
+import TYPOGRAPHY from "@/assets/typography";
 
 export const styles = StyleSheet.create({
   container: {
@@ -10,28 +12,30 @@ export const styles = StyleSheet.create({
   },
   btn: {
     position: "relative",
-    backgroundColor: "black",
+    backgroundColor: COLORS.lighterBackground,
     height: 40,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 16,
     flex: 1, // Make buttons grow equally to fill space
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   text: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     textAlign: "center", // Ensure text is centered
   },
   lastBtn: {
-    backgroundColor: "white",
-    borderWidth: 2,
-    borderColor: "#32D4DE",
+    backgroundColor: COLORS.darkerBackground,
+    borderWidth: 1,
+    borderColor: COLORS.brandPrimary,
   },
   lastBtnText: {
-    color: "black",
-    fontSize: 14,
-    fontWeight: "bold",
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
 });

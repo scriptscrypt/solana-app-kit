@@ -1,7 +1,8 @@
 // File: src/screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen.tsx
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, Platform, Alert, ActivityIndicator, Text } from 'react-native';
+import { View, StyleSheet, Platform, Alert, ActivityIndicator, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import Profile from '@/core/profile/components/profile';
@@ -11,6 +12,7 @@ import COLORS from '@/assets/colors';
 import { SERVER_URL } from '@env';
 import { flattenPosts } from '@/core/thread/components/thread.utils';
 import { useFetchNFTs } from '@/modules/nft';
+import Icons from '@/assets/svgs';
 
 const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
 
@@ -19,7 +21,7 @@ type OtherProfileRouteProp = RouteProp<RootStackParamList, 'OtherProfile'>;
 export default function OtherProfileScreen() {
   const route = useRoute<OtherProfileRouteProp>();
   const { userId } = route.params; // The user's wallet address or ID from the route
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dispatch = useAppDispatch();
 
   // Get current wallet provider from Redux
@@ -168,6 +170,16 @@ export default function OtherProfileScreen() {
     error: nftsError
   } = useFetchNFTs(userId, { providerType: provider });
 
+  // Handle go back
+  const handleGoBack = () => {
+    navigation.goBack();
+  };
+
+  // Handle post press
+  const handlePostPress = (post: ThreadPost) => {
+    navigation.navigate('PostThread', { postId: post.id });
+  };
+
   // Show a loading spinner while profile data is being fetched
   if (loading) {
     return (
@@ -188,33 +200,50 @@ export default function OtherProfileScreen() {
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         Platform.OS === 'android' && styles.androidSafeArea,
       ]}>
-      <Profile
-        isOwnProfile={false}
-        user={{
-          address: userId,
-          profilePicUrl: profilePicUrl || '',
-          username: username,
-          description: description,
-          attachmentData: attachmentData,
-        }}
-        posts={myPosts}
-        nfts={nfts}
-        loadingNfts={loadingNfts || loading}
-        fetchNftsError={nftsError}
-      />
-    </View>
+      {/* Back button header */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
+        </TouchableOpacity>
+        
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerUsername} numberOfLines={1} ellipsizeMode="tail">
+            {username}
+          </Text>
+          <Text style={styles.postCount}>{myPosts.length} posts</Text>
+        </View>
+      </View>
+
+      <View style={styles.profileWrapper}>
+        <Profile
+          isOwnProfile={false}
+          user={{
+            address: userId,
+            profilePicUrl: profilePicUrl || '',
+            username: username,
+            description: description,
+            attachmentData: attachmentData,
+          }}
+          posts={myPosts}
+          nfts={nfts}
+          loadingNfts={loadingNfts || loading}
+          fetchNftsError={nftsError}
+          containerStyle={styles.profileContainer}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   androidSafeArea: {
     paddingTop: 30,
@@ -233,5 +262,46 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     padding: 20,
+  },
+  // Header styles
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16, 
+    paddingVertical: 10,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 0.2,
+    borderBottomColor: COLORS.borderDarkColor,
+    paddingTop: Platform.OS === 'ios' ? 0 : 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  headerUsername: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+  postCount: {
+    fontSize: 13,
+    color: COLORS.greyMid,
+    marginTop: 2,
+  },
+  profileWrapper: {
+    flex: 1,
+    paddingTop: 8, // Add a small gap between header and profile content
+  },
+  profileContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
 });

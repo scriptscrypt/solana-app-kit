@@ -50,33 +50,41 @@ export const styles = StyleSheet.create({
   },
 });
 
-export const tabBarStyles = {
-  container: {
+export const tabBarStyles = StyleSheet.create({
+  gradientContainer: {
+    // Container to hold both the TabBar and the gradient
     backgroundColor: COLORS.background,
+  },
+  tabBarContainer: {
+    backgroundColor: 'transparent',
     height: 50,
-    elevation: 4,
-    // Add subtle gradient effect to bottom border
-    borderBottomWidth: 1,
-    borderBottomColor: 'transparent',
-    shadowColor: '#243050',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
+    // Removed elevation, border, and shadow properties
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     textTransform: 'none',
+    color: COLORS.white, // Use activeColor directly here as default
   },
   indicator: {
     backgroundColor: COLORS.brandBlue,
     height: 3,
     borderRadius: 2,
-    marginBottom: 1,
+    marginBottom: -1,
   },
-  activeColor: COLORS.white,
-  inactiveColor: COLORS.greyMid,
-};
+  bottomGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 50, // Adjust height for desired gradient size
+    zIndex: -1, // Ensure it's behind the TabBar content
+  },
+});
+
+// Active/inactive colors remain outside StyleSheet as they are direct values used in the component
+export const tabBarActiveColor = COLORS.white;
+export const tabBarInactiveColor = COLORS.greyMid;
 
 // Retweet specific styles
 export const retweetStyles = StyleSheet.create({

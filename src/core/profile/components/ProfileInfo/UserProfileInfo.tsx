@@ -21,6 +21,7 @@ import {
 } from '@/shared/state/auth/reducer';
 import { tokenModalStyles } from './profileInfoTokenModal.style';
 import COLORS from '../../../../assets/colors';
+import TYPOGRAPHY from '../../../../assets/typography';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { UserProfileInfoProps } from '../../types/index';
 import ProfileEditDrawer from '../ProfileEditDrawer';
@@ -61,7 +62,11 @@ const TokenAttachModal = memo(({
           </View>
 
           <View style={{ marginVertical: 8 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600' }}>
+            <Text style={{ 
+              fontSize: TYPOGRAPHY.size.sm, 
+              fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+              color: COLORS.textDark
+            }}>
               Description:
             </Text>
             <TextInput
@@ -71,6 +76,7 @@ const TokenAttachModal = memo(({
                 borderRadius: 8,
                 padding: 8,
                 marginTop: 4,
+                color: COLORS.textDark
               }}
               placeholder="Write a short token description"
               value={tokenDescription}

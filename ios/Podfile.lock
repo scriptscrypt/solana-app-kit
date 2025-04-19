@@ -224,6 +224,8 @@ PODS:
     - ExpoModulesCore
   - ExpoAsset (11.0.5):
     - ExpoModulesCore
+  - ExpoBlur (14.0.3):
+    - ExpoModulesCore
   - ExpoClipboard (7.0.1):
     - ExpoModulesCore
   - ExpoCrypto (14.0.2):
@@ -2075,6 +2077,7 @@ DEPENDENCIES:
   - "expo-dev-menu-interface (from `../node_modules/.pnpm/expo-dev-menu-interface@1.9.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_ac7ec5cf48e312282358d68db5ab37dd/node_modules/expo-dev-menu-interface/ios`)"
   - "ExpoAppleAuthentication (from `../node_modules/.pnpm/expo-apple-authentication@7.1.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26_95ddaf8a4bec9fb20af909073c93f223/node_modules/expo-apple-authentication/ios`)"
   - "ExpoAsset (from `../node_modules/.pnpm/expo-asset@11.0.5_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core_16c37cc68df72d4dec130d52d4d19ac6/node_modules/expo-asset/ios`)"
+  - "ExpoBlur (from `../node_modules/.pnpm/expo-blur@14.0.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core@_d8d2e2b63940b94dff40db61e3cfa336/node_modules/expo-blur/ios`)"
   - "ExpoClipboard (from `../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+c_5c934043e0e14a8104e098b5041d9830/node_modules/expo-clipboard/ios`)"
   - "ExpoCrypto (from `../node_modules/.pnpm/expo-crypto@14.0.2_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+cor_96ad03eea4f04cf2145b9520d052bc49/node_modules/expo-crypto/ios`)"
   - "ExpoFileSystem (from `../node_modules/.pnpm/expo-file-system@18.0.12_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@bab_5c4d2ba9b7f432c59431b9e85d83e04c/node_modules/expo-file-system/ios`)"
@@ -2202,6 +2205,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-apple-authentication@7.1.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26_95ddaf8a4bec9fb20af909073c93f223/node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../node_modules/.pnpm/expo-asset@11.0.5_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core_16c37cc68df72d4dec130d52d4d19ac6/node_modules/expo-asset/ios"
+  ExpoBlur:
+    :path: "../node_modules/.pnpm/expo-blur@14.0.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core@_d8d2e2b63940b94dff40db61e3cfa336/node_modules/expo-blur/ios"
   ExpoClipboard:
     :path: "../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+c_5c934043e0e14a8104e098b5041d9830/node_modules/expo-clipboard/ios"
   ExpoCrypto:
@@ -2395,6 +2400,7 @@ SPEC CHECKSUMS:
   expo-dev-menu-interface: 00dc42302a72722fdecec3fa048de84a9133bcc4
   ExpoAppleAuthentication: 52631ed9dcb71c65712a447bbb9a5667bb8fcf0c
   ExpoAsset: 48386d40d53a8c1738929b3ed509bcad595b5516
+  ExpoBlur: 392c1207f71d0ecf22371621c1fbd44ba84d9742
   ExpoClipboard: 44fd1c8959ee8f6175d059dc011b154c9709a969
   ExpoCrypto: e97e864c8d7b9ce4a000bca45dddb93544a1b2b4
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655

@@ -54,6 +54,7 @@ import LeftPlus from './login-elements-left/plus.svg';
 import LeftRect from './login-elements-left/rect.svg';
 import YellowBoomerang from './login-elements-left/yellow-boomerang.svg';
 import Setting from './login-elements-left/setting.svg';
+import ArrowLeft from './arrowLeft.svg';
 
 export default {
   SolanaDot,
@@ -111,5 +112,6 @@ export default {
   LeftPlus,
   LeftRect,
   YellowBoomerang,
-  Setting
+  Setting,
+  ArrowLeft,
 };

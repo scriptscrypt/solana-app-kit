@@ -10,7 +10,7 @@ import { NftScreen } from '@/modules/nft';
 import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
 import OtherProfileScreen from '@/screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen';
 import PostThreadScreen from '@/screens/SampleUI/Threads/PostThreadScreen/PostthreadScreen';
-import FollowersFollowingListScreen from '@/core/thread/components/FollowersFollowingListScreen/FollowersFollowingListScreen';
+import FollowersFollowingListScreen from '@/core/profile/components/FollowersFollowingListScreen/FollowersFollowingListScreen';
 import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
 import IntroScreen from '@/screens/Common/IntroScreen/IntroScreen';
 import LoginScreen from '@/screens/Common/LoginScreen/LoginScreen';
