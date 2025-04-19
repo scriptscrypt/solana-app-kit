@@ -55,7 +55,13 @@ import LeftRect from './login-elements-left/rect.svg';
 import YellowBoomerang from './login-elements-left/yellow-boomerang.svg';
 import Setting from './login-elements-left/setting.svg';
 import ArrowLeft from './arrowLeft.svg';
-
+import AppLogo from './App_Logo.svg';
+import copyIcon from './copy.svg'
+import walletIcon from './Wallet_icon.svg'
+import NFTIcon from './NFT.svg'
+import ImageIcon from './Image_Upload.svg'
+import TradeShare from './Share_Trade.svg'
+import searchIcon from './Search_Icon.svg'
 export default {
   SolanaDot,
   SplashText,
@@ -114,4 +120,11 @@ export default {
   YellowBoomerang,
   Setting,
   ArrowLeft,
+  AppLogo,
+  copyIcon,
+  walletIcon,
+  NFTIcon,
+  ImageIcon,
+  TradeShare,
+  searchIcon
 };

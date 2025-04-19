@@ -50,7 +50,11 @@ type RouteType = {
   title: string;
 };
 
-export default function SearchScreen() {
+interface SearchScreenProps {
+  showHeader?: boolean;
+}
+
+export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -432,12 +436,14 @@ export default function SearchScreen() {
         Platform.OS === 'android' && androidStyles.safeArea
       ]}>
         <Animated.View style={[{ opacity: fadeAnim }, { flex: 1 }]}>
-          <View style={[
-            styles.header,
-            Platform.OS === 'android' && androidStyles.header
-          ]}>
-            <Text style={styles.headerTitle}>Search</Text>
-          </View>
+          {showHeader && (
+            <View style={[
+              styles.header,
+              Platform.OS === 'android' && androidStyles.header
+            ]}>
+              <Text style={styles.headerTitle}>Search</Text>
+            </View>
+          )}
 
           <View style={styles.searchContainer}>
             <View style={styles.searchIcon}>
@@ -573,7 +579,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   listContainer: {
-    paddingTop: 8, 
+    paddingTop: 8,
     paddingBottom: 20,
   },
   loaderContainer: {

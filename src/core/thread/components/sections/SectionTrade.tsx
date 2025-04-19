@@ -1,8 +1,10 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { View, Text, ImageSourcePropType } from 'react-native';
+import { View, Text, ImageSourcePropType, StyleSheet } from 'react-native';
 import { ThreadUser, TradeData } from '../thread.types';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import { TradeCard } from '@/core/sharedUI/TradeCard';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 interface SectionTradeProps {
   text?: string;
@@ -142,7 +144,7 @@ function SectionTrade({
 
   // If tradeData is missing, don't render a TradeCard
   if (!enhancedTradeData) {
-    return <Text>[Missing trade data]</Text>;
+    return <Text style={styles.errorText}>[Missing trade data]</Text>;
   }
 
   // Combine all refresh triggers
@@ -153,7 +155,7 @@ function SectionTrade({
   return (
     <View>
       {!!text && (
-        <Text style={{ fontSize: 14, color: '#000', marginBottom: 6 }}>
+        <Text style={styles.textContent}>
           {text}
         </Text>
       )}
@@ -166,6 +168,21 @@ function SectionTrade({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  textContent: {
+    fontSize: TYPOGRAPHY.size.sm,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.regular),
+    color: COLORS.white,
+    marginBottom: 6,
+  },
+  errorText: {
+    fontSize: TYPOGRAPHY.size.sm,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    color: COLORS.errorRed,
+  }
+});
 
 // Improved deep comparison function for props
 function arePropsEqual(

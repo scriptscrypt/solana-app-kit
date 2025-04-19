@@ -29,6 +29,8 @@ import {
 } from '@/shared/state/thread/reducer';
 import { nanoid } from '@reduxjs/toolkit';
 import { DEFAULT_IMAGES } from '@/config/constants';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 // Get window dimensions for animation
 const { height } = Dimensions.get('window');
@@ -412,10 +414,16 @@ export default function PostFooter({
     }
     return (
       <View style={reactionStyles.existingReactionsContainer}>
-        {Object.entries(updatedPost.reactions).map(([emoji, count]) => (
-          <View key={emoji} style={reactionStyles.reactionBadge}>
-            <Text style={reactionStyles.reactionEmoji}>{emoji}</Text>
-            <Text style={reactionStyles.reactionCount}>{String(count)}</Text>
+        {Object.entries(updatedPost.reactions).map(([emoji, count], index) => (
+          <View key={emoji} style={reactionStyles.reactionPill}>
+            <View style={reactionStyles.emojiCircle}>
+              <Text style={reactionStyles.reactionEmoji}>{emoji}</Text>
+            </View>
+            {index === Object.entries(updatedPost.reactions).length - 1 && (
+              <Text style={reactionStyles.totalCount}>
+                {Object.values(updatedPost.reactions).reduce((a: number, b) => a + (typeof b === 'number' ? b : 0), 0)}
+              </Text>
+            )}
           </View>
         ))}
       </View>
@@ -641,7 +649,7 @@ const reactionStyles = StyleSheet.create({
     position: 'absolute',
     bottom: 25,
     left: -40,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.lighterBackground,
     borderRadius: 20,
     padding: 6,
     shadowColor: '#000',
@@ -665,7 +673,7 @@ const reactionStyles = StyleSheet.create({
     borderTopWidth: 6,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: '#f0f0f0',
+    borderTopColor: COLORS.lighterBackground,
   },
   emojiRow: {
     flexDirection: 'row',
@@ -683,29 +691,35 @@ const reactionStyles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    marginBottom: 8,
-    paddingHorizontal: 4,
-    justifyContent: 'flex-start',
-  },
-  reactionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f2f5',
-    borderRadius: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginRight: 8,
-    marginLeft: 0,
+    marginLeft: 38,
     marginBottom: 4,
   },
-  reactionEmoji: {
-    fontSize: 13,
+  reactionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.darkerBackground,
+    borderRadius: 16,
+    height: 26,
+    paddingRight: 8,
+    marginRight: 4,
+    overflow: 'hidden',
+  },
+  emojiCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 4,
   },
-  reactionCount: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
+  reactionEmoji: {
+    fontSize: 16,
+  },
+  totalCount: {
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.white,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
 });
 
