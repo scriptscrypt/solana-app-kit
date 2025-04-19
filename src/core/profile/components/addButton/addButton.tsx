@@ -1,4 +1,3 @@
-// File: src/components/AddButton/AddButton.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -10,17 +9,18 @@ import {
   Alert,
 } from 'react-native';
 import { styles } from './addButton.style';
-import Icons from '../../../../assets/svgs/index';
-import { useAppSelector, useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { Cluster, Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
-import { sendSOL } from '../../../../utils/transactions/transactionUtils';
-import { useWallet } from '../../../../modules/embeddedWalletProviders/hooks/useWallet';
+import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
+import { Cluster, Connection, clusterApiUrl } from '@solana/web3.js';
+import { sendSOL } from '@/shared/utils/transactions/transactionUtils';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   setSelectedFeeTier as setFeeTier,
   setTransactionMode as setMode
-} from '../../../../state/transaction/reducer';
+} from '@/shared/state/transaction/reducer';
 import { CLUSTER } from '@env';
-import { TransactionService } from '../../../../modules/embeddedWalletProviders/services/transaction/transactionService';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 export interface AddButtonProps {
   amIFollowing: boolean;
@@ -288,6 +288,7 @@ const AddButton: React.FC<AddButtonProps> = ({
                 onChangeText={setAmountSol}
                 keyboardType="numeric"
                 placeholder="e.g. 0.25"
+                placeholderTextColor={COLORS.textHint}
               />
             </View>
 
@@ -299,7 +300,7 @@ const AddButton: React.FC<AddButtonProps> = ({
 
             <View style={modalOverlayStyles.buttonRow}>
               <TouchableOpacity
-                style={[modalOverlayStyles.modalButton, { backgroundColor: '#ccc' }]}
+                style={[modalOverlayStyles.modalButton, { backgroundColor: COLORS.lighterBackground }]}
                 onPress={() => setSendModalVisible(false)}
                 disabled={!!transactionStatus && !transactionStatus.includes('Error')}
               >
@@ -308,7 +309,7 @@ const AddButton: React.FC<AddButtonProps> = ({
               <TouchableOpacity
                 style={[
                   modalOverlayStyles.modalButton,
-                  { backgroundColor: '#1d9bf0' },
+                  { backgroundColor: COLORS.brandPrimary },
                   !!transactionStatus && { opacity: 0.5 }
                 ]}
                 onPress={handleSendTransaction}
@@ -329,28 +330,32 @@ export default AddButton;
 const modalOverlayStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     padding: 16,
   },
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
     padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: 600,
+    marginBottom: 16,
     textAlign: 'center',
+    color: COLORS.white,
   },
   modeContainer: {
     marginBottom: 16,
   },
   sectionTitle: {
-    fontWeight: '600',
-    fontSize: 14,
+    fontWeight: 500,
+    fontSize: TYPOGRAPHY.size.sm,
     marginBottom: 8,
+    color: COLORS.white,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -362,16 +367,21 @@ const modalOverlayStyles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.lighterBackground,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   modeButtonText: {
-    color: '#333',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
   },
   selectedBtn: {
-    backgroundColor: '#1d9bf0',
+    backgroundColor: COLORS.brandPrimary,
+    borderColor: COLORS.brandPrimary,
   },
   selectedBtnText: {
-    color: '#fff',
+    color: COLORS.background,
+    fontWeight: 600,
   },
   tierContainer: {
     marginBottom: 16,
@@ -380,40 +390,47 @@ const modalOverlayStyles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.lighterBackground,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   tierButtonText: {
-    color: '#333',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
   },
   inputContainer: {
     marginBottom: 16,
   },
   statusContainer: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: COLORS.darkerBackground,
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 6,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   statusText: {
-    color: '#333',
-    fontSize: 14,
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
     textAlign: 'center',
   },
   label: {
-    fontWeight: '500',
+    fontWeight: 500,
     marginTop: 8,
     marginBottom: 4,
-    fontSize: 13,
-    color: '#333',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.white,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: COLORS.borderDarkColor,
     borderRadius: 6,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.size.sm,
+    backgroundColor: COLORS.lighterBackground,
+    color: COLORS.white,
   },
   modalButton: {
     flex: 1,
@@ -424,7 +441,8 @@ const modalOverlayStyles = StyleSheet.create({
     marginHorizontal: 4,
   },
   modalButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: COLORS.white,
+    fontWeight: 600,
+    fontSize: TYPOGRAPHY.size.sm,
   },
 });

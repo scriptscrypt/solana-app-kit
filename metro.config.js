@@ -15,7 +15,9 @@ config.resolver = {
   assetExts: config.resolver.assetExts.filter(ext => ext !== 'svg'),
   sourceExts: [...config.resolver.sourceExts, 'svg'],
   extraNodeModules: {
+    ...config.resolver.extraNodeModules,
     crypto: require.resolve('expo-crypto'),
+    fs: path.resolve(__dirname, './src/shared/utils/fsPolyfill.js'),
   },
 };
 

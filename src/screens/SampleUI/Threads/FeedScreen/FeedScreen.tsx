@@ -3,18 +3,19 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 
-import { Thread } from '../../../../core/thread/components/Thread';
+import { Thread } from '@/core/thread/components/Thread';
 import {
   ThreadUser,
   ThreadPost,
   ThreadCTAButton,
-} from '../../../../core/thread/components/thread.types';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
-import { fetchAllPosts } from '../../../../state/thread/reducer';
-import { fetchUserProfile } from '../../../../state/auth/reducer';
-import COLORS from '../../../../assets/colors';
-import { RootStackParamList } from '../../../../navigation/RootNavigator';
-import { DEFAULT_IMAGES } from '../../../../config/constants';
+} from '@/core/thread/components/thread.types';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { fetchAllPosts } from '@/shared/state/thread/reducer';
+import { fetchUserProfile } from '@/shared/state/auth/reducer';
+import COLORS from '@/assets/colors';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+import { DEFAULT_IMAGES } from '@/config/constants';
+import HomeEnvErrorBanner from '@/core/sharedUI/EnvErrors/HomeEnvErrorBanner';
 
 export default function FeedScreen() {
   const dispatch = useAppDispatch();
@@ -127,12 +128,22 @@ export default function FeedScreen() {
     );
   }
 
+  // Custom header render function with environment error banner
+  const renderCustomHeader = () => {
+    return (
+      <View>
+        <HomeEnvErrorBanner />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView
       style={[
         styles.container,
         Platform.OS === 'android' && styles.androidContainer,
       ]}>
+      {renderCustomHeader()}
       <Thread
         rootPosts={feedPosts} // Passing all posts (including replies)
         currentUser={currentUser}
@@ -209,7 +220,7 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
   androidContainer: {
     paddingTop: 30,

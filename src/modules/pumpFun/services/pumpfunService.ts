@@ -1,8 +1,4 @@
-import {
-  PublicKey,
-  Keypair,
-  LAMPORTS_PER_SOL,
-} from '@solana/web3.js';
+import {PublicKey, Keypair, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import {PumpFunSDK} from 'pumpdotfun-sdk';
 import {getAssociatedTokenAddress} from '@solana/spl-token';
 
@@ -19,7 +15,7 @@ import {
 
 import {calculateWithSlippageBuy} from 'pumpdotfun-sdk';
 import {SERVER_URL} from '@env';
-import { TransactionService } from '../../embeddedWalletProviders/services/transaction/transactionService';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 
 /**
  * Create and immediately buy tokens
@@ -144,7 +140,7 @@ export async function createAndBuyTokenViaPumpfun({
     // Combine create + buy instructions
     const combinedTx = createTx;
     if (buyTx) {
-      console.log("buyTx =>", buyTx);
+      console.log('buyTx =>', buyTx);
       buyTx.instructions.forEach(ix => combinedTx.add(ix));
     }
     // Sign it with the mint keypair
@@ -153,17 +149,17 @@ export async function createAndBuyTokenViaPumpfun({
     combinedTx.recentBlockhash = blockhash.blockhash;
     combinedTx.feePayer = creatorPubkey;
     combinedTx.partialSign(mintKeypair);
-    
+
     // Use the new transaction service
-    console.log("combinedTx =>", combinedTx);
+    console.log('combinedTx =>', combinedTx);
     onStatusUpdate?.('Sending transaction for approval...');
     const txSignature = await TransactionService.signAndSendTransaction(
-      { type: 'transaction', transaction: combinedTx },
+      {type: 'transaction', transaction: combinedTx},
       solanaWallet, // Pass wallet directly - TransactionService will handle it
-      { 
+      {
         connection,
-        statusCallback: onStatusUpdate 
-      }
+        statusCallback: onStatusUpdate,
+      },
     );
 
     if (!txSignature) {
@@ -218,12 +214,14 @@ export async function buyTokenViaPumpfun({
     onStatusUpdate?.('Checking token availability...');
     const isOnRaydium = await checkIfTokenIsOnRaydium(tokenAddress);
     console.log('isOnRaydium =>', isOnRaydium);
-    
+
     // If on Raydium, we should use their API
     if (isOnRaydium) {
       onStatusUpdate?.('Token found on Raydium, preparing swap...');
-      console.log('[buyTokenViaPumpfun] Token is on Raydium, using swap API...');
-      
+      console.log(
+        '[buyTokenViaPumpfun] Token is on Raydium, using swap API...',
+      );
+
       // 2. Get quote first (exact output: I want X tokens, how much SOL?)
       const lamportsIn = Math.floor(solAmount * LAMPORTS_PER_SOL);
       onStatusUpdate?.('Getting swap quote...');
@@ -233,8 +231,8 @@ export async function buyTokenViaPumpfun({
         lamportsIn, // amount in (SOL lamports)
       );
 
-      console.log('quote =>', quote)
-      
+      console.log('quote =>', quote);
+
       if (!quote || !quote.data) {
         throw new Error('Failed to get swap quote from Raydium');
       }
@@ -252,42 +250,49 @@ export async function buyTokenViaPumpfun({
         wrapSol: true,
       });
 
-      console.log("swapTxResp =>", swapTxResp);
-      
+      console.log('swapTxResp =>', swapTxResp);
+
       const base64Tx = swapTxResp?.data?.[0]?.transaction;
       if (!base64Tx) {
         throw new Error('No swap transaction returned from Raydium');
       }
-      
+
       // Send the transaction
       onStatusUpdate?.('Sending transaction for approval...');
       const txSignature = await TransactionService.signAndSendTransaction(
-        { type: 'base64', data: base64Tx },
+        {type: 'base64', data: base64Tx},
         solanaWallet,
-        { 
+        {
           connection,
-          statusCallback: onStatusUpdate 
-        }
+          statusCallback: onStatusUpdate,
+        },
       );
-      
+
       onStatusUpdate?.('Token purchased successfully!');
       return txSignature;
     } else {
       // Not on Raydium, use PumpFun API
-      console.log('[buyTokenViaPumpfun] Token not on Raydium, using PumpFun...');
+      console.log(
+        '[buyTokenViaPumpfun] Token not on Raydium, using PumpFun...',
+      );
       onStatusUpdate?.('Using PumpFun for token purchase...');
-      
+
       const mintPubkey = new PublicKey(tokenAddress);
       const buyerPubkey = new PublicKey(buyerPublicKey);
-      
+
       onStatusUpdate?.('Building transaction...');
-      console.log('[buyTokenViaPumpfun] Building buy transaction with params:', {
-        payerPubkey: buyerPubkey.toString(),
-        tokenMint: mintPubkey.toString(),
-        solAmount,
-        lamportsToBuy: BigInt(Math.floor(solAmount * LAMPORTS_PER_SOL)).toString(),
-      });
-      
+      console.log(
+        '[buyTokenViaPumpfun] Building buy transaction with params:',
+        {
+          payerPubkey: buyerPubkey.toString(),
+          tokenMint: mintPubkey.toString(),
+          solAmount,
+          lamportsToBuy: BigInt(
+            Math.floor(solAmount * LAMPORTS_PER_SOL),
+          ).toString(),
+        },
+      );
+
       const tx = await buildPumpFunBuyTransaction({
         payerPubkey: buyerPubkey,
         tokenMint: mintPubkey,
@@ -295,23 +300,23 @@ export async function buyTokenViaPumpfun({
         sdk,
         connection,
       });
-      
+
       console.log('[buyTokenViaPumpfun] Transaction built successfully:', {
         recentBlockhash: tx.recentBlockhash,
         feePayer: tx.feePayer?.toString() || 'undefined',
         hasInstructions: tx.instructions.length > 0,
       });
-      
+
       onStatusUpdate?.('Sending transaction for approval...');
       const txSignature = await TransactionService.signAndSendTransaction(
-        { type: 'transaction', transaction: tx },
+        {type: 'transaction', transaction: tx},
         solanaWallet,
-        { 
+        {
           connection,
-          statusCallback: onStatusUpdate 
-        }
+          statusCallback: onStatusUpdate,
+        },
       );
-      
+
       onStatusUpdate?.('Token purchased successfully!');
       return txSignature;
     }
@@ -358,47 +363,64 @@ export async function sellTokenViaPumpfun({
     onStatusUpdate?.('Checking token availability...');
     const isOnRaydium = await checkIfTokenIsOnRaydium(tokenAddress);
     console.log('isOnRaydium =>', isOnRaydium);
-    
+
     // If on Raydium, we should use their API
     if (isOnRaydium) {
       onStatusUpdate?.('Token found on Raydium, preparing swap...');
-      console.log('[sellTokenViaPumpfun] Token is on Raydium, using swap API...');
-      
+      console.log(
+        '[sellTokenViaPumpfun] Token is on Raydium, using swap API...',
+      );
+
       // Get token ATA (Associated Token Account)
-      const tokenAta = await getAssociatedTokenAddress(new PublicKey(tokenAddress), new PublicKey(sellerPublicKey));
+      const tokenAta = await getAssociatedTokenAddress(
+        new PublicKey(tokenAddress),
+        new PublicKey(sellerPublicKey),
+      );
       console.log('[sellTokenViaPumpfun] Token ATA:', tokenAta.toString());
-      
+
       // Check if token ATA exists
       const ataInfo = await connection.getAccountInfo(tokenAta);
       if (!ataInfo) {
         throw new Error(`Token account ${tokenAta.toString()} does not exist`);
       }
-      
+
       // Get the actual token balance
       const tokenBalance = await connection.getTokenAccountBalance(tokenAta);
       console.log('[sellTokenViaPumpfun] Token balance:', tokenBalance);
-      
+
       if (!tokenBalance.value) {
         throw new Error('Could not retrieve token balance');
       }
-      
+
       const actualBalance = BigInt(tokenBalance.value.amount);
       const tokenDecimals = tokenBalance.value.decimals;
-      
+
       // Calculate token amount in lamports using actual decimals
-      const requestedAmount = BigInt(Math.floor(tokenAmount * 10 ** tokenDecimals));
-      
-      console.log('[sellTokenViaPumpfun] Actual balance:', actualBalance.toString());
-      console.log('[sellTokenViaPumpfun] Trying to sell:', requestedAmount.toString());
+      const requestedAmount = BigInt(
+        Math.floor(tokenAmount * 10 ** tokenDecimals),
+      );
+
+      console.log(
+        '[sellTokenViaPumpfun] Actual balance:',
+        actualBalance.toString(),
+      );
+      console.log(
+        '[sellTokenViaPumpfun] Trying to sell:',
+        requestedAmount.toString(),
+      );
       console.log('[sellTokenViaPumpfun] Token decimals:', tokenDecimals);
-      
+
       if (actualBalance < requestedAmount) {
-        throw new Error(`Not enough tokens to sell. You have ${Number(actualBalance) / 10 ** tokenDecimals} tokens available.`);
+        throw new Error(
+          `Not enough tokens to sell. You have ${
+            Number(actualBalance) / 10 ** tokenDecimals
+          } tokens available.`,
+        );
       }
-      
+
       // Convert token amount to lamports using the correct decimals
       const tokenLamports = Math.floor(tokenAmount * 10 ** tokenDecimals);
-      
+
       // Get a swap quote (token -> SOL)
       onStatusUpdate?.('Getting swap quote...');
       const quote = await getSwapQuote(
@@ -407,7 +429,10 @@ export async function sellTokenViaPumpfun({
         tokenLamports, // amount in (token lamports)
       );
 
-      console.log('[sellTokenViaPumpfun] Raydium quote:', JSON.stringify(quote, null, 2));
+      console.log(
+        '[sellTokenViaPumpfun] Raydium quote:',
+        JSON.stringify(quote, null, 2),
+      );
 
       if (!quote || !quote.data) {
         throw new Error('Failed to get swap quote from Raydium');
@@ -427,18 +452,24 @@ export async function sellTokenViaPumpfun({
         wrapSol: false,
         inputAccount: tokenAta.toString(),
       };
-      console.log('[sellTokenViaPumpfun] Raydium swap params:', JSON.stringify(swapParams, null, 2));
-      
+      console.log(
+        '[sellTokenViaPumpfun] Raydium swap params:',
+        JSON.stringify(swapParams, null, 2),
+      );
+
       const swapTxResp = await getSwapTransaction(swapParams);
-      console.log('[sellTokenViaPumpfun] Raydium swap response:', JSON.stringify(swapTxResp, null, 2));
-      
+      console.log(
+        '[sellTokenViaPumpfun] Raydium swap response:',
+        JSON.stringify(swapTxResp, null, 2),
+      );
+
       // Check if the response indicates failure
       if (!swapTxResp.success) {
         const errorMsg = swapTxResp.msg || 'Unknown Raydium API error';
         console.error(`[sellTokenViaPumpfun] Raydium API error: ${errorMsg}`);
         throw new Error(`Raydium API error: ${errorMsg}`);
       }
-      
+
       const base64Tx = swapTxResp?.data?.[0]?.transaction;
       if (!base64Tx) {
         throw new Error('No swap transaction returned from Raydium');
@@ -447,24 +478,26 @@ export async function sellTokenViaPumpfun({
       // Send the transaction
       onStatusUpdate?.('Sending transaction for approval...');
       const txSignature = await TransactionService.signAndSendTransaction(
-        { type: 'base64', data: base64Tx },
+        {type: 'base64', data: base64Tx},
         solanaWallet,
-        { 
+        {
           connection,
-          statusCallback: onStatusUpdate
-        }
+          statusCallback: onStatusUpdate,
+        },
       );
-      
+
       onStatusUpdate?.('Tokens sold successfully!');
       return txSignature;
     } else {
       // Not on Raydium, use PumpFun API
-      console.log('[sellTokenViaPumpfun] Token not on Raydium, using PumpFun...');
+      console.log(
+        '[sellTokenViaPumpfun] Token not on Raydium, using PumpFun...',
+      );
       onStatusUpdate?.('Using PumpFun for token sale...');
-      
+
       const mintPubkey = new PublicKey(tokenAddress);
       const sellerPubkey = new PublicKey(sellerPublicKey);
-      
+
       // Check if user has the token account
       onStatusUpdate?.('Checking token account...');
       const ata = await getAssociatedTokenAddress(mintPubkey, sellerPubkey);
@@ -472,36 +505,51 @@ export async function sellTokenViaPumpfun({
       if (!tokenAccountInfo) {
         throw new Error(`You don't own any ${tokenAddress} tokens.`);
       }
-      
+
       // Get the actual token balance
       try {
         const tokenBalance = await connection.getTokenAccountBalance(ata);
         console.log('[sellTokenViaPumpfun] Token balance:', tokenBalance);
-        
+
         if (!tokenBalance.value) {
           throw new Error('Could not retrieve token balance');
         }
-        
+
         const actualBalance = BigInt(tokenBalance.value.amount);
-        const requestedAmount = BigInt(Math.floor(tokenAmount * 10 ** tokenBalance.value.decimals));
-        
-        console.log('[sellTokenViaPumpfun] Actual balance:', actualBalance.toString());
-        console.log('[sellTokenViaPumpfun] Trying to sell:', requestedAmount.toString());
-        
+        const requestedAmount = BigInt(
+          Math.floor(tokenAmount * 10 ** tokenBalance.value.decimals),
+        );
+
+        console.log(
+          '[sellTokenViaPumpfun] Actual balance:',
+          actualBalance.toString(),
+        );
+        console.log(
+          '[sellTokenViaPumpfun] Trying to sell:',
+          requestedAmount.toString(),
+        );
+
         if (actualBalance < requestedAmount) {
-          throw new Error(`Not enough tokens to sell. You have ${Number(actualBalance) / 10 ** tokenBalance.value.decimals} tokens available.`);
+          throw new Error(
+            `Not enough tokens to sell. You have ${
+              Number(actualBalance) / 10 ** tokenBalance.value.decimals
+            } tokens available.`,
+          );
         }
-        
+
         // Build the transaction
         onStatusUpdate?.('Building transaction...');
-        console.log('[sellTokenViaPumpfun] Building sell transaction with params:', {
-          sellerPubkey: sellerPubkey.toString(),
-          tokenMint: mintPubkey.toString(),
-          tokenAmount,
-          actualBalance: actualBalance.toString(),
-          lamportsToSell: requestedAmount.toString(),
-        });
-        
+        console.log(
+          '[sellTokenViaPumpfun] Building sell transaction with params:',
+          {
+            sellerPubkey: sellerPubkey.toString(),
+            tokenMint: mintPubkey.toString(),
+            tokenAmount,
+            actualBalance: actualBalance.toString(),
+            lamportsToSell: requestedAmount.toString(),
+          },
+        );
+
         const tx = await buildPumpFunSellTransaction({
           sellerPubkey,
           tokenMint: mintPubkey,
@@ -509,73 +557,88 @@ export async function sellTokenViaPumpfun({
           sdk,
           connection,
         });
-        
+
         console.log('[sellTokenViaPumpfun] Transaction built successfully:', {
           recentBlockhash: tx.recentBlockhash,
           feePayer: tx.feePayer?.toString() || 'undefined',
           hasInstructions: tx.instructions.length > 0,
         });
-        
+
         // Send the transaction
         onStatusUpdate?.('Sending transaction for approval...');
         const txSignature = await TransactionService.signAndSendTransaction(
-          { type: 'transaction', transaction: tx },
+          {type: 'transaction', transaction: tx},
           solanaWallet,
-          { 
+          {
             connection,
-            statusCallback: onStatusUpdate
-          }
+            statusCallback: onStatusUpdate,
+          },
         );
-        
+
         onStatusUpdate?.('Tokens sold successfully!');
         return txSignature;
       } catch (err: any) {
         console.error('[sellTokenViaPumpfun] Error:', err);
-        
+
         // Check for common error patterns
         const errorMessage = err.message || '';
         const errorLogs = err.logs || [];
-        
+
         // Check for insufficient funds errors
-        if (errorMessage.includes('insufficient funds') || 
-            errorLogs.some((log: string) => log.includes('insufficient funds'))) {
+        if (
+          errorMessage.includes('insufficient funds') ||
+          errorLogs.some((log: string) => log.includes('insufficient funds'))
+        ) {
           onStatusUpdate?.('Failed: Insufficient token balance');
-          throw new Error('Insufficient token balance. Please try a smaller amount or check your balance.');
-        }
-        
-        // Check for not enough tokens errors
-        if (errorMessage.includes('Not enough tokens') || 
-            errorLogs.some((log: string) => log.includes('NotEnoughTokensToSell'))) {
-          onStatusUpdate?.('Failed: Not enough tokens to sell');
-          throw new Error('Not enough tokens to sell. Please try a smaller amount.');
-        }
-        
-        // Check for slippage errors
-        if (errorMessage.includes('slippage') || 
-            errorLogs.some((log: string) => log.includes('slippage'))) {
-          onStatusUpdate?.('Failed: Price slippage too high');
-          throw new Error('Price slippage too high. Try a smaller amount or try again later.');
-        }
-        
-        // Check for simulation errors that contain logs
-        if (errorMessage.includes('Simulation failed') && errorLogs.length > 0) {
-          console.error('Transaction simulation logs:', errorLogs);
-          
-          // Try to extract a more specific error message from the logs
-          const relevantErrorLog = errorLogs.find((log: string) => 
-            log.includes('Error:') || log.includes('failed:')
+          throw new Error(
+            'Insufficient token balance. Please try a smaller amount or check your balance.',
           );
-          
+        }
+
+        // Check for not enough tokens errors
+        if (
+          errorMessage.includes('Not enough tokens') ||
+          errorLogs.some((log: string) => log.includes('NotEnoughTokensToSell'))
+        ) {
+          onStatusUpdate?.('Failed: Not enough tokens to sell');
+          throw new Error(
+            'Not enough tokens to sell. Please try a smaller amount.',
+          );
+        }
+
+        // Check for slippage errors
+        if (
+          errorMessage.includes('slippage') ||
+          errorLogs.some((log: string) => log.includes('slippage'))
+        ) {
+          onStatusUpdate?.('Failed: Price slippage too high');
+          throw new Error(
+            'Price slippage too high. Try a smaller amount or try again later.',
+          );
+        }
+
+        // Check for simulation errors that contain logs
+        if (
+          errorMessage.includes('Simulation failed') &&
+          errorLogs.length > 0
+        ) {
+          console.error('Transaction simulation logs:', errorLogs);
+
+          // Try to extract a more specific error message from the logs
+          const relevantErrorLog = errorLogs.find(
+            (log: string) => log.includes('Error:') || log.includes('failed:'),
+          );
+
           if (relevantErrorLog) {
-            const cleanError = relevantErrorLog.includes('Error:') 
+            const cleanError = relevantErrorLog.includes('Error:')
               ? relevantErrorLog.split('Error:')[1].trim()
               : relevantErrorLog;
-              
+
             onStatusUpdate?.(`Failed: ${cleanError}`);
             throw new Error(`Transaction failed: ${cleanError}`);
           }
         }
-        
+
         // Default error handling
         onStatusUpdate?.('Transaction failed');
         throw err;
@@ -583,51 +646,63 @@ export async function sellTokenViaPumpfun({
     }
   } catch (err: any) {
     console.error('[sellTokenViaPumpfun] Error:', err);
-    
+
     // Check for common error patterns
     const errorMessage = err.message || '';
     const errorLogs = err.logs || [];
-    
+
     // Check for insufficient funds errors
-    if (errorMessage.includes('insufficient funds') || 
-        errorLogs.some((log: string) => log.includes('insufficient funds'))) {
+    if (
+      errorMessage.includes('insufficient funds') ||
+      errorLogs.some((log: string) => log.includes('insufficient funds'))
+    ) {
       onStatusUpdate?.('Failed: Insufficient token balance');
-      throw new Error('Insufficient token balance. Please try a smaller amount or check your balance.');
+      throw new Error(
+        'Insufficient token balance. Please try a smaller amount or check your balance.',
+      );
     }
-    
+
     // Check for not enough tokens errors
-    if (errorMessage.includes('Not enough tokens') || 
-        errorLogs.some((log: string) => log.includes('NotEnoughTokensToSell'))) {
+    if (
+      errorMessage.includes('Not enough tokens') ||
+      errorLogs.some((log: string) => log.includes('NotEnoughTokensToSell'))
+    ) {
       onStatusUpdate?.('Failed: Not enough tokens to sell');
-      throw new Error('Not enough tokens to sell. Please try a smaller amount.');
+      throw new Error(
+        'Not enough tokens to sell. Please try a smaller amount.',
+      );
     }
-    
+
     // Check for slippage errors
-    if (errorMessage.includes('slippage') || 
-        errorLogs.some((log: string) => log.includes('slippage'))) {
+    if (
+      errorMessage.includes('slippage') ||
+      errorLogs.some((log: string) => log.includes('slippage'))
+    ) {
       onStatusUpdate?.('Failed: Price slippage too high');
-      throw new Error('Price slippage too high. Try a smaller amount or try again later.');
+      throw new Error(
+        'Price slippage too high. Try a smaller amount or try again later.',
+      );
     }
-    
+
     // Check for simulation errors that contain logs
     if (errorMessage.includes('Simulation failed') && errorLogs.length > 0) {
       console.error('Transaction simulation logs:', errorLogs);
-      
+
       // Try to extract a more specific error message from the logs
-      const relevantErrorLog = errorLogs.find((log: string) => 
-        log.includes('Error:') || log.includes('failed:')
+      const relevantErrorLog = errorLogs.find(
+        (log: string) => log.includes('Error:') || log.includes('failed:'),
       );
-      
+
       if (relevantErrorLog) {
-        const cleanError = relevantErrorLog.includes('Error:') 
+        const cleanError = relevantErrorLog.includes('Error:')
           ? relevantErrorLog.split('Error:')[1].trim()
           : relevantErrorLog;
-          
+
         onStatusUpdate?.(`Failed: ${cleanError}`);
         throw new Error(`Transaction failed: ${cleanError}`);
       }
     }
-    
+
     // Default error handling
     onStatusUpdate?.('Transaction failed');
     throw err;

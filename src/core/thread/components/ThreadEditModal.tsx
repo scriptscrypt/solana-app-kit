@@ -15,8 +15,8 @@ import {
   FlatList,
 } from 'react-native';
 import { ThreadPost, ThreadUser } from './thread.types';
-import { useAppDispatch } from '../../../hooks/useReduxHooks';
-import { updatePostAsync } from '../../../state/thread/reducer';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
+import { updatePostAsync } from '@/shared/state/thread/reducer';
 import { getMergedTheme, createThreadStyles } from './thread.styles';
 import editModalStyles from './ThreadEditModal.style';
 

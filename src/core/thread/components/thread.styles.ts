@@ -1,6 +1,8 @@
 // FILE: src/components/thread/thread.styles.ts
 import {DimensionValue, StyleSheet} from 'react-native';
 import {THREAD_DEFAULT_THEME} from './thread.theme';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 export function getMergedTheme(
   userTheme?: Partial<typeof THREAD_DEFAULT_THEME>,
@@ -18,13 +20,13 @@ export function createThreadStyles(
 ): {[key: string]: any} {
   const baseStyles: {[key: string]: any} = StyleSheet.create({
     threadRootContainer: {
-      backgroundColor: 'white',
+      backgroundColor: COLORS.background,
       flex: 1,
     },
 
     header: {
       width: '100%',
-      backgroundColor: 'white',
+      backgroundColor: COLORS.background,
       alignItems: 'center',
     },
 
@@ -39,58 +41,70 @@ export function createThreadStyles(
     /* Composer */
     composerContainer: {
       flexDirection: 'row',
-      paddingHorizontal: 16,
-      paddingTop: 8,
+      padding: 12,
       paddingBottom: 8,
-      backgroundColor: 'white',
+      backgroundColor: COLORS.background,
+      borderBottomColor: COLORS.borderDarkColor,
+      borderBottomWidth: 1,
+      ...overrideStyles?.composerContainer,
     },
     composerAvatarContainer: {
-      position: 'relative',
-      width: theme['--thread-avatar-size'],
-      height: theme['--thread-avatar-size'],
-      marginRight: 8,
-      backgroundColor: 'white',
+      marginRight: 12,
+      ...overrideStyles?.composerAvatarContainer,
     },
     composerAvatar: {
-      width: '100%',
-      height: '100%',
-      borderRadius: theme['--thread-avatar-size'] / 2,
-    },
-    plusIconContainer: {
-      position: 'absolute',
-      bottom: -2,
-      right: -2,
-      borderRadius: 25,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: COLORS.background,
+      ...overrideStyles?.composerAvatar,
     },
     composerMiddle: {
-      backgroundColor: 'white',
       flex: 1,
+      ...overrideStyles?.composerMiddle,
     },
     composerUsername: {
-      fontWeight: '600',
-      fontSize: theme['--thread-font-size'],
+      fontSize: TYPOGRAPHY.size.md,
+      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
       marginBottom: 4,
-      color: theme['--thread-text-primary'],
+      color: COLORS.white,
+      fontFamily: TYPOGRAPHY.fontFamily,
+      ...overrideStyles?.composerUsername,
     },
     composerInput: {
-      borderWidth: 0,
-      borderRadius: 8,
-      height: 40,
-      paddingHorizontal: 2,
-      marginBottom: 4,
-      fontSize: theme['--thread-font-size'],
-      color: theme['--thread-text-primary'],
+      fontSize: TYPOGRAPHY.size.md,
+      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.regular),
+      color: COLORS.white,
+      padding: 0,
+      minHeight: 30,
+      textAlignVertical: 'top',
+      fontFamily: TYPOGRAPHY.fontFamily,
+      ...overrideStyles?.composerInput,
     },
     iconsRow: {
       flexDirection: 'row',
+      marginTop: 0,
+      marginBottom: 0,
+      paddingBottom: 0,
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginTop: 8,
+      ...overrideStyles?.iconsRow,
     },
     leftIcons: {
       flexDirection: 'row',
-      gap: 10,
       alignItems: 'center',
+      ...overrideStyles?.leftIcons,
+    },
+    iconButton: {
+      marginRight: 10,
+      padding: 4,
+      ...overrideStyles?.iconButton,
+    },
+    actionButtonText: {
+      fontSize: TYPOGRAPHY.size.xs,
+      color: COLORS.greyMid,
+      fontFamily: TYPOGRAPHY.fontFamily,
+      ...overrideStyles?.actionButtonText,
     },
 
     /* Thread List Container */
@@ -104,7 +118,7 @@ export function createThreadStyles(
       paddingHorizontal: theme['--thread-post-padding-horizontal'],
       paddingVertical: theme['--thread-post-padding-vertical'],
       borderBottomWidth: 1,
-      borderBottomColor: theme['--thread-post-border-color'],
+      borderBottomColor: COLORS.borderDarkColor,
     },
     threadItemReplyLine: {
       borderLeftWidth: 1,
@@ -151,7 +165,7 @@ export function createThreadStyles(
     },
     threadItemHandleTime: {
       fontSize: 12,
-      color: '#999',
+      color: COLORS.greyMid,
     },
     verifiedIcon: {
       marginLeft: 4,
@@ -356,30 +370,40 @@ export function createThreadStyles(
     composerTradePreview: {
       flexDirection: 'row',
       alignItems: 'center',
+      marginTop: 8,
       padding: 8,
-      backgroundColor: '#F9F9F9',
       borderRadius: 8,
-      marginVertical: 8,
+      backgroundColor: COLORS.background,
+      borderWidth: 1,
+      borderColor: COLORS.borderDarkColor,
+      ...overrideStyles?.composerTradePreview,
     },
     composerTradeImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 4,
-      backgroundColor: '#ddd',
+      width: 40,
+      height: 40,
+      borderRadius: 6,
+      backgroundColor: COLORS.darkerBackground,
+      ...overrideStyles?.composerTradeImage,
     },
     composerTradeName: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: '#333',
+      fontSize: TYPOGRAPHY.size.sm,
+      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+      color: COLORS.white,
+      fontFamily: TYPOGRAPHY.fontFamily,
+      ...overrideStyles?.composerTradeName,
     },
     composerTradePrice: {
       fontSize: 12,
       color: '#666',
     },
     composerTradeRemove: {
-      backgroundColor: '#ff3b30',
-      padding: 4,
-      borderRadius: 4,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: COLORS.darkerBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...overrideStyles?.composerTradeRemove,
     },
     
     /* Migrated from ThreadComposer.tsx modalStyles */
@@ -492,35 +516,63 @@ export function createThreadStyles(
 
     // Image preview in composer
     imagePreviewContainer: {
-      marginTop: 12,
-      marginBottom: 8,
+      position: 'relative',
+      marginTop: 8,
+      width: 150,
+      height: 150,
       borderRadius: 12,
       overflow: 'hidden',
-      position: 'relative',
-      alignSelf: 'flex-start',
-      borderWidth: 1,
-      borderColor: '#eaeaea',
+      backgroundColor: COLORS.background,
+      ...overrideStyles?.imagePreviewContainer,
     },
     imagePreview: {
-      width: 160,
-      height: 160,
-      borderRadius: 12,
+      width: '100%',
+      height: '100%',
+      borderRadius: 8,
+      ...overrideStyles?.imagePreview,
     },
     removeImageButton: {
       position: 'absolute',
       top: 8,
       right: 8,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       width: 24,
       height: 24,
       borderRadius: 12,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
       alignItems: 'center',
+      justifyContent: 'center',
+      ...overrideStyles?.removeImageButton,
     },
     removeImageButtonText: {
-      color: 'white',
-      fontSize: 14,
-      fontWeight: 'bold',
+      color: COLORS.white,
+      fontSize: TYPOGRAPHY.size.sm,
+      ...overrideStyles?.removeImageButtonText,
+    },
+    postButton: {
+      backgroundColor: COLORS.brandBlue,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...overrideStyles?.postButton,
+    },
+    postButtonText: {
+      color: COLORS.white,
+      fontSize: TYPOGRAPHY.size.sm,
+      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+      fontFamily: TYPOGRAPHY.fontFamily,
+      ...overrideStyles?.postButtonText,
+    },
+    
+    // Send button style for paper plane icon
+    sendButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...overrideStyles?.sendButton,
     },
   });
 

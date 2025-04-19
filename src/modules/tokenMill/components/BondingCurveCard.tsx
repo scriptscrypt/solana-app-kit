@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import BN from 'bn.js';
@@ -10,19 +10,18 @@ import { Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = Math.min(width * 0.85, 350);
-const CHART_HEIGHT = 180;
+const CHART_HEIGHT = 220; // Increased height for better visualization
 
-export default function BondingCurveCard({
+const BondingCurveCard = React.memo(({
   marketAddress,
   connection,
   publicKey,
   solanaWallet,
   setLoading,
   styleOverrides = {},
-}: BondingCurveCardProps) {
-  // Local states for BN arrays from configurator
-  const [askPrices, setAskPrices] = useState<BN[]>([]);
-  const [bidPrices, setBidPrices] = useState<BN[]>([]);
+}: BondingCurveCardProps) => {
+  // Local states for curve values
+  const [pricePoints, setPricePoints] = useState<BN[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -32,40 +31,65 @@ export default function BondingCurveCard({
   const [basePrice, setBasePrice] = useState<number>(0);
   const [topPrice, setTopPrice] = useState<number>(0);
   const [pointCount, setPointCount] = useState<number>(0);
-  const [feePercent, setFeePercent] = useState<number>(0);
+  const [feePercent, setFeePercent] = useState<number>(2.0);
 
-  // Chart data derived from askPrices and bidPrices
+  // Safely convert BN to number to prevent Infinity/NaN errors
+  const safeConvertBnToNumber = useCallback((bn: BN) => {
+    try {
+      const num = bn.toNumber();
+      return Number.isFinite(num) ? num : 0;
+    } catch (e) {
+      return 0; // Fallback to 0 if conversion fails
+    }
+  }, []);
+
+  // Chart data derived from pricePoints with safety checks
   const chartData = useMemo(() => {
-    if (askPrices.length === 0 || bidPrices.length === 0) {
+    if (pricePoints.length === 0) {
       // Default empty data if no prices yet
       return {
-        labels: ['0', '1'],
+        labels: ['0', '5', '10'],
         datasets: [
-          { data: [0, 0], color: () => '#FF4F78', strokeWidth: 3 },
-          { data: [0, 0], color: () => '#5078FF', strokeWidth: 3 },
+          { data: [0, 0, 0], color: () => '#5078FF', strokeWidth: 3 },
+          { data: [0, 0, 0], color: () => '#FF4F78', strokeWidth: 2, strokeDashArray: [4, 2] },
         ],
-        legend: ['Ask Curve', 'Bid Curve'],
+        legend: ['Ask Price', 'After Fee (Bid)'],
       };
     }
 
-    const askPricesNumber = askPrices.map(bn => bn.toNumber());
-    const bidPricesNumber = bidPrices.map(bn => bn.toNumber());
+    // Create safe arrays of numbers from BN values
+    const askPrices = pricePoints.map(safeConvertBnToNumber);
+    
+    // Calculate prices after fee (bid prices)
+    const bidPrices = askPrices.map(price => {
+      const bidPrice = price * (1 - feePercent / 100);
+      return Number.isFinite(bidPrice) ? bidPrice : 0;
+    });
+    
     return {
-      labels: askPrices.map((_, idx) => String(idx + 1)),
+      labels: pricePoints.map((_, idx) => String(idx + 1)),
       datasets: [
-        { data: askPricesNumber, color: () => '#FF4F78', strokeWidth: 3 },
-        { data: bidPricesNumber, color: () => '#5078FF', strokeWidth: 3 },
+        { 
+          data: askPrices.length > 0 ? askPrices : [0, 0, 0], 
+          color: () => '#5078FF', 
+          strokeWidth: 3 
+        },
+        {
+          data: bidPrices.length > 0 ? bidPrices : [0, 0, 0],
+          color: () => '#FF4F78',
+          strokeWidth: 2,
+          strokeDashArray: [4, 2] // Dashed line for bid prices
+        }
       ],
-      legend: ['Ask Curve', 'Bid Curve'],
+      legend: ['Ask Price', 'After Fee (Bid)'],
     };
-  }, [askPrices, bidPrices]);
+  }, [pricePoints, feePercent, safeConvertBnToNumber]);
 
   /**
    * Handles curve changes from the configurator
    */
-  const handleCurveChange = (newAsk: BN[], newBid: BN[], parameters: any) => {
-    setAskPrices(newAsk);
-    setBidPrices(newBid);
+  const handleCurveChange = useCallback((newPrices: BN[], parameters: any) => {
+    setPricePoints(newPrices);
 
     // Update display parameters
     if (parameters) {
@@ -75,13 +99,23 @@ export default function BondingCurveCard({
       setPointCount(parameters.points || 0);
       setFeePercent(parameters.feePercent || 0);
     }
-  };
+  }, []);
+
+  /**
+   * Derives bid prices from ask prices based on fee percentage
+   */
+  const deriveBidPricesFromAsk = useCallback((askPrices: number[]): number[] => {
+    return askPrices.map(price => {
+      const bidPrice = price * (1 - feePercent / 100);
+      return Number.isFinite(bidPrice) ? bidPrice : 0;
+    });
+  }, [feePercent]);
 
   /**
    * Handles the process of setting the bonding curve on-chain
    * @returns {Promise<void>}
    */
-  const onPressSetCurve = async () => {
+  const onPressSetCurve = useCallback(async () => {
     if (!marketAddress) {
       Alert.alert(
         'No Market Address',
@@ -91,7 +125,7 @@ export default function BondingCurveCard({
       return;
     }
 
-    if (askPrices.length === 0 || bidPrices.length === 0) {
+    if (pricePoints.length === 0) {
       Alert.alert(
         'Configure Curve First',
         'Please configure the bonding curve parameters before submitting.',
@@ -107,8 +141,17 @@ export default function BondingCurveCard({
       setStatusType('info');
 
       // Convert BN => number before passing
-      const askNumbers = askPrices.map(p => p.toNumber());
-      const bidNumbers = bidPrices.map(p => p.toNumber());
+      const askNumbers = pricePoints.map(p => {
+        try {
+          const num = p.toNumber();
+          return Number.isFinite(num) ? num : 0;
+        } catch (e) {
+          return 0;
+        }
+      });
+      
+      // Derive bid prices from ask prices
+      const bidNumbers = deriveBidPricesFromAsk(askNumbers);
 
       const txSig = await setBondingCurve({
         marketAddress,
@@ -142,21 +185,21 @@ export default function BondingCurveCard({
         setStatus(null);
       }, 5000);
     }
-  };
+  }, [marketAddress, pricePoints, connection, publicKey, solanaWallet, setLoading, deriveBidPricesFromAsk]);
 
   // Determine which status container style to use based on status type
-  const getStatusContainerStyle = () => {
+  const getStatusContainerStyle = useCallback(() => {
     if (statusType === 'success') return [styles.statusContainer, styles.successStatusContainer];
     if (statusType === 'error') return [styles.statusContainer, styles.errorStatusContainer];
     return styles.statusContainer;
-  };
+  }, [statusType]);
 
   // Determine which status text style to use based on status type
-  const getStatusTextStyle = () => {
+  const getStatusTextStyle = useCallback(() => {
     if (statusType === 'success') return [styles.statusText, styles.successStatusText];
     if (statusType === 'error') return [styles.statusText, styles.errorStatusText];
     return styles.statusText;
-  };
+  }, [statusType]);
 
   return (
     <View style={styles.section}>
@@ -168,105 +211,96 @@ export default function BondingCurveCard({
         </Text>
       </View>
 
-      {/* Two-column layout for configuration and visualization */}
-      <View style={styles.twoColumnLayout}>
-        {/* Left column: Configuration controls */}
-        <View style={styles.configColumn}>
-          <Text style={styles.configSectionTitle}>Configure Parameters</Text>
+      <View style={styles.mainContainer}>
+        {/* Visual preview */}
+        <View style={styles.chartContainer}>
+          <Text style={styles.livePreviewTitle}>Live Preview</Text>
+          
+          <LineChart
+            data={chartData}
+            width={CHART_WIDTH}
+            height={CHART_HEIGHT}
+            chartConfig={{
+              backgroundColor: '#fff',
+              backgroundGradientFrom: '#fff',
+              backgroundGradientTo: '#fff',
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(70, 70, 70, ${opacity})`,
+              style: {
+                borderRadius: 16,
+              },
+              propsForDots: {
+                r: '4',
+                strokeWidth: '1',
+                stroke: '#fafafa',
+              },
+            }}
+            bezier={false} // Use straight lines instead of curved
+            style={{
+              marginVertical: 8,
+              borderRadius: 16,
+            }}
+            fromZero
+            yAxisLabel=""
+            yAxisSuffix=""
+            formatYLabel={(value) => {
+              const num = parseFloat(value);
+              if (!Number.isFinite(num)) return '0';
+              if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+              if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+              return value;
+            }}
+            withInnerLines={false}
+            withOuterLines
+            withVerticalLines={false}
+          />
 
-          <View style={styles.configControls}>
-            <BondingCurveConfigurator
-              onCurveChange={handleCurveChange}
-              disabled={!!isSubmitting}
-            />
+          {/* Legend */}
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, styles.bidDot]} />
+              <Text style={styles.legendText}>Ask Price</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, styles.askDot]} />
+              <Text style={styles.legendText}>After Fee (Bid)</Text>
+            </View>
           </View>
+
+          {/* Current parameters display */}
+          {pricePoints.length > 0 && (
+            <View style={styles.curveParameters}>
+              <View style={styles.parameterRow}>
+                <Text style={styles.parameterLabel}>Type:</Text>
+                <Text style={styles.parameterValue}>{curveType.charAt(0).toUpperCase() + curveType.slice(1)}</Text>
+              </View>
+              <View style={styles.parameterRow}>
+                <Text style={styles.parameterLabel}>Base:</Text>
+                <Text style={styles.parameterValue}>{basePrice.toFixed(0)}</Text>
+              </View>
+              <View style={styles.parameterRow}>
+                <Text style={styles.parameterLabel}>Top:</Text>
+                <Text style={styles.parameterValue}>{topPrice.toFixed(0)}</Text>
+              </View>
+              <View style={styles.parameterRow}>
+                <Text style={styles.parameterLabel}>Points:</Text>
+                <Text style={styles.parameterValue}>{pointCount}</Text>
+              </View>
+              <View style={styles.parameterRow}>
+                <Text style={styles.parameterLabel}>Fee:</Text>
+                <Text style={styles.parameterValue}>{feePercent.toFixed(1)}%</Text>
+              </View>
+            </View>
+          )}
         </View>
 
-        {/* Right column: Visual preview */}
-        <View style={styles.visualColumn}>
-          <View style={styles.livePreviewContainer}>
-            <Text style={styles.livePreviewTitle}>Live Preview</Text>
-
-            {/* Chart visualization */}
-            <View style={styles.previewChart}>
-              <LineChart
-                data={chartData}
-                width={CHART_WIDTH}
-                height={CHART_HEIGHT}
-                chartConfig={{
-                  backgroundColor: '#fff',
-                  backgroundGradientFrom: '#fff',
-                  backgroundGradientTo: '#fff',
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(70, 70, 70, ${opacity})`,
-                  style: {
-                    borderRadius: 16,
-                  },
-                  propsForDots: {
-                    r: '4',
-                    strokeWidth: '1',
-                    stroke: '#fafafa',
-                  },
-                }}
-                bezier
-                style={{
-                  marginVertical: 8,
-                  borderRadius: 16,
-                }}
-                fromZero
-                yAxisLabel=""
-                yAxisSuffix=""
-                formatYLabel={(value) => {
-                  const num = parseFloat(value);
-                  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-                  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-                  return value;
-                }}
-                withInnerLines={false}
-                withOuterLines
-                withVerticalLines={false}
-              />
-            </View>
-
-            {/* Legend */}
-            <View style={styles.legendContainer}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, styles.askDot]} />
-                <Text style={styles.legendText}>Ask Price</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, styles.bidDot]} />
-                <Text style={styles.legendText}>Bid Price</Text>
-              </View>
-            </View>
-
-            {/* Current parameters display */}
-            {askPrices.length > 0 && (
-              <View style={styles.curveParameters}>
-                <View style={styles.parameterRow}>
-                  <Text style={styles.parameterLabel}>Curve Type:</Text>
-                  <Text style={styles.parameterValue}>{curveType.charAt(0).toUpperCase() + curveType.slice(1)}</Text>
-                </View>
-                <View style={styles.parameterRow}>
-                  <Text style={styles.parameterLabel}>Base Price:</Text>
-                  <Text style={styles.parameterValue}>{basePrice.toFixed(2)}</Text>
-                </View>
-                <View style={styles.parameterRow}>
-                  <Text style={styles.parameterLabel}>Top Price:</Text>
-                  <Text style={styles.parameterValue}>{topPrice.toFixed(2)}</Text>
-                </View>
-                <View style={styles.parameterRow}>
-                  <Text style={styles.parameterLabel}>Points:</Text>
-                  <Text style={styles.parameterValue}>{pointCount}</Text>
-                </View>
-                <View style={styles.parameterRow}>
-                  <Text style={styles.parameterLabel}>Fee %:</Text>
-                  <Text style={styles.parameterValue}>{feePercent.toFixed(2)}%</Text>
-                </View>
-              </View>
-            )}
-          </View>
+        {/* Configuration controls */}
+        <View style={styles.configuratorContainer}>
+          <BondingCurveConfigurator
+            onCurveChange={handleCurveChange}
+            disabled={!!isSubmitting}
+          />
         </View>
       </View>
 
@@ -298,4 +332,6 @@ export default function BondingCurveCard({
       </Text>
     </View>
   );
-}
+});
+
+export default BondingCurveCard;

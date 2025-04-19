@@ -1,195 +1,118 @@
-# TokenMill Server Services
+# TokenMill Service
 
-This directory contains the server-side implementation of the TokenMill module, which provides core functionality for token creation, market operations, token swapping, staking, and vesting on the Solana blockchain.
+This service provides a complete backend implementation for interacting with the TokenMill Solana program. TokenMill allows for the creation and management of token markets, token minting, staking, vesting, and market trading with customizable bonding curves.
 
-## Overview
+## Features
 
-The TokenMill server services integrate with the TokenMill Solana program to provide endpoints that generate and serialize transactions for client applications. These transactions enable users to:
+The TokenMill service includes implementation for:
 
-- Create token markets
-- Configure bonding curves
-- Swap tokens (buy/sell)
-- Stake tokens for rewards
-- Create and release vesting plans
+- Configuration of TokenMill program
+- Market creation and management
+- Token creation and management
+- Token badge minting
+- Market curve configuration
+- Token swapping (buy/sell)
+- Token staking
+- Vesting schedules
+- Market graduation
+
+## Implementation
+
+The service is built using:
+
+- Anchor framework for Solana program interaction
+- Web3.js for Solana blockchain transactions
+- SPL Token program for token operations
+
+## Available Functionality
+
+### Configuration
+
+- Create and initialize TokenMill configuration
+- Retrieve configuration data
+- Update configuration parameters
+
+### Markets
+
+- Create new token markets
+- Configure market curves (linear, exponential, etc.)
+- Set market fees and parameters
+- Free markets from restrictions
 - Fund markets with SOL
-- And more
+- Graduate markets to independent SPL tokens
 
-## Files
+### Tokens
 
-The directory contains the following files:
+- Create new tokens within markets
+- Get token metadata and market information
+- Manage token supply and distribution
 
-### `tokenMill.ts`
+### Swapping
 
-The primary implementation of the TokenMill client that interfaces with the Solana blockchain and provides transaction building services.
+- Buy tokens using SOL
+- Sell tokens for SOL
+- Get quotes for token swaps
+- Execute swap transactions
 
-### `tokenMillBackupFunctions.ts`
+### Staking
 
-Contains additional functions and alternative implementations for TokenMill operations that are kept as backup or for reference.
+- Create staking positions
+- Unstake tokens
+- Calculate staking rewards
+- Manage staking parameters
 
-## TokenMillClient Class
+### Vesting
 
-The `TokenMillClient` class in `tokenMill.ts` is the main entry point for all TokenMill operations on the server side.
+- Create vesting schedules
+- Release vested tokens
+- Track vesting progress
+- Manage vesting parameters
 
-### Initialization
+## Usage
 
-The client initializes with:
+The service is used by controllers to handle API requests. It provides a clean interface for all TokenMill operations, handling the complexities of Solana transaction building, signing, and submission.
 
-- A connection to the Solana RPC endpoint
-- A wallet keypair generated from the environment-provided private key
-- An Anchor provider
-- The TokenMill program derived from the IDL
-
-### Core Functions
-
-#### Market and Token Creation
-
-| Function                | Description                                             |
-| ----------------------- | ------------------------------------------------------- |
-| `createConfig()`        | Creates a new TokenMill configuration with fee settings |
-| `getTokenBadge()`       | Creates a token badge for wSOL as a quote asset         |
-| `buildCreateMarketTx()` | Builds a transaction to create a new token market       |
-| `freeMarket()`          | Removes restrictions from a market                      |
-| `createToken()`         | Creates a new token mint                                |
-
-#### Token Swapping
-
-| Function        | Description                                         |
-| --------------- | --------------------------------------------------- |
-| `buildSwapTx()` | Builds a transaction for token swapping (buy/sell)  |
-| `quoteSwap()`   | Calculates expected swap outcomes for a given input |
-
-#### Staking and Vesting
-
-| Function                                       | Description                                      |
-| ---------------------------------------------- | ------------------------------------------------ |
-| `buildStakeTx()`                               | Builds a transaction for staking tokens          |
-| `buildCreateVestingTxWithAutoPositionAndATA()` | Builds a transaction for creating a vesting plan |
-| `buildReleaseVestingTx()`                      | Builds a transaction for releasing vested tokens |
-
-#### Market Configuration
-
-| Function            | Description                                               |
-| ------------------- | --------------------------------------------------------- |
-| `buildSetCurveTx()` | Builds a transaction for setting a market's bonding curve |
-
-#### Metadata and Information
-
-| Function             | Description                              |
-| -------------------- | ---------------------------------------- |
-| `getAssetMetadata()` | Retrieves metadata for a given asset     |
-| `getGraduation()`    | Gets graduation information for a market |
-
-## TokenMillClientBackup Class
-
-The `TokenMillClientBackup` class in `tokenMillBackupFunctions.ts` contains alternative implementations and additional utilities.
-
-### Notable Functions
-
-| Function           | Description                                                |
-| ------------------ | ---------------------------------------------------------- |
-| `lockMarket()`     | Locks a market with a given swap authority                 |
-| `createMarket()`   | Direct implementation of market creation (not building tx) |
-| `setPrices()`      | Sets prices for a market                                   |
-| `stake()`          | Direct implementation for staking tokens                   |
-| `createVesting()`  | Direct implementation for creating a vesting plan          |
-| `releaseVesting()` | Direct implementation for releasing vested tokens          |
-| `executeSwap()`    | Direct implementation for executing token swaps            |
-
-## Technical Details
-
-### Transaction Building Pattern
-
-Most functions follow a similar pattern:
-
-1. Parse and validate input parameters
-2. Derive necessary accounts and PDAs
-3. Build the transaction with appropriate instructions
-4. Serialize the transaction to a base64 string
-5. Return the serialized transaction to the client for signing and submission
-
-### PDA (Program Derived Address) Derivation
-
-The service handles complex PDA derivations for various accounts:
-
-- Market PDAs
-- Quote token badges
-- Associated Token Accounts (ATAs)
-- Metadata accounts
-- Staking accounts
-- Vesting plan accounts
-
-### Error Handling
-
-The services implement robust error handling with:
-
-- Proper error messages
-- Transaction validation
-- Response formatting with success/error flags
-- Logging for debugging
-
-## Usage in API Endpoints
-
-These service functions are used by the server's API endpoints to provide client-facing functionality:
-
-| Endpoint               | TokenMill Service Function                     |
-| ---------------------- | ---------------------------------------------- |
-| `/api/markets`         | `buildCreateMarketTx()`                        |
-| `/api/stake`           | `buildStakeTx()`                               |
-| `/api/vesting/create`  | `buildCreateVestingTxWithAutoPositionAndATA()` |
-| `/api/vesting/release` | `buildReleaseVestingTx()`                      |
-| `/api/swap`            | `buildSwapTx()`                                |
-| `/api/market/fund`     | `buildFundMarketTx()`                          |
-| `/api/market/curve`    | `buildSetCurveTx()`                            |
-
-## Environment Variables
-
-The services rely on several environment variables:
-
-- `RPC_URL`: Solana RPC endpoint URL
-- `WALLET_PRIVATE_KEY`: Server wallet private key (bs58 encoded)
-- `TOKEN_MILL_CONFIG_PDA`: TokenMill configuration PDA address
-- `SWAP_AUTHORITY_KEY`: Swap authority private key (for locking markets)
-
-## Transaction Security
-
-All transactions built by these services:
-
-- Require client-side signature with the user's wallet
-- Include proper fee payers
-- Set appropriate blockhash and timeout
-- Implement signature verification
-- Validate user authority
-
-## Integration with Solana Programs
-
-The services integrate with:
-
-- TokenMill program (primary)
-- SPL Token program
-- System program
-- Metaplex token metadata program
-
-## Response Format
-
-All service functions return responses in a consistent format:
+Example usage from a controller:
 
 ```typescript
-{
-  success: boolean;        // Whether the operation was successful
-  data?: string | object;  // Base64-encoded transaction or other data
-  error?: string;          // Error message if applicable
-}
+import { createToken } from '../service/TokenMill/tokenService';
+
+// In controller function
+const result = await createToken({
+  name: "My Token",
+  symbol: "MTKN",
+  marketIndex: 1,
+  totalSupply: 1000000,
+  decimals: 9,
+  metadata: {
+    description: "My awesome token",
+    image: "https://example.com/image.png"
+  }
+});
 ```
 
-## Development and Extension
+## Configuration
 
-When extending the TokenMill services:
+The service requires the following environment variables:
 
-1. Follow the established patterns for transaction building
-2. Ensure proper PDA derivation for new accounts
-3. Implement consistent error handling
-4. Update the appropriate API endpoints
+- `TOKEN_MILL_PROGRAMID`: The Solana program ID for TokenMill
+- `TOKEN_MILL_CONFIG_PDA`: The PDA address for TokenMill configuration
+- `WALLET_PRIVATE_KEY`: Private key for the authority wallet
+- `RPC_URL`: Solana RPC URL for network access
 
-## Documentation
+## Error Handling
 
-For more information about the TokenMill module's client-side integration, refer to the `src/modules/tokenMill/README.md` file.
+The service implements comprehensive error handling for:
+
+- Network issues
+- Transaction failures
+- Invalid parameters
+- Authorization errors
+- Rate limiting
+
+## Security Considerations
+
+- All transactions are signed by the authority wallet
+- Input validation is performed for all parameters
+- Rate limiting is implemented for high-volume operations
+- Error messages are sanitized to prevent information leakage

@@ -1,0 +1,262 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    },
+    container: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        maxHeight: '90%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 20,
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 16,
+        top: 16,
+        zIndex: 1,
+        padding: 8,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 20,
+        width: 36,
+        height: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    closeButtonText: {
+        fontSize: 20,
+        color: '#666',
+        lineHeight: 20,
+    },
+    content: {
+        padding: 20,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 24,
+        marginBottom: 20,
+    },
+    tokenLogo: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#F5F5F5',
+    },
+    tokenInfo: {
+        marginLeft: 16,
+        flex: 1,
+    },
+    tokenName: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#111',
+        marginBottom: 4,
+    },
+    tokenSymbol: {
+        fontSize: 16,
+        color: '#666',
+    },
+    priceContainer: {
+        marginBottom: 28,
+    },
+    price: {
+        fontSize: 36,
+        fontWeight: '700',
+        color: '#111',
+        marginBottom: 8,
+    },
+    priceChangeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    priceChangeAmount: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginRight: 12,
+    },
+    percentageBox: {
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    percentageText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    section: {
+        marginBottom: 32,
+    },
+    chartContainer: {
+        marginBottom: 32,
+        height: 300,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    graphWrapper: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        height: 220,
+    },
+    graph: {
+        backgroundColor: 'transparent',
+    },
+    noDataContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    noDataText: {
+        color: '#666',
+        fontSize: 16,
+    },
+    timeframeContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 20,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 12,
+        padding: 4,
+    },
+    timeframeButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+    },
+    selectedTimeframe: {
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    timeframeText: {
+        color: '#666',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    selectedTimeframeText: {
+        color: '#111',
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#111',
+        marginBottom: 16,
+    },
+    infoSection: {
+        marginBottom: 32,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 16,
+        padding: 20,
+    },
+    infoGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginHorizontal: -8,
+    },
+    infoItem: {
+        width: '50%',
+        paddingHorizontal: 8,
+        marginBottom: 20,
+    },
+    infoLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 6,
+    },
+    infoValue: {
+        fontSize: 16,
+        color: '#111',
+        fontWeight: '600',
+    },
+    performanceSection: {
+        marginBottom: 32,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 16,
+        padding: 20,
+    },
+    performanceGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        marginTop: 8,
+    },
+    performanceItem: {
+        width: '48%',
+        marginBottom: 12,
+    },
+    performanceLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 6,
+    },
+    performanceValue: {
+        fontSize: 16,
+        color: '#111',
+        fontWeight: '600',
+    },
+    securitySection: {
+        marginBottom: 32,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 16,
+        padding: 20,
+    },
+    securityGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginHorizontal: -8,
+    },
+    securityItem: {
+        width: '50%',
+        paddingHorizontal: 8,
+        marginBottom: 20,
+    },
+    securityLabel: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 6,
+    },
+    securityValue: {
+        fontSize: 16,
+        color: '#111',
+        fontWeight: '600',
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 220,
+    },
+    loadingText: {
+        marginTop: 12,
+        color: '#666',
+        fontSize: 14,
+    },
+    disabledButton: {
+        opacity: 0.5,
+    },
+    disabledText: {
+        opacity: 0.5,
+    },
+}); 

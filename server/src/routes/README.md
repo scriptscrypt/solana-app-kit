@@ -1,110 +1,164 @@
 # Routes Directory
 
-This directory contains all the Express.js route definitions for the Solana Social Starter backend server. Each file defines a set of related API endpoints that handle specific functionality.
+This directory contains all the Express.js route definitions for the Solana App Kit server. Routes define the API endpoints that clients can interact with and connect them to the appropriate controller functions.
 
-## Structure
+## Directory Structure
 
-### `tokenMillRoutes.ts`
+The routes are organized by feature in subdirectories and individual files:
 
-Contains all routes related to TokenMill functionality:
+```
+routes/
+├── aura/          # Aura-related endpoints
+├── auth/          # Authentication and authorization endpoints
+├── feed/          # Social feed endpoints
+├── pumpfun/       # PumpFun launch endpoints
+├── swap/          # Swap-related endpoints (Jupiter, PumpSwap)
+├── tokenmill/     # TokenMill functionality endpoints
+└── user/          # User profile endpoints
+```
 
-- Token creation and management
-- Market operations
-- Staking
-- Vesting
-- Swapping
-- Asset metadata retrieval
+## Route Categories
 
-### `threadRoutes.ts`
+### TokenMill Routes (`tokenmill/`)
 
-Handles endpoints for the social thread functionality:
+TokenMill-related endpoints for token creation and management:
+
+- Token creation and badge minting
+- Market creation and configuration
+- Token swapping
+- Staking and vesting
+- Market graduation and asset retrieval
+
+### Authentication Routes (`auth/`)
+
+Endpoints handling user authentication and authorization:
+
+- User signup and login
+- Token validation
+- Session management
+- Wallet authentication
+
+### User Routes (`user/`)
+
+Endpoints for user profile management:
+
+- Profile creation and retrieval
+- Profile updates
+- User settings
+- Wallet connection
+
+### Feed Routes (`feed/`)
+
+Social feed related endpoints:
 
 - Thread creation and retrieval
 - Thread interactions
 - Thread listing and filtering
+- Thread image operations
 
-### `threadImageRoutes.ts`
+### Swap Routes (`swap/`)
 
-Manages thread-related image operations:
+Endpoints for token swap operations:
 
-- Image upload for threads
-- Image retrieval
-- Image metadata
-
-### `profileImageRoutes.ts`
-
-Handles user profile image operations:
-
-- Upload profile images
-- Retrieve profile images
-- Update profile images
-
-### `profileWalletRoutes.ts`
-
-Manages the association between user profiles and their wallets:
-
-- Connect wallets to profiles
-- Retrieve profile information by wallet
-- Update wallet information
-
-### `jupiterSwapRoutes.ts`
-
-Provides endpoints for interacting with Jupiter DEX:
-
-- Token swapping
+- Jupiter DEX integration
+- PumpSwap integration
 - Quote retrieval
-- Liquidity information
+- Swap execution
 
-### `pumpSwapRoutes.ts`
+### PumpFun Routes (`pumpfun/`)
 
-Handles PumpSwap-specific functionality:
-
-- PumpSwap token swapping
-- Quote retrieval
-- Trade execution
-
-### `pumpfunLaunch.ts`
-
-Contains endpoints related to PumpFun token launches:
+PumpFun token launch endpoints:
 
 - Launch configuration
 - Participation
 - Status retrieval
+- Launch statistics
 
-## Usage
+### Aura Routes (`aura/`)
 
-All routes are imported and mounted in the main `index.ts` file. Most routes are prefixed with `/api` when mounted, with some having additional prefixes like `/api/profile` or `/api/thread/images`.
+Aura-specific endpoints:
 
-## Adding New Routes
+- Aura data retrieval
+- Aura interactions
+- Configuration endpoints
 
-To add new routes:
+## Route Implementation Pattern
 
-1. Create a new file in this directory following the naming convention `featureRoutes.ts`
-2. Import necessary dependencies and types
-3. Create an Express Router instance
-4. Define your route handlers
-5. Export the router as the default export
-6. Import and mount the router in `index.ts`
-
-Example route file template:
+Routes follow a consistent implementation pattern:
 
 ```typescript
-import express, {Request, Response} from 'express';
-import {YourService} from '../services/yourService';
+import express, { Request, Response } from 'express';
+import { controllerFunction } from '../controllers/featureController';
 
 const router = express.Router();
 
-router.get('/your-endpoint', async (req: Request, res: Response) => {
+/**
+ * @route   POST /feature/endpoint
+ * @desc    Description of what this endpoint does
+ * @access  Public/Private
+ */
+router.post('/endpoint', async (req: Request, res: Response) => {
   try {
-    // Implementation
-    res.json({success: true, data: result});
+    // Call controller function
+    const result = await controllerFunction(req.body);
+    
+    // Return successful response
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
   } catch (error) {
-    res.status(500).json({
+    // Handle error
+    console.error('Error in endpoint:', error);
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
 
 export default router;
 ```
+
+## Route Registration
+
+All routes are registered in the main application in `index.ts`:
+
+```typescript
+// Import routes
+import authRoutes from './routes/auth';
+import userRoutes from './routes/user';
+import tokenmillRoutes from './routes/tokenmill';
+// ... other imports
+
+// Register routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/tokenmill', tokenmillRoutes);
+// ... other route registrations
+```
+
+## Adding New Routes
+
+To add new routes:
+
+1. Determine if the route belongs in an existing subdirectory or needs a new one
+2. Create a new file following the naming convention `featureRoutes.ts`
+3. Import necessary controllers and middleware
+4. Create an Express Router instance
+5. Define your route handlers with proper error handling
+6. Document each endpoint with comments explaining its purpose
+7. Export the router
+8. Import and mount the router in `index.ts`
+
+## Best Practices
+
+- Group related endpoints in the same router file or subdirectory
+- Use descriptive route paths that follow RESTful conventions
+- Implement consistent error handling
+- Validate request data before processing
+- Use appropriate HTTP methods (GET, POST, PUT, DELETE)
+- Document all endpoints with comments
+- Add appropriate middleware for authentication where needed
+- Return consistent response formats
+- Use proper HTTP status codes

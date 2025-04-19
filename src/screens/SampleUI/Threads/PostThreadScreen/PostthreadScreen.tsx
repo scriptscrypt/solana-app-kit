@@ -13,25 +13,24 @@ import {
 } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 
-import { RootStackParamList } from '../../../../navigation/RootNavigator';
-import PostHeader from '../../../../core/thread/components/post/PostHeader';
-import PostBody from '../../../../core/thread/components/post/PostBody';
-import PostFooter from '../../../../core/thread/components/post/PostFooter';
-import PostCTA from '../../../../core/thread/components/post/PostCTA';
-import ThreadComposer from '../../../../core/thread/components/ThreadComposer';
-import { useAppSelector, useAppDispatch } from '../../../../hooks/useReduxHooks';
-import { useAppNavigation } from '../../../../hooks/useAppNavigation';
+import PostHeader from '@/core/thread/components/post/PostHeader';
+import PostBody from '@/core/thread/components/post/PostBody';
+import PostFooter from '@/core/thread/components/post/PostFooter';
+import PostCTA from '@/core/thread/components/post/PostCTA';
+import ThreadComposer from '@/core/thread/components/ThreadComposer';
 
 import {
   ThreadPost,
   ThreadUser,
-} from '../../../../core/thread/components/thread.types';
-import { DEFAULT_IMAGES } from '../../../../config/constants';
-import { flattenPosts } from '../../../../core/thread/components/thread.utils';
-import { deletePostAsync } from '../../../../state/thread/reducer';
-import ThreadEditModal from '../../../../core/thread/components/ThreadEditModal';
-import RetweetPreview from '../../../../core/thread/components/retweet/RetweetPreview';
-import Icons from '../../../../assets/svgs';
+} from '@/core/thread/components/thread.types';
+import { DEFAULT_IMAGES } from '@/config/constants';
+import { flattenPosts } from '@/core/thread/components/thread.utils';
+import ThreadEditModal from '@/core/thread/components/ThreadEditModal';
+import Icons from '@/assets/svgs';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { deletePostAsync } from '@/shared/state/thread/reducer';
 
 /**
  * Finds a post in the array by ID.

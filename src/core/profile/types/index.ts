@@ -47,6 +47,7 @@ export interface ProfileViewProps {
   fetchNftsError: string | null;
   onAvatarPress?: () => void;
   onEditProfile?: () => void;
+  onShareProfile?: () => void;
   amIFollowing?: boolean;
   areTheyFollowingMe?: boolean;
   onFollowPress?: () => void;
@@ -83,6 +84,8 @@ export interface UserProfileInfoProps {
   onAvatarPress?: () => void;
   /** Callback when user taps "Edit Profile" (open an edit name modal) */
   onEditProfile?: () => void;
+  /** Callback when user taps "Share Profile" */
+  onShareProfile?: () => void;
   /** Optional short text describing the user's bio. We'll show mention highlighting. */
   bioText?: string;
   /** If the current user is following this user */
@@ -197,6 +200,7 @@ export interface TransactionEvents {
 // Import needed types
 import { AssetItem, PortfolioData } from '../../../hooks/useFetchTokens';
 import { StyleProp, ViewStyle } from 'react-native';
-import { Action } from '../services/profileActions';import { ThreadPost } from '../../thread/types';
+import { Action } from '../utils/profileActionsUtils';
+import { ThreadPost } from '../../thread/types';
 import { NftItem } from '../../../modules/nft';
  

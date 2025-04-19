@@ -9,25 +9,27 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Import from the original location instead of the NFT module
 import Collectibles from '../collectibles/collectibles';
 import { NftItem } from '../../../../modules/nft/types';
 
-import { styles, tabBarStyles, retweetStyles } from './ProfileTabs.style';
+import { styles, tabBarStyles, retweetStyles, tabBarActiveColor, tabBarInactiveColor } from './ProfileTabs.style';
 import ActionsPage from '../actions/ActionsPage';
 
 import Icons from '../../../../assets/svgs';
-import { AssetItem, PortfolioData } from '../../../../hooks/useFetchTokens';
 
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
-import { deletePostAsync } from '../../../../state/thread/reducer';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { deletePostAsync } from '@/shared/state/thread/reducer';
 import { ProfileTabsProps } from '../../types';
 import { ThreadPost } from '../../../thread/types';
 import PostHeader from '../../../thread/components/post/PostHeader';
 import PostBody from '../../../thread/components/post/PostBody';
 import PostFooter from '../../../thread/components/post/PostFooter';
+import { AssetItem, PortfolioData } from '@/modules/dataModule';
 
+import COLORS from '@/assets/colors'; // Import COLORS if not already
 
 // Loading placeholder for lazy-loaded tabs
 const LoadingPlaceholder = memo(() => (
@@ -77,7 +79,7 @@ const PostItem = memo(({
       {/* Retweet indicator */}
       {isRetweet && (
         <View style={retweetStyles.retweetHeader}>
-          <Icons.RetweetIdle width={12} height={12} color="#657786" />
+          <Icons.RetweetIdle width={12} height={12} />
           <Text style={retweetStyles.retweetHeaderText}>
             {post.user.username} Retweeted
           </Text>
@@ -373,18 +375,27 @@ function ProfileTabs({
   );
 
   // Custom tab bar renderer
-  const renderTabBar = useCallback((props: any) => (
-    <TabBar
-      {...props}
-      style={tabBarStyles.container}
-      labelStyle={tabBarStyles.label}
-      activeColor={tabBarStyles.activeColor}
-      inactiveColor={tabBarStyles.inactiveColor}
-      indicatorStyle={tabBarStyles.indicator}
-      pressColor="transparent" // Prevent ripple effect on Android
-      pressOpacity={0.8}       // Subtle opacity change on iOS
-    />
-  ), []);
+  const renderTabBar = useCallback(
+    (props: any) => (
+      <View style={tabBarStyles.gradientContainer}>
+        <TabBar
+          {...props}
+          style={tabBarStyles.tabBarContainer}
+          labelStyle={tabBarStyles.label}
+          activeColor={tabBarActiveColor}
+          inactiveColor={tabBarInactiveColor}
+          indicatorStyle={tabBarStyles.indicator}
+          pressColor="transparent" // Prevent ripple effect on Android
+          pressOpacity={0.8} // Subtle opacity change on iOS
+        />
+        <LinearGradient
+          colors={['transparent', COLORS.lightBackground]}
+          style={tabBarStyles.bottomGradient}
+        />
+      </View>
+    ),
+    [],
+  );
 
   // Memoize the initial layout to prevent recalculation
   const initialLayout = useMemo(() => ({ width: 300, height: 300 }), []);

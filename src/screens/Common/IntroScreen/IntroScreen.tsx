@@ -1,114 +1,82 @@
-import React, { useEffect, useRef } from 'react';
-import { View, TouchableOpacity, Animated, Easing } from 'react-native';
-import Icons from '../../../assets/svgs/index';
-import styles from './IntroScreen.styles';
-import { useAppNavigation } from '../../../hooks/useAppNavigation';
-import { getDynamicClient } from '../../../modules/embeddedWalletProviders/services/walletProviders/dynamic';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
+import COLORS from '@/assets/colors';
+import Logo from '@/assets/svgs/logo.svg';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '@/shared/state/store';
+import { getDynamicClient } from '@/modules/walletProviders/services/walletProviders/dynamic';
 
 export default function IntroScreen() {
   const navigation = useAppNavigation();
-
-  const solanaDotOpacity = useRef(new Animated.Value(0)).current;
-  const splashTextOpacity = useRef(new Animated.Value(0)).current;
-  const smileScale = useRef(new Animated.Value(0.5)).current;
-  const buttonScale = useRef(new Animated.Value(1)).current;
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
 
   useEffect(() => {
-    // Check if user is already authenticated
-    try {
-      const client = getDynamicClient();
-      const authUser = client?.auth?.authenticatedUser;
+    const checkAuthStatus = async () => {
+      setIsCheckingAuth(true);
+      try {
+        // Check if user is already authenticated using Dynamic client
+        const client = getDynamicClient();
+        const authUser = client?.auth?.authenticatedUser;
 
-      if (authUser) {
-        console.log('User already authenticated, skipping login screen');
-        navigation.navigate('MainTabs' as never);
+        if (authUser) {
+          console.log('User already authenticated, navigating to MainTabs');
+          // User is authenticated, navigate to MainTabs
+          setTimeout(() => {
+            navigation.navigate('MainTabs' as never);
+            setIsCheckingAuth(false);
+          }, 1000); // Small delay for smooth transition
+        } else {
+          console.log('User not authenticated, navigating to LoginOptions');
+          // User is not authenticated, navigate to LoginOptions
+          setTimeout(() => {
+            navigation.navigate('LoginOptions');
+            setIsCheckingAuth(false);
+          }, 2000); // 2 seconds delay
+        }
+      } catch (e) {
+        console.log('Dynamic client not initialized yet or error:', e);
+        // If there's an error or client not initialized, fallback to Redux state
+        setTimeout(() => {
+          if (isLoggedIn) {
+            navigation.navigate('MainTabs' as never);
+          } else {
+            navigation.navigate('LoginOptions');
+          }
+          setIsCheckingAuth(false);
+        }, 2000); // 2 seconds delay
       }
-    } catch (e) {
-      console.log('Dynamic client not initialized yet:', e);
-    }
-  }, [navigation]);
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(solanaDotOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(splashTextOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.spring(smileScale, {
-        toValue: 0.8,
-        friction: 2,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [solanaDotOpacity, splashTextOpacity, smileScale]);
-
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(buttonScale, {
-          toValue: 1.05,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(buttonScale, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    pulse.start();
-    return () => {
-      pulse.stop();
     };
-  }, [buttonScale]);
+
+    checkAuthStatus();
+  }, [navigation, isLoggedIn]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.svgContainer}>
-        <Animated.View style={{ opacity: solanaDotOpacity }}>
-          <Icons.SolanaDot />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.splashTextContainer,
-            {
-              opacity: splashTextOpacity,
-            },
-          ]}>
-          <Icons.SplashText />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.smileFaceContainer,
-            {
-              transform: [{ scale: smileScale }],
-            },
-          ]}>
-          <Icons.SmileFace />
-        </Animated.View>
-      </View>
-
-      <TouchableOpacity
-        activeOpacity={0.8}
-        style={styles.bottomRectContainer}
-        onPress={() => {
-          navigation.navigate('LoginOptions');
-        }}>
-        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-          <Icons.GettingStartedButton />
-        </Animated.View>
-      </TouchableOpacity>
+      <Logo width={250} height={120} />
+      {isCheckingAuth && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={COLORS.brandPrimary} style={styles.loader} />
+        </View>
+      )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loaderContainer: {
+    position: 'absolute',
+    bottom: 100,
+    alignItems: 'center',
+  },
+  loader: {
+    marginTop: 20,
+  },
+});

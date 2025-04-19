@@ -1,4 +1,5 @@
 // FILE: src/components/thread/sections/SectionTextOnly.tsx
+import COLORS from '@/assets/colors';
 import React from 'react';
 import {Text} from 'react-native';
 
@@ -31,6 +32,6 @@ interface SectionTextOnlyProps {
  */
 export default function SectionTextOnly({text = ''}: SectionTextOnlyProps) {
   return (
-    <Text style={{fontSize: 14, color: '#000', marginBottom: 6}}>{text}</Text>
+    <Text style={{fontSize: 15, color: COLORS.white, marginBottom: 0}}>{text}</Text>
   );
 }
