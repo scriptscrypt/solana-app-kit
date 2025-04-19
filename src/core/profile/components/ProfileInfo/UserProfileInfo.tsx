@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import {
   Image,
   View,
@@ -23,6 +23,7 @@ import { tokenModalStyles } from './profileInfoTokenModal.style';
 import COLORS from '../../../../assets/colors';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { UserProfileInfoProps } from '../../types/index';
+import ProfileEditDrawer from '../ProfileEditDrawer';
 
 /**
  * TokenAttachModal - Component for the token attachment modal
@@ -316,6 +317,18 @@ function UserProfileInfo({
 }: UserProfileInfoProps) {
   const dispatch = useAppDispatch();
 
+  // Local state to handle updates
+  const [localProfilePic, setLocalProfilePic] = useState(profilePicUrl);
+  const [localUsername, setLocalUsername] = useState(username);
+  const [localBioText, setLocalBioText] = useState(bioText);
+
+  // Update local state when props change
+  useEffect(() => {
+    setLocalProfilePic(profilePicUrl);
+    setLocalUsername(username);
+    setLocalBioText(bioText);
+  }, [profilePicUrl, username, bioText]);
+
   // Format wallet address as a handle
   const handleString = useMemo(() =>
     userWallet
@@ -326,9 +339,9 @@ function UserProfileInfo({
 
   // Default bio with username if none provided
   const sampleBio = useMemo(() =>
-    bioText ||
-    `Hey folks! I'm ${username} building on Solana. Mention @someone to highlight.`,
-    [bioText, username]
+    localBioText ||
+    `Hey folks! I'm ${localUsername} building on Solana. Mention @someone to highlight.`,
+    [localBioText, localUsername]
   );
 
   // Conditionals for UI elements - memoized to prevent recalculations
@@ -356,6 +369,29 @@ function UserProfileInfo({
     imageUrl?: string;
     symbol?: string;
   } | null>(null);
+
+  // Profile edit drawer state
+  const [showEditProfileDrawer, setShowEditProfileDrawer] = useState(false);
+
+  /**
+   * Combined handler for avatar press and edit profile
+   */
+  const handleEditProfilePress = useCallback(() => {
+    if (!isOwnProfile) return;
+    setShowEditProfileDrawer(true);
+  }, [isOwnProfile]);
+
+  /**
+   * Handle profile updated event
+   */
+  const handleProfileUpdated = useCallback((field: 'image' | 'username' | 'description') => {
+    // Refresh the local state based on the field that was updated
+    if (field === 'image' && onAvatarPress) {
+      onAvatarPress();
+    } else if ((field === 'username' || field === 'description') && onEditProfile) {
+      onEditProfile();
+    }
+  }, [onAvatarPress, onEditProfile]);
 
   /**
    * Handle token selection from the portfolio modal
@@ -449,12 +485,12 @@ function UserProfileInfo({
     <View style={styles.profileInfo}>
       {/* Profile Header with Avatar and Name */}
       <ProfileHeader
-        profilePicUrl={profilePicUrl}
-        username={username}
+        profilePicUrl={localProfilePic}
+        username={localUsername}
         handleString={handleString}
         showFollowsYou={canShowFollowsYou}
         isOwnProfile={isOwnProfile}
-        onAvatarPress={onAvatarPress}
+        onAvatarPress={handleEditProfilePress}
       />
 
       {/* Short bio */}
@@ -480,7 +516,7 @@ function UserProfileInfo({
       )}
 
       {/* Edit profile button (for own profile) */}
-      {isOwnProfile && <EditButton onPress={onEditProfile} onSharePress={onShareProfile} />}
+      {isOwnProfile && <EditButton onPress={handleEditProfilePress} onSharePress={onShareProfile} />}
 
       {/* BuyCard for token (own profile or if token is attached) */}
 
@@ -504,6 +540,21 @@ function UserProfileInfo({
         tokenDescription={tokenDescription}
         onChangeDescription={handleDescriptionChange}
       />
+
+      {/* Profile Edit Drawer - new unified profile editor */}
+      {isOwnProfile && (
+        <ProfileEditDrawer
+          visible={showEditProfileDrawer}
+          onClose={() => setShowEditProfileDrawer(false)}
+          profileData={{
+            userId: userWallet,
+            profilePicUrl: localProfilePic,
+            username: localUsername,
+            description: localBioText || sampleBio,
+          }}
+          onProfileUpdated={handleProfileUpdated}
+        />
+      )}
     </View>
   );
 }
