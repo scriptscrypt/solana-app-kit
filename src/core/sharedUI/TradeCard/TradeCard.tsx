@@ -19,6 +19,8 @@ import { useCoingecko, Timeframe } from '@/modules/dataModule/hooks/useCoingecko
 import LineGraph from './LineGraph';
 import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
 import { fetchJupiterTokenData } from '@/modules/dataModule/utils/tokenUtils';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 export interface TradeData {
   inputMint: string;
@@ -451,22 +453,47 @@ function TradeCard({
     setShowOutputTokenDrawer(true);
   }, []);
 
-  // --------------------------------------------------
-  // Render: Chart Mode
-  // --------------------------------------------------
-  const isOutputChartMode = !!showGraphForOutputToken;
-  const isLoading = loadingMeta || loadingOHLC;
+  // Get the display price for the card
+  const displayPrice = useMemo(() => {
+    if (tradeData.outputUsdValue && tradeData.outputUsdValue !== '$??') {
+      return tradeData.outputUsdValue.replace('$', '');
+    }
+    if (calculatedOutputUsdValue) {
+      return calculatedOutputUsdValue.replace('$', '');
+    }
+    if (timeframePrice) {
+      return timeframePrice.toFixed(2);
+    }
+    return '';
+  }, [tradeData.outputUsdValue, calculatedOutputUsdValue, timeframePrice]);
 
-  if (isOutputChartMode) {
-    return (
-      <>
-        <View style={styles.tradeCardContainer}>
-          {/* Output token details row */}
-          <TouchableOpacity
-            style={styles.tradeCardCombinedSides}
-            onPress={handleOpenOutputTokenDetails}
-            activeOpacity={0.7}>
-            <View style={styles.tradeCardLeftSide}>
+  // Calculate quantity difference if available (+5 SOL example from the image)
+  const quantityDiff = useMemo(() => {
+    // In a real app this would be calculated from trade history or provided in props
+    // For now, just show a positive example if we have output quantity
+    if (tradeData.outputQuantity) {
+      return `+${tradeData.outputQuantity} ${tradeData.outputSymbol}`;
+    }
+    return '';
+  }, [tradeData.outputQuantity, tradeData.outputSymbol]);
+
+  // Handle loading states
+  const isLoading = loadingMeta || loadingOHLC || loadingPrices;
+  
+  // --------------------------------------------------
+  // Render main TradeCard component
+  // --------------------------------------------------
+  return (
+    <>
+      <View style={styles.tradeCardContainer}>
+        {/* Token Header Section - Always displayed even during loading */}
+        <TouchableOpacity 
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+          onPress={handleOpenOutputTokenDetails}
+          activeOpacity={0.7}
+        >
+          <View style={{ flexDirection: 'column' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Image
                 source={
                   fallbackOutLogo
@@ -475,316 +502,60 @@ function TradeCard({
                 }
                 style={styles.tradeCardTokenImage}
               />
-              <View style={styles.tradeCardNamePriceContainer}>
-                <Text style={styles.tradeCardTokenName}>{fallbackOutName}</Text>
-                <Text style={styles.tradeCardTokenPrice}>
-                  {timeframePrice ? `$${timeframePrice.toFixed(4)}` : '$0.00'}
+              <View style={{ flexDirection: 'column' }}>
+                <Text style={styles.tradeCardTokenName}>
+                  {tradeData.outputSymbol}
+                </Text>
+                <Text style={styles.tokenSubtitle}>
+                  {`Bought at ${tradeData.inputUsdValue || calculatedInputUsdValue || ''}`}
                 </Text>
               </View>
             </View>
-            <View style={styles.tradeCardRightSide}>
-              <Text style={[styles.tradeCardSolPrice, { color: '#00C851' }]}>
-                {tradeData.outputQuantity + ' ' + tradeData.outputSymbol}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.tradeCardUsdPrice}>
-                  {tradeData.outputUsdValue && tradeData.outputUsdValue !== '$??'
-                    ? tradeData.outputUsdValue
-                    : calculatedOutputUsdValue}
-                </Text>
-                {priceDifference && (
-                  <Text style={{
-                    marginLeft: 4,
-                    fontSize: 12,
-                    color: priceDifference.isPositive ? '#00C851' : '#FF4136',
-                    fontWeight: '600',
-                  }}>
-                    {priceDifference.formattedChange}
-                  </Text>
-                )}
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          {/* Timeframe Row + Refresh Button */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginVertical: 8,
-            }}>
-            {(['1H', '1D', '1W', '1M', 'All'] as Timeframe[]).map(tf => (
-              <TouchableOpacity
-                key={tf}
-                style={{
-                  marginHorizontal: 4,
-                  padding: 6,
-                  borderRadius: 6,
-                  backgroundColor: timeframe === tf ? '#D6FDFF' : 'transparent',
-                }}
-                onPress={() => setTimeframe(tf)}>
-                <Text
-                  style={{
-                    color: timeframe === tf ? '#32D4DE' : '#666666',
-                    fontWeight: timeframe === tf ? '600' : '400',
-                  }}>
-                  {tf}
-                </Text>
-              </TouchableOpacity>
-            ))}
-
-            {/* Refresh icon => re-fetch coin data */}
-            <TouchableOpacity
-              style={{
-                marginLeft: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-              onPress={handleRefresh}
-              accessibilityLabel="Refresh Chart">
-              <Icon.SwapIcon width={20} height={20} />
-              <Text style={{ color: '#1d9bf0', marginLeft: 4 }}>Refresh</Text>
-            </TouchableOpacity>
           </View>
+          
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.positiveValue}>
+              {quantityDiff}
+            </Text>
+            <Text style={styles.tradeCardUsdPrice}>
+              ${displayPrice}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
-          {/* Chart container */}
-          {coinError ? (
-            <View style={{
-              width: '100%',
-              height: 220,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#FFFFFF',
-            }}>
-              <Text style={{ color: 'red', marginTop: 6 }}>
-                Error: {coinError.toString()}
-              </Text>
-            </View>
-          ) : graphData.length === 0 && !isLoading ? (
-            <View style={{
-              width: '100%',
-              height: 220,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#FFFFFF',
-            }}>
-              <Text style={{ color: '#999', marginTop: 6 }}>
-                No chart data found. Try a different timeframe or refresh.
-              </Text>
-            </View>
-          ) : (
-            <LineGraph
-              data={graphData}
-              width={Dimensions.get('window').width - 100}
-              executionPrice={executionPrice}
-              executionTimestamp={executionTimestamp}
-              timestamps={timestamps}
-              userAvatar={userAvatar}
-              isLoading={isLoading}
-            />
-          )}
-
-          {/* Current Price Indicator */}
-          {timeframePrice > 0 && (
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              backgroundColor: '#F8FAFC',
-              borderRadius: 6,
-              marginTop: 8,
-            }}>
-              <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>
-                Current Price
-              </Text>
-              <Text style={{ fontSize: 14, color: '#1E293B', fontWeight: '600' }}>
-                ${timeframePrice.toFixed(4)}
-              </Text>
-            </View>
-          )}
+        {/* Chart Section - Always shows the container, loading indicator displayed within */}
+        <View style={styles.chartContainer}>
+          <LineGraph
+            data={graphData && graphData.length > 0 ? graphData : []}
+            width={Dimensions.get('window').width - 130}
+            executionPrice={executionPrice}
+            executionTimestamp={executionTimestamp}
+            timestamps={timestamps}
+            userAvatar={userAvatar}
+            isLoading={isLoading}
+          />
         </View>
 
-        {/* Token Details Drawer for output token */}
-        <TokenDetailsDrawer
-          visible={showOutputTokenDrawer}
-          onClose={() => setShowOutputTokenDrawer(false)}
-          tokenMint={tradeData.outputMint}
-          initialData={{
-            symbol: tradeData.outputSymbol,
-            name: fallbackOutName,
-            logoURI: fallbackOutLogo,
-          }}
-        />
-      </>
-    );
-  }
-
-  // --------------------------------------------------
-  // Non-chart mode => standard "swap" view
-  // --------------------------------------------------
-  return (
-    <>
-      <View style={styles.tradeCardContainer}>
-        {loadingMeta ? (
-          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator size="small" color="#1d9bf0" />
-          </View>
-        ) : (
-          <>
-            <View style={{ position: 'relative' }}>
-              {/* Input token info */}
-              <TouchableOpacity
-                style={styles.tradeCardCombinedSides}
-                onPress={handleOpenInputTokenDetails}
-                activeOpacity={0.7}>
-                <View style={styles.tradeCardLeftSide}>
-                  <Image
-                    source={
-                      fallbackInLogo
-                        ? { uri: fallbackInLogo }
-                        : require('@/assets/images/SENDlogo.png')
-                    }
-                    style={styles.tradeCardTokenImage}
-                  />
-                  <View style={styles.tradeCardNamePriceContainer}>
-                    <Text style={styles.tradeCardTokenName}>
-                      {fallbackInName}
-                    </Text>
-                    <Text style={styles.tradeCardTokenPrice}>
-                      {tradeData.inputUsdValue && tradeData.inputUsdValue !== '$??'
-                        ? tradeData.inputUsdValue
-                        : calculatedInputUsdValue}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.tradeCardRightSide}>
-                  <Text style={[styles.tradeCardSolPrice, { color: '#00C851' }]}>
-                    {tradeData.inputQuantity}
-                  </Text>
-                  <Text style={styles.tradeCardUsdPrice}>
-                    {tradeData.inputUsdValue && tradeData.inputUsdValue !== '$??'
-                      ? tradeData.inputUsdValue
-                      : calculatedInputUsdValue}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Center swap icon */}
-              <View style={styles.tradeCardSwapIcon}>
-                <Icon.SwapIcon />
-              </View>
-
-              {/* Output token info */}
-              <TouchableOpacity
-                style={styles.tradeCardCombinedSides}
-                onPress={handleOpenOutputTokenDetails}
-                activeOpacity={0.7}>
-                <View style={styles.tradeCardLeftSide}>
-                  <Image
-                    source={
-                      fallbackOutLogo
-                        ? { uri: fallbackOutLogo }
-                        : require('@/assets/images/SENDlogo.png')
-                    }
-                    style={styles.tradeCardTokenImage}
-                  />
-                  <View style={styles.tradeCardNamePriceContainer}>
-                    <Text style={styles.tradeCardTokenName}>
-                      {fallbackOutName}
-                    </Text>
-                    <Text style={styles.tradeCardTokenPrice}>
-                      {tradeData.outputUsdValue && tradeData.outputUsdValue !== '$??'
-                        ? tradeData.outputUsdValue
-                        : calculatedOutputUsdValue}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.tradeCardRightSide}>
-                  <Text style={[styles.tradeCardSolPrice, { color: '#00C851' }]}>
-                    {tradeData.outputQuantity + ' ' + tradeData.outputSymbol}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={styles.tradeCardUsdPrice}>
-                      {tradeData.outputUsdValue && tradeData.outputUsdValue !== '$??'
-                        ? tradeData.outputUsdValue
-                        : calculatedOutputUsdValue}
-                    </Text>
-                    {priceDifference && (
-                      <Text style={{
-                        marginLeft: 4,
-                        fontSize: 12,
-                        color: priceDifference.isPositive ? '#00C851' : '#FF4136',
-                        fontWeight: '600',
-                      }}>
-                        {priceDifference.formattedChange}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Optional CTA button */}
-            {onTrade && (
-              <TouchableOpacity
-                style={{
-                  marginTop: 10,
-                  backgroundColor: '#1d9bf0',
-                  padding: 10,
-                  borderRadius: 5,
-                  alignItems: 'center',
-                }}
-                onPress={onTrade}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                  Trade Now
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Current Price Indicator (in non-chart mode) */}
-            {outputUsdPrice !== null && tradeData.outputQuantity && !showGraphForOutputToken && (
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                backgroundColor: '#F8FAFC',
-                borderRadius: 6,
-                marginTop: 12,
-                marginBottom: 4,
-              }}>
-                <View>
-                  <Text style={{ fontSize: 12, color: '#64748B', fontWeight: '500' }}>
-                    Current {tradeData.outputSymbol} Price
-                  </Text>
-                  <Text style={{ fontSize: 14, color: '#1E293B', fontWeight: '600' }}>
-                    ${outputUsdPrice.toFixed(4)} per {tradeData.outputSymbol}
-                  </Text>
-                </View>
-                {priceDifference && (
-                  <View style={{
-                    backgroundColor: priceDifference.isPositive ? 'rgba(0, 200, 81, 0.1)' : 'rgba(255, 65, 54, 0.1)',
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderRadius: 12,
-                  }}>
-                    <Text style={{
-                      fontSize: 12,
-                      color: priceDifference.isPositive ? '#00C851' : '#FF4136',
-                      fontWeight: '600',
-                    }}>
-                      {priceDifference.formattedChange} since trade
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-          </>
-        )}
+        {/* Timeframe controls - Always displayed even during loading */}
+        <View style={styles.timeframeRow}>
+          {(['1H', '1D', '1W', '1M', 'ALL'] as Timeframe[]).map(tf => (
+            <TouchableOpacity
+              key={tf}
+              style={[
+                styles.timeframeButton,
+                timeframe === tf && styles.timeframeButtonActive
+              ]}
+              onPress={() => setTimeframe(tf)}>
+              <Text
+                style={[
+                  styles.timeframeButtonText,
+                  timeframe === tf && styles.timeframeButtonTextActive
+                ]}>
+                {tf}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Token Details Drawers */}

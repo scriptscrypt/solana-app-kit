@@ -15,6 +15,7 @@ const COLORS = {
   brandPurple: '#B591FF',
   brandPurpleBg: '#EDECFF',
   brandBlue: '#00ABE4',
+  brandPink: '#F53987',
   errorRed: '#e0245e',
 
   // Other usage

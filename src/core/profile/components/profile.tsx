@@ -44,6 +44,7 @@ import { ThreadPost } from '@/core/thread/types';
 import { useFetchPortfolio } from '@/modules/dataModule/hooks/useFetchTokens';
 import { AssetItem } from '@/modules/dataModule/types/assetTypes';
 import EditPostModal from '@/core/thread/components/EditPostModal';
+import Icons from '@/assets/svgs';
 
 export default function Profile({
   isOwnProfile = false,
@@ -53,6 +54,7 @@ export default function Profile({
   loadingNfts = false,
   fetchNftsError,
   containerStyle,
+  onGoBack,
 }: ProfileProps) {
   const dispatch = useAppDispatch();
   const allReduxPosts = useAppSelector(state => state.thread.allPosts);
@@ -547,6 +549,15 @@ export default function Profile({
     setStatusBarStyle('dark');
   }, []);
 
+  // Handle back navigation
+  const handleGoBack = useCallback(() => {
+    if (onGoBack) {
+      onGoBack();
+    } else {
+      navigation.goBack();
+    }
+  }, [onGoBack, navigation]);
+
   return (
     <SafeAreaView
       style={[
@@ -554,29 +565,45 @@ export default function Profile({
         containerStyle,
         Platform.OS === 'android' && androidStyles.safeArea,
       ]}>
-      {/* Main profile view */}
-      <ProfileView
-        isOwnProfile={isOwnProfile}
-        user={resolvedUser}
-        myPosts={myPosts}
-        myNFTs={resolvedNfts}
-        loadingNfts={resolvedLoadingNfts}
-        fetchNftsError={resolvedNftError}
-        onAvatarPress={() => handleProfileUpdated('image')}
-        onEditProfile={() => handleProfileUpdated('username')}
-        {...memoizedFollowProps}
-        onPressPost={handlePostPress}
-        containerStyle={containerStyle}
-        myActions={myActions}
-        loadingActions={loadingActions}
-        fetchActionsError={fetchActionsError}
-        portfolioData={portfolio}
-        onRefreshPortfolio={handleRefreshPortfolio}
-        refreshingPortfolio={refreshingPortfolio}
-        onAssetPress={handleAssetPress}
-        isLoading={isLoading}
-        onEditPost={handleEditPost}
-      />
+      {/* Back button header */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
+        </TouchableOpacity>
+        
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerUsername} numberOfLines={1} ellipsizeMode="tail">
+            {localUsername}
+          </Text>
+          <Text style={styles.postCount}>{myPosts.length} posts</Text>
+        </View>
+      </View>
+
+      <View style={styles.profileWrapper}>
+        {/* Main profile view */}
+        <ProfileView
+          isOwnProfile={isOwnProfile}
+          user={resolvedUser}
+          myPosts={myPosts}
+          myNFTs={resolvedNfts}
+          loadingNfts={resolvedLoadingNfts}
+          fetchNftsError={resolvedNftError}
+          onAvatarPress={() => handleProfileUpdated('image')}
+          onEditProfile={() => handleProfileUpdated('username')}
+          {...memoizedFollowProps}
+          onPressPost={handlePostPress}
+          containerStyle={containerStyle}
+          myActions={myActions}
+          loadingActions={loadingActions}
+          fetchActionsError={fetchActionsError}
+          portfolioData={portfolio}
+          onRefreshPortfolio={handleRefreshPortfolio}
+          refreshingPortfolio={refreshingPortfolio}
+          onAssetPress={handleAssetPress}
+          isLoading={isLoading}
+          onEditPost={handleEditPost}
+        />
+      </View>
 
       {/* Edit Post Modal */}
       <EditPostModal

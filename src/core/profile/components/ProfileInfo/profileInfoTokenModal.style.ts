@@ -64,6 +64,26 @@ export const tokenModalStyles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.fontFamily,
     fontSize: TYPOGRAPHY.size.sm,
   },
+  descriptionLabel: {
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    marginBottom: 4,
+  },
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 4,
+    color: COLORS.white,
+    backgroundColor: COLORS.lighterBackground,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    textAlignVertical: 'top',
+    minHeight: 60,
+  },
   listContainer: {
     marginTop: 6,
   },
@@ -109,6 +129,35 @@ export const tokenModalStyles = StyleSheet.create({
     textAlign: 'center',
     fontSize: TYPOGRAPHY.size.sm,
     color: COLORS.greyDark,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  // Styles for action buttons at the bottom
+  actionButtonContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    justifyContent: 'flex-end', // Align buttons to the right
+  },
+  actionButton: {
+    paddingHorizontal: 20, // More horizontal padding
+    paddingVertical: 10,  // Slightly more vertical padding
+    borderRadius: 8,
+    marginLeft: 8, // Space between buttons
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80, // Ensure buttons have a minimum width
+  },
+  cancelButton: {
+    backgroundColor: COLORS.lighterBackground, // Less prominent background
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+  },
+  saveButton: {
+    backgroundColor: COLORS.brandPrimary, // Primary action color
+  },
+  actionButtonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
     fontFamily: TYPOGRAPHY.fontFamily,
   },
 });

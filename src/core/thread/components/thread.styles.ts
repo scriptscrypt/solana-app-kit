@@ -266,7 +266,7 @@ export function createThreadStyles(
       justifyContent: 'flex-end',
     },
     threadPostCTAButton: {
-      backgroundColor: '#1A1A1A',
+      backgroundColor: COLORS.white,
       paddingVertical: 10,
       paddingHorizontal: 20,
       borderRadius: 20,
@@ -274,7 +274,7 @@ export function createThreadStyles(
       alignItems: 'center',
     },
     threadPostCTAButtonLabel: {
-      color: '#FFFFFF',
+      color: COLORS.textDark,
       fontSize: 15,
       fontWeight: '600',
     },
