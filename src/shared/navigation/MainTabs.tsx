@@ -3,8 +3,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, TouchableOpacity, View, StyleSheet, Animated, Dimensions, Image, Text, findNodeHandle, UIManager } from 'react-native';
 import { useNavigation, ParamListBase } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
 
 import Icons from '@/assets/svgs';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 import AnimatedTabIcon from './AnimatedTabIcon';
 import FeedScreen from '@/screens/SampleUI/Threads/FeedScreen/FeedScreen';
@@ -32,7 +35,7 @@ if (width < 375) {
 const TOOLTIP_POSITION = FEED_TAB_CENTER + TOOLTIP_OFFSET;
 
 const iconStyle = {
-  shadowColor: '#000',
+  shadowColor: COLORS.black,
   shadowOffset: { width: 0, height: 10 },
   shadowOpacity: 0.3,
   shadowRadius: 8,
@@ -155,12 +158,6 @@ export default function MainTabs() {
     outputRange: [0, 0.8, 1], // Faster fade in
   });
 
-  // Add a function to handle regular taps on the Feed button
-  // const handleFeedPress = () => {
-  //   // Use jumpTo instead of navigate for tab navigation
-  //   navigation.navigate('Feed');
-  // };
-
   return (
     <>
       {/* Platform Selection Menu - appears above tab bar */}
@@ -250,38 +247,25 @@ export default function MainTabs() {
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarActiveTintColor: 'black',
+          tabBarActiveTintColor: COLORS.brandPrimary,
           tabBarStyle: {
             paddingTop: Platform.OS === 'android' ? 5 : 10,
-            backgroundColor: '#ffffff',
+            backgroundColor: 'transparent',
             borderTopWidth: 0,
+            position: 'absolute',
+            elevation: 0,
+            height: 65,
           },
+          tabBarBackground: () => (
+            <BlurView
+              tint="dark"
+              intensity={35}
+              style={StyleSheet.absoluteFill}
+            >
+              <View style={platformStyles.tabBarOverlay} />
+            </BlurView>
+          ),
         }}>
-        {/* <Tab.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{
-            tabBarIcon: ({ focused, size }) => (
-              <AnimatedTabIcon
-                focused={focused}
-                size={size * 1.4}
-                icon={
-                  Icons.HomeIcon as React.ComponentType<{
-                    width: number;
-                    height: number;
-                  }>
-                }
-                iconSelected={
-                  Icons.HomeIconSelected as React.ComponentType<{
-                    width: number;
-                    height: number;
-                  }>
-                }
-                style={iconStyle}
-              />
-            ),
-          }}
-        /> */}
         <Tab.Screen
           name="Modules"
           component={ModuleScreen}
@@ -346,7 +330,7 @@ export default function MainTabs() {
                   }>
                 }
                 style={{
-                  shadowColor: '#000',
+                  shadowColor: COLORS.black,
                   shadowOffset: { width: 0, height: 15 },
                   shadowOpacity: 0.6,
                   shadowRadius: 8,
@@ -423,19 +407,19 @@ const platformStyles = StyleSheet.create({
   },
   menuContent: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.lighterBackground,
     borderRadius: 30,
     paddingVertical: 8,
     paddingHorizontal: 12,
     justifyContent: 'space-between',
     width: width * 0.58, // Smaller width
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 7,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   platformButton: {
     width: 50, // Smaller buttons
@@ -443,13 +427,13 @@ const platformStyles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fafafa',
+    backgroundColor: COLORS.darkerBackground,
     marginHorizontal: 4, // Less space between buttons
     borderWidth: 1,
-    borderColor: '#f0f0f0',
-    shadowColor: '#000',
+    borderColor: COLORS.borderDarkColor,
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 2,
   },
@@ -458,12 +442,12 @@ const platformStyles = StyleSheet.create({
     height: 28, // Smaller icons
   },
   activePlatform: {
-    backgroundColor: 'rgba(0, 153, 255, 0.08)',
-    borderColor: 'rgba(0, 153, 255, 0.6)',
+    backgroundColor: `${COLORS.brandPrimary}20`, // 20% opacity
+    borderColor: COLORS.brandPrimary,
     transform: [{ scale: 1.06 }], // Slightly less scaling for subtlety
-    shadowColor: '#0099ff',
+    shadowColor: COLORS.brandPrimary,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 3,
   },
@@ -472,16 +456,20 @@ const platformStyles = StyleSheet.create({
     bottom: 75,
     left: TOOLTIP_POSITION,
     width: 150,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(20, 25, 38, 0.85)',
     borderRadius: 8,
     padding: 8,
     zIndex: 1000,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   tooltipText: {
-    color: 'white',
-    fontSize: 12,
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
     textAlign: 'center',
+    letterSpacing: TYPOGRAPHY.letterSpacing,
+    fontWeight: String(TYPOGRAPHY.medium) as any,
   },
   tooltipArrow: {
     position: 'absolute',
@@ -496,6 +484,10 @@ const platformStyles = StyleSheet.create({
     borderTopWidth: 8,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: 'rgba(0,0,0,0.75)',
+    borderTopColor: 'rgba(20, 25, 38, 0.85)',
   },
+  tabBarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 16, 26, 0.75)',
+  }
 });

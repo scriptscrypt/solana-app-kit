@@ -34,6 +34,11 @@ const TYPOGRAPHY = {
 
   // Letter spacing (-1.1%)
   letterSpacing: -0.011,
+
+  // Helper function to convert typography weight to string format for React Native
+  fontWeightToString: (weight: number): "400" | "500" | "600" | "700" => {
+    return String(weight) as "400" | "500" | "600" | "700";
+  }
 };
 
 export default TYPOGRAPHY; 
