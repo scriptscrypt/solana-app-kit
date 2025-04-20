@@ -678,7 +678,7 @@ const BuyCard: React.FC<BuyCardProps> = ({
         disableTabs={true}
         initialInputToken={tradeModalData.initialInputToken}
         initialOutputToken={tradeModalData.initialOutputToken}
-        initialActiveTab="TRADE_AND_SHARE"
+        initialActiveTab="PAST_SWAPS"
       />
 
       {/* Portfolio Modal */}
