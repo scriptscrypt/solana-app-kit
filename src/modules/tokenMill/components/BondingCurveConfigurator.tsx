@@ -12,6 +12,8 @@ import BN from 'bn.js';
 
 import { BondingCurveConfiguratorStyles as styles } from './styles/BondingCurveConfigurator.style';
 import { BondingCurveConfiguratorProps, CurveType } from '../types';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 // Default initial price array
 const initialPrices = [
@@ -39,7 +41,7 @@ const BondingCurveConfigurator = memo(({
   // Store the callback in a ref to avoid unnecessary re-renders
   const onCurveChangeRef = useRef(onCurveChange);
   const computeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   // Update the ref when the callback changes
   useEffect(() => {
     onCurveChangeRef.current = onCurveChange;
@@ -47,7 +49,7 @@ const BondingCurveConfigurator = memo(({
 
   // State for the price curve
   const [prices, setPrices] = useState<BN[]>(initialPrices);
-  
+
   // Curve configuration state
   const [curveType, setCurveType] = useState<CurveType>('linear');
   const [points, setPoints] = useState<number>(11);
@@ -74,23 +76,23 @@ const BondingCurveConfigurator = memo(({
     const top = config?.topPrice ?? topPrice;
     const curPower = config?.power ?? power;
     const fee = config?.feePercent ?? feePercent;
-    
+
     // Clear any existing timeout
     if (computeTimeoutRef.current) {
       clearTimeout(computeTimeoutRef.current);
     }
-    
+
     setIsComputing(true);
-    
+
     // Use a short timeout to batch updates
     computeTimeoutRef.current = setTimeout(() => {
       try {
         const newPrices: BN[] = [];
-        
+
         for (let i = 0; i < numPoints; i++) {
           const t = i / Math.max(numPoints - 1, 1);
           let price: number;
-          
+
           switch (type) {
             case 'linear':
               price = base + t * (top - base);
@@ -112,17 +114,17 @@ const BondingCurveConfigurator = memo(({
             default:
               price = base + t * (top - base);
           }
-          
+
           // Ensure price is valid
           if (!Number.isFinite(price)) price = base;
           if (price < 0) price = 0;
           if (price > 1e9) price = 1e9;
-          
+
           newPrices.push(new BN(Math.floor(price)));
         }
-        
+
         setPrices(newPrices);
-        
+
         // Notify parent component of the change
         onCurveChangeRef.current(newPrices, {
           curveType: type,
@@ -143,7 +145,7 @@ const BondingCurveConfigurator = memo(({
   // Compute the curve on mount and when dependencies change
   useEffect(() => {
     computeCurve();
-    
+
     // Cleanup on unmount
     return () => {
       if (computeTimeoutRef.current) {
@@ -155,7 +157,7 @@ const BondingCurveConfigurator = memo(({
   // Handle curve type selection
   const handleCurveTypePress = useCallback((type: CurveType) => {
     if (disabled || isComputing) return;
-    
+
     setCurveType(type);
     computeCurve({ type });
   }, [disabled, isComputing, computeCurve]);
@@ -183,7 +185,7 @@ const BondingCurveConfigurator = memo(({
         break;
     }
   }, []);
-  
+
   // Handle slider completion - recompute curve
   const handleSliderComplete = useCallback((
     type: 'points' | 'basePrice' | 'topPrice' | 'power' | 'feePercent',
@@ -212,26 +214,26 @@ const BondingCurveConfigurator = memo(({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Curve Configuration</Text>
+      {/* <Text style={styles.sectionTitle}>Curve Configuration</Text> */}
 
       {/* Curve Type Selector */}
-      <View style={styles.tabContainer}>
+      <View style={tabStyles.tabContainer}>
         {(['linear', 'power', 'exponential', 'logarithmic'] as CurveType[]).map((type) => (
           <TouchableOpacity
             key={type}
             style={[
-              styles.tab,
-              curveType === type && styles.selectedTab,
-              disabled && styles.disabledTab,
-              isComputing && styles.disabledTab,
+              tabStyles.tab,
+              curveType === type && tabStyles.selectedTab,
+              disabled && tabStyles.disabledTab,
+              isComputing && tabStyles.disabledTab,
             ]}
             onPress={() => handleCurveTypePress(type)}
             disabled={disabled || isComputing}>
             <Text
               style={[
-                styles.tabText,
-                curveType === type && styles.selectedTabText,
-                (disabled || isComputing) && styles.disabledText,
+                tabStyles.tabText,
+                curveType === type && tabStyles.selectedTabText,
+                (disabled || isComputing) && tabStyles.disabledText,
               ]}>
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </Text>
@@ -318,32 +320,54 @@ const BondingCurveConfigurator = memo(({
       )}
 
       {/* Sample price points */}
-      <View style={styles.readoutContainer}>
-        <Text style={styles.readoutTitle}>Sample Price Points</Text>
-        <View style={localStyles.readoutTable}>
-          <View style={styles.readoutTableHeader}>
-            <Text style={[styles.readoutCell, styles.readoutHeaderText, localStyles.indexCell]}>#</Text>
-            <Text style={[styles.readoutCell, styles.readoutHeaderText, localStyles.priceCell]}>Ask Price</Text>
-            <Text style={[styles.readoutCell, styles.readoutHeaderText, localStyles.bidCell]}>After Fee</Text>
-          </View>
-          <View style={localStyles.tableBodyContainer}>
-            {/* Just show a subset of points for better UX */}
-            {prices.filter((_, i) => i % 2 === 0 || i === prices.length - 1).map((price, idx) => {
-              const originalIdx = idx === 0 ? 0 : (idx * 2 === prices.length - 1 ? prices.length - 1 : idx * 2);
-              const bidPrice = price.toNumber() * (1 - feePercent / 100);
-              return (
-                <View key={originalIdx} style={styles.readoutRow}>
-                  <Text style={[styles.readoutCell, localStyles.indexCell]}>{originalIdx + 1}</Text>
-                  <Text style={[styles.readoutCell, localStyles.priceCell]}>{price.toString()}</Text>
-                  <Text style={[styles.readoutCell, localStyles.bidCell]}>{Math.floor(bidPrice).toString()}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      </View>
+
     </View>
   );
+});
+
+// Custom tab styles using app colors and typography
+const tabStyles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    width: '100%',
+  },
+  tab: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 30, // More circular borders
+    marginHorizontal: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: COLORS.darkerBackground, // Dark background for all tabs
+    height: 36,
+    minWidth: 70, // Ensure a minimum width
+    flexShrink: 1, // Allow shrinking if needed
+    flexGrow: 1, // Allow growing if space is available
+  },
+  selectedTab: {
+    backgroundColor: COLORS.lightBackground, // Slightly lighter background for selected tab
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  disabledTab: {
+    opacity: 0.5,
+  },
+  tabText: {
+    fontSize: TYPOGRAPHY.size.xs, // Slightly smaller font for better fit
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.regular),
+    color: 'rgba(255, 255, 255, 0.5)', // Dimmed text for unselected
+    textAlign: 'center',
+  },
+  selectedTabText: {
+    color: COLORS.white,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+  },
+  disabledText: {
+    color: 'rgba(255, 255, 255, 0.3)',
+  }
 });
 
 // Slider with label component for better UI
@@ -384,9 +408,9 @@ const SliderWithLabel: React.FC<SliderWithLabelProps> = ({
       disabled={disabled}
       onValueChange={onValueChange}
       onSlidingComplete={onSlidingComplete}
-      minimumTrackTintColor="#3a86ff"
-      maximumTrackTintColor="#e0e0e0"
-      thumbTintColor="#3a86ff"
+      minimumTrackTintColor={COLORS.brandBlue}
+      maximumTrackTintColor={COLORS.darkerBackground}
+      thumbTintColor={COLORS.brandBlue}
     />
   </View>
 );
@@ -396,7 +420,7 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: COLORS.background,
     padding: 8,
     borderRadius: 8,
     marginVertical: 12,
@@ -421,12 +445,12 @@ const localStyles = StyleSheet.create({
   },
   sliderLabel: {
     fontSize: 15,
-    color: '#444',
+    color: COLORS.greyMid,
     fontWeight: '500',
   },
   sliderValue: {
     fontSize: 15,
-    color: '#333',
+    color: COLORS.greyMid,
     fontWeight: '600',
   },
   slider: {

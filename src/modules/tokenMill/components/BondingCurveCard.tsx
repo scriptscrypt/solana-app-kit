@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import BN from 'bn.js';
 import { BondingCurveCardProps } from '../types';
 import BondingCurveConfigurator from './BondingCurveConfigurator';
 import { setBondingCurve } from '../services/tokenMillService';
-import { BondingCurveCardStyles as styles } from './styles/BondingCurveCard.style';
 import { Dimensions } from 'react-native';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = Math.min(width * 0.85, 350);
@@ -19,6 +20,7 @@ const BondingCurveCard = React.memo(({
   solanaWallet,
   setLoading,
   styleOverrides = {},
+  onCurveChange
 }: BondingCurveCardProps) => {
   // Local states for curve values
   const [pricePoints, setPricePoints] = useState<BN[]>([]);
@@ -59,20 +61,20 @@ const BondingCurveCard = React.memo(({
 
     // Create safe arrays of numbers from BN values
     const askPrices = pricePoints.map(safeConvertBnToNumber);
-    
+
     // Calculate prices after fee (bid prices)
     const bidPrices = askPrices.map(price => {
       const bidPrice = price * (1 - feePercent / 100);
       return Number.isFinite(bidPrice) ? bidPrice : 0;
     });
-    
+
     return {
       labels: pricePoints.map((_, idx) => String(idx + 1)),
       datasets: [
-        { 
-          data: askPrices.length > 0 ? askPrices : [0, 0, 0], 
-          color: () => '#5078FF', 
-          strokeWidth: 3 
+        {
+          data: askPrices.length > 0 ? askPrices : [0, 0, 0],
+          color: () => '#5078FF',
+          strokeWidth: 3
         },
         {
           data: bidPrices.length > 0 ? bidPrices : [0, 0, 0],
@@ -99,7 +101,19 @@ const BondingCurveCard = React.memo(({
       setPointCount(parameters.points || 0);
       setFeePercent(parameters.feePercent || 0);
     }
-  }, []);
+
+    // Call the external callback if provided
+    if (onCurveChange) {
+      onCurveChange(newPrices, {
+        curveType,
+        basePrice,
+        topPrice,
+        points: pointCount,
+        feePercent,
+        ...parameters
+      });
+    }
+  }, [onCurveChange, curveType, basePrice, topPrice, pointCount, feePercent]);
 
   /**
    * Derives bid prices from ask prices based on fee percentage
@@ -149,7 +163,7 @@ const BondingCurveCard = React.memo(({
           return 0;
         }
       });
-      
+
       // Derive bid prices from ask prices
       const bidNumbers = deriveBidPricesFromAsk(askNumbers);
 
@@ -187,53 +201,33 @@ const BondingCurveCard = React.memo(({
     }
   }, [marketAddress, pricePoints, connection, publicKey, solanaWallet, setLoading, deriveBidPricesFromAsk]);
 
-  // Determine which status container style to use based on status type
-  const getStatusContainerStyle = useCallback(() => {
-    if (statusType === 'success') return [styles.statusContainer, styles.successStatusContainer];
-    if (statusType === 'error') return [styles.statusContainer, styles.errorStatusContainer];
-    return styles.statusContainer;
-  }, [statusType]);
-
-  // Determine which status text style to use based on status type
-  const getStatusTextStyle = useCallback(() => {
-    if (statusType === 'success') return [styles.statusText, styles.successStatusText];
-    if (statusType === 'error') return [styles.statusText, styles.errorStatusText];
-    return styles.statusText;
-  }, [statusType]);
-
   return (
     <View style={styles.section}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.sectionTitle}>Bonding Curve</Text>
-        <Text style={styles.sectionDescription}>
-          Configure the pricing curve for your token. The bonding curve determines how token price
-          changes based on supply.
-        </Text>
-      </View>
-
       <View style={styles.mainContainer}>
         {/* Visual preview */}
         <View style={styles.chartContainer}>
-          <Text style={styles.livePreviewTitle}>Live Preview</Text>
-          
           <LineChart
             data={chartData}
             width={CHART_WIDTH}
             height={CHART_HEIGHT}
             chartConfig={{
-              backgroundColor: '#fff',
-              backgroundGradientFrom: '#fff',
-              backgroundGradientTo: '#fff',
+              backgroundColor: COLORS.background,
+              backgroundGradientFrom: COLORS.background,
+              backgroundGradientTo: COLORS.background,
               decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(70, 70, 70, ${opacity})`,
+              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
               style: {
                 borderRadius: 16,
               },
               propsForDots: {
                 r: '4',
                 strokeWidth: '1',
-                stroke: '#fafafa',
+                stroke: COLORS.darkerBackground,
+              },
+              propsForBackgroundLines: {
+                stroke: COLORS.borderDarkColor,
+                strokeWidth: 1,
               },
             }}
             bezier={false} // Use straight lines instead of curved
@@ -251,48 +245,22 @@ const BondingCurveCard = React.memo(({
               if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
               return value;
             }}
-            withInnerLines={false}
+            withInnerLines
             withOuterLines
-            withVerticalLines={false}
+            withVerticalLines
           />
 
           {/* Legend */}
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.bidDot]} />
-              <Text style={styles.legendText}>Ask Price</Text>
+              <View style={[styles.legendDot, styles.askDot]} />
+              <Text style={styles.legendText}>Ask Curve</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.askDot]} />
-              <Text style={styles.legendText}>After Fee (Bid)</Text>
+              <View style={[styles.legendDot, styles.bidDot]} />
+              <Text style={styles.legendText}>Bid Curve</Text>
             </View>
           </View>
-
-          {/* Current parameters display */}
-          {pricePoints.length > 0 && (
-            <View style={styles.curveParameters}>
-              <View style={styles.parameterRow}>
-                <Text style={styles.parameterLabel}>Type:</Text>
-                <Text style={styles.parameterValue}>{curveType.charAt(0).toUpperCase() + curveType.slice(1)}</Text>
-              </View>
-              <View style={styles.parameterRow}>
-                <Text style={styles.parameterLabel}>Base:</Text>
-                <Text style={styles.parameterValue}>{basePrice.toFixed(0)}</Text>
-              </View>
-              <View style={styles.parameterRow}>
-                <Text style={styles.parameterLabel}>Top:</Text>
-                <Text style={styles.parameterValue}>{topPrice.toFixed(0)}</Text>
-              </View>
-              <View style={styles.parameterRow}>
-                <Text style={styles.parameterLabel}>Points:</Text>
-                <Text style={styles.parameterValue}>{pointCount}</Text>
-              </View>
-              <View style={styles.parameterRow}>
-                <Text style={styles.parameterLabel}>Fee:</Text>
-                <Text style={styles.parameterValue}>{feePercent.toFixed(1)}%</Text>
-              </View>
-            </View>
-          )}
         </View>
 
         {/* Configuration controls */}
@@ -304,14 +272,12 @@ const BondingCurveCard = React.memo(({
         </View>
       </View>
 
-      <View style={styles.divider} />
-
       {status && (
         <View style={getStatusContainerStyle()}>
           {isSubmitting && (
             <ActivityIndicator
               size="small"
-              color={statusType === 'error' ? '#e12d39' : statusType === 'success' ? '#03a66d' : '#0065ff'}
+              color={statusType === 'error' ? '#e12d39' : statusType === 'success' ? '#03a66d' : COLORS.brandBlue}
             />
           )}
           <Text style={getStatusTextStyle()}>{status}</Text>
@@ -326,12 +292,124 @@ const BondingCurveCard = React.memo(({
           {isSubmitting ? 'Setting Curve...' : 'Set Curve On-Chain'}
         </Text>
       </TouchableOpacity>
-
-      <Text style={styles.helpText}>
-        Setting the curve will require a transaction approval from your wallet
-      </Text>
     </View>
   );
+
+  // Determine which status container style to use based on status type
+  function getStatusContainerStyle() {
+    if (statusType === 'success') return [styles.statusContainer, styles.successStatusContainer];
+    if (statusType === 'error') return [styles.statusContainer, styles.errorStatusContainer];
+    return styles.statusContainer;
+  }
+
+  // Determine which status text style to use based on status type
+  function getStatusTextStyle() {
+    if (statusType === 'success') return [styles.statusText, styles.successStatusText];
+    if (statusType === 'error') return [styles.statusText, styles.errorStatusText];
+    return styles.statusText;
+  }
+});
+
+const styles = StyleSheet.create({
+  section: {
+    width: '100%',
+    backgroundColor: COLORS.background,
+    padding: 16,
+    borderRadius: 16,
+  },
+  mainContainer: {
+    width: '100%',
+    flexDirection: 'column',
+  },
+  chartContainer: {
+    padding: 10,
+    backgroundColor: COLORS.background,
+    borderRadius: 10,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  configuratorContainer: {
+    width: '100%',
+    backgroundColor: COLORS.background,
+    borderRadius: 10,
+    padding: 10,
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 6,
+  },
+  askDot: {
+    backgroundColor: '#5078FF',
+  },
+  bidDot: {
+    backgroundColor: '#FF4F78',
+  },
+  legendText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+  },
+  statusContainer: {
+    backgroundColor: COLORS.lighterBackground,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successStatusContainer: {
+    backgroundColor: 'rgba(3, 166, 109, 0.15)',
+    borderColor: 'rgba(3, 166, 109, 0.3)',
+  },
+  errorStatusContainer: {
+    backgroundColor: 'rgba(225, 45, 57, 0.15)',
+    borderColor: 'rgba(225, 45, 57, 0.3)',
+  },
+  statusText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    textAlign: 'center',
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    marginLeft: 8,
+  },
+  successStatusText: {
+    color: '#03a66d',
+  },
+  errorStatusText: {
+    color: '#e12d39',
+  },
+  button: {
+    backgroundColor: COLORS.brandBlue,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+  },
+  disabledButton: {
+    opacity: 0.6,
+  }
 });
 
 export default BondingCurveCard;

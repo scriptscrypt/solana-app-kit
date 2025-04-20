@@ -15,6 +15,7 @@ import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
 import SwapScreen from '@/screens/SampleUI/Swap';
 import SearchScreen from '@/screens/SampleUI/Threads/SearchScreen';
 import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
+import ModuleScreen from '@/screens/Common/ModulesScreen/Modules';
 
 // Platform icons matching PlatformSelectionScreen
 const platformIcons = {
@@ -366,8 +367,8 @@ export default function MainTabs() {
           }}
         />
         <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
+          name="Modules"
+          component={ModuleScreen}
           options={{
             tabBarIcon: ({ focused, size }) => (
               <AnimatedTabIcon

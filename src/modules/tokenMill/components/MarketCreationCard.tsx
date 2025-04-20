@@ -6,10 +6,12 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { MarketCreationCardProps } from '../types';
 import { createMarket } from '../services/tokenMillService';
-import { MarketCreationCardStyles as styles } from './styles/MarketCreationCard.style';
+import COLORS from '@/assets/colors';
 
 export default function MarketCreationCard({
   connection,
@@ -18,8 +20,8 @@ export default function MarketCreationCard({
   setLoading,
   onMarketCreated,
 }: MarketCreationCardProps) {
-  const [tokenName, setTokenName] = useState('MyToken');
-  const [tokenSymbol, setTokenSymbol] = useState('MTK');
+  const [tokenName, setTokenName] = useState('');
+  const [tokenSymbol, setTokenSymbol] = useState('');
   const [metadataUri, setMetadataUri] = useState('https://arweave.net/abc123');
   const [totalSupply, setTotalSupply] = useState('1000000');
   const [creatorFee, setCreatorFee] = useState('3300');
@@ -27,6 +29,16 @@ export default function MarketCreationCard({
   const [status, setStatus] = useState<string | null>(null);
 
   const onPressCreateMarket = async () => {
+    if (!tokenName.trim()) {
+      Alert.alert("Missing Field", "Token Name is required");
+      return;
+    }
+
+    if (!tokenSymbol.trim()) {
+      Alert.alert("Missing Field", "Token Symbol is required");
+      return;
+    }
+
     try {
       setLoading(true);
       setStatus('Preparing market creation...');
@@ -62,63 +74,158 @@ export default function MarketCreationCard({
   };
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Create Market (Token)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Token Name"
-        value={tokenName}
-        onChangeText={setTokenName}
-        editable={!status}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Token Symbol"
-        value={tokenSymbol}
-        onChangeText={setTokenSymbol}
-        editable={!status}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Metadata URI"
-        value={metadataUri}
-        onChangeText={setMetadataUri}
-        editable={!status}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Total Supply"
-        value={totalSupply}
-        onChangeText={setTotalSupply}
-        editable={!status}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Creator Fee BPS"
-        value={creatorFee}
-        onChangeText={setCreatorFee}
-        editable={!status}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Staking Fee BPS"
-        value={stakingFee}
-        onChangeText={setStakingFee}
-        editable={!status}
-      />
+    <View style={styles.container}>
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Token Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="..."
+          placeholderTextColor={COLORS.greyMid}
+          value={tokenName}
+          onChangeText={setTokenName}
+          editable={!status}
+        />
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Token Symbol</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="..."
+          placeholderTextColor={COLORS.greyMid}
+          value={tokenSymbol}
+          onChangeText={setTokenSymbol}
+          editable={!status}
+        />
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Metadata URI</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="https://arweave.net/abc123"
+          placeholderTextColor={COLORS.greyMid}
+          value={metadataUri}
+          onChangeText={setMetadataUri}
+          editable={!status}
+        />
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Total Supply</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="1,000,000"
+          placeholderTextColor={COLORS.greyMid}
+          value={totalSupply}
+          onChangeText={setTotalSupply}
+          keyboardType="numeric"
+          editable={!status}
+        />
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Creator Fee</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="3300"
+          placeholderTextColor={COLORS.greyMid}
+          value={creatorFee}
+          onChangeText={setCreatorFee}
+          keyboardType="numeric"
+          editable={!status}
+        />
+      </View>
+
+      <View style={styles.formField}>
+        <Text style={styles.fieldLabel}>Staking Fee</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="6200"
+          placeholderTextColor={COLORS.greyMid}
+          value={stakingFee}
+          onChangeText={setStakingFee}
+          keyboardType="numeric"
+          editable={!status}
+        />
+      </View>
 
       {status && (
         <View style={styles.statusContainer}>
+          <ActivityIndicator size="small" color={COLORS.brandBlue} style={styles.loader} />
           <Text style={styles.statusText}>{status}</Text>
         </View>
       )}
 
-      <TouchableOpacity
-        style={[styles.button, status ? { opacity: 0.7 } : {}]}
-        onPress={onPressCreateMarket}
-        disabled={!!status}>
-        <Text style={styles.buttonText}>Create Market</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[styles.button, status ? styles.disabledButton : {}]}
+          onPress={onPressCreateMarket}
+          disabled={!!status}>
+          <Text style={styles.buttonText}>Create Market</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: 10,
+  },
+  formField: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    color: COLORS.greyMid,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: 'transparent',
+    color: COLORS.white,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+  },
+  buttonRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  button: {
+    backgroundColor: COLORS.brandBlue,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 180,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.lighterBackground,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  loader: {
+    marginRight: 10,
+  },
+  statusText: {
+    color: COLORS.white,
+    fontSize: 14,
+  },
+});
