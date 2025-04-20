@@ -12,9 +12,9 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Clipboard,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { PublicKey } from '@solana/web3.js';
 
@@ -31,17 +31,18 @@ import {
   ensureCompleteTokenInfo,
   estimateTokenUsdValue
 } from '@/modules/dataModule';
-import { TradeService } from '@/modules/dataModule/services/tradeService';
+import { TradeService, SwapProvider } from '@/modules/dataModule/services/tradeService';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 
 // Swap providers
-const swapProviders = ['Rayduim', 'Pumpswap', 'Jupiter'];
+const swapProviders: SwapProvider[] = ['Jupiter', 'Raydium', 'PumpSwap'];
 
 export default function SwapScreen() {
   const navigation = useNavigation();
   const { publicKey: userPublicKey, connected, sendTransaction } = useWallet();
   
   // UI States
-  const [activeProvider, setActiveProvider] = useState('Rayduim');
+  const [activeProvider, setActiveProvider] = useState<SwapProvider>('Jupiter');
   const [inputValue, setInputValue] = useState('5');
   const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
   const [selectingWhichSide, setSelectingWhichSide] = useState<'input' | 'output'>('input');
@@ -58,6 +59,7 @@ export default function SwapScreen() {
   const [loading, setLoading] = useState(false);
   const [resultMsg, setResultMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [solscanTxSig, setSolscanTxSig] = useState(''); // For completed transactions
   
   // Refs
   const isMounted = useRef(true);
@@ -67,6 +69,7 @@ export default function SwapScreen() {
   useEffect(() => {
     isMounted.current = true;
     return () => {
+      console.log('[SwapScreen] Component unmounting, cleaning up');
       isMounted.current = false;
       pendingTokenOps.current = { input: false, output: false };
     };
@@ -74,11 +77,13 @@ export default function SwapScreen() {
 
   // Initialize tokens with details
   const initializeTokens = useCallback(async () => {
+    // Don't initialize if already initializing or completed
     if (!isMounted.current || (pendingTokenOps.current.input && pendingTokenOps.current.output)) {
       return;
     }
 
     try {
+      // Mark operations as pending
       pendingTokenOps.current = { input: true, output: true };
       console.log('[SwapScreen] Initializing tokens...');
 
@@ -86,6 +91,7 @@ export default function SwapScreen() {
       const completeOutputToken = await ensureCompleteTokenInfo(DEFAULT_USDC_TOKEN);
 
       if (isMounted.current) {
+        // Batch state updates to reduce rerenders
         setInputToken(completeInputToken);
         setOutputToken(completeOutputToken);
         pendingTokenOps.current = { input: false, output: false };
@@ -118,6 +124,35 @@ export default function SwapScreen() {
     }
   }, [tokensInitialized, initializeTokens]);
 
+  // Handle visibility changes to reset states and initialize tokens if needed
+  useEffect(() => {
+    // Reset states
+    setResultMsg('');
+    setErrorMsg('');
+    setSolscanTxSig('');
+
+    // Initialize tokens if not already initialized
+    if (!tokensInitialized) {
+      initializeTokens();
+    } else if (connected && userPublicKey) {
+      // If tokens are already initialized, fetch both balance and price
+      console.log('[SwapScreen] Fetching balance and price for initialized tokens');
+
+      // Use a small timeout to avoid state updates colliding
+      const timer = setTimeout(() => {
+        if (isMounted.current) {
+          fetchTokenBalance(userPublicKey, inputToken).then(() => {
+            if (isMounted.current) {
+              fetchTokenPrice(inputToken);
+            }
+          });
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [tokensInitialized, initializeTokens, connected, userPublicKey, fetchTokenBalance, inputToken]);
+
   // Fetch token balance
   const fetchBalance = useCallback(async (tokenToUse?: TokenInfo) => {
     if (!connected || !userPublicKey) {
@@ -131,6 +166,7 @@ export default function SwapScreen() {
       console.log(`[SwapScreen] Fetching balance for ${tokenForBalance.symbol}...`);
       const balance = await fetchTokenBalance(userPublicKey, tokenForBalance);
 
+      // Only update state if component is still mounted and balance is non-null
       if (isMounted.current) {
         console.log(`[SwapScreen] Token balance fetched for ${tokenForBalance.symbol}: ${balance}`);
         setCurrentBalance(balance);
@@ -139,7 +175,7 @@ export default function SwapScreen() {
     } catch (err) {
       console.error('[SwapScreen] Error fetching balance:', err);
       if (isMounted.current) {
-        setCurrentBalance(null);
+        setCurrentBalance(0);
         setErrorMsg(`Failed to fetch ${tokenForBalance.symbol} balance`);
         setTimeout(() => isMounted.current && setErrorMsg(''), 3000);
       }
@@ -147,7 +183,7 @@ export default function SwapScreen() {
     return null;
   }, [connected, userPublicKey, inputToken]);
 
-  // Get token price
+  // Fetch token price
   const getTokenPrice = useCallback(async (tokenToUse?: TokenInfo): Promise<number | null> => {
     const tokenForPrice = tokenToUse || inputToken;
 
@@ -175,17 +211,22 @@ export default function SwapScreen() {
     try {
       console.log(`[SwapScreen] Token selected: ${token.symbol || 'Unknown'}`);
 
+      // Mark token operation as pending
       if (selectingWhichSide === 'input') {
         pendingTokenOps.current.input = true;
       } else {
         pendingTokenOps.current.output = true;
       }
 
+      // Ensure we have complete token info
       const completeToken = await ensureCompleteTokenInfo(token);
 
       if (!isMounted.current) return;
 
       if (selectingWhichSide === 'input') {
+        console.log('[SwapScreen] Input token changed to', completeToken.symbol);
+        
+        // Update input token state
         setInputToken(completeToken);
         pendingTokenOps.current.input = false;
         
@@ -193,17 +234,21 @@ export default function SwapScreen() {
         setInputValue('0');
         setCurrentBalance(null);
         
-        if (userPublicKey) {
-          setTimeout(async () => {
-            if (isMounted.current) {
+        // Fetch balance and price for new token with small delay
+        setTimeout(async () => {
+          if (isMounted.current && userPublicKey) {
+            try {
               const newBalance = await fetchBalance(completeToken);
               if (isMounted.current && newBalance !== null) {
                 await getTokenPrice(completeToken);
               }
+            } catch (error) {
+              console.error('[SwapScreen] Error fetching balance/price after token change:', error);
             }
-          }, 100);
-        }
+          }
+        }, 100);
       } else {
+        console.log('[SwapScreen] Output token changed to', completeToken.symbol);
         setOutputToken(completeToken);
         pendingTokenOps.current.output = false;
       }
@@ -211,6 +256,7 @@ export default function SwapScreen() {
       setShowSelectTokenModal(false);
     } catch (error) {
       console.error('[SwapScreen] Error selecting token:', error);
+      // Reset pending flags
       if (selectingWhichSide === 'input') {
         pendingTokenOps.current.input = false;
       } else {
@@ -229,9 +275,10 @@ export default function SwapScreen() {
     console.log("[SwapScreen] MAX button clicked, current balance:", currentBalance);
 
     if (isMounted.current) {
-      setErrorMsg('');
+      setErrorMsg(''); // Clear any existing error messages
     }
 
+    // Validate wallet connection
     if (!connected || !userPublicKey) {
       if (isMounted.current) {
         Alert.alert(
@@ -242,11 +289,13 @@ export default function SwapScreen() {
       return;
     }
 
+    // If we already have a balance, use it
     if (currentBalance !== null && currentBalance > 0) {
       setInputValue(String(currentBalance));
       return;
     }
 
+    // Otherwise, fetch fresh balance
     if (isMounted.current) {
       setLoading(true);
       setResultMsg("Fetching your balance...");
@@ -260,9 +309,12 @@ export default function SwapScreen() {
         setResultMsg("");
       }
 
+      // Check if we have a balance after fetching
       if (balance !== null && balance > 0 && isMounted.current) {
+        console.log("[SwapScreen] Setting max amount from fetched balance:", balance);
         setInputValue(String(balance));
       } else if (isMounted.current) {
+        console.log("[SwapScreen] Balance fetch returned:", balance);
         Alert.alert(
           "Balance Unavailable",
           `Could not get your ${inputToken.symbol} balance. Please check your wallet connection.`
@@ -388,78 +440,105 @@ export default function SwapScreen() {
       return;
     }
 
+    // Check if the selected provider is implemented
+    if (activeProvider !== 'Jupiter') {
+      Alert.alert(
+        'Provider Not Available',
+        `${activeProvider} integration is coming soon! Please use Jupiter for now.`
+      );
+      return;
+    }
+
     setLoading(true);
     setResultMsg('');
     setErrorMsg('');
 
-    let retryCount = 0;
-    const MAX_RETRIES = 2;
-
-    while (retryCount <= MAX_RETRIES) {
-      try {
-        // Execute the swap using the trade service
-        const response = await TradeService.executeSwap(
-          inputToken,
-          outputToken,
-          inputValue,
-          userPublicKey,
-          sendTransaction,
-          {
-            statusCallback: (status) => {
-              if (isMounted.current) {
-                setResultMsg(status);
-              }
+    try {
+      // Execute the swap using the trade service with the selected provider
+      const response = await TradeService.executeSwap(
+        inputToken,
+        outputToken,
+        inputValue,
+        userPublicKey,
+        sendTransaction,
+        {
+          statusCallback: (status) => {
+            if (isMounted.current) {
+              setResultMsg(status);
             }
           }
-        );
+        },
+        activeProvider
+      );
 
-        if (response.success && response.signature) {
-          if (isMounted.current) {
-            setResultMsg(`Swap successful!`);
-            Alert.alert(
-              'Swap Successful', 
-              `Successfully swapped ${inputValue} ${inputToken.symbol} for ${outputToken.symbol}`,
-              [{ text: 'OK', onPress: () => {
-                setInputValue('0');
-                fetchBalance();
-              }}]
-            );
-          }
-          break;
-        } else {
-          throw new Error(response.error?.toString() || 'Transaction failed');
-        }
-      } catch (err: any) {
-        console.error('Trade error:', err);
-
-        if (err.message.includes('signature verification') && retryCount < MAX_RETRIES) {
-          console.log(`Retrying transaction (attempt ${retryCount + 1} of ${MAX_RETRIES})...`);
-          retryCount++;
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
-        }
-
+      if (response.success && response.signature) {
         if (isMounted.current) {
-          let errorMessage = 'Trade failed. ';
-          if (err.message.includes('signature verification')) {
-            errorMessage += 'Please try again.';
-          } else if (err.message.includes('0x1771')) {
-            errorMessage += 'Insufficient balance or price impact too high.';
-          } else {
-            errorMessage += err.message;
-          }
-
-          setErrorMsg(errorMessage);
-          Alert.alert('Swap Failed', errorMessage);
+          setResultMsg(`Swap successful!`);
+          setSolscanTxSig(response.signature);
+          
+          Alert.alert(
+            'Swap Successful', 
+            `Successfully swapped ${inputValue} ${inputToken.symbol} for approximately ${estimatedOutputAmount} ${outputToken.symbol}`,
+            [{ text: 'OK', onPress: () => {
+              setInputValue('0');
+              fetchBalance();
+            }}]
+          );
         }
-        break;
+      } else {
+        throw new Error(response.error?.toString() || 'Transaction failed');
+      }
+    } catch (err: any) {
+      console.error('Swap error:', err);
+
+      if (isMounted.current) {
+        // Format error message for user
+        let errorMessage = 'Swap failed. ';
+        if (err.message.includes('signature verification')) {
+          errorMessage += 'Please try again.';
+        } else if (err.message.includes('0x1771')) {
+          errorMessage += 'Insufficient balance or price impact too high.';
+        } else {
+          errorMessage += err.message;
+        }
+
+        setErrorMsg(errorMessage);
+        Alert.alert('Swap Failed', errorMessage);
+      }
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
       }
     }
+  }, [
+    connected,
+    userPublicKey,
+    inputValue,
+    inputToken,
+    outputToken,
+    sendTransaction,
+    fetchBalance,
+    estimatedOutputAmount,
+    activeProvider
+  ]);
 
-    if (isMounted.current) {
-      setLoading(false);
+  // Allow user to paste from clipboard (for transaction signatures)
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await Clipboard.getString();
+      if (text) {
+        setSolscanTxSig(text.trim());
+      }
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error);
     }
-  }, [connected, userPublicKey, inputValue, inputToken, outputToken, sendTransaction, fetchBalance]);
+  };
+
+  // Check if a provider is available for selection
+  const isProviderAvailable = useCallback((provider: SwapProvider) => {
+    // Only Jupiter is fully implemented for now
+    return provider === 'Jupiter';
+  }, []);
 
   return (
     <KeyboardAvoidingView 
@@ -487,9 +566,19 @@ export default function SwapScreen() {
                   key={provider}
                   style={[
                     styles.providerButton,
-                    activeProvider === provider && { backgroundColor: COLORS.lightBackground, borderWidth: 1, borderColor: COLORS.white }
+                    activeProvider === provider && { backgroundColor: COLORS.lightBackground, borderWidth: 1, borderColor: COLORS.white },
+                    !isProviderAvailable(provider) && { opacity: 0.5 }
                   ]}
-                  onPress={() => setActiveProvider(provider)}
+                  onPress={() => {
+                    if (isProviderAvailable(provider)) {
+                      setActiveProvider(provider);
+                    } else {
+                      Alert.alert(
+                        'Coming Soon', 
+                        `${provider} integration is coming soon!`
+                      );
+                    }
+                  }}
                 >
                   <Text
                     style={[
@@ -499,7 +588,7 @@ export default function SwapScreen() {
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
-                    {provider}
+                    {provider}{!isProviderAvailable(provider) ? ' (soon)' : ''}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -652,6 +741,20 @@ export default function SwapScreen() {
                   <Text style={{ color: COLORS.brandPrimary }}>~0.05%</Text>
                 </Text>
               </View>
+              {solscanTxSig && (
+                <View style={styles.swapInfoRow}>
+                  <Text style={styles.swapInfoLabel}>Transaction</Text>
+                  <TouchableOpacity onPress={() => {
+                    // Open transaction on Solscan
+                    const url = `https://solscan.io/tx/${solscanTxSig}`;
+                    // Add your URL opener here if needed
+                  }}>
+                    <Text style={[styles.swapInfoValue, { color: COLORS.brandPrimary }]}>
+                      View on Solscan
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </ScrollView>
           
@@ -707,13 +810,15 @@ export default function SwapScreen() {
           <TouchableOpacity 
             style={[
               styles.swapActionButton,
-              (!connected || loading) && { opacity: 0.6 }
+              (!connected || loading || !isProviderAvailable(activeProvider)) && { opacity: 0.6 }
             ]} 
             onPress={handleSwap}
-            disabled={!connected || loading}
+            disabled={!connected || loading || !isProviderAvailable(activeProvider)}
           >
             <Text style={[styles.swapActionButtonText, { color: COLORS.textDark }]}>
-              {!connected ? 'Connect Wallet to Swap' : 'Swap'}
+              {!connected ? 'Connect Wallet to Swap' : 
+                !isProviderAvailable(activeProvider) ? `${activeProvider} Coming Soon` :
+                loading ? 'Swapping...' : `Swap via ${activeProvider}`}
             </Text>
           </TouchableOpacity>
         </View>
