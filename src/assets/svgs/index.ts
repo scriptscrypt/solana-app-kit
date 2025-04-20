@@ -68,6 +68,9 @@ import RocketIcon from './rocket.svg';
 import RocketIconSelected from './rocket-selected.svg';
 import SwapNavIcon from './swap-nav-icon.svg';
 import SwapNavIconSelected from './swap-nav-icon-selected.svg';
+import PumpFunIcon from './Pumpfun_logo.svg';
+import RadyuimIcom from './Rayduim_icon.svg'
+import TokenMillIcon from './Tokenmill_icon.svg'
 
 export default {
   SolanaDot,
@@ -139,5 +142,8 @@ export default {
   RocketIcon,
   RocketIconSelected,
   SwapNavIcon,
-  SwapNavIconSelected
+  SwapNavIconSelected,
+  PumpFunIcon,
+  RadyuimIcom,
+  TokenMillIcon
 };

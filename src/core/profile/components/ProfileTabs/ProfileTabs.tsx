@@ -114,6 +114,7 @@ const PostItem = memo(({
               <PostBody
                 post={post.retweetOf}
                 externalRefreshTrigger={externalRefreshTrigger}
+                isRetweet={true}
               />
               <PostFooter
                 post={post.retweetOf}
