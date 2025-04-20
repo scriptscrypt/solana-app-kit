@@ -7,7 +7,7 @@ export const THREAD_DEFAULT_THEME = {
 
   // Text colors
   '--thread-text-primary': COLORS.white,
-  '--thread-text-secondary': '#434445',
+  '--thread-text-secondary': COLORS.accessoryDarkColor,
   '--thread-text-placeholder': '#737373',
 
   // Border and link

@@ -12,10 +12,16 @@ import TYPOGRAPHY from '@/assets/typography';
 import AnimatedTabIcon from './AnimatedTabIcon';
 import FeedScreen from '@/screens/SampleUI/Threads/FeedScreen/FeedScreen';
 import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
-import ModuleScreen from '@/screens/Common/ModulesScreen/Modules';
+import SwapScreen from '@/screens/SampleUI/Swap';
 import SearchScreen from '@/screens/SampleUI/Threads/SearchScreen';
 import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
 
+// Platform icons matching PlatformSelectionScreen
+const platformIcons = {
+  threads: 'https://img.icons8.com/color/96/000000/twitter--v1.png',
+  insta: 'https://img.icons8.com/color/96/000000/instagram-new.png',
+  chats: 'https://img.icons8.com/color/96/000000/chat--v1.png',
+};
 
 const Tab = createBottomTabNavigator();
 const { width } = Dimensions.get('window');
@@ -40,13 +46,6 @@ const iconStyle = {
   shadowOpacity: 0.3,
   shadowRadius: 8,
   elevation: 6,
-};
-
-// Platform icons matching PlatformSelectionScreen
-const platformIcons = {
-  threads: 'https://img.icons8.com/color/96/000000/twitter--v1.png',
-  insta: 'https://img.icons8.com/color/96/000000/instagram-new.png',
-  chats: 'https://img.icons8.com/color/96/000000/chat--v1.png',
 };
 
 export default function MainTabs() {
@@ -254,7 +253,7 @@ export default function MainTabs() {
             borderTopWidth: 0,
             position: 'absolute',
             elevation: 0,
-            height: 65,
+            height: 75,
           },
           tabBarBackground: () => (
             <BlurView
@@ -267,21 +266,21 @@ export default function MainTabs() {
           ),
         }}>
         <Tab.Screen
-          name="Modules"
-          component={ModuleScreen}
+          name="Swap"
+          component={SwapScreen}
           options={{
             tabBarIcon: ({ focused, size }) => (
               <AnimatedTabIcon
                 focused={focused}
-                size={size * 1.4}
+                size={size * 1}
                 icon={
-                  Icons.ExploreIcon as React.ComponentType<{
+                  Icons.SwapNavIcon as React.ComponentType<{
                     width: number;
                     height: number;
                   }>
                 }
                 iconSelected={
-                  Icons.ExploreIconSelected as React.ComponentType<{
+                  Icons.SwapNavIconSelected as React.ComponentType<{
                     width: number;
                     height: number;
                   }>
@@ -343,20 +342,20 @@ export default function MainTabs() {
 
         <Tab.Screen
           name="Search"
-          component={SearchScreen}
+          component={ChatScreen}
           options={{
             tabBarIcon: ({ focused, size }) => (
               <AnimatedTabIcon
                 focused={focused}
-                size={size * 1}
+                size={size * 1.25}
                 icon={
-                  Icons.MagnifyingGlass as React.ComponentType<{
+                  Icons.ChatIcon as React.ComponentType<{
                     width: number;
                     height: number;
                   }>
                 }
                 iconSelected={
-                  Icons.MagnifyingGlassSelected as React.ComponentType<{
+                  Icons.ChatIconSelected as React.ComponentType<{
                     width: number;
                     height: number;
                   }>
@@ -373,15 +372,15 @@ export default function MainTabs() {
             tabBarIcon: ({ focused, size }) => (
               <AnimatedTabIcon
                 focused={focused}
-                size={size * 1.8}
+                size={size * 1.2}
                 icon={
-                  Icons.ProfileIcon as React.ComponentType<{
+                  Icons.RocketIcon as React.ComponentType<{
                     width: number;
                     height: number;
                   }>
                 }
                 iconSelected={
-                  Icons.ProfileIconSelected as React.ComponentType<{
+                  Icons.RocketIconSelected as React.ComponentType<{
                     width: number;
                     height: number;
                   }>
