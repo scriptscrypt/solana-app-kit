@@ -123,7 +123,7 @@ export default function FeedScreen() {
   if (!profileStable) {
     return (
       <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={COLORS.brandPrimary} />
+        <ActivityIndicator size="large" color={COLORS.greyMid} />
       </SafeAreaView>
     );
   }
@@ -169,10 +169,10 @@ export default function FeedScreen() {
           }
         }}
         themeOverrides={{
-          '--thread-bg-primary': '#F0F0F0',
-          '--retweet-border-color': '#E1E8ED',
-          '--retweet-bg-color': '#F8F8F8',
-          '--retweet-text-color': '#657786'
+          '--thread-bg-primary': COLORS.background,
+          '--retweet-border-color': COLORS.borderDarkColor,
+          '--retweet-bg-color': COLORS.lighterBackground,
+          '--retweet-text-color': COLORS.greyMid
         }}
         styleOverrides={{
           container: { padding: 6 },
@@ -187,7 +187,7 @@ export default function FeedScreen() {
           },
           retweetHeaderText: {
             fontSize: 13,
-            color: '#657786',
+            color: COLORS.greyMid,
             marginLeft: 6,
             fontWeight: '500',
           },
@@ -198,10 +198,10 @@ export default function FeedScreen() {
           originalPostContainer: {
             width: '100%',
             borderRadius: 12,
-            backgroundColor: '#F8F8F8',
+            backgroundColor: COLORS.lighterBackground,
             padding: 10,
             borderWidth: 1,
-            borderColor: '#E1E8ED',
+            borderColor: COLORS.borderDarkColor,
           },
         }}
         onPressUser={user => {

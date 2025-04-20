@@ -11,6 +11,7 @@ import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { deletePostAsync } from '@/shared/state/thread/reducer';
 import EditPostModal from './EditPostModal';
 import Icons from '../../../assets/svgs';
+import COLORS from '@/assets/colors';
 
 // Styles for retweets within ThreadItem
 const threadStyles = StyleSheet.create({
@@ -23,7 +24,7 @@ const threadStyles = StyleSheet.create({
   },
   retweetHeaderText: {
     fontSize: 13,
-    color: '#657786',
+    color: COLORS.greyMid,
     marginLeft: 6,
     fontWeight: '500',
   },
@@ -34,17 +35,17 @@ const threadStyles = StyleSheet.create({
   originalPostContainer: {
     width: '100%',
     borderRadius: 12,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: COLORS.lighterBackground,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#E1E8ED',
+    borderColor: COLORS.borderDarkColor,
   },
   quoteContent: {
     marginBottom: 4,
   },
   quoteText: {
     fontSize: 13,
-    color: '#657786',
+    color: COLORS.greyMid,
   },
 });
 
@@ -167,6 +168,7 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
                 post={post.retweetOf}
                 themeOverrides={themeOverrides}
                 styleOverrides={styleOverrides}
+                isRetweet={true}
               />
               <PostCTA
                 post={post.retweetOf}
