@@ -62,6 +62,13 @@ import NFTIcon from './NFT.svg'
 import ImageIcon from './Image_Upload.svg'
 import TradeShare from './Share_Trade.svg'
 import searchIcon from './Search_Icon.svg'
+import ChatIcon from './chat-icon.svg';
+import ChatIconSelected from './chat-icon-selected.svg';
+import RocketIcon from './rocket.svg';
+import RocketIconSelected from './rocket-selected.svg';
+import SwapNavIcon from './swap-nav-icon.svg';
+import SwapNavIconSelected from './swap-nav-icon-selected.svg';
+
 export default {
   SolanaDot,
   SplashText,
@@ -126,5 +133,11 @@ export default {
   NFTIcon,
   ImageIcon,
   TradeShare,
-  searchIcon
+  searchIcon,
+  ChatIcon,
+  ChatIconSelected,
+  RocketIcon,
+  RocketIconSelected,
+  SwapNavIcon,
+  SwapNavIconSelected
 };
