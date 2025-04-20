@@ -1,3 +1,4 @@
+import COLORS from '@/assets/colors';
 import {Dimensions, StyleSheet} from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
@@ -17,11 +18,8 @@ export const BondingCurveConfiguratorStyles = StyleSheet.create({
   /** Main container for the entire component */
   container: {
     width: '100%',
-    backgroundColor: '#f8faff',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e6eeff',
   },
   /** Title text for each section */
   sectionTitle: {
@@ -41,17 +39,16 @@ export const BondingCurveConfiguratorStyles = StyleSheet.create({
   /** Base style for curve type buttons */
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    // paddingHorizontal: 18,
     alignItems: 'center',
-    borderColor: '#d1d8ff',
-    borderWidth: 1,
     borderRadius: 8,
     marginHorizontal: 3,
   },
   /** Style for the selected tab button */
   selectedTab: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
+    backgroundColor: COLORS.lightBackground,
+    // borderColor: '#2563EB',
   },
   /** Style for disabled tab button */
   disabledTab: {
@@ -59,7 +56,7 @@ export const BondingCurveConfiguratorStyles = StyleSheet.create({
   },
   /** Text style for tab buttons */
   tabText: {
-    color: '#2a2a2a',
+    color: COLORS.greyMid,
     fontWeight: '600',
     fontSize: 13,
   },
@@ -75,11 +72,9 @@ export const BondingCurveConfiguratorStyles = StyleSheet.create({
   slidersContainer: {
     width: '100%',
     marginBottom: 10,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
     padding: 12,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#edf2ff',
   },
   /** Style for each slider row */
   sliderRow: {

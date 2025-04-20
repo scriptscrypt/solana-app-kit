@@ -10,6 +10,7 @@ export interface BondingCurveCardProps {
   solanaWallet: any;
   setLoading: (val: boolean) => void;
   styleOverrides?: Partial<typeof StyleSheet.create>;
+  onCurveChange?: (pricePoints: BN[], parameters: any) => void;
 }
 
 export interface BondingCurveConfiguratorProps {
