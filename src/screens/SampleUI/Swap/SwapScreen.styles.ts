@@ -12,6 +12,7 @@ export const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingBottom: 80, // Safe area for bottom navigation
+    marginTop: 20,
   },
   header: {
     flexDirection: 'row',
@@ -55,6 +56,7 @@ export const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: COLORS.borderDarkColor,
+    position: 'relative', // For proper positioning of the swap button
   },
   tokenRow: {
     flexDirection: 'row',
@@ -104,19 +106,17 @@ export const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.size.xs,
   },
   swapButton: {
-    backgroundColor: COLORS.white,
-    height: 36,
-    width: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: 'absolute',
     alignSelf: 'center',
-    marginVertical: 10,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: COLORS.lightBackground,
     elevation: 5,
+    top: '50%',
+    marginTop: -16, // Half of height to center
   },
   receiveContainer: {
     flexDirection: 'row',
@@ -252,5 +252,44 @@ export const styles = StyleSheet.create({
     fontWeight: String(TYPOGRAPHY.medium) as any,
     flexShrink: 1,
     textAlign: 'right',
+  },
+  fullWidthScroll: {
+    width: '100%',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: '100%',
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderDarkColor,
+  },
+  leftPlaceholder: {
+    width: 36, // Same width as profileContainer in Thread.tsx for balance
+  },
+  titleContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: -1,
+  },
+  titleText: {
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
+  },
+  iconsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    paddingHorizontal: 4,
+    marginLeft: 8,
   },
 }); 

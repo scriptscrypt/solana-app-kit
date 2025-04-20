@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Clipboard,
+  StyleSheet,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +34,8 @@ import {
 } from '@/modules/dataModule';
 import { TradeService, SwapProvider } from '@/modules/dataModule/services/tradeService';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import Icons from '@/assets/svgs';
+import TYPOGRAPHY from '@/assets/typography';
 
 // Swap providers
 const swapProviders: SwapProvider[] = ['Jupiter', 'Raydium', 'PumpSwap'];
@@ -548,13 +551,30 @@ export default function SwapScreen() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
         
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Swap via</Text>
+        {/* Header - Styled like Thread.tsx */}
+        <View style={styles.headerContainer}>
+          {/* Left: Placeholder (empty) */}
+          <View style={styles.leftPlaceholder} />
+
+          {/* Center: "Swap Via" text */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleText}>Swap Via</Text>
+          </View>
+
+          {/* Right: Copy and Wallet Icons */}
+          <View style={styles.iconsContainer}>
+            <TouchableOpacity style={styles.iconButton}>
+              <Icons.copyIcon width={16} height={16} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton}>
+              <Icons.walletIcon width={35} height={35} />
+            </TouchableOpacity>
+          </View>
         </View>
         
         <View style={styles.contentContainer}>
           <ScrollView 
+            style={styles.fullWidthScroll}
             bounces={false} 
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 250 }} // Extra padding for keypad
@@ -594,9 +614,9 @@ export default function SwapScreen() {
               ))}
             </View>
             
-            {/* Swap Interface */}
+            {/* Swap Container with Input and Output */}
             <View style={styles.swapContainer}>
-              {/* From Token */}
+              {/* Input Token (From) */}
               <View>
                 <TouchableOpacity 
                   style={styles.tokenRow}
@@ -636,7 +656,7 @@ export default function SwapScreen() {
                 </TouchableOpacity>
               </View>
               
-              {/* Swap Button */}
+              {/* Swap Button - Positioned to overlap both cards */}
               <TouchableOpacity 
                 style={styles.swapButton}
                 onPress={() => {
@@ -657,10 +677,10 @@ export default function SwapScreen() {
                   }
                 }}
               >
-                <Ionicons name="swap-vertical" size={20} color={COLORS.background} />
+                <Icons.SwapIcon width={36} height={36} />
               </TouchableOpacity>
               
-              {/* To Token */}
+              {/* Output Token (To) */}
               <View>
                 <TouchableOpacity 
                   style={styles.tokenRow}
@@ -815,7 +835,7 @@ export default function SwapScreen() {
             onPress={handleSwap}
             disabled={!connected || loading || !isProviderAvailable(activeProvider)}
           >
-            <Text style={[styles.swapActionButtonText, { color: COLORS.textDark }]}>
+            <Text style={styles.swapActionButtonText}>
               {!connected ? 'Connect Wallet to Swap' : 
                 !isProviderAvailable(activeProvider) ? `${activeProvider} Coming Soon` :
                 loading ? 'Swapping...' : `Swap via ${activeProvider}`}
