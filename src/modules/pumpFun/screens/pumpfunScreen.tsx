@@ -1,255 +1,186 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
   Platform,
-  StatusBar
+  StatusBar,
+  ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
-import { styles } from './pumpfunScreen.style';
 import { useAuth } from '../../walletProviders/hooks/useAuth';
-import { fetchSolBalance, fetchTokenAccounts } from '../../dataModule/utils/fetch';
-import PumpfunBuySection from '../components/PumpfunBuySection';
-import PumpfunSellSection from '../components/PumpfunSellSection';
 import PumpfunLaunchSection from '../components/PumpfunLaunchSection';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
-import { TokenEntry } from '../../dataModule/types/tokenTypes';
-
-const customStyles = StyleSheet.create({
-  customCardContainer: {
-    backgroundColor: '#F9F9FF',
-    padding: 20,
-    borderRadius: 16,
-  },
-  customInput: {
-    backgroundColor: '#FFF5E1',
-    borderColor: '#FFA500',
-    borderWidth: 1.5,
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 14,
-  },
-  customButton: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  customButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-});
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
+import Icons from '@/assets/svgs';
 
 export default function PumpfunScreen() {
   const { solanaWallet } = useAuth();
   const myWallet = useAppSelector(state => state.auth.address);
+  const navigation = useNavigation();
 
   const userPublicKey = solanaWallet?.wallets?.[0]?.publicKey || myWallet || null;
-  // console.log('userPublicKey', userPublicKey);
 
-  const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'launch'>('buy');
-  const [solBalance, setSolBalance] = useState<number | null>(null);
-  const [tokens, setTokens] = useState<TokenEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedSellToken, setSelectedSellToken] = useState<TokenEntry | null>(
-    null,
-  );
-
-  // Get the status bar height for Android
-  const STATUSBAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
-
-  async function refreshAll() {
-    if (!userPublicKey) return;
-    setLoading(true);
-    setTokens([]);
-    setSolBalance(null);
-
-    try {
-      const balance = await fetchSolBalance(userPublicKey);
-      setSolBalance(balance);
-      const tokenAccounts = await fetchTokenAccounts(userPublicKey);
-      setTokens(tokenAccounts);
-    } catch (err) {
-      console.error('Error refreshing data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
 
   if (!userPublicKey) {
     return (
-      <>
-        {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: styles.container.backgroundColor }} />}
-        <SafeAreaView style={[styles.container, Platform.OS === 'android' && androidStyles.container]}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Pump.fun</Text>
+          </View>
+          <View style={styles.rightButtons}>
+            <TouchableOpacity style={styles.headerButton}>
+              <Icons.copyIcon width={16} height={16} color={COLORS.white} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerButton}>
+              <Icons.walletIcon width={35} height={35} color={COLORS.white} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.centeredMessageContainer}>
           <Text style={styles.warnText}>Please connect your wallet first!</Text>
-        </SafeAreaView>
-      </>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  const solString = useMemo(() => {
-    if (solBalance === null) return '--';
-    return (solBalance / 1e9).toFixed(4);
-  }, [solBalance]);
-
-  const renderTokenItem = ({ item }: { item: TokenEntry }) => (
-    <View style={styles.tokenRow}>
-      <Text style={styles.tokenMint}>
-        {item.mintPubkey.slice(0, 6)}...{item.mintPubkey.slice(-6)}
-      </Text>
-      <Text style={styles.tokenAmount}>{item.uiAmount.toFixed(4)}</Text>
-      <TouchableOpacity
-        onPress={() => {
-          setSelectedSellToken(item);
-          setActiveTab('sell');
-        }}
-        style={styles.selectButton}>
-        <Text style={styles.selectButtonText}>Sell</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderListHeader = () => (
-    <View style={{ marginBottom: 16 }}>
-      <Text style={styles.header}>Pumpfun Dashboard</Text>
-      <View style={styles.balanceContainer}>
-        <Text style={styles.balanceLabel}>SOL Balance: </Text>
-        <Text style={styles.balanceValue}>{solString} SOL</Text>
-      </View>
-      <TouchableOpacity style={styles.refreshButton} onPress={refreshAll}>
-        <Text style={styles.refreshButtonText}>
-          {loading ? 'Loading...' : 'Refresh'}
-        </Text>
-      </TouchableOpacity>
-      <Text style={styles.subHeader}>Your Tokens</Text>
-      {loading && <ActivityIndicator size="large" color="#999" />}
-    </View>
-  );
-
-  const renderListFooter = () => (
-    <View style={{ paddingBottom: 40 }}>
-      <View style={styles.tabsRow}>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'buy' && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveTab('buy')}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'buy' && styles.tabTextActive,
-            ]}>
-            Buy
-          </Text>
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'sell' && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveTab('sell')}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'sell' && styles.tabTextActive,
-            ]}>
-            Sell
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'launch' && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveTab('launch')}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'launch' && styles.tabTextActive,
-            ]}>
-            Launch
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Pump.fun</Text>
+        </View>
+        <View style={styles.rightButtons}>
+          <TouchableOpacity style={styles.headerButton}>
+            <Icons.copyIcon width={16} height={16} color={COLORS.white} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerButton}>
+            <Icons.walletIcon width={35} height={35} color={COLORS.white} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {activeTab === 'buy' && (
-        <PumpfunBuySection
-          containerStyle={customStyles.customCardContainer}
-          inputStyle={customStyles.customInput}
-          buttonStyle={customStyles.customButton}
-        />
-      )}
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionTitle}>Create a new coin</Text>
 
-      {activeTab === 'sell' && (
-        <>
-          <View style={styles.selectedTokenContainer}>
-            <Text style={styles.selectedTokenLabel}>Selected Token:</Text>
-            {selectedSellToken ? (
-              <Text style={styles.selectedTokenText}>
-                {selectedSellToken.mintPubkey} {'\n'}
-                Balance: {selectedSellToken.uiAmount.toFixed(4)}
-              </Text>
-            ) : (
-              <Text style={styles.selectedTokenPlaceholder}>
-                No token selected
-              </Text>
-            )}
-          </View>
-          <PumpfunSellSection
-            selectedToken={selectedSellToken}
-            containerStyle={customStyles.customCardContainer}
-            inputStyle={customStyles.customInput}
-            buttonStyle={customStyles.customButton}
-            sellButtonLabel="Sell Now"
-          />
-        </>
-      )}
-
-      {activeTab === 'launch' && (
         <PumpfunLaunchSection
-          containerStyle={customStyles.customCardContainer}
-          inputStyle={customStyles.customInput}
-          buttonStyle={customStyles.customButton}
+          containerStyle={styles.cardContainer}
+          inputStyle={styles.input}
+          buttonStyle={styles.button}
           launchButtonLabel="Go Live!"
         />
-      )}
-    </View>
-  );
-
-  return (
-    <>
-      {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: styles.container.backgroundColor }} />}
-      <SafeAreaView style={[styles.container, Platform.OS === 'android' && androidStyles.container]}>
-        <FlatList
-          data={tokens}
-          keyExtractor={item => item.accountPubkey}
-          renderItem={renderTokenItem}
-          ListHeaderComponent={renderListHeader}
-          ListEmptyComponent={
-            !loading ? (
-              <Text style={styles.emptyText}>
-                No tokens found. Press Refresh.
-              </Text>
-            ) : null
-          }
-          ListFooterComponent={renderListFooter}
-          contentContainerStyle={styles.listContentContainer}
-        />
-      </SafeAreaView>
-    </>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-// Add Android-specific styles
-const androidStyles = StyleSheet.create({
-  container: {
-    paddingTop: 0, // We're handling this with the extra View
-  }
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderDarkColor,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: -1,
+  },
+  title: {
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  rightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    marginLeft: 15,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  centeredMessageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  warnText: {
+    fontSize: TYPOGRAPHY.size.lg,
+    color: COLORS.white,
+    textAlign: 'center',
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  sectionTitle: {
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    alignSelf: 'center',
+  },
+  cardContainer: {
+    backgroundColor: COLORS.background,
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  input: {
+    backgroundColor: 'transparent',
+    color: COLORS.white,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: TYPOGRAPHY.size.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.borderDarkColor,
+    marginBottom: 12,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  button: {
+    backgroundColor: COLORS.brandBlue,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
 });
