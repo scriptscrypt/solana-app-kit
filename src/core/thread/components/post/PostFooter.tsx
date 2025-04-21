@@ -16,7 +16,6 @@ import {
   Dimensions,
 } from 'react-native';
 import Icons from '../../../../assets/svgs';
-import { getMergedTheme } from '../../utils';
 import { createPostFooterStyles } from './PostFooter.styles';
 import { ThreadPost, ThreadUser, ThreadSection } from '../thread.types';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
@@ -299,10 +298,8 @@ export default function PostFooter({
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const [commentPressed, setCommentPressed] = useState(false);
 
-  // Memoize theme and styles
-  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
-  const styles = useMemo(() => createPostFooterStyles(mergedTheme, styleOverrides), [
-    mergedTheme,
+  // Memoize styles (no theme needed)
+  const styles = useMemo(() => createPostFooterStyles(styleOverrides), [
     styleOverrides,
   ]);
 

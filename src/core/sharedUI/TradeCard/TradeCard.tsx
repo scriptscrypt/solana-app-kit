@@ -17,7 +17,6 @@ import { useCoingecko, Timeframe } from '@/modules/dataModule/hooks/useCoingecko
 import LineGraph from './LineGraph';
 import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
 import { fetchJupiterTokenData } from '@/modules/dataModule/utils/tokenUtils';
-import { getMergedTheme } from '@/core/thread/utils';
 
 export interface TradeData {
   inputMint: string;
@@ -76,8 +75,6 @@ function TradeCard({
   userAvatar,
   externalRefreshTrigger,
 }: TradeCardProps) {
-  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
-
   // --------------------------------------------------
   // Jupiter metadata about input & output tokens
   // --------------------------------------------------

@@ -1,7 +1,6 @@
 // FILE: src/components/thread/post/PostBody.tsx
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import { getMergedTheme } from '../../utils';
 import { createPostBodyStyles } from './PostBody.styles';
 import { ThreadPost } from '../thread.types';
 import SectionTextOnly from '../sections/SectionTextOnly';
@@ -95,10 +94,8 @@ function PostBody({
   externalRefreshTrigger,
   isRetweet,
 }: PostBodyProps) {
-  // Memoize theme and styles to prevent recalculation
-  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
-  const styles = useMemo(() => createPostBodyStyles(mergedTheme, styleOverrides), [
-    mergedTheme,
+  // Memoize styles (no theme needed)
+  const styles = useMemo(() => createPostBodyStyles(styleOverrides), [
     styleOverrides,
   ]);
 

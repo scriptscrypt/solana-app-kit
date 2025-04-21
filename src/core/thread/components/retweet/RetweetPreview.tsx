@@ -5,7 +5,6 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { ThreadPost } from '../thread.types';
 import PostBody from '../post/PostBody';
 import { createThreadStyles } from '../thread.styles';
-import { THREAD_DEFAULT_THEME } from '../thread.theme';
 import Icons from '../../../../assets/svgs';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
@@ -36,7 +35,7 @@ export default function RetweetPreview({
     : '';
 
   // Use default theme with styleOverrides
-  const styles = createThreadStyles(THREAD_DEFAULT_THEME, styleOverrides);
+  const styles = createThreadStyles(styleOverrides);
 
   // If the retweeted user's avatar is a string, we treat it as a URI
   const avatarSource =
