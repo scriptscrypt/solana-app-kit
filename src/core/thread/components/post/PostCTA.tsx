@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type { ThreadPost, ThreadUser } from '../thread.types';
-import { getMergedTheme } from '../../utils';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/shared/state/store';
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
@@ -151,13 +150,11 @@ export default function PostCTA({
     avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
   };
 
-  // Memoize theme and styles
-  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
+  // Memoize styles (no theme needed)
   const styles = useMemo(() => createPostCTAStyles(
-    mergedTheme,
     styleOverrides as { [key: string]: object } | undefined,
     userStyleSheet as { [key: string]: object } | undefined,
-  ), [mergedTheme, styleOverrides, userStyleSheet]);
+  ), [styleOverrides, userStyleSheet]);
 
   // Helper to get collection data from a post
   function getCollectionData(post: ThreadPost) {

@@ -1,24 +1,22 @@
 import {StyleSheet} from 'react-native';
-import {THREAD_DEFAULT_THEME} from '../thread.theme'; // Adjust path if needed
 import COLORS from '@/assets/colors'; // Adjust path if needed
 import TYPOGRAPHY from '@/assets/typography'; // Adjust path if needed
 
 export function createPostBodyStyles(
-  theme: typeof THREAD_DEFAULT_THEME,
   overrideStyles?: {[key: string]: object},
   userStyleSheet?: {[key: string]: object},
 ): {[key: string]: any} {
   const baseStyles: {[key: string]: any} = StyleSheet.create({
     /* Body/content area - Migrated from thread.styles.ts */
     extraContentContainer: {
-      marginVertical: theme['--thread-section-spacing'],
+      marginVertical: 8,
       width: '100%',
       alignItems: 'flex-end',
       ...overrideStyles?.extraContentContainer,
     },
     threadItemText: {
-      fontSize: theme['--thread-font-size'],
-      color: theme['--thread-text-primary'],
+      fontSize: TYPOGRAPHY.size.sm,
+      color: COLORS.white,
       marginBottom: 6,
       fontFamily: TYPOGRAPHY.fontFamily,
       ...overrideStyles?.threadItemText,
@@ -47,22 +45,22 @@ export function createPostBodyStyles(
 
     /* Poll styles - Migrated from thread.styles.ts */
     pollContainer: {
-      backgroundColor: theme['--thread-poll-bg'],
+      backgroundColor: '#F5F5F5',
       borderRadius: 8,
       padding: 8,
       marginTop: 4,
       ...overrideStyles?.pollContainer,
     },
     pollQuestion: {
-      fontSize: theme['--thread-font-size'],
+      fontSize: TYPOGRAPHY.size.sm,
       fontWeight: '600',
       marginBottom: 6,
-      color: theme['--thread-text-primary'],
+      color: COLORS.white,
       fontFamily: TYPOGRAPHY.fontFamily,
       ...overrideStyles?.pollQuestion,
     },
     pollOption: {
-      backgroundColor: theme['--thread-poll-option-bg'],
+      backgroundColor: '#ECECEC',
       paddingVertical: 6,
       paddingHorizontal: 8,
       borderRadius: 4,
@@ -70,8 +68,8 @@ export function createPostBodyStyles(
       ...overrideStyles?.pollOption,
     },
     pollOptionText: {
-      fontSize: theme['--thread-font-size'],
-      color: theme['--thread-text-primary'],
+      fontSize: TYPOGRAPHY.size.sm,
+      color: COLORS.white,
       fontFamily: TYPOGRAPHY.fontFamily,
       ...overrideStyles?.pollOptionText,
     },

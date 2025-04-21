@@ -1,18 +1,16 @@
 // FILE: src/components/thread/thread.styles.ts
 import {DimensionValue, StyleSheet} from 'react-native';
-import {THREAD_DEFAULT_THEME} from './thread.theme';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
 export function createThreadStyles(
-  theme: typeof THREAD_DEFAULT_THEME,
   overrideStyles?: {[key: string]: object},
   userStyleSheet?: {[key: string]: object},
 ): {[key: string]: any} {
   const baseStyles: {[key: string]: any} = StyleSheet.create({
     divider: {
       height: 1,
-      backgroundColor: theme['--thread-border-color'],
+      backgroundColor: COLORS.greyBorder,
       marginVertical: 4,
       width: '90%',
       alignSelf: 'center',

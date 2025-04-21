@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { getMergedTheme, mergeStyles } from '../../utils'; // Import getMergedTheme from utils
+import { mergeStyles } from '../../utils'; // Import mergeStyles from utils
 import { getThreadAncestorsBaseStyles, ancestorStyles } from './ThreadAncestors.styles'; // Import new styles
 import { gatherAncestorChain } from '../../utils';
 import { ThreadPost } from '../../types';
@@ -51,13 +51,10 @@ export const ThreadAncestors: React.FC<ThreadAncestorsProps> = ({
   // If no parent, do nothing
   if (!post.parentId) return null;
 
-  // 1. Get the merged theme
-  const mergedTheme = getMergedTheme(themeOverrides);
+  // 1. Get base styles (no theme needed)
+  const baseComponentStyles = getThreadAncestorsBaseStyles();
   
-  // 2. Get base styles, passing the theme
-  const baseComponentStyles = getThreadAncestorsBaseStyles(mergedTheme);
-  
-  // 3. Merge styles using the utility function
+  // 2. Merge styles using the utility function
   const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
   // Gather chain => array from earliest ancestor to the current post

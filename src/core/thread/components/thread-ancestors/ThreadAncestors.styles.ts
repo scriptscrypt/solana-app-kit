@@ -1,25 +1,24 @@
 import { StyleSheet } from 'react-native';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
-import { THREAD_DEFAULT_THEME } from '../thread.theme'; // Import theme type if needed
 
 // Function to create base styles for ThreadAncestors
 export function getThreadAncestorsBaseStyles(
-  theme: typeof THREAD_DEFAULT_THEME // Use a specific theme type
+  // Remove the theme parameter as it's no longer used
 ) {
   return StyleSheet.create({
     replyingContainer: {
-      backgroundColor: theme['--thread-replying-bg'],
-      padding: theme['--thread-replying-padding'],
-      marginVertical: theme['--thread-replying-margin-vertical'],
-      borderRadius: theme['--thread-replying-border-radius'],
+      backgroundColor: '#F9F9F9', // Replaced theme['--thread-replying-bg']
+      padding: 8, // Replaced theme['--thread-replying-padding']
+      marginVertical: 8, // Replaced theme['--thread-replying-margin-vertical']
+      borderRadius: 6, // Replaced theme['--thread-replying-border-radius']
     },
     replyingText: {
       fontSize: 13,
       color: '#666',
     },
     replyingHandle: {
-      color: theme['--thread-link-color'],
+      color: '#2B8EF0', // Replaced theme['--thread-link-color']
       fontWeight: '600',
     },
   });

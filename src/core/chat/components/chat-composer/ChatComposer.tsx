@@ -12,47 +12,47 @@ import {
   Platform,
   Animated,
 } from 'react-native';
-import Icons from '../../../../assets/svgs';
+import Icons from '@/assets/svgs';
 import {
   useAppDispatch,
   useAppSelector,
-} from '../../../../shared/hooks/useReduxHooks';
+} from '@/shared/hooks/useReduxHooks';
 import {
   createRootPostAsync,
   createReplyAsync,
   addPostLocally,
   addReplyLocally,
-} from '../../../../shared/state/thread/reducer';
-import { getThreadComposerBaseStyles } from './ThreadComposer.styles'; // Import new base styles function
-import { mergeStyles } from '../../utils'; // Import the utility function
-import { ThreadSection, ThreadSectionType, ThreadUser } from '../../types';
+} from '@/shared/state/thread/reducer';
+import { getChatComposerBaseStyles } from './ChatComposer.styles'; 
+import { mergeStyles } from '../../utils'; 
+import { ThreadSection, ThreadSectionType, ThreadUser } from '../../../thread/types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
-import TradeModal from '../trade/TradeModal';
-import { DEFAULT_IMAGES } from '../../../../config/constants';
-import { NftListingModal, useFetchNFTs, NftItem } from '../../../../modules/nft';
-import { uploadThreadImage } from '../../services/threadImageService';
+import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import TradeModal from '../../../thread/components/trade/TradeModal';
+import { DEFAULT_IMAGES } from '@/config/constants';
+import { NftListingModal, useFetchNFTs, NftItem } from '@/modules/nft';
+import { uploadThreadImage } from '../../../thread/services/threadImageService';
 import {
   IPFSAwareImage,
   getValidImageSource,
   fixIPFSUrl,
-} from '../../../../shared/utils/IPFSImage';
+} from '@/shared/utils/IPFSImage';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
 
 /**
- * Props for the ThreadComposer component
- * @interface ThreadComposerProps
+ * Props for the ChatComposer component
+ * @interface ChatComposerProps
  */
-interface ThreadComposerProps {
+interface ChatComposerProps {
   /** Current user information - must have user.id set to wallet address */
   currentUser: ThreadUser;
   /** Optional parent post ID - if present, this composer is for a reply */
   parentId?: string;
-  /** Callback fired when a new post is created */
-  onPostCreated?: () => void;
+  /** Callback fired when a new message is created */
+  onMessageSent?: () => void;
   /** Theme overrides for customizing appearance */
   themeOverrides?: Partial<Record<string, any>>;
   /** Style overrides for specific components */
@@ -64,13 +64,12 @@ interface ThreadComposerProps {
 }
 
 /**
- * A component for composing new posts and replies in a thread
+ * A component for composing new messages in a chat
  *
  * @component
  * @description
- * ThreadComposer provides a rich text editor for creating new posts and replies in a thread.
- * It supports text input, image attachments, and NFT listings. The component handles both
- * root-level posts and nested replies, with appropriate styling and behavior for each case.
+ * ChatComposer provides a modern chat input UI with support for text, images, 
+ * NFT listings, and other media. It has a chat-like UI with icons on the right.
  *
  * Features:
  * - Text input with placeholder text
@@ -82,18 +81,18 @@ interface ThreadComposerProps {
  *
  * @example
  * ```tsx
- * <ThreadComposer
+ * <ChatComposer
  *   currentUser={user}
- *   parentId="post-123" // Optional, for replies
- *   onPostCreated={() => refetchPosts()}
+ *   parentId="chat-123" // Optional, for replies
+ *   onMessageSent={() => refetchMessages()}
  *   themeOverrides={{ '--primary-color': '#1D9BF0' }}
  * />
  * ```
  */
-export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerProps>(({
+export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>(({
   currentUser,
   parentId,
-  onPostCreated,
+  onMessageSent,
   themeOverrides,
   styleOverrides,
   userStyleSheet,
@@ -121,6 +120,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
   const [textValue, setTextValue] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAttachments, setShowAttachments] = useState(false);
 
   // NFT listing states
   const [showListingModal, setShowListingModal] = useState(false);
@@ -136,7 +136,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
   const SOL_TO_LAMPORTS = 1_000_000_000;
 
   // 1. Get base styles (no theme needed)
-  const baseComponentStyles = getThreadComposerBaseStyles();
+  const baseComponentStyles = getChatComposerBaseStyles();
   
   // 2. Merge styles using the utility function
   const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
@@ -212,9 +212,9 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
   }, [userPublicKey]);
 
   /**
-   * Post creation logic
+   * Message sending logic
    */
-  const handlePost = async () => {
+  const handleSend = async () => {
     if (!textValue.trim() && !selectedImage && !selectedListingNft) return;
 
     // Show loading indicator
@@ -305,10 +305,10 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
       setTextValue('');
       setSelectedImage(null);
       setSelectedListingNft(null);
-      onPostCreated && onPostCreated();
+      onMessageSent && onMessageSent();
     } catch (error: any) {
       console.warn(
-        'Network request failed, adding post locally:',
+        'Network request failed, adding message locally:',
         error.message,
       );
 
@@ -335,7 +335,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
       setTextValue('');
       setSelectedImage(null);
       setSelectedListingNft(null);
-      onPostCreated && onPostCreated();
+      onMessageSent && onMessageSent();
     } finally {
       setIsSubmitting(false);
     }
@@ -393,136 +393,123 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
     setShowListingModal(false);
   };
 
+  // Render attachment previews if any
+  const renderAttachmentPreviews = () => {
+    if (!selectedImage && !selectedListingNft) return null;
 
-  // Add debug logging for Android IPFS image handling
-  if (Platform.OS === 'android' && storedProfilePic) {
-    console.log('Profile image source being used:', JSON.stringify(getValidImageSource(storedProfilePic)));
-  }
+    return (
+      <View style={styles.attachmentPreviewsContainer}>
+        {/* Selected image preview */}
+        {selectedImage && (
+          <View style={styles.imagePreviewContainer}>
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.imagePreview}
+              resizeMode="cover"
+            />
+            <TouchableOpacity
+              style={styles.removeImageButton}
+              onPress={() => setSelectedImage(null)}>
+              <Text style={styles.removeImageButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* NFT listing preview */}
+        {selectedListingNft && (
+          <View style={styles.composerTradePreview}>
+            <IPFSAwareImage
+              source={getValidImageSource(selectedListingNft.image)}
+              style={styles.composerTradeImage}
+              defaultSource={DEFAULT_IMAGES.user}
+              key={Platform.OS === 'android' ? `nft-${Date.now()}` : 'nft'}
+            />
+            <View style={{ marginLeft: 8, flex: 1 }}>
+              <Text style={styles.composerTradeName} numberOfLines={1}>
+                {selectedListingNft.name}
+              </Text>
+              {/* If price is known, display it */}
+            </View>
+            <TouchableOpacity
+              style={styles.composerTradeRemove}
+              onPress={() => setSelectedListingNft(null)}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>X</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <View>
+      {renderAttachmentPreviews()}
+      
       <View style={styles.composerContainer}>
-        <View style={styles.composerAvatarContainer}>
-          <IPFSAwareImage
-            source={
-              storedProfilePic
-                ? getValidImageSource(storedProfilePic)
-                : currentUser.avatar
-                  ? getValidImageSource(currentUser.avatar)
-                  : DEFAULT_IMAGES.user
-            }
-            style={styles.composerAvatar}
-            defaultSource={DEFAULT_IMAGES.user}
-            key={Platform.OS === 'android' ? `profile-${Date.now()}` : 'profile'}
-          />
-        </View>
-
-        <View style={styles.composerMiddle}>
-          <Text style={styles.composerUsername}>{currentUser.username}</Text>
+        <View style={styles.inputContainer}>
           <TextInput
             ref={inputRef}
             style={styles.composerInput}
-            placeholder={parentId ? 'Reply...' : "Got something to say?"}
+            placeholder={parentId ? 'Reply...' : "Type a message..."}
             placeholderTextColor="#999"
             value={textValue}
             onChangeText={setTextValue}
             multiline
           />
+          
+          <View style={styles.iconsContainer}>
+            <TouchableOpacity
+              onPress={handleMediaPress}
+              style={styles.iconButton}>
+              <Icons.ImageIcon width={22} height={22} />
+            </TouchableOpacity>
 
-          {/* Selected image preview */}
-          {selectedImage && (
-            <View style={styles.imagePreviewContainer}>
-              <Image
-                source={{ uri: selectedImage }}
-                style={styles.imagePreview}
-                resizeMode="cover"
-              />
-              <TouchableOpacity
-                style={styles.removeImageButton}
-                onPress={() => setSelectedImage(null)}>
-                <Text style={styles.removeImageButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            <TouchableOpacity
+              onPress={handleNftListingPress}
+              style={styles.iconButton}>
+              <Icons.NFTIcon width={22} height={22} />
+            </TouchableOpacity>
 
-          {/* NFT listing preview */}
-          {selectedListingNft && (
-            <View style={styles.composerTradePreview}>
-              <IPFSAwareImage
-                source={getValidImageSource(selectedListingNft.image)}
-                style={styles.composerTradeImage}
-                defaultSource={DEFAULT_IMAGES.user}
-                key={Platform.OS === 'android' ? `nft-${Date.now()}` : 'nft'}
-              />
-              <View style={{ marginLeft: 8, flex: 1 }}>
-                <Text style={styles.composerTradeName} numberOfLines={1}>
-                  {selectedListingNft.name}
-                </Text>
-                {/* If price is known, display it */}
-              </View>
-              <TouchableOpacity
-                style={styles.composerTradeRemove}
-                onPress={() => setSelectedListingNft(null)}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>X</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Buttons */}
-          <View style={styles.iconsRow}>
-            <View style={styles.leftIcons}>
-              <TouchableOpacity
-                onPress={handleMediaPress}
-                style={styles.iconButton}>
-                <Icons.ImageIcon width={22} height={22} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleNftListingPress}
-                style={styles.iconButton}>
-                <Icons.NFTIcon width={22} height={22} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setShowTradeModal(true)}
-                style={styles.iconButton}>
-                <Icons.TradeShare width={22} height={22} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Right side with animated send button */}
-            <Animated.View style={{
-              opacity: fadeAnim,
-              transform: [{
-                scale: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.5, 1]
-                })
-              }]
-            }}>
-              <TouchableOpacity
-                onPress={handlePost}
-                disabled={isSubmitting || !(textValue.trim() || selectedImage || selectedListingNft)}
-                style={styles.sendButton}>
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color={COLORS.white} />
-                ) : (
-                  // Wider paper plane SVG with proper tilt
-                  <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M3 11l19-7.5-6 18.5-3.5-7L3 11zm0 0l9.5 4"
-                      fill={COLORS.brandBlue}
-                      stroke={COLORS.brandBlue}
-                      strokeWidth={1.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity
+              onPress={() => setShowTradeModal(true)}
+              style={styles.iconButton}>
+              <Icons.TradeShare width={22} height={22} />
+            </TouchableOpacity>
           </View>
         </View>
+
+        <Animated.View style={{
+          opacity: fadeAnim,
+          transform: [{
+            scale: fadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.5, 1]
+            })
+          }]
+        }}>
+          <TouchableOpacity
+            onPress={handleSend}
+            disabled={isSubmitting || !(textValue.trim() || selectedImage || selectedListingNft)}
+            style={[
+              styles.sendButton,
+              !(textValue.trim() || selectedImage || selectedListingNft) && styles.disabledSendButton
+            ]}>
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"
+                  fill={COLORS.white}
+                  stroke={COLORS.white}
+                  strokeWidth={1}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Listing Modal */}
@@ -541,11 +528,11 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
         visible={showTradeModal}
         onClose={() => setShowTradeModal(false)}
         currentUser={currentUser}
-        onPostCreated={onPostCreated}
+        onPostCreated={onMessageSent}
       />
     </View>
   );
 });
 
 // Also export as default for backward compatibility
-export default ThreadComposer;
+export default ChatComposer; 
