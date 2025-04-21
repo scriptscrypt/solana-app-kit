@@ -16,6 +16,8 @@ import {
 import tokenModalStyles from './tokenModal.style';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { TokenInfo } from '../../../../modules/dataModule/types/tokenTypes';
+import COLORS from '../../../../assets/colors';
+import TYPOGRAPHY from '../../../../assets/typography';
 
 const { height } = Dimensions.get('window');
 
@@ -133,42 +135,6 @@ export default function SelectTokenModal({
     );
   }, [tokens, searchInput]);
 
-  /**
-   * Renders a single token item in the list
-   * @param {{item: TokenInfo}} props - The token item to render
-   * @returns {JSX.Element} The rendered token item
-   */
-  const renderItem = ({ item }: { item: TokenInfo }) => (
-    <TouchableOpacity
-      style={tokenModalStyles.tokenItem}
-      onPress={() => onTokenSelected(item)}
-      activeOpacity={0.7}>
-      <View style={tokenModalStyles.tokenItemContent}>
-        {item.logoURI ? (
-          <Image
-            source={{ uri: item.logoURI }}
-            style={tokenModalStyles.tokenLogo}
-            resizeMode="contain"
-          />
-        ) : (
-          <View style={[tokenModalStyles.tokenLogo, { backgroundColor: '#F3F4F6' }]}>
-            <Text style={{ color: '#6B7280', fontWeight: '600', fontSize: 12 }}>
-              {item.symbol.charAt(0)}
-            </Text>
-          </View>
-        )}
-        <View style={tokenModalStyles.tokenTextContainer}>
-          <Text style={tokenModalStyles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
-            {item.symbol}
-          </Text>
-          <Text style={tokenModalStyles.tokenName} numberOfLines={1} ellipsizeMode="tail">
-            {item.name}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <Modal visible={visible} transparent animationType="slide">
       <TouchableWithoutFeedback onPress={onClose}>
@@ -189,50 +155,71 @@ export default function SelectTokenModal({
           </View>
 
           <View style={tokenModalStyles.searchContainer}>
-            <FontAwesome5 name="search" size={14} color="#9CA3AF" style={tokenModalStyles.searchIcon} />
+            <FontAwesome5 name="search" size={14} color={COLORS.accessoryDarkColor} style={tokenModalStyles.searchIcon} />
             <TextInput
               style={tokenModalStyles.searchInput}
               placeholder="Search by name, symbol, or address"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={COLORS.accessoryDarkColor}
               value={searchInput}
               onChangeText={setSearchInput}
-              clearButtonMode="while-editing"
             />
           </View>
 
           {loading ? (
             <View style={tokenModalStyles.loadingContainer}>
-              <ActivityIndicator
-                size="large"
-                color="#3871DD"
-              />
+              <ActivityIndicator size="large" color={COLORS.brandBlue} />
               <Text style={tokenModalStyles.loadingText}>Loading tokens...</Text>
             </View>
+          ) : filteredTokens.length === 0 ? (
+            <View style={tokenModalStyles.emptyContainer}>
+              <Text style={tokenModalStyles.emptyText}>
+                No tokens found matching your search
+              </Text>
+            </View>
           ) : (
-            <>
-              <FlatList
-                data={filteredTokens}
-                keyExtractor={item => item.address}
-                renderItem={renderItem}
-                contentContainerStyle={tokenModalStyles.listContentContainer}
-                showsVerticalScrollIndicator={true}
-                keyboardShouldPersistTaps="handled"
-                ListEmptyComponent={
-                  <View style={tokenModalStyles.emptyContainer}>
-                    <Text style={tokenModalStyles.emptyText}>
-                      No tokens found matching "{searchInput}"
-                    </Text>
+            <FlatList
+              data={filteredTokens}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={tokenModalStyles.tokenItem}
+                  onPress={() => onTokenSelected(item)}
+                  activeOpacity={0.7}>
+                  <View style={tokenModalStyles.tokenItemContent}>
+                    {item.logoURI ? (
+                      <Image
+                        source={{ uri: item.logoURI }}
+                        style={tokenModalStyles.tokenLogo}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <View style={tokenModalStyles.tokenLogo}>
+                        <Text style={{ color: COLORS.accessoryDarkColor, fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold), fontSize: TYPOGRAPHY.size.xs }}>
+                          {item.symbol.charAt(0)}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={tokenModalStyles.tokenTextContainer}>
+                      <Text style={tokenModalStyles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
+                        {item.symbol}
+                      </Text>
+                      <Text style={tokenModalStyles.tokenName} numberOfLines={1} ellipsizeMode="tail">
+                        {item.name}
+                      </Text>
+                    </View>
                   </View>
-                }
-              />
-
-              <TouchableOpacity
-                style={tokenModalStyles.closeButton}
-                onPress={onClose}>
-                <Text style={tokenModalStyles.closeButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.address}
+              contentContainerStyle={tokenModalStyles.listContentContainer}
+            />
           )}
+
+          <TouchableOpacity
+            style={tokenModalStyles.closeButton}
+            onPress={onClose}
+          >
+            <Text style={tokenModalStyles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </Modal>

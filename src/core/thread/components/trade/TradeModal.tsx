@@ -13,6 +13,8 @@ import {
   Image,
   Clipboard,
   FlatList,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { PublicKey, Connection, clusterApiUrl, Cluster } from '@solana/web3.js';
 import {
@@ -36,15 +38,19 @@ import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '@/mod
 import { FontAwesome5 } from '@expo/vector-icons';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 import { TokenInfo } from '@/modules/dataModule/types/tokenTypes';
-import { 
-  DEFAULT_SOL_TOKEN, 
-  DEFAULT_USDC_TOKEN, 
-  fetchTokenBalance, 
+import {
+  DEFAULT_SOL_TOKEN,
+  DEFAULT_USDC_TOKEN,
+  fetchTokenBalance,
   fetchTokenPrice as fetchTokenPriceFromModule,
   estimateTokenUsdValue,
   ensureCompleteTokenInfo
 } from '../../../../modules/dataModule';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
+import COLORS from '../../../../assets/colors';
+
+// Get screen dimensions
+const { height } = Dimensions.get('window');
 
 /**
  * Available tab options in the TradeModal
@@ -130,6 +136,34 @@ export default function TradeModal({
     userPublicKey ? userPublicKey.toString() : null,
     [userPublicKey]
   );
+
+  // Create animated value for slide-up animation
+  const slideAnimation = useRef(new Animated.Value(0)).current;
+
+  // Handle animation when visibility changes
+  useEffect(() => {
+    if (visible) {
+      // Animate the drawer sliding up
+      Animated.timing(slideAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Animate the drawer sliding down
+      Animated.timing(slideAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, slideAnimation]);
+
+  // Calculate the transform based on the animated value
+  const translateY = slideAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [height, 0],
+  });
 
   /**
    * Setup cleanup and initialization
@@ -464,8 +498,26 @@ export default function TradeModal({
       }
       isRefreshingRef.current = false;
       hasLoadedInitialDataRef.current = true;
-      }
+    }
   }, [walletAddress, selectedPastSwap]);
+
+  /**
+   * Handle refresh explicitly with a forced update
+   */
+  const forceRefresh = useCallback(async () => {
+    console.log('[TradeModal] Force refreshing swaps...');
+
+    if (!walletAddress) {
+      console.log('[TradeModal] No wallet address, cannot refresh');
+      return;
+    }
+
+    // Reset refresh state to ensure we're starting fresh
+    isRefreshingRef.current = false;
+
+    // Call the refresh function
+    await handleRefresh();
+  }, [walletAddress, handleRefresh]);
 
   // Fetch past swaps when modal becomes visible - only once
   useEffect(() => {
@@ -502,7 +554,7 @@ export default function TradeModal({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={handleClose}>
       {/* Container for the entire screen */}
       <View style={styles.flexFill}>
@@ -511,157 +563,171 @@ export default function TradeModal({
           <View style={styles.darkOverlay} />
         </TouchableWithoutFeedback>
 
-        {/* Centered wrapper for the modal content */}
+        {/* Bottom drawer wrapper */}
         <View style={styles.centeredWrapper}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalContentContainer}>
+          <Animated.View
+            style={[
+              styles.modalContentContainer,
+              { transform: [{ translateY }] },
+            ]}>
             <TouchableWithoutFeedback>
-              <View>
-                <View style={styles.header}>
-                  <Text style={styles.headerTitle}>Trade History</Text>
-                  <TouchableOpacity
-                    style={styles.headerClose}
-                    onPress={handleClose}>
-                    <Text style={styles.headerCloseText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <View>
+                  {/* Drag handle for bottom drawer UI */}
+                  <View style={styles.dragHandle} />
 
-                {/* Past Swaps Tab Content */}
-        <View style={styles.pastSwapsContainer}>
-          {walletAddress ? (
-            <>
-              <View style={styles.pastSwapsContent}>
-                <View style={styles.pastSwapsHeader}>
-                  <Text style={styles.pastSwapsHeaderText}>
-                    Recent Swaps
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.refreshButton}
-                    onPress={handleRefresh}
-                    disabled={refreshing || initialLoading}
-                  >
-                    <FontAwesome5
-                      name="sync"
-                      size={14}
-                      color="#4B5563"
-                      style={(refreshing || initialLoading) ? { transform: [{ rotate: '45deg' }] } : undefined}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {initialLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3871DD" />
-                    <Text style={styles.loadingText}>
-                      Loading your transaction history...
-                    </Text>
+                  <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Trade History</Text>
+                    <TouchableOpacity
+                      style={styles.headerClose}
+                      onPress={handleClose}>
+                      <Text style={styles.headerCloseText}>✕</Text>
+                    </TouchableOpacity>
                   </View>
-                ) : refreshing ? (
-                  <View style={styles.refreshingOverlay}>
-                    <ActivityIndicator size="small" color="#3871DD" />
-                  </View>
-                ) : swaps.length === 0 ? (
-                  <View style={styles.emptySwapsList}>
-                    <View style={styles.emptySwapsIcon}>
-                      <FontAwesome5 name="exchange-alt" size={24} color="#FFFFFF" />
-                    </View>
-                    <Text style={styles.emptySwapsText}>No Swap History</Text>
-                    <Text style={styles.emptySwapsSubtext}>
-                      Complete a token swap to see it here
-                    </Text>
-                  </View>
-                ) : (
-                  <FlatList
-                    data={swaps}
-                    renderItem={({ item }) => {
-                      // Debug logging to see what's available
-                      console.log(`[TradeModal] Rendering swap item:`, {
-                        inputTokenImage: item.inputToken.image,
-                        inputTokenLogoURI: (item.inputToken as any).logoURI,
-                        outputTokenImage: item.outputToken.image,
-                        outputTokenLogoURI: (item.outputToken as any).logoURI
-                      });
 
-                      // Helper function to get token logo URL with fallbacks
-                      const getTokenLogoUrl = (token: any) => {
-                        // Try the properties we know about
-                        if (token.logoURI) return token.logoURI;
-                        if (token.image) return token.image;
+                  {/* Past Swaps Tab Content */}
+                  <View style={styles.pastSwapsContainer}>
+                    {walletAddress ? (
+                      <>
+                        <View style={styles.pastSwapsContent}>
+                          <View style={styles.pastSwapsHeader}>
+                            <Text style={styles.pastSwapsHeaderText}>
+                              Recent Swaps
+                            </Text>
+                            <TouchableOpacity
+                              style={styles.refreshButton}
+                              onPress={forceRefresh}
+                              disabled={refreshing || initialLoading}
+                            >
+                              <FontAwesome5
+                                name="sync"
+                                size={14}
+                                color={COLORS.accessoryDarkColor}
+                                style={[
+                                  (refreshing || initialLoading) && {
+                                    transform: [{ rotate: '45deg' }]
+                                  },
+                                  refreshing && { opacity: 0.7 }
+                                ]}
+                              />
+                            </TouchableOpacity>
+                          </View>
 
-                        // Fallbacks for common tokens
-                        if (token.symbol === 'SOL' || token.mint === 'So11111111111111111111111111111111111111112') {
-                          return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
-                        }
+                          {initialLoading ? (
+                            <View style={styles.loadingContainer}>
+                              <ActivityIndicator size="large" color={COLORS.brandBlue} />
+                              <Text style={styles.loadingText}>
+                                Loading your transaction history...
+                              </Text>
+                            </View>
+                          ) : refreshing ? (
+                            <View style={styles.refreshingOverlay}>
+                              <ActivityIndicator size="large" color={COLORS.brandBlue} />
+                              <Text style={styles.loadingText}>Refreshing...</Text>
+                            </View>
+                          ) : swaps.length === 0 ? (
+                            <View style={styles.emptySwapsList}>
+                              <View style={styles.emptySwapsIcon}>
+                                <FontAwesome5 name="exchange-alt" size={24} color={COLORS.white} />
+                              </View>
+                              <Text style={styles.emptySwapsText}>No Swap History</Text>
+                              <Text style={styles.emptySwapsSubtext}>
+                                Complete a token swap to see it here
+                              </Text>
+                            </View>
+                          ) : (
+                            <FlatList
+                              data={swaps}
+                              renderItem={({ item }) => {
+                                // Debug logging to see what's available
+                                console.log(`[TradeModal] Rendering swap item:`, {
+                                  inputTokenImage: item.inputToken.image,
+                                  inputTokenLogoURI: (item.inputToken as any).logoURI,
+                                  outputTokenImage: item.outputToken.image,
+                                  outputTokenLogoURI: (item.outputToken as any).logoURI
+                                });
 
-                        if (token.symbol === 'USDC' || token.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
-                          return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png';
-                        }
+                                // Helper function to get token logo URL with fallbacks
+                                const getTokenLogoUrl = (token: any) => {
+                                  // Try the properties we know about
+                                  if (token.logoURI) return token.logoURI;
+                                  if (token.image) return token.image;
 
-                        // No logo found
-                        return null;
-                      };
+                                  // Fallbacks for common tokens
+                                  if (token.symbol === 'SOL' || token.mint === 'So11111111111111111111111111111111111111112') {
+                                    return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
+                                  }
 
-                      return (
-                        <View style={styles.swapItemContainer}>
-                          <PastSwapItem
-                            swap={item}
-                            onSelect={handlePastSwapSelected}
-                            selected={selectedPastSwap?.signature === item.signature}
-                            inputTokenLogoURI={getTokenLogoUrl(item.inputToken)}
-                            outputTokenLogoURI={getTokenLogoUrl(item.outputToken)}
-                          />
+                                  if (token.symbol === 'USDC' || token.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
+                                    return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png';
+                                  }
+
+                                  // No logo found
+                                  return null;
+                                };
+
+                                return (
+                                  <View style={styles.swapItemContainer}>
+                                    <PastSwapItem
+                                      swap={item}
+                                      onSelect={handlePastSwapSelected}
+                                      selected={selectedPastSwap?.signature === item.signature}
+                                      inputTokenLogoURI={getTokenLogoUrl(item.inputToken)}
+                                      outputTokenLogoURI={getTokenLogoUrl(item.outputToken)}
+                                    />
+                                  </View>
+                                );
+                              }}
+                              keyExtractor={item => item.signature}
+                              contentContainerStyle={styles.swapsList}
+                              showsVerticalScrollIndicator={true}
+                              initialNumToRender={5}
+                              onRefresh={handleRefresh}
+                              refreshing={refreshing}
+                            />
+                          )}
                         </View>
-                      );
-                    }}
-                    keyExtractor={item => item.signature}
-                    contentContainerStyle={styles.swapsList}
-                    showsVerticalScrollIndicator={true}
-                    initialNumToRender={5}
-                    onRefresh={handleRefresh}
-                    refreshing={refreshing}
-                  />
-                )}
-              </View>
 
-              {selectedPastSwap && !loading && !initialLoading && (
-                <TouchableOpacity
-                  style={styles.swapButton}
-                  onPress={handleSharePastSwap}>
-                  <Text style={styles.swapButtonText}>
-                    Share Selected Swap
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </>
-          ) : (
-            <View style={styles.walletNotConnected}>
-              <View style={styles.connectWalletIcon}>
-                <FontAwesome5 name="wallet" size={20} color="#9CA3AF" />
-              </View>
-              <Text style={styles.walletNotConnectedText}>
-                Please connect your wallet to view your past swaps
-              </Text>
-            </View>
-          )}
+                        {selectedPastSwap && !loading && !initialLoading && (
+                          <TouchableOpacity
+                            style={styles.swapButton}
+                            onPress={handleSharePastSwap}>
+                            <Text style={styles.swapButtonText}>
+                              Share Selected Swap
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </>
+                    ) : (
+                      <View style={styles.walletNotConnected}>
+                        <View style={styles.connectWalletIcon}>
+                          <FontAwesome5 name="wallet" size={20} color={COLORS.accessoryDarkColor} />
+                        </View>
+                        <Text style={styles.walletNotConnectedText}>
+                          Please connect your wallet to view your past swaps
+                        </Text>
+                      </View>
+                    )}
 
-          {loading && selectedPastSwap && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#3871DD" />
-              <Text style={styles.loadingText}>Sharing selected swap...</Text>
-            </View>
-          )}
-            </View>
+                    {loading && selectedPastSwap && (
+                      <View style={styles.loadingOverlay}>
+                        <ActivityIndicator size="large" color={COLORS.brandBlue} />
+                        <Text style={styles.loadingText}>Sharing selected swap...</Text>
+                      </View>
+                    )}
+                  </View>
 
-                {!!resultMsg && (
-                  <Text style={styles.resultText}>{resultMsg}</Text>
-                )}
-                {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
-              </View>
+                  {!!resultMsg && (
+                    <Text style={styles.resultText}>{resultMsg}</Text>
+                  )}
+                  {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+                </View>
+              </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
-          </KeyboardAvoidingView>
-          </View>
+          </Animated.View>
         </View>
+      </View>
     </Modal>
   );
 }

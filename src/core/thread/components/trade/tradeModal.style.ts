@@ -1,4 +1,6 @@
 import {StyleSheet, Platform, Dimensions} from 'react-native';
+import COLORS from '../../../../assets/colors';
+import TYPOGRAPHY from '../../../../assets/typography';
 
 const {width, height} = Dimensions.get('window');
 
@@ -8,7 +10,7 @@ export default StyleSheet.create({
     flex: 1,
   },
   darkOverlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     position: 'absolute',
     left: 0,
     right: 0,
@@ -17,14 +19,15 @@ export default StyleSheet.create({
   },
   centeredWrapper: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
   modalContentContainer: {
-    backgroundColor: 'white',
-    width: '92%',
-    maxWidth: 420,
-    borderRadius: 16,
+    backgroundColor: COLORS.lightBackground,
+    width: '100%',
+    maxWidth: '100%',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 24,
@@ -32,14 +35,26 @@ export default StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.15,
+        shadowOffset: {width: 0, height: -4},
+        shadowOpacity: 0.3,
         shadowRadius: 12,
       },
       android: {
         elevation: 8,
       },
     }),
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    borderBottomWidth: 0,
+  },
+
+  dragHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: COLORS.borderDarkColor,
+    alignSelf: 'center',
+    marginBottom: 15,
   },
 
   /** Header styles */
@@ -51,10 +66,10 @@ export default StyleSheet.create({
     position: 'relative',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    letterSpacing: -0.5,
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    color: COLORS.white,
+    letterSpacing: TYPOGRAPHY.letterSpacing,
   },
   headerClose: {
     position: 'absolute',
@@ -66,11 +81,11 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.lighterBackground,
   },
   headerCloseText: {
-    fontSize: 18,
-    color: '#4B5563',
+    fontSize: TYPOGRAPHY.size.lg,
+    color: COLORS.accessoryDarkColor,
     lineHeight: 18,
   },
 
@@ -78,7 +93,7 @@ export default StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
     marginBottom: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
     padding: 4,
   },
@@ -89,13 +104,13 @@ export default StyleSheet.create({
     borderRadius: 8,
   },
   tabButtonActive: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.lighterBackground,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: {width: 0, height: 1},
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
       },
       android: {
         elevation: 2,
@@ -103,13 +118,13 @@ export default StyleSheet.create({
     }),
   },
   tabButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    color: COLORS.accessoryDarkColor,
   },
   tabButtonTextActive: {
-    fontWeight: '600',
-    color: '#3871DD',
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.brandBlue,
   },
 
   /** Tab content wrapper */
@@ -128,7 +143,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     padding: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
   },
   tokenColumn: {
@@ -141,12 +156,12 @@ export default StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.lighterBackground,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: {width: 0, height: 1},
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.15,
         shadowRadius: 2,
       },
       android: {
@@ -155,26 +170,26 @@ export default StyleSheet.create({
     }),
   },
   arrowText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3871DD',
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    color: COLORS.brandBlue,
   },
   tokenSelector: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.borderDarkColor,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.lighterBackground,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 6,
   },
   tokenSelectorText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
   },
   tokenIcon: {
     width: 24,
@@ -185,7 +200,7 @@ export default StyleSheet.create({
   chevronDown: {
     width: 16,
     height: 16,
-    opacity: 0.5,
+    opacity: 0.7,
   },
   tokenSelectorInner: {
     flexDirection: 'row',
@@ -194,36 +209,40 @@ export default StyleSheet.create({
 
   /** Text inputs and labels */
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.accessoryDarkColor,
     marginBottom: 8,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.borderDarkColor,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
     marginBottom: 20,
-    fontSize: 16,
-    color: '#111827',
-    backgroundColor: '#FFF',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.white,
+    backgroundColor: COLORS.lighterBackground,
   },
 
   /** Buttons & loaders */
   swapButton: {
-    backgroundColor: '#3871DD',
+    backgroundColor: COLORS.brandBlue,
     borderRadius: 10,
-    paddingVertical: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 8,
+    alignSelf: 'center',
+    width: 'auto',
+    maxWidth: '80%',
     ...Platform.select({
       ios: {
-        shadowColor: '#3871DD',
+        shadowColor: 'rgba(0, 171, 228, 0.5)',
         shadowOffset: {width: 0, height: 3},
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.25,
         shadowRadius: 6,
       },
       android: {
@@ -232,9 +251,9 @@ export default StyleSheet.create({
     }),
   },
   swapButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '700',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
   },
   activityLoader: {
     marginVertical: 20,
@@ -243,24 +262,24 @@ export default StyleSheet.create({
   /** Result & error messages */
   resultText: {
     color: '#10B981',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.size.sm,
     marginTop: 12,
     textAlign: 'center',
-    fontWeight: '600',
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
   errorText: {
-    color: '#EF4444',
-    fontSize: 14,
+    color: COLORS.errorRed,
+    fontSize: TYPOGRAPHY.size.sm,
     marginTop: 12,
     textAlign: 'center',
-    fontWeight: '600',
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
 
   /**
    * Confirmation ("Share your trade?") Modal Styles
    */
   sharePromptBackdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     position: 'absolute',
     left: 0,
     right: 0,
@@ -273,7 +292,7 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
   sharePromptBox: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.lightBackground,
     width: '85%',
     borderRadius: 16,
     padding: 24,
@@ -281,27 +300,29 @@ export default StyleSheet.create({
       ios: {
         shadowColor: '#000',
         shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.3,
         shadowRadius: 10,
       },
       android: {
         elevation: 8,
       },
     }),
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   sharePromptTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     marginBottom: 12,
     textAlign: 'center',
-    color: '#111827',
+    color: COLORS.white,
   },
   sharePromptDescription: {
-    fontSize: 15,
-    color: '#4B5563',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.accessoryDarkColor,
     marginBottom: 24,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: TYPOGRAPHY.lineHeight.md,
   },
   sharePromptButtonRow: {
     flexDirection: 'row',
@@ -315,15 +336,17 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
   sharePromptBtnCancel: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.darkerBackground,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   sharePromptBtnConfirm: {
-    backgroundColor: '#3871DD',
+    backgroundColor: COLORS.brandBlue,
     ...Platform.select({
       ios: {
-        shadowColor: '#3871DD',
+        shadowColor: 'rgba(0, 171, 228, 0.5)',
         shadowOffset: {width: 0, height: 3},
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.25,
         shadowRadius: 6,
       },
       android: {
@@ -332,23 +355,25 @@ export default StyleSheet.create({
     }),
   },
   sharePromptBtnText: {
-    fontWeight: '600',
-    fontSize: 16,
-    color: '#333',
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.accessoryDarkColor,
   },
   sharePromptConfirmText: {
-    color: '#FFF',
+    color: COLORS.white,
   },
 
   // Past swaps tab
   pastSwapsContainer: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
     width: '100%',
     height: Platform.OS === 'ios' ? height * 0.45 : height * 0.4,
     maxHeight: 450,
     marginBottom: 16,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   pastSwapsContent: {
     flex: 1,
@@ -364,18 +389,18 @@ export default StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: COLORS.borderDarkColor,
   },
   pastSwapsHeaderText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
   },
   refreshButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.lighterBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -387,28 +412,28 @@ export default StyleSheet.create({
   },
   refreshingOverlay: {
     position: 'absolute',
-    top: 12,
-    right: 16,
     zIndex: 10,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(12, 16, 26, 0.7)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 12,
   },
   walletNotConnected: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
     margin: 10,
   },
   walletNotConnectedText: {
-    fontSize: 16,
-    color: '#4B5563',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.accessoryDarkColor,
     textAlign: 'center',
     marginTop: 12,
   },
@@ -416,7 +441,7 @@ export default StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: COLORS.lighterBackground,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -427,15 +452,15 @@ export default StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(12, 16, 26, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 16,
-    color: '#3871DD',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.brandBlue,
     textAlign: 'center',
   },
   swapItemContainer: {
@@ -452,21 +477,21 @@ export default StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#3871DD',
+    backgroundColor: COLORS.brandBlue,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   emptySwapsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
     textAlign: 'center',
     marginBottom: 8,
   },
   emptySwapsSubtext: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.accessoryDarkColor,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -477,7 +502,7 @@ export default StyleSheet.create({
   // Input amount section
   amountInputContainer: {
     marginBottom: 20,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
     padding: 12,
   },
@@ -488,38 +513,38 @@ export default StyleSheet.create({
   },
   amountInput: {
     flex: 1,
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
     paddingVertical: 8,
   },
   maxButton: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: COLORS.lighterBackground,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
   },
   maxButtonText: {
-    color: '#3871DD',
-    fontWeight: '600',
-    fontSize: 14,
+    color: COLORS.brandBlue,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontSize: TYPOGRAPHY.size.sm,
   },
   amountUsdValue: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.accessoryDarkColor,
     marginTop: 4,
   },
   
   // Transaction history tab
   txHistoryHeader: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
     marginVertical: 12,
     paddingHorizontal: 16,
   },
   txSignatureInputContainer: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -527,7 +552,7 @@ export default StyleSheet.create({
   pasteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: COLORS.lighterBackground,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -535,14 +560,14 @@ export default StyleSheet.create({
     marginTop: 8,
   },
   pasteButtonText: {
-    color: '#3871DD',
-    fontWeight: '600',
+    color: COLORS.brandBlue,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     marginLeft: 4,
   },
   txDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.accessoryDarkColor,
+    lineHeight: TYPOGRAPHY.lineHeight.sm,
     marginBottom: 12,
   },
 });
