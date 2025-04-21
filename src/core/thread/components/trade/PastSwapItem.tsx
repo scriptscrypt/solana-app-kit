@@ -8,11 +8,13 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import {format} from 'date-fns';
-import {FontAwesome5} from '@expo/vector-icons';
+import { format } from 'date-fns';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { SwapTransaction, TokenMetadata } from '../../../../modules/dataModule/services/swapTransactions';
+import COLORS from '../../../../assets/colors';
+import TYPOGRAPHY from '../../../../assets/typography';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface PastSwapItemProps {
   swap: SwapTransaction;
@@ -69,7 +71,7 @@ function formatTokenAmount(amount: number, decimals: number): string {
     return result.toFixed(2);
   }
 
-  return result.toLocaleString(undefined, {maximumFractionDigits: 2});
+  return result.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 /**
@@ -105,7 +107,7 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
   inputTokenLogoURI,
   outputTokenLogoURI,
 }) => {
-  const {inputToken, outputToken, timestamp} = swap;
+  const { inputToken, outputToken, timestamp } = swap;
 
   // Format the token amounts with proper decimals
   const formattedInputAmount = formatTokenAmount(
@@ -156,7 +158,7 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
           <View style={styles.tokenIconContainer}>
             {inputImageSource ? (
               <Image
-                source={{uri: inputImageSource}}
+                source={{ uri: inputImageSource }}
                 style={styles.tokenIcon}
                 resizeMode="contain"
               />
@@ -186,7 +188,7 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
 
         {/* Arrow */}
         <View style={styles.arrowContainer}>
-          <FontAwesome5 name="arrow-right" size={12} color="#3871DD" />
+          <FontAwesome5 name="arrow-right" size={12} color={COLORS.brandBlue} />
         </View>
 
         {/* Output Token */}
@@ -194,7 +196,7 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
           <View style={styles.tokenIconContainer}>
             {outputImageSource ? (
               <Image
-                source={{uri: outputImageSource}}
+                source={{ uri: outputImageSource }}
                 style={styles.tokenIcon}
                 resizeMode="contain"
               />
@@ -235,14 +237,14 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
 
 const styles = StyleSheet.create({
   swapItem: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.lighterBackground,
     borderRadius: 12,
     marginVertical: 6,
     padding: 16,
     ...Platform.select({
       ios: {
-        shadowColor: 'rgba(0,0,0,0.05)',
-        shadowOffset: {width: 0, height: 2},
+        shadowColor: 'rgba(0,0,0,0.2)',
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 1,
         shadowRadius: 4,
       },
@@ -251,11 +253,13 @@ const styles = StyleSheet.create({
       },
     }),
     position: 'relative',
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   selectedSwapItem: {
     borderWidth: 2,
-    borderColor: '#3871DD',
-    backgroundColor: '#F0F7FF',
+    borderColor: COLORS.brandBlue,
+    backgroundColor: 'rgba(0, 171, 228, 0.1)',
   },
   swapHeader: {
     flexDirection: 'row',
@@ -264,20 +268,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dateText: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.accessoryDarkColor,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   signatureBadge: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.darkerBackground,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   signatureText: {
-    fontSize: 10,
-    color: '#4B5563',
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.accessoryDarkColor,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   tokensContainer: {
     flexDirection: 'row',
@@ -297,36 +301,36 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background,
   },
   placeholderIcon: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   placeholderText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    color: COLORS.accessoryDarkColor,
   },
   tokenInfo: {
     flex: 1,
   },
   tokenAmount: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
     marginBottom: 2,
   },
   tokenSymbol: {
-    fontSize: 13,
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.accessoryDarkColor,
   },
   arrowContainer: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 12,
@@ -338,7 +342,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#3871DD',
+    backgroundColor: COLORS.brandBlue,
     alignItems: 'center',
     justifyContent: 'center',
   },
