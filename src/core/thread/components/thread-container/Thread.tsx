@@ -3,7 +3,6 @@ import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from 'react
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThreadComposer } from '../thread-composer/ThreadComposer';
-import { getMergedTheme } from '../../utils';
 import { getThreadBaseStyles, headerStyles, tabStyles } from './Thread.styles';
 import { mergeStyles } from '../../utils';
 import Icons from '../../../../assets/svgs';
@@ -41,13 +40,10 @@ export const Thread: React.FC<ThreadProps> = ({
   // Get the stored profile pic from Redux
   const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
 
-  // 1. Get the merged theme
-  const mergedTheme = getMergedTheme(themeOverrides);
-  
-  // 2. Get the base styles for this component (doesn't need theme argument anymore)
+  // 1. Get the base styles for this component (doesn't need theme argument anymore)
   const baseComponentStyles = getThreadBaseStyles(); 
 
-  // 3. Use the utility function to merge base styles, overrides, and user sheet
+  // 2. Use the utility function to merge base styles, overrides, and user sheet
   const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
   // Local onRefresh if external prop is not provided

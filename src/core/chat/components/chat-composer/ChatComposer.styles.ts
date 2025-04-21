@@ -2,73 +2,65 @@ import { StyleSheet } from 'react-native';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
-// Function to create base styles for ThreadComposer
-export function getThreadComposerBaseStyles(
-  // Remove the theme parameter as it's no longer used
-) {
+// Function to create base styles for ChatComposer
+export function getChatComposerBaseStyles() {
   return StyleSheet.create({
     composerContainer: {
       flexDirection: 'row',
       padding: 12,
-      paddingBottom: 8,
+      paddingBottom: 0,
       backgroundColor: COLORS.background,
-      borderBottomColor: COLORS.borderDarkColor,
-      borderBottomWidth: 1,
+      borderTopColor: COLORS.borderDarkColor,
+      borderTopWidth: 1,
+      alignItems: 'center',
     },
-    composerAvatarContainer: {
-      marginRight: 12,
-    },
-    composerAvatar: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: COLORS.background,
-    },
-    composerMiddle: {
+    inputContainer: {
       flex: 1,
-    },
-    composerUsername: {
-      fontSize: TYPOGRAPHY.size.md,
-      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
-      marginBottom: 4,
-      color: COLORS.white,
-      fontFamily: TYPOGRAPHY.fontFamily,
+      flexDirection: 'row',
+      backgroundColor: COLORS.darkerBackground,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      minHeight: 48,
+      alignItems: 'center',
     },
     composerInput: {
+      flex: 1,
       fontSize: TYPOGRAPHY.size.md,
       fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.regular),
       color: COLORS.white,
       padding: 0,
-      minHeight: 30,
-      textAlignVertical: 'top',
+      margin: 0,
+      textAlignVertical: 'center',
       fontFamily: TYPOGRAPHY.fontFamily,
     },
-    iconsRow: {
-      flexDirection: 'row',
-      marginTop: 0,
-      marginBottom: 0,
-      paddingBottom: 0,
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    leftIcons: {
+    iconsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
+      marginLeft: 8,
     },
     iconButton: {
-      marginRight: 10,
-      padding: 4,
+      padding: 6,
+      marginLeft: 4,
     },
-    actionButtonText: {
-      fontSize: TYPOGRAPHY.size.xs,
-      color: COLORS.greyMid,
-      fontFamily: TYPOGRAPHY.fontFamily,
+    sendButton: {
+      width: 40, 
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: COLORS.brandBlue,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 8,
+    },
+    disabledSendButton: {
+      backgroundColor: COLORS.greyDark,
     },
     imagePreviewContainer: {
       position: 'relative',
       marginTop: 8,
-      width: 150,
-      height: 150,
+      marginBottom: 4,
+      width: 120,
+      height: 120,
       borderRadius: 12,
       overflow: 'hidden',
       backgroundColor: COLORS.background,
@@ -97,6 +89,7 @@ export function getThreadComposerBaseStyles(
       flexDirection: 'row',
       alignItems: 'center',
       marginTop: 8,
+      marginBottom: 4,
       padding: 8,
       borderRadius: 8,
       backgroundColor: COLORS.background,
@@ -117,7 +110,7 @@ export function getThreadComposerBaseStyles(
     },
     composerTradePrice: {
       fontSize: 12,
-      color: '#666',
+      color: COLORS.greyMid,
     },
     composerTradeRemove: {
       width: 24,
@@ -127,68 +120,75 @@ export function getThreadComposerBaseStyles(
       alignItems: 'center',
       justifyContent: 'center',
     },
-    sendButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    // Migrated modal styles from thread.styles.ts (originally from ThreadComposer)
+    // Modal styles for NFT listing
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: 'rgba(0,0,0,0.7)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     modalContainer: {
       width: '85%',
       maxHeight: '80%',
-      backgroundColor: '#fff',
-      borderRadius: 10,
+      backgroundColor: COLORS.background,
+      borderRadius: 16,
       padding: 16,
       alignItems: 'center',
     },
     modalTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 8,
+      fontSize: TYPOGRAPHY.size.lg,
+      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+      marginBottom: 12,
+      color: COLORS.white,
+      fontFamily: TYPOGRAPHY.fontFamily,
     },
     listingCard: {
       flexDirection: 'row',
-      padding: 8,
+      padding: 10,
       borderWidth: 1,
-      borderColor: '#eee',
-      borderRadius: 8,
+      borderColor: COLORS.borderDarkColor,
+      borderRadius: 12,
       marginBottom: 8,
       alignItems: 'center',
+      backgroundColor: COLORS.darkerBackground,
     },
     listingImage: {
-      width: 40,
-      height: 40,
-      borderRadius: 4,
-      backgroundColor: '#f0f0f0',
+      width: 50,
+      height: 50,
+      borderRadius: 8,
+      backgroundColor: COLORS.background,
+    },
+    listingTextContainer: {
+      flex: 1,
+      marginLeft: 12,
     },
     listingName: {
-      fontWeight: '600',
-      fontSize: 14,
-      color: '#333',
+      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+      fontSize: TYPOGRAPHY.size.md,
+      color: COLORS.white,
+      fontFamily: TYPOGRAPHY.fontFamily,
     },
     listingPrice: {
       marginTop: 2,
-      fontSize: 12,
-      color: '#999',
+      fontSize: TYPOGRAPHY.size.sm,
+      color: COLORS.greyLight,
+      fontFamily: TYPOGRAPHY.fontFamily,
     },
     closeButton: {
-      marginTop: 12,
-      backgroundColor: '#1d9bf0',
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 5,
+      marginTop: 16,
+      backgroundColor: COLORS.brandBlue,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 24,
     },
     closeButtonText: {
-      color: '#fff',
-      fontWeight: '600',
+      color: COLORS.white,
+      fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+      fontFamily: TYPOGRAPHY.fontFamily,
+    },
+    attachmentPreviewsContainer: {
+      width: '100%',
+      marginBottom: 4,
     },
   });
 } 

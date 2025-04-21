@@ -1,10 +1,8 @@
 import {StyleSheet} from 'react-native';
-import {THREAD_DEFAULT_THEME} from '../thread.theme'; // Adjust path if needed
 import COLORS from '@/assets/colors'; // Adjust path if needed
 import TYPOGRAPHY from '@/assets/typography'; // Adjust path if needed
 
 export function createPostHeaderStyles(
-  theme: typeof THREAD_DEFAULT_THEME,
   overrideStyles?: {[key: string]: object},
   userStyleSheet?: {[key: string]: object},
 ): {[key: string]: any} {
@@ -25,8 +23,8 @@ export function createPostHeaderStyles(
     },
     threadItemUsername: {
       fontWeight: '600',
-      fontSize: theme['--thread-font-size'],
-      color: theme['--thread-text-primary'],
+      fontSize: TYPOGRAPHY.size.sm,
+      color: COLORS.white,
       fontFamily: TYPOGRAPHY.fontFamily,
       ...overrideStyles?.threadItemUsername,
     },

@@ -13,7 +13,6 @@ import {
   Platform,
 } from 'react-native';
 import Icons from '../../../../assets/svgs';
-import { getMergedTheme } from '../../utils';
 import { createPostHeaderStyles } from './PostHeader.styles';
 import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
@@ -235,9 +234,7 @@ export default React.memo(function PostHeader({
 }: PostHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, createdAt } = post;
-  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
-  const styles = useMemo(() => createPostHeaderStyles(mergedTheme, styleOverrides), [
-    mergedTheme,
+  const styles = useMemo(() => createPostHeaderStyles(styleOverrides), [
     styleOverrides,
   ]);
 

@@ -1,18 +1,5 @@
 import { ThreadPost } from '../types';
 import { StyleSheet } from 'react-native';
-import { THREAD_DEFAULT_THEME } from '../components/thread.theme';
-
-/**
- * Merges the default theme with user-provided overrides.
- */
-export function getMergedTheme(
-  userTheme?: Partial<typeof THREAD_DEFAULT_THEME>,
-) {
-  return {
-    ...THREAD_DEFAULT_THEME,
-    ...(userTheme || {}),
-  };
-}
 
 /**
  * Gathers the ancestor chain for a given post.

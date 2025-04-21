@@ -1,10 +1,8 @@
 import {StyleSheet} from 'react-native';
-import {THREAD_DEFAULT_THEME} from '../thread.theme'; // Adjust path if needed
 import COLORS from '@/assets/colors'; // Adjust path if needed
 import TYPOGRAPHY from '@/assets/typography'; // Adjust path if needed
 
 export function createPostFooterStyles(
-  theme: typeof THREAD_DEFAULT_THEME,
   overrideStyles?: {[key: string]: object},
   userStyleSheet?: {[key: string]: object},
 ): {[key: string]: any} {
@@ -39,7 +37,7 @@ export function createPostFooterStyles(
     },
     iconText: {
       fontSize: 12,
-      color: theme['--thread-text-secondary'],
+      color: COLORS.accessoryDarkColor,
       marginLeft: -2,
       fontFamily: TYPOGRAPHY.fontFamily,
       ...overrideStyles?.iconText,

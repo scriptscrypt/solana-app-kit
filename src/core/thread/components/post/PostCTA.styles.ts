@@ -1,17 +1,15 @@
 import { StyleSheet, DimensionValue } from 'react-native';
-import { THREAD_DEFAULT_THEME } from '../thread.theme'; // Adjust path if needed
 import COLORS from '@/assets/colors'; // Adjust path if needed
 import TYPOGRAPHY from '@/assets/typography'; // Adjust path if needed
 
 export function createPostCTAStyles(
-  theme: typeof THREAD_DEFAULT_THEME,
   overrideStyles?: { [key: string]: object },
   userStyleSheet?: { [key: string]: object },
 ): { [key: string]: any } {
   const baseStyles: { [key: string]: any } = StyleSheet.create({
     /* CTA (PostCTA) - Migrated from thread.styles.ts */
     threadPostCTAContainer: {
-      width: theme['--thread-cta-container-width'] as DimensionValue,
+      width: '84%' as DimensionValue,
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 8,
