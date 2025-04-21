@@ -5,7 +5,6 @@ import PostHeader from '../post/PostHeader';
 import PostBody from '../post/PostBody';
 import PostFooter from '../post/PostFooter';
 import PostCTA from '../post/PostCTA';
-import { getMergedTheme } from '../../utils'; // Updated import path
 import { getThreadItemBaseStyles, retweetStyles } from './ThreadItem.styles'; // Import new base styles function
 import { mergeStyles } from '../../utils'; // Import the new utility function
 import { ThreadItemProps, ThreadPost } from '../../types';
@@ -33,13 +32,10 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
   const dispatch = useAppDispatch();
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // 1. Get the merged theme
-  const mergedTheme = getMergedTheme(themeOverrides);
+  // 1. Get the base styles for this component (no theme needed)
+  const baseComponentStyles = getThreadItemBaseStyles();
 
-  // 2. Get the base styles for this component, passing the theme
-  const baseComponentStyles = getThreadItemBaseStyles(mergedTheme);
-
-  // 3. Use the utility function to merge base styles, overrides, and user sheet
+  // 2. Use the utility function to merge base styles, overrides, and user sheet
   const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
   const containerStyle = [
