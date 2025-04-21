@@ -1,4 +1,18 @@
 import { ThreadPost } from '../types';
+import { StyleSheet } from 'react-native';
+import { THREAD_DEFAULT_THEME } from '../components/thread.theme';
+
+/**
+ * Merges the default theme with user-provided overrides.
+ */
+export function getMergedTheme(
+  userTheme?: Partial<typeof THREAD_DEFAULT_THEME>,
+) {
+  return {
+    ...THREAD_DEFAULT_THEME,
+    ...(userTheme || {}),
+  };
+}
 
 /**
  * Gathers the ancestor chain for a given post.
@@ -109,4 +123,54 @@ export function gatherDescendants(
 
   helper(postId);
   return result;
+}
+
+/**
+ * Merges base styles with user-provided overrides and stylesheets.
+ * Applies userStyleSheet first, then styleOverrides, ensuring overrides take precedence.
+ *
+ * @param baseStyles The base StyleSheet object created by StyleSheet.create.
+ * @param styleOverrides Optional object containing specific style overrides.
+ * @param userStyleSheet Optional object containing a full user-defined stylesheet.
+ * @returns A new object with merged styles.
+ */
+export function mergeStyles(
+  baseStyles: {[key: string]: any},
+  styleOverrides?: {[key: string]: object},
+  userStyleSheet?: {[key: string]: object},
+): {[key: string]: any} {
+  // Start with a copy of base styles
+  let mergedStyles = { ...baseStyles };
+
+  // Merge userStyleSheet if provided
+  if (userStyleSheet) {
+    Object.keys(userStyleSheet).forEach(key => {
+      if (mergedStyles.hasOwnProperty(key)) {
+        mergedStyles[key] = StyleSheet.flatten([
+          mergedStyles[key],
+          userStyleSheet[key],
+        ]);
+      } else {
+        // Add new keys from userStyleSheet if they don't exist in baseStyles
+        mergedStyles[key] = userStyleSheet[key];
+      }
+    });
+  }
+
+  // Merge explicit styleOverrides last (they take precedence)
+  if (styleOverrides) {
+    Object.keys(styleOverrides).forEach(key => {
+      if (mergedStyles.hasOwnProperty(key)) {
+        mergedStyles[key] = StyleSheet.flatten([
+          mergedStyles[key],
+          styleOverrides[key],
+        ]);
+      } else {
+        // Add new keys from styleOverrides if they don't exist
+        mergedStyles[key] = styleOverrides[key];
+      }
+    });
+  }
+
+  return mergedStyles;
 } 

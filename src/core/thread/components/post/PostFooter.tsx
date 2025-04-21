@@ -1,6 +1,6 @@
 // FILE: src/components/thread/post/PostFooter.tsx
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,8 @@ import {
   Dimensions,
 } from 'react-native';
 import Icons from '../../../../assets/svgs';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { getMergedTheme } from '../../utils';
+import { createPostFooterStyles } from './PostFooter.styles';
 import { ThreadPost, ThreadUser, ThreadSection } from '../thread.types';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import {
@@ -286,12 +287,24 @@ export default function PostFooter({
   themeOverrides,
   styleOverrides,
 }: PostFooterProps) {
-  // Local states for bookmark, reactions, and retweet modal.
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  // Use state for managing the counts locally for optimistic updates
+  const currentUser = useAppSelector(state => state.auth);
+  const [localReactionCount, setLocalReactionCount] = useState(post.reactionCount);
+  const [localRetweetCount, setLocalRetweetCount] = useState(post.retweetCount);
+  const [localQuoteCount, setLocalQuoteCount] = useState(post.quoteCount);
   const [showReactions, setShowReactions] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [showRetweetDrawer, setShowRetweetDrawer] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
   const [commentPressed, setCommentPressed] = useState(false);
+
+  // Memoize theme and styles
+  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
+  const styles = useMemo(() => createPostFooterStyles(mergedTheme, styleOverrides), [
+    mergedTheme,
+    styleOverrides,
+  ]);
 
   // Grab user info from Redux
   const address = useAppSelector(state => state.auth.address);
@@ -348,9 +361,6 @@ export default function PostFooter({
     useAppSelector(state =>
       state.thread.allPosts.find(p => p.id === post.id),
     ) || post;
-
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(mergedTheme, styleOverrides);
 
   const closeReactionBubble = () => {
     Animated.timing(scaleAnim, {

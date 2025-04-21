@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 
-import { Thread } from '@/core/thread/components/Thread';
+import { Thread } from '@/core/thread/components/thread-container/Thread';
 import {
   ThreadUser,
   ThreadPost,

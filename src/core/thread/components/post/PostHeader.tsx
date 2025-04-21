@@ -1,6 +1,6 @@
 // FILE: src/components/thread/post/PostHeader.tsx
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import {
   Platform,
 } from 'react-native';
 import Icons from '../../../../assets/svgs';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { getMergedTheme } from '../../utils';
+import { createPostHeaderStyles } from './PostHeader.styles';
 import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
@@ -234,8 +235,11 @@ export default React.memo(function PostHeader({
 }: PostHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, createdAt } = post;
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(mergedTheme, styleOverrides);
+  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
+  const styles = useMemo(() => createPostHeaderStyles(mergedTheme, styleOverrides), [
+    mergedTheme,
+    styleOverrides,
+  ]);
 
   // Get current user's wallet address to check post ownership
   const { address: currentUserAddress } = useWallet();

@@ -12,15 +12,12 @@ import {
   ViewStyle,
   ImageSourcePropType,
 } from 'react-native';
-import Icon from '@/assets/svgs/index';
-import { getMergedTheme } from '@/core/thread/components/thread.styles';
 import styles from './TradeCard.style';
 import { useCoingecko, Timeframe } from '@/modules/dataModule/hooks/useCoingecko';
 import LineGraph from './LineGraph';
 import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
 import { fetchJupiterTokenData } from '@/modules/dataModule/utils/tokenUtils';
-import COLORS from '@/assets/colors';
-import TYPOGRAPHY from '@/assets/typography';
+import { getMergedTheme } from '@/core/thread/utils';
 
 export interface TradeData {
   inputMint: string;

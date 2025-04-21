@@ -1,7 +1,8 @@
 // FILE: src/components/thread/post/PostBody.tsx
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { getMergedTheme } from '../../utils';
+import { createPostBodyStyles } from './PostBody.styles';
 import { ThreadPost } from '../thread.types';
 import SectionTextOnly from '../sections/SectionTextOnly';
 import SectionTextImage from '../sections/SectionTextImage';
@@ -96,7 +97,10 @@ function PostBody({
 }: PostBodyProps) {
   // Memoize theme and styles to prevent recalculation
   const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
-  const styles = useMemo(() => createThreadStyles(mergedTheme, styleOverrides), [mergedTheme, styleOverrides]);
+  const styles = useMemo(() => createPostBodyStyles(mergedTheme, styleOverrides), [
+    mergedTheme,
+    styleOverrides,
+  ]);
 
   const { user, createdAt, sections = [] } = post;
 

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ThreadComposer } from './ThreadComposer';
-import { createThreadStyles, getMergedTheme } from './thread.styles';
-import Icons from '../../../assets/svgs';
-import { ThreadProps } from '../types';
-import { ThreadItem } from './ThreadItem';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ThreadComposer } from '../thread-composer/ThreadComposer';
+import { getMergedTheme } from '../../utils';
+import { getThreadBaseStyles, headerStyles, tabStyles } from './Thread.styles';
+import { mergeStyles } from '../../utils';
+import Icons from '../../../../assets/svgs';
+import { ThreadProps } from '../../types';
+import { ThreadItem } from '../thread-item/ThreadItem';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { DEFAULT_IMAGES } from '@/config/constants';
@@ -38,12 +41,14 @@ export const Thread: React.FC<ThreadProps> = ({
   // Get the stored profile pic from Redux
   const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
 
+  // 1. Get the merged theme
   const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(
-    mergedTheme,
-    styleOverrides,
-    userStyleSheet,
-  );
+  
+  // 2. Get the base styles for this component (doesn't need theme argument anymore)
+  const baseComponentStyles = getThreadBaseStyles(); 
+
+  // 3. Use the utility function to merge base styles, overrides, and user sheet
+  const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
   // Local onRefresh if external prop is not provided
   const localOnRefresh = () => {
@@ -139,6 +144,12 @@ export const Thread: React.FC<ThreadProps> = ({
           />
           {activeTab === 'search' && <View style={tabStyles.indicator} />}
         </TouchableOpacity>
+        
+        {/* Bottom gradient border */}
+        <LinearGradient
+          colors={['transparent', COLORS.lightBackground]}
+          style={tabStyles.bottomGradient}
+        />
       </View>
 
       {activeTab === 'feed' ? (
@@ -167,81 +178,6 @@ export const Thread: React.FC<ThreadProps> = ({
     </View>
   );
 }
-
-const headerStyles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    position: 'relative',
-  },
-  profileContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 18,
-  },
-  absoluteLogoContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: -1,
-  },
-  iconsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    paddingHorizontal: 4,
-  },
-});
-
-const tabStyles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    height: 48,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderDarkColor,
-    backgroundColor: COLORS.background,
-  },
-  tab: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  activeTab: {
-    backgroundColor: 'transparent',
-  },
-  tabText: {
-    fontSize: TYPOGRAPHY.size.md,
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
-    color: COLORS.greyMid,
-    letterSpacing: TYPOGRAPHY.letterSpacing,
-  },
-  activeTabText: {
-    color: COLORS.brandBlue,
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
-  },
-  indicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 3,
-    width: '80%',
-    backgroundColor: COLORS.brandBlue,
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-    alignSelf: 'center',
-  },
-});
 
 // Also export as default for backward compatibility
 export default Thread;

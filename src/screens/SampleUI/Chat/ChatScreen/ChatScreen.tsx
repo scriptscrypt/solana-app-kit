@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { ThreadPost, ThreadUser } from '@/core/thread/components/thread.types';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 import PostCTA from '@/core/thread/components/post/PostCTA';
 import RetweetPreview from '@/core/thread/components/retweet/RetweetPreview';
@@ -21,7 +23,7 @@ import RetweetModal from '@/core/thread/components/retweet/RetweetModal';
 import { styles, androidStyles, chatBodyOverrides } from './ChatScreen.styles';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import PostBody from '@/core/thread/components/post/PostBody';
-import ThreadComposer from '@/core/thread/components/ThreadComposer';
+import ThreadComposer from '@/core/thread/components/thread-composer/ThreadComposer';
 import { RootState } from '@/shared/state/store';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
@@ -203,7 +205,7 @@ export default function ChatScreen() {
                 retweetOf={item.retweetOf}
                 themeOverrides={{}}
                 styleOverrides={{
-                  threadItemText: { fontSize: 13 },
+                  threadItemText: { fontSize: 13, color: COLORS.white },
                   container: { padding: 0 }
                 }}
               />
@@ -218,7 +220,7 @@ export default function ChatScreen() {
                 styleOverrides={{
                   container: chatBodyOverrides.threadPostCTAContainer,
                   button: { padding: 8, height: 32 },
-                  buttonLabel: { fontSize: 12 }
+                  buttonLabel: { fontSize: TYPOGRAPHY.size.xs, color: COLORS.white }
                 }}
                 {...{
                   showGraphForOutputToken: true,
@@ -287,10 +289,10 @@ export default function ChatScreen() {
   return (
     <SafeAreaView
       style={[
-        { flex: 1, backgroundColor: '#FFFFFF' },
+        { flex: 1, backgroundColor: COLORS.background },
         Platform.OS === 'android' && androidStyles.safeArea,
       ]}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar backgroundColor={COLORS.background} barStyle="light-content" />
       <KeyboardAvoidingView
         style={styles.chatScreenContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

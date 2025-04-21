@@ -18,6 +18,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { PublicKey } from '@solana/web3.js';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { styles } from './SwapScreen.styles';
 import COLORS from '@/assets/colors';
@@ -551,7 +552,7 @@ export default function SwapScreen() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
         
-        {/* Header - Styled like Thread.tsx */}
+        {/* Header with Gradient Border */}
         <View style={styles.headerContainer}>
           {/* Left: Placeholder (empty) */}
           <View style={styles.leftPlaceholder} />
@@ -570,6 +571,12 @@ export default function SwapScreen() {
               <Icons.walletIcon width={35} height={35} />
             </TouchableOpacity>
           </View>
+          
+          {/* Bottom gradient border */}
+          <LinearGradient
+            colors={['transparent', COLORS.lightBackground]}
+            style={styles.headerBottomGradient}
+          />
         </View>
         
         <View style={styles.contentContainer}>

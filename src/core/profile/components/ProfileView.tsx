@@ -14,6 +14,7 @@ import { PortfolioData, AssetItem } from '@/modules/dataModule';
 interface ExtendedProfileViewProps extends ProfileViewProps {
   onEditPost?: (post: ThreadPost) => void;
   onShareProfile?: () => void;
+  onLogout?: () => void;
 }
 
 // Define Action type locally if not exported
@@ -63,6 +64,7 @@ function ProfileViewComponent({
   onAssetPress,
   isLoading = false,
   onEditPost,
+  onLogout,
 }: ExtendedProfileViewProps) {
   // Ensure attachmentData is always defined
   const attachmentData = useMemo(() => user.attachmentData || {}, [user.attachmentData]);
@@ -77,6 +79,7 @@ function ProfileViewComponent({
     onAvatarPress,
     onEditProfile,
     onShareProfile,
+    onLogout,
     amIFollowing,
     areTheyFollowingMe,
     onFollowPress,
@@ -102,6 +105,7 @@ function ProfileViewComponent({
     onAvatarPress,
     onEditProfile,
     onShareProfile,
+    onLogout,
     onFollowPress,
     onUnfollowPress,
     onPressFollowers,

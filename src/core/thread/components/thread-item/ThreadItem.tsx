@@ -1,53 +1,21 @@
 import React, { useState } from 'react';
 import { View, Alert, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { ThreadAncestors } from './ThreadAncestors';
-import PostHeader from './post/PostHeader';
-import PostBody from './post/PostBody';
-import PostFooter from './post/PostFooter';
-import PostCTA from './post/PostCTA';
-import { createThreadStyles, getMergedTheme } from './thread.styles';
-import { ThreadItemProps, ThreadPost } from '../types';
+import { ThreadAncestors } from '../thread-ancestors/ThreadAncestors';
+import PostHeader from '../post/PostHeader';
+import PostBody from '../post/PostBody';
+import PostFooter from '../post/PostFooter';
+import PostCTA from '../post/PostCTA';
+import { getMergedTheme } from '../../utils'; // Updated import path
+import { getThreadItemBaseStyles, retweetStyles } from './ThreadItem.styles'; // Import new base styles function
+import { mergeStyles } from '../../utils'; // Import the new utility function
+import { ThreadItemProps, ThreadPost } from '../../types';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { deletePostAsync } from '@/shared/state/thread/reducer';
-import EditPostModal from './EditPostModal';
-import Icons from '../../../assets/svgs';
+import EditPostModal from '../EditPostModal';
+import Icons from '../../../../assets/svgs';
 import COLORS from '@/assets/colors';
 
-// Styles for retweets within ThreadItem
-const threadStyles = StyleSheet.create({
-  retweetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    paddingLeft: 6,
-    paddingTop: 4,
-  },
-  retweetHeaderText: {
-    fontSize: 13,
-    color: COLORS.greyMid,
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  retweetedContent: {
-    marginTop: 4,
-    width: '100%',
-  },
-  originalPostContainer: {
-    width: '100%',
-    borderRadius: 12,
-    backgroundColor: COLORS.lighterBackground,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
-  },
-  quoteContent: {
-    marginBottom: 4,
-  },
-  quoteText: {
-    fontSize: 13,
-    color: COLORS.greyMid,
-  },
-});
+// Styles previously defined inline in ThreadItem.tsx moved to ThreadItem.styles.ts
 
 export const ThreadItem: React.FC<ThreadItemProps> = ({
   post,
@@ -65,12 +33,14 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
   const dispatch = useAppDispatch();
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // 1. Get the merged theme
   const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(
-    mergedTheme,
-    styleOverrides,
-    userStyleSheet,
-  );
+
+  // 2. Get the base styles for this component, passing the theme
+  const baseComponentStyles = getThreadItemBaseStyles(mergedTheme);
+
+  // 3. Use the utility function to merge base styles, overrides, and user sheet
+  const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
   const containerStyle = [
     styles.threadItemContainer,
@@ -128,9 +98,9 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
 
       {/* Twitter style retweet indicator */}
       {isRetweet && (
-        <View style={threadStyles.retweetHeader}>
+        <View style={retweetStyles.retweetHeader}>
           <Icons.RetweetIdle width={12} height={12} color="#657786" />
-          <Text style={threadStyles.retweetHeaderText}>
+          <Text style={retweetStyles.retweetHeaderText}>
             {post.user.username} Retweeted
           </Text>
         </View>
@@ -138,12 +108,12 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
 
       {isRetweet ? (
         /* If it's a retweet, handle it differently depending on whether it has content */
-        <View style={threadStyles.retweetedContent}>
+        <View style={retweetStyles.retweetedContent}>
           {/* For quote retweets, show the quote text first */}
           {isQuoteRetweet && (
-            <View style={threadStyles.quoteContent}>
+            <View style={retweetStyles.quoteContent}>
               {post.sections.map(section => (
-                <Text key={section.id} style={threadStyles.quoteText}>
+                <Text key={section.id} style={retweetStyles.quoteText}>
                   {section.text}
                 </Text>
               ))}
@@ -156,7 +126,7 @@ export const ThreadItem: React.FC<ThreadItemProps> = ({
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleOriginalPostPress}
-              style={threadStyles.originalPostContainer}
+              style={retweetStyles.originalPostContainer}
             >
               <PostHeader
                 post={post.retweetOf}
