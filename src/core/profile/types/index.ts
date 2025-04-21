@@ -48,6 +48,7 @@ export interface ProfileViewProps {
   onAvatarPress?: () => void;
   onEditProfile?: () => void;
   onShareProfile?: () => void;
+  onLogout?: () => void;
   amIFollowing?: boolean;
   areTheyFollowingMe?: boolean;
   onFollowPress?: () => void;
@@ -86,6 +87,8 @@ export interface UserProfileInfoProps {
   onEditProfile?: () => void;
   /** Callback when user taps "Share Profile" */
   onShareProfile?: () => void;
+  /** Callback when user taps "Logout" */
+  onLogout?: () => void;
   /** Optional short text describing the user's bio. We'll show mention highlighting. */
   bioText?: string;
   /** If the current user is following this user */

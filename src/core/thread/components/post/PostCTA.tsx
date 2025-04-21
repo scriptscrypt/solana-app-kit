@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type { ThreadPost, ThreadUser } from '../thread.types';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { getMergedTheme } from '../../utils';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/shared/state/store';
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
@@ -24,6 +24,7 @@ import { TransactionService } from '@/modules/walletProviders/services/transacti
 
 // Import NFT services
 import { buyNft, buyCollectionFloor } from '@/modules/nft';
+import { createPostCTAStyles } from './PostCTA.styles';
 
 /**
  * Determines the type of CTA to display based on the post's sections
@@ -150,12 +151,13 @@ export default function PostCTA({
     avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
   };
 
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(
+  // Memoize theme and styles
+  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
+  const styles = useMemo(() => createPostCTAStyles(
     mergedTheme,
     styleOverrides as { [key: string]: object } | undefined,
     userStyleSheet as { [key: string]: object } | undefined,
-  );
+  ), [mergedTheme, styleOverrides, userStyleSheet]);
 
   // Helper to get collection data from a post
   function getCollectionData(post: ThreadPost) {
@@ -174,10 +176,8 @@ export default function PostCTA({
     return null;
   }
 
-  // Determine which CTA to show based on the post content
+  // Determine section type and data
   const sectionType = getPostSectionType(post);
-  if (!sectionType) return null;
-
   const tradeData = sectionType === 'trade' ? getTradeData(post) : null;
   const collectionData = sectionType === 'collection' ? getCollectionData(post) : null;
 
@@ -287,83 +287,69 @@ export default function PostCTA({
     }
   };
 
-  // Set CTA label and onPress based on section type
-  let ctaLabel = 'Copy Trade';
-  let onCtaPress = handleOpenTradeModal;
+  // Logic to determine CTA label, action, and disabled state
+  let ctaLabel = 'Default CTA'; 
+  let onCtaPress = () => {}; 
+  let isDisabled = false; 
 
-  if (sectionType === 'nft') {
+  if (sectionType === 'trade') {
+    ctaLabel = 'Copy Trade';
+    onCtaPress = handleOpenTradeModal;
+    isDisabled = !tradeData; 
+  } else if (sectionType === 'nft') {
     ctaLabel = 'Buy NFT';
     onCtaPress = handleBuyListedNft;
+    isDisabled = nftLoading; 
   } else if (sectionType === 'collection') {
-    ctaLabel = 'Buy Collection Floor';
+    ctaLabel = loadingFloor ? 'Finding Floor...' : `Buy Floor @ ${collectionData?.name || 'Collection'}`;
     onCtaPress = handleBuyCollectionFloor;
+    isDisabled = loadingFloor || !collectionData; 
   }
 
+  if (!sectionType) return null; // Return null if no relevant section type
+
   return (
-    <View style={[styles.threadPostCTAContainer, styleOverrides?.container]}>
+    <View style={[styles.threadPostCTAContainer, styleOverrides?.container, userStyleSheet?.container]}>
       <TouchableOpacity
-        style={[styles.threadPostCTAButton, styleOverrides?.button]}
+        style={[
+          styles.threadPostCTAButton,
+          styleOverrides?.button,
+          userStyleSheet?.button,
+          isDisabled && { opacity: 0.5 } 
+        ]}
         onPress={onCtaPress}
+        disabled={isDisabled}
         activeOpacity={0.8}>
         <Text
           style={[
             styles.threadPostCTAButtonLabel,
             styleOverrides?.buttonLabel,
+            userStyleSheet?.buttonLabel,
           ]}>
           {ctaLabel}
         </Text>
       </TouchableOpacity>
 
-      {/* Render Trade Modal for Copy Trade */}
-      {showTradeModal && tradeData && (
+      {/* Trade Modal */} 
+      {tradeData && (
         <TradeModal
           visible={showTradeModal}
           onClose={() => setShowTradeModal(false)}
           currentUser={currentUser}
-          disableTabs={true}
-          initialActiveTab="TRADE_AND_SHARE"
-          initialInputToken={{
-            address: tradeData.inputMint,
-            symbol: tradeData.inputSymbol,
-            name:
-              tradeData.inputSymbol === 'SOL'
-                ? 'Solana'
-                : tradeData.inputSymbol,
-            decimals: tradeData.inputSymbol === 'SOL' ? 9 : 6,
-            logoURI:
-              tradeData.inputSymbol === 'SOL'
-                ? 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png'
-                : tradeData.inputSymbol === 'USDC'
-                  ? 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png'
-                  : '', // Empty logoURI will trigger a fetch for complete metadata
-          }}
-          initialOutputToken={{
-            address: tradeData.outputMint,
-            symbol: tradeData.outputSymbol,
-            name:
-              tradeData.outputSymbol === 'USDC'
-                ? 'USD Coin'
-                : tradeData.outputSymbol === 'SOL'
-                  ? 'Solana'
-                  : tradeData.outputSymbol,
-            decimals: tradeData.outputSymbol === 'USDC' ? 6 : tradeData.outputSymbol === 'SOL' ? 9 : 6,
-            logoURI:
-              tradeData.outputSymbol === 'USDC'
-                ? 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png'
-                : tradeData.outputSymbol === 'SOL'
-                  ? 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png'
-                  : '', // Empty logoURI will trigger a fetch for complete metadata
-          }}
+          initialActiveTab="PAST_SWAPS"
+          initialInputToken={{ address: tradeData.inputMint }}
+          initialOutputToken={{ address: tradeData.outputMint }}
+          onPostCreated={() => setShowTradeModal(false)}
         />
       )}
 
-      {/* NFT Buying Progress Overlay */}
+      {/* NFT Loading Modal */}
       <Modal
         visible={nftLoading}
         transparent
         animationType="fade"
-        onRequestClose={() => { }}>
-        <View style={styles.progressOverlay}>
+        onRequestClose={() => { /* Prevent closing while loading */ }}>
+        <View style={styles.progressOverlay}> 
           <View style={styles.progressContainer}>
             <ActivityIndicator size="large" color="#1d9bf0" />
             {!!nftStatusMsg && (

@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { createThreadStyles, getMergedTheme } from './thread.styles';
-import { gatherAncestorChain } from '../utils';
-import { ThreadPost } from '../types';
+import { getMergedTheme, mergeStyles } from '../../utils'; // Import getMergedTheme from utils
+import { getThreadAncestorsBaseStyles, ancestorStyles } from './ThreadAncestors.styles'; // Import new styles
+import { gatherAncestorChain } from '../../utils';
+import { ThreadPost } from '../../types';
 
 // We import PostHeader, PostBody, PostFooter to display parent snippet
-import PostHeader from './post/PostHeader';
-import PostBody from './post/PostBody';
-import PostFooter from './post/PostFooter';
+import PostHeader from '../post/PostHeader';
+import PostBody from '../post/PostBody';
+import PostFooter from '../post/PostFooter';
 
 /**
  * Props for the ThreadAncestors component
@@ -50,12 +51,14 @@ export const ThreadAncestors: React.FC<ThreadAncestorsProps> = ({
   // If no parent, do nothing
   if (!post.parentId) return null;
 
+  // 1. Get the merged theme
   const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(
-    mergedTheme,
-    styleOverrides,
-    userStyleSheet,
-  );
+  
+  // 2. Get base styles, passing the theme
+  const baseComponentStyles = getThreadAncestorsBaseStyles(mergedTheme);
+  
+  // 3. Merge styles using the utility function
+  const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
   // Gather chain => array from earliest ancestor to the current post
   const chain = gatherAncestorChain(post.id, rootPosts);
@@ -83,9 +86,10 @@ export const ThreadAncestors: React.FC<ThreadAncestorsProps> = ({
       )}
 
       {/* Additional snippet to show parent's entire post details */}
-      <View style={[localStyles.parentSnippetWrapper]}>
-        <Text style={localStyles.parentSnippetTitle}>Parent Post:</Text>
-        <View style={localStyles.parentSnippetContainer}>
+      {/* Use styles from the imported ancestorStyles object */}
+      <View style={ancestorStyles.parentSnippetWrapper}>
+        <Text style={ancestorStyles.parentSnippetTitle}>Parent Post:</Text>
+        <View style={ancestorStyles.parentSnippetContainer}>
           <PostHeader
             post={parentPost}
             // For parent snippet, we typically do not allow editing/deleting
@@ -93,17 +97,20 @@ export const ThreadAncestors: React.FC<ThreadAncestorsProps> = ({
             onEditPost={() => { }}
             themeOverrides={themeOverrides}
             styleOverrides={styleOverrides}
+            // Pass down styles if PostHeader needs merging too
           />
           <PostBody
             post={parentPost}
             themeOverrides={themeOverrides}
             styleOverrides={styleOverrides}
+            // Pass down styles if PostBody needs merging too
           />
           <PostFooter
             post={parentPost}
             onPressComment={() => { }}
             themeOverrides={themeOverrides}
             styleOverrides={styleOverrides}
+            // Pass down styles if PostFooter needs merging too
           />
         </View>
       </View>
@@ -111,25 +118,7 @@ export const ThreadAncestors: React.FC<ThreadAncestorsProps> = ({
   );
 };
 
-const localStyles = StyleSheet.create({
-  parentSnippetWrapper: {
-    marginTop: 8,
-  },
-  parentSnippetTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-  },
-  parentSnippetContainer: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#F9F9F9',
-    // Optionally add a border or small shadow
-    borderWidth: 1,
-    borderColor: '#EEE',
-  },
-});
+// Removed inline localStyles definition
 
 // Also export as default for backward compatibility
 export default ThreadAncestors;

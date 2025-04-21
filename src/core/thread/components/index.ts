@@ -1,8 +1,8 @@
 // src/components/thread/index.ts
-import Thread from './Thread';
-import ThreadItem from './ThreadItem';
-import ThreadAncestors from './ThreadAncestors';
-import ThreadComposer from './ThreadComposer';
+import Thread from './thread-container/Thread';
+import ThreadItem from './thread-item/ThreadItem';
+import ThreadAncestors from './thread-ancestors/ThreadAncestors';
+import ThreadComposer from './thread-composer/ThreadComposer';
 import ThreadEditModal from './ThreadEditModal';
 import EditPostModal from './EditPostModal';
 import NftListingModal from '../../../modules/nft/components/NftListingModal';

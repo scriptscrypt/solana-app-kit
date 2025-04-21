@@ -17,7 +17,8 @@ import {
 import { ThreadPost, ThreadUser } from './thread.types';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { updatePostAsync } from '@/shared/state/thread/reducer';
-import { getMergedTheme, createThreadStyles } from './thread.styles';
+import { getMergedTheme } from '../utils';
+import { createThreadStyles } from './thread.styles';
 import editModalStyles from './ThreadEditModal.style';
 
 /**

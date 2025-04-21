@@ -23,6 +23,7 @@ import { fetchAllPosts } from '@/shared/state/thread/reducer';
 import { useFetchNFTs } from '@/modules/nft';
 import { NftItem } from '@/modules/nft/types';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
 import {
   fetchFollowers,
   fetchFollowing,
@@ -60,6 +61,7 @@ export default function Profile({
   const allReduxPosts = useAppSelector(state => state.thread.allPosts);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { address: currentWalletAddress } = useWallet();
+  const { logout } = useAuth();
   const myWallet = useAppSelector(state => state.auth.address);
 
   // Get profile actions from Redux state
@@ -558,6 +560,25 @@ export default function Profile({
     }
   }, [onGoBack, navigation]);
 
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => logout(),
+        },
+      ],
+    );
+  }, [logout]);
+
   return (
     <SafeAreaView
       style={[
@@ -590,6 +611,8 @@ export default function Profile({
           fetchNftsError={resolvedNftError}
           onAvatarPress={() => handleProfileUpdated('image')}
           onEditProfile={() => handleProfileUpdated('username')}
+          onShareProfile={() => {}}
+          onLogout={isOwnProfile ? handleLogout : undefined}
           {...memoizedFollowProps}
           onPressPost={handlePostPress}
           containerStyle={containerStyle}

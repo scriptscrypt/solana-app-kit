@@ -1,4 +1,6 @@
 import {StyleSheet, Platform, Dimensions} from 'react-native';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 // Get screen width for responsive sizing
 const screenWidth = Dimensions.get('window').width;
@@ -9,8 +11,8 @@ export const chatBodyOverrides = StyleSheet.create({
     width: '100%',
   },
   threadItemText: {
-    fontSize: 14,
-    color: '#232324',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.white,
     flexWrap: 'wrap',
   },
   // Trade card specific overrides to prevent overflow
@@ -28,8 +30,8 @@ export const chatBodyOverrides = StyleSheet.create({
   },
   // Hide token symbol in price display
   tradeCardSolPrice: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   // LineGraph container styling
   threadPostCTAContainer: {
@@ -46,23 +48,23 @@ export const chatBodyOverrides = StyleSheet.create({
   },
 });
 
-// Subtle color palette for a minimalist chat design
+// Dark theme color palette for chat
 const colors = {
-  background: '#F7F7F7',
-  sentBubble: '#E6F3FF',
-  receivedBubble: '#FFFFFF',
-  primaryText: '#262626',
-  secondaryText: '#757575',
-  border: '#E0E0E0',
-  accentLight: '#E8E8E8',
-  accent: '#2558D4',
-  chartBackground: '#FFFFFF',
+  background: COLORS.background,
+  sentBubble: COLORS.brandPurpleBg,
+  receivedBubble: COLORS.lighterBackground,
+  primaryText: COLORS.white,
+  secondaryText: COLORS.greyMid,
+  border: COLORS.borderDarkColor,
+  accentLight: COLORS.lighterBackground,
+  accent: COLORS.brandPrimary,
+  chartBackground: COLORS.lightBackground,
 };
 
 export const styles = StyleSheet.create({
   chatScreenContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: COLORS.background,
   },
   listContent: {
     paddingTop: 12,
@@ -98,9 +100,9 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   senderLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.primaryText,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
   },
 
   /* BUBBLE */
@@ -109,11 +111,11 @@ export const styles = StyleSheet.create({
     padding: 12,
     paddingBottom: 8, // Less padding at bottom for timestamps
     minWidth: 60,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 1,
-    elevation: 1,
+    elevation: 2,
     overflow: 'hidden', // Ensure content doesn't overflow bubble
   },
   receivedBubble: {
@@ -127,7 +129,7 @@ export const styles = StyleSheet.create({
   },
 
   timeStampText: {
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.size.xs - 2,
     color: colors.secondaryText,
     marginTop: 6,
     alignSelf: 'flex-end',
@@ -139,7 +141,7 @@ export const styles = StyleSheet.create({
     borderTopColor: colors.border,
     padding: 12, 
     paddingBottom: Platform.OS === 'ios' ? 24 : 12, // More padding on iOS for better spacing
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.darkerBackground,
   },
   
   quoteReplyButton: {
@@ -150,15 +152,15 @@ export const styles = StyleSheet.create({
     marginTop: 6,
   },
   quoteReplyText: {
-    color: colors.accent,
-    fontSize: 13,
-    fontWeight: '500',
+    color: COLORS.brandPrimary,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
     textAlign: 'center',
   },
 
   // Styles for quoted replies in messages
   quotedContentContainer: {
-    backgroundColor: colors.accentLight,
+    backgroundColor: COLORS.lightBackground,
     borderRadius: 12,
     padding: 8,
     marginTop: 4,
@@ -166,7 +168,7 @@ export const styles = StyleSheet.create({
     opacity: 0.9,
     maxWidth: '100%',
     borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
+    borderLeftColor: COLORS.brandPrimary,
   },
   
   // Custom styles for charts in messages
@@ -181,7 +183,7 @@ export const styles = StyleSheet.create({
   
   // Trade button in chat
   tradeButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: COLORS.brandPrimary,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
@@ -189,9 +191,9 @@ export const styles = StyleSheet.create({
     marginTop: 8,
   },
   tradeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
     textAlign: 'center',
   },
 });
@@ -199,5 +201,6 @@ export const styles = StyleSheet.create({
 export const androidStyles = StyleSheet.create({
   safeArea: {
     paddingTop: 50,
+    backgroundColor: COLORS.background,
   },
 });

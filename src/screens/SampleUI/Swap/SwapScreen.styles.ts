@@ -264,8 +264,8 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
     width: '100%',
     backgroundColor: COLORS.background,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderDarkColor,
+    borderBottomWidth: 0, // Remove border since we're using gradient
+    position: 'relative', // For proper positioning of the gradient
   },
   leftPlaceholder: {
     width: 36, // Same width as profileContainer in Thread.tsx for balance
@@ -291,5 +291,13 @@ export const styles = StyleSheet.create({
   iconButton: {
     paddingHorizontal: 4,
     marginLeft: 8,
+  },
+  headerBottomGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 50,
+    zIndex: -2,
   },
 }); 

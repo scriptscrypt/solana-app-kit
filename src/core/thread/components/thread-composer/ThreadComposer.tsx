@@ -12,31 +12,33 @@ import {
   Platform,
   Animated,
 } from 'react-native';
-import Icons from '../../../assets/svgs';
+import Icons from '../../../../assets/svgs';
 import {
   useAppDispatch,
   useAppSelector,
-} from '../../../shared/hooks/useReduxHooks';
+} from '../../../../shared/hooks/useReduxHooks';
 import {
   createRootPostAsync,
   createReplyAsync,
   addPostLocally,
   addReplyLocally,
-} from '../../../shared/state/thread/reducer';
-import { createThreadStyles, getMergedTheme } from './thread.styles';
-import { ThreadSection, ThreadSectionType, ThreadUser } from '../types';
+} from '../../../../shared/state/thread/reducer';
+import { getMergedTheme } from '../../utils'; // Updated import path
+import { getThreadComposerBaseStyles } from './ThreadComposer.styles'; // Import new base styles function
+import { mergeStyles } from '../../utils'; // Import the utility function
+import { ThreadSection, ThreadSectionType, ThreadUser } from '../../types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
-import { useWallet } from '../../../modules/walletProviders/hooks/useWallet';
-import TradeModal from './trade/TradeModal';
-import { DEFAULT_IMAGES } from '../../../config/constants';
-import { NftListingModal, useFetchNFTs, NftItem } from '../../../modules/nft';
-import { uploadThreadImage } from '../services/threadImageService';
+import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import TradeModal from '../trade/TradeModal';
+import { DEFAULT_IMAGES } from '../../../../config/constants';
+import { NftListingModal, useFetchNFTs, NftItem } from '../../../../modules/nft';
+import { uploadThreadImage } from '../../services/threadImageService';
 import {
   IPFSAwareImage,
   getValidImageSource,
   fixIPFSUrl,
-} from '../../../shared/utils/IPFSImage';
+} from '../../../../shared/utils/IPFSImage';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
@@ -134,13 +136,14 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
   const [showTradeModal, setShowTradeModal] = useState(false);
   const SOL_TO_LAMPORTS = 1_000_000_000;
 
-  // Merged theme
+  // 1. Get the merged theme
   const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(
-    mergedTheme,
-    styleOverrides,
-    userStyleSheet,
-  );
+  
+  // 2. Get base styles, passing the theme
+  const baseComponentStyles = getThreadComposerBaseStyles(mergedTheme);
+  
+  // 3. Merge styles using the utility function
+  const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
   // Animation for send button
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -534,7 +537,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
         listingItems={activeListings}
         loadingListings={loadingActiveListings}
         fetchNftsError={activeListingsError}
-        styles={styles} // Pass your existing styles
+        styles={styles} // Pass merged styles down
       />
 
       {/* Trade Modal */}

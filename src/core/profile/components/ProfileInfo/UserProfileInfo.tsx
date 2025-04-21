@@ -25,6 +25,7 @@ import TYPOGRAPHY from '../../../../assets/typography';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { UserProfileInfoProps } from '../../types/index';
 import ProfileEditDrawer from '../ProfileEditDrawer';
+import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
 
 /**
  * TokenAttachModal - Component for the token attachment modal
@@ -144,19 +145,28 @@ const StatsSection = memo(({
 /**
  * Edit Profile Button with memoized content
  */
-const EditButton = memo(({ onPress, onSharePress }: { onPress?: () => void; onSharePress?: () => void }) => (
-  <View style={{ marginTop: 8, width: '100%', flexDirection: 'row', gap: 12 }}>
-    <TouchableOpacity
-      style={[styles.editProfileBtn, { flex: 1 }]}
-      onPress={onPress}>
-      <Text style={styles.editProfileBtnText}>Edit Profile</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={[styles.editProfileBtn, { flex: 1 }]}
-      onPress={onSharePress}>
-      <Text style={styles.editProfileBtnText}>Share Profile</Text>
-    </TouchableOpacity>
-
+const EditButton = memo(({ onPress, onSharePress, onLogout }: { onPress?: () => void; onSharePress?: () => void; onLogout?: () => void }) => (
+  <View style={{ marginTop: 8, width: '100%', flexDirection: 'column', gap: 12 }}>
+    <View style={{ flexDirection: 'row', gap: 12 }}>
+      <TouchableOpacity
+        style={[styles.editProfileBtn, { flex: 1 }]}
+        onPress={onPress}>
+        <Text style={styles.editProfileBtnText}>Edit Profile</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.editProfileBtn, { flex: 1 }]}
+        onPress={onSharePress}>
+        <Text style={styles.editProfileBtnText}>Share Profile</Text>
+      </TouchableOpacity>
+    </View>
+    
+    {onLogout && (
+      <TouchableOpacity
+        style={[styles.editProfileBtn, { backgroundColor: COLORS.errorRed }]}
+        onPress={onLogout}>
+        <Text style={[styles.editProfileBtnText, { color: COLORS.white }]}>Logout</Text>
+      </TouchableOpacity>
+    )}
   </View>
 ));
 
@@ -306,6 +316,7 @@ function UserProfileInfo({
   attachmentData = {},
 }: UserProfileInfoProps) {
   const dispatch = useAppDispatch();
+  const { logout } = useAuth();
 
   // Local state to handle updates
   const [localProfilePic, setLocalProfilePic] = useState(profilePicUrl);
@@ -510,6 +521,27 @@ function UserProfileInfo({
   }, []);
   const handleDescriptionChange = useCallback((text: string) => setTokenDescription(text), []);
 
+  /**
+   * Handle logout
+   */
+  const handleLogout = useCallback(() => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => logout(),
+        },
+      ],
+    );
+  }, [logout]);
+
   return (
     <View style={styles.profileInfo}>
       {/* Profile Header with Avatar and Name */}
@@ -545,7 +577,11 @@ function UserProfileInfo({
       )}
 
       {/* Edit profile button (for own profile) */}
-      {isOwnProfile && <EditButton onPress={handleEditProfilePress} onSharePress={onShareProfile} />}
+      {isOwnProfile && <EditButton 
+        onPress={handleEditProfilePress} 
+        onSharePress={onShareProfile}
+        onLogout={handleLogout}
+      />}
 
       {/* BuyCard for token (own profile or if token is attached) */}
 

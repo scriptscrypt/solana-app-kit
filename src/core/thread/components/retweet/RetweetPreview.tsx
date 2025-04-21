@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { ThreadPost } from '../thread.types';
 import PostBody from '../post/PostBody';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { createThreadStyles } from '../thread.styles';
+import { THREAD_DEFAULT_THEME } from '../thread.theme';
 import Icons from '../../../../assets/svgs';
 import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 interface RetweetPreviewProps {
   retweetOf: ThreadPost;
@@ -33,9 +35,8 @@ export default function RetweetPreview({
     ? retweetOf.sections.find(s => s.text)?.text
     : '';
 
-  // Merge your theme if needed
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(mergedTheme, styleOverrides);
+  // Use default theme with styleOverrides
+  const styles = createThreadStyles(THREAD_DEFAULT_THEME, styleOverrides);
 
   // If the retweeted user's avatar is a string, we treat it as a URI
   const avatarSource =
@@ -153,10 +154,10 @@ const localStyles = StyleSheet.create({
     marginBottom: 6,
   },
   retweetText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.size.xs,
     color: COLORS.greyMid,
     marginLeft: 4,
-    fontWeight: '500',
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   headerRow: {
     flexDirection: 'row',
@@ -167,7 +168,7 @@ const localStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.greyLight, // Changed from #DDD
+    backgroundColor: COLORS.greyLight,
   },
   userInfo: {
     flex: 1,
@@ -175,13 +176,13 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   username: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textDark, // Changed from #14171A
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    color: COLORS.white,
   },
   handle: {
-    fontSize: 12,
-    color: COLORS.greyMid, // Changed from #657786
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyMid,
     marginTop: 1,
   },
   bodyContainer: {
@@ -198,26 +199,26 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.borderDarkColor, // Changed from #E1E8ED
+    borderTopColor: COLORS.borderDarkColor,
     paddingTop: 8,
   },
   actionButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: COLORS.lighterBackground, // Changed from #EFF3F7
+    backgroundColor: COLORS.lighterBackground,
     marginRight: 8,
   },
   actionButtonText: {
-    fontSize: 12,
-    color: COLORS.brandBlue, // Changed from #1DA1F2
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.brandPrimary,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
   quoteContainer: {
     marginBottom: 8,
   },
   quoteText: {
-    fontSize: 12,
-    color: COLORS.greyMid, // Changed from #657786
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.white,
   },
 });

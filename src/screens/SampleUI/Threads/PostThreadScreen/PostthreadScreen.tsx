@@ -17,7 +17,7 @@ import PostHeader from '@/core/thread/components/post/PostHeader';
 import PostBody from '@/core/thread/components/post/PostBody';
 import PostFooter from '@/core/thread/components/post/PostFooter';
 import PostCTA from '@/core/thread/components/post/PostCTA';
-import ThreadComposer from '@/core/thread/components/ThreadComposer';
+import ThreadComposer from '@/core/thread/components/thread-composer/ThreadComposer';
 
 import {
   ThreadPost,
