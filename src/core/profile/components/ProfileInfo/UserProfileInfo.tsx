@@ -160,13 +160,13 @@ const EditButton = memo(({ onPress, onSharePress, onLogout }: { onPress?: () => 
       </TouchableOpacity>
     </View>
     
-    {onLogout && (
+    {/* {onLogout && (
       <TouchableOpacity
         style={[styles.editProfileBtn, { backgroundColor: COLORS.errorRed }]}
         onPress={onLogout}>
         <Text style={[styles.editProfileBtnText, { color: COLORS.white }]}>Logout</Text>
       </TouchableOpacity>
-    )}
+    )} */}
   </View>
 ));
 

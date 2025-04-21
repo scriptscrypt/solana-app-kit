@@ -42,6 +42,16 @@ export const styles = StyleSheet.create({
     color: COLORS.greyMid,
     marginTop: 2,
   },
+  headerLogoutButton: {
+    marginLeft: 'auto',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: 'red',
+    fontWeight: '500',
+  },
   profileWrapper: {
     flex: 1,
     paddingTop: 8, // Add a small gap between header and profile content

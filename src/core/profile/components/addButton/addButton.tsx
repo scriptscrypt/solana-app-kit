@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TextInput,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { styles } from './addButton.style';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
@@ -208,116 +209,172 @@ const AddButton: React.FC<AddButtonProps> = ({
           style={modalOverlayStyles.overlay}
           ref={modalRef}
         >
-          <View style={modalOverlayStyles.container}>
-            <Text style={modalOverlayStyles.title}>Send SOL</Text>
+          <View style={modalOverlayStyles.drawerContainer}>
+            {/* Drag handle for bottom drawer */}
+            <View style={modalOverlayStyles.dragHandle} />
 
-            <View style={modalOverlayStyles.modeContainer}>
-              <Text style={modalOverlayStyles.sectionTitle}>Select Mode:</Text>
-              <View style={modalOverlayStyles.buttonRow}>
-                <TouchableOpacity
-                  style={[
-                    modalOverlayStyles.modeButton,
-                    selectedMode === 'priority' && modalOverlayStyles.selectedBtn,
-                  ]}
-                  onPress={() => setSelectedMode('priority')}
-                >
-                  <Text
-                    style={[
-                      modalOverlayStyles.modeButtonText,
-                      selectedMode === 'priority' &&
-                      modalOverlayStyles.selectedBtnText,
-                    ]}
-                  >
-                    Priority
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    modalOverlayStyles.modeButton,
-                    selectedMode === 'jito' && modalOverlayStyles.selectedBtn,
-                  ]}
-                  onPress={() => setSelectedMode('jito')}
-                >
-                  <Text
-                    style={[
-                      modalOverlayStyles.modeButtonText,
-                      selectedMode === 'jito' && modalOverlayStyles.selectedBtnText,
-                    ]}
-                  >
-                    Jito
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={modalOverlayStyles.scrollContent}>
+              <Text style={modalOverlayStyles.title}>Send SOL</Text>
 
-            {selectedMode === 'priority' && (
-              <View style={modalOverlayStyles.tierContainer}>
-                <Text style={modalOverlayStyles.sectionTitle}>
-                  Priority Fee Tier:
-                </Text>
+              <View style={modalOverlayStyles.modeContainer}>
+                {/* <Text style={modalOverlayStyles.sectionTitle}>Select Mode:</Text> */}
                 <View style={modalOverlayStyles.buttonRow}>
-                  {(['low', 'medium', 'high', 'very-high'] as const).map(tier => (
-                    <TouchableOpacity
-                      key={tier}
+                  <TouchableOpacity
+                    style={[
+                      modalOverlayStyles.modeButton,
+                      selectedMode === 'priority' && modalOverlayStyles.selectedBtn,
+                    ]}
+                    onPress={() => setSelectedMode('priority')}
+                  >
+                    <Text
                       style={[
-                        modalOverlayStyles.tierButton,
-                        selectedFeeTier === tier && modalOverlayStyles.selectedBtn,
+                        modalOverlayStyles.modeButtonText,
+                        selectedMode === 'priority' &&
+                        modalOverlayStyles.selectedBtnText,
                       ]}
-                      onPress={() => setSelectedFeeTier(tier)}
                     >
-                      <Text
-                        style={[
-                          modalOverlayStyles.tierButtonText,
-                          selectedFeeTier === tier &&
-                          modalOverlayStyles.selectedBtnText,
-                        ]}
-                      >
-                        {tier}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                      Priority
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      modalOverlayStyles.modeButton,
+                      selectedMode === 'jito' && modalOverlayStyles.selectedBtn,
+                    ]}
+                    onPress={() => setSelectedMode('jito')}
+                  >
+                    <Text
+                      style={[
+                        modalOverlayStyles.modeButtonText,
+                        selectedMode === 'jito' && modalOverlayStyles.selectedBtnText,
+                      ]}
+                    >
+                      Jito
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-            )}
 
-            <View style={modalOverlayStyles.inputContainer}>
-              <Text style={modalOverlayStyles.label}>Amount (SOL)</Text>
-              <TextInput
-                style={modalOverlayStyles.input}
-                value={amountSol}
-                onChangeText={setAmountSol}
-                keyboardType="numeric"
-                placeholder="e.g. 0.25"
-                placeholderTextColor={COLORS.textHint}
-              />
-            </View>
+              {selectedMode === 'priority' && (
+                <View style={modalOverlayStyles.tierContainer}>
+                  <Text style={modalOverlayStyles.sectionTitle}>
+                    Priority Fee Tier:
+                  </Text>
+                  <View style={modalOverlayStyles.tierButtonRow}>
+                    {(['low', 'medium', 'high', 'very-high'] as const).map(tier => (
+                      <TouchableOpacity
+                        key={tier}
+                        style={[
+                          modalOverlayStyles.tierButton,
+                          selectedFeeTier === tier && modalOverlayStyles.selectedBtn,
+                        ]}
+                        onPress={() => setSelectedFeeTier(tier)}
+                      >
+                        <Text
+                          style={[
+                            modalOverlayStyles.tierButtonText,
+                            selectedFeeTier === tier &&
+                            modalOverlayStyles.selectedBtnText,
+                          ]}
+                        >
+                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
 
-            {transactionStatus && (
-              <View style={modalOverlayStyles.statusContainer}>
-                <Text style={modalOverlayStyles.statusText}>{transactionStatus}</Text>
+              <View style={modalOverlayStyles.inputContainer}>
+                <Text style={modalOverlayStyles.label}>Amount (SOL)</Text>
+
+                {/* Preset amount buttons */}
+                <View style={modalOverlayStyles.presetButtonsRow}>
+                  <TouchableOpacity
+                    style={modalOverlayStyles.presetButton}
+                    onPress={() => setAmountSol("1")}
+                  >
+                    <Text style={modalOverlayStyles.presetButtonText}>1 SOL</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={modalOverlayStyles.presetButton}
+                    onPress={() => setAmountSol("5")}
+                  >
+                    <Text style={modalOverlayStyles.presetButtonText}>5 SOL</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={modalOverlayStyles.presetButton}
+                    onPress={() => setAmountSol("10")}
+                  >
+                    <Text style={modalOverlayStyles.presetButtonText}>10 SOL</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Input with plus/minus controls */}
+                <View style={modalOverlayStyles.amountControlContainer}>
+                  <TouchableOpacity
+                    style={modalOverlayStyles.controlButton}
+                    onPress={() => {
+                      const currentVal = parseFloat(amountSol) || 0;
+                      if (currentVal > 0) {
+                        setAmountSol((currentVal - 1).toString());
+                      }
+                    }}
+                  >
+                    <Text style={modalOverlayStyles.controlButtonText}>−</Text>
+                  </TouchableOpacity>
+
+                  <TextInput
+                    style={modalOverlayStyles.amountInput}
+                    value={amountSol}
+                    onChangeText={setAmountSol}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={COLORS.textHint}
+                    textAlign="center"
+                  />
+
+                  <TouchableOpacity
+                    style={modalOverlayStyles.controlButton}
+                    onPress={() => {
+                      const currentVal = parseFloat(amountSol) || 0;
+                      setAmountSol((currentVal + 1).toString());
+                    }}
+                  >
+                    <Text style={modalOverlayStyles.controlButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            )}
 
-            <View style={modalOverlayStyles.buttonRow}>
-              <TouchableOpacity
-                style={[modalOverlayStyles.modalButton, { backgroundColor: COLORS.lighterBackground }]}
-                onPress={() => setSendModalVisible(false)}
-                disabled={!!transactionStatus && !transactionStatus.includes('Error')}
-              >
-                <Text style={modalOverlayStyles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  modalOverlayStyles.modalButton,
-                  { backgroundColor: COLORS.brandPrimary },
-                  !!transactionStatus && { opacity: 0.5 }
-                ]}
-                onPress={handleSendTransaction}
-                disabled={!!transactionStatus}
-              >
-                <Text style={modalOverlayStyles.modalButtonText}>Send</Text>
-              </TouchableOpacity>
-            </View>
+              {transactionStatus && (
+                <View style={modalOverlayStyles.statusContainer}>
+                  <Text style={modalOverlayStyles.statusText}>{transactionStatus}</Text>
+                </View>
+              )}
+
+              <View style={modalOverlayStyles.buttonRow}>
+                <TouchableOpacity
+                  style={[modalOverlayStyles.modalButton, { backgroundColor: COLORS.lightBackground }]}
+                  onPress={() => setSendModalVisible(false)}
+                  disabled={!!transactionStatus && !transactionStatus.includes('Error')}
+                >
+                  <Text style={modalOverlayStyles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    modalOverlayStyles.modalButton,
+                    { backgroundColor: COLORS.brandBlue },
+                    !!transactionStatus && { opacity: 0.5 }
+                  ]}
+                  onPress={handleSendTransaction}
+                  disabled={!!transactionStatus}
+                >
+                  <Text style={modalOverlayStyles.modalButtonText}>Send</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -331,15 +388,19 @@ const modalOverlayStyles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    padding: 16,
+    justifyContent: 'flex-end',
+    padding: 0,
   },
-  container: {
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 16,
+  drawerContainer: {
+    backgroundColor: COLORS.lighterBackground,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingTop: 16,
     borderWidth: 1,
+    borderBottomWidth: 0,
     borderColor: COLORS.borderDarkColor,
+    maxHeight: '85%',
   },
   title: {
     fontSize: TYPOGRAPHY.size.xl,
@@ -349,7 +410,8 @@ const modalOverlayStyles = StyleSheet.create({
     color: COLORS.white,
   },
   modeContainer: {
-    marginBottom: 16,
+    marginBottom: 24,
+    width: '100%',
   },
   sectionTitle: {
     fontWeight: 500,
@@ -359,44 +421,54 @@ const modalOverlayStyles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    columnGap: 8,
+    justifyContent: 'space-between',
+    width: '100%',
+    columnGap: 6,
     rowGap: 8,
+    marginTop: 16,
+    flexWrap: 'nowrap',
   },
   modeButton: {
-    paddingVertical: 8,
+    flex: 1,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.lighterBackground,
-    borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
+    borderRadius: 8,
+    backgroundColor: COLORS.lightBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
   },
   modeButtonText: {
     color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.xs,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   selectedBtn: {
-    backgroundColor: COLORS.brandPrimary,
-    borderColor: COLORS.brandPrimary,
+    backgroundColor: COLORS.lightGrey,
   },
   selectedBtnText: {
-    color: COLORS.background,
-    fontWeight: 600,
+    color: COLORS.white,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
   },
   tierContainer: {
     marginBottom: 16,
   },
   tierButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     backgroundColor: COLORS.lighterBackground,
     borderWidth: 1,
     borderColor: COLORS.borderDarkColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 30,
   },
   tierButtonText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    textAlign: 'center',
   },
   inputContainer: {
     marginBottom: 16,
@@ -418,7 +490,7 @@ const modalOverlayStyles = StyleSheet.create({
   label: {
     fontWeight: 500,
     marginTop: 8,
-    marginBottom: 4,
+    marginBottom: 8,
     fontSize: TYPOGRAPHY.size.sm,
     color: COLORS.white,
   },
@@ -434,15 +506,81 @@ const modalOverlayStyles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
     marginHorizontal: 4,
+    minHeight: 48,
+    backgroundColor: COLORS.brandBlue,
   },
   modalButtonText: {
     color: COLORS.white,
-    fontWeight: 600,
-    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontSize: TYPOGRAPHY.size.md,
+  },
+  tierButtonRow: {
+    flexDirection: 'row',
+    width: '100%',
+    columnGap: 8,
+    rowGap: 10,
+    flexWrap: 'nowrap',
+  },
+  presetButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  presetButton: {
+    flex: 1,
+    backgroundColor: COLORS.lightGrey,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  presetButtonText: {
+    color: COLORS.white,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontSize: TYPOGRAPHY.size.md,
+  },
+  amountControlContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: COLORS.lightGrey,
+    overflow: 'hidden',
+  },
+  controlButton: {
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  controlButtonText: {
+    fontSize: 24,
+    color: COLORS.white,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+  },
+  amountInput: {
+    flex: 1,
+    color: COLORS.white,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    fontSize: 20,
+    textAlign: 'center',
+    height: '100%',
+  },
+  dragHandle: {
+    width: 36,
+    height: 5,
+    backgroundColor: COLORS.borderDarkColor,
+    borderRadius: 2.5,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
 });

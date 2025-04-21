@@ -15,6 +15,8 @@ import Icons from '@/assets/svgs';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import { buyCollectionFloor } from '@/modules/nft';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 interface NFTCollectionDrawerProps {
     visible: boolean;
@@ -33,7 +35,7 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
     collection,
 }) => {
     console.log('NFTCollectionDrawer render, visible:', visible);
-    
+
     const isMounted = useRef(true);
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState('');
@@ -62,7 +64,7 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
 
     useEffect(() => {
         console.log('NFTCollectionDrawer mounted with collection:', collection.name);
-        
+
         return () => {
             console.log('NFTCollectionDrawer unmounted');
             isMounted.current = false;
@@ -132,13 +134,16 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
         >
             <View style={styles.modalOverlay}>
                 <View style={[styles.drawerContainer, { maxHeight: windowHeight * 0.7 }]}>
+                    {/* Drag handle for better UX */}
+                    <View style={styles.dragHandle} />
+
                     <View style={styles.header}>
                         <Text style={styles.title}>
                             {collection.name && collection.name.length > 20 ?
                                 `${collection.name.substring(0, 17)}...` :
                                 collection.name}
                         </Text>
-                        <TouchableOpacity onPress={handleClose}>
+                        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                             <Icons.cross width={24} height={24} />
                         </TouchableOpacity>
                     </View>
@@ -172,7 +177,7 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
                                 disabled={loading}
                             >
                                 {loading ? (
-                                    <ActivityIndicator size="small" color="#fff" />
+                                    <ActivityIndicator size="small" color={COLORS.white} />
                                 ) : (
                                     <Text style={styles.buyButtonText}>Buy Collection Floor</Text>
                                 )}
@@ -184,7 +189,7 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
                     {loading && (
                         <View style={styles.loadingOverlay}>
                             <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color="#32D4DE" />
+                                <ActivityIndicator size="large" color={COLORS.brandPrimary} />
                                 <Text style={styles.loadingText}>{statusMsg}</Text>
                             </View>
                         </View>
@@ -198,14 +203,27 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         justifyContent: 'flex-end',
     },
     drawerContainer: {
-        backgroundColor: 'white',
+        backgroundColor: COLORS.lightBackground,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         paddingBottom: 20,
+        borderTopWidth: 1,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderColor: COLORS.borderDarkColor,
+    },
+    dragHandle: {
+        width: 40,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: COLORS.borderDarkColor,
+        alignSelf: 'center',
+        marginTop: 10,
+        marginBottom: 5,
     },
     header: {
         flexDirection: 'row',
@@ -213,12 +231,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#eaecef',
+        borderBottomColor: COLORS.borderDarkColor,
     },
     title: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#14171a',
+        fontSize: TYPOGRAPHY.size.lg,
+        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+        color: COLORS.white,
+        letterSpacing: TYPOGRAPHY.letterSpacing,
+    },
+    closeButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: COLORS.lighterBackground,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     content: {
         padding: 16,
@@ -230,6 +257,10 @@ const styles = StyleSheet.create({
     imageContainer: {
         alignItems: 'center',
         marginBottom: 16,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: COLORS.borderDarkColor,
     },
     collectionImage: {
         width: 200,
@@ -240,50 +271,59 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     collectionName: {
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: TYPOGRAPHY.size.xxl,
+        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
         marginBottom: 8,
         textAlign: 'center',
+        color: COLORS.white,
     },
     description: {
-        fontSize: 16,
-        color: '#657786',
+        fontSize: TYPOGRAPHY.size.md,
+        color: COLORS.accessoryDarkColor,
         marginBottom: 16,
-        lineHeight: 22,
+        lineHeight: TYPOGRAPHY.lineHeight.md,
+        textAlign: 'center',
     },
     buttonContainer: {
         alignItems: 'center',
         marginTop: 24,
     },
     buyButton: {
-        backgroundColor: '#32D4DE',
+        backgroundColor: COLORS.brandPrimary,
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 24,
         alignItems: 'center',
+        minWidth: 180,
     },
     buyButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
+        color: COLORS.white,
+        fontSize: TYPOGRAPHY.size.md,
+        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        backgroundColor: 'rgba(12, 16, 26, 0.9)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
     },
     loadingContainer: {
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: COLORS.darkerBackground,
         borderRadius: 12,
         padding: 20,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.borderDarkColor,
+        minWidth: 200,
     },
     loadingText: {
-        color: 'white',
+        color: COLORS.white,
         marginTop: 12,
         textAlign: 'center',
+        fontSize: TYPOGRAPHY.size.md,
     },
 });
 

@@ -591,13 +591,19 @@ export default function Profile({
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
           <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerUsername} numberOfLines={1} ellipsizeMode="tail">
             {localUsername}
           </Text>
           <Text style={styles.postCount}>{myPosts.length} posts</Text>
         </View>
+
+        {isOwnProfile && (
+          <TouchableOpacity onPress={handleLogout} style={styles.headerLogoutButton}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.profileWrapper}>
@@ -611,7 +617,7 @@ export default function Profile({
           fetchNftsError={resolvedNftError}
           onAvatarPress={() => handleProfileUpdated('image')}
           onEditProfile={() => handleProfileUpdated('username')}
-          onShareProfile={() => {}}
+          onShareProfile={() => { }}
           onLogout={isOwnProfile ? handleLogout : undefined}
           {...memoizedFollowProps}
           onPressPost={handlePostPress}
