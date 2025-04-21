@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevelColor, RiskLevel } from '../../../services/rugCheckService';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 interface RiskAnalysisSectionProps {
     tokenAddress: string;
@@ -41,7 +43,7 @@ const RiskAnalysisSection: React.FC<RiskAnalysisSectionProps> = ({ tokenAddress 
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0099ff" />
+                <ActivityIndicator size="large" color={COLORS.brandPrimary} />
                 <Text style={styles.loadingText}>Loading security analysis...</Text>
             </View>
         );
@@ -174,7 +176,7 @@ function getRiskExplanation(score: number, isRugged: boolean): string {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#F8F9FA',
+        backgroundColor: COLORS.lightBackground,
         borderRadius: 16,
         padding: 20,
         marginBottom: 30,
@@ -186,8 +188,8 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         marginTop: 12,
-        color: '#666',
-        fontSize: 16,
+        color: COLORS.greyMid,
+        fontSize: TYPOGRAPHY.size.md,
     },
     errorContainer: {
         padding: 24,
@@ -195,8 +197,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     errorText: {
-        color: '#666',
-        fontSize: 16,
+        color: COLORS.greyMid,
+        fontSize: TYPOGRAPHY.size.md,
         textAlign: 'center',
     },
     scoreSection: {
@@ -217,55 +219,55 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scoreValue: {
-        color: '#fff',
-        fontSize: 16,
+        color: COLORS.white,
+        fontSize: TYPOGRAPHY.size.md,
         fontWeight: '700',
     },
     riskLabel: {
-        fontSize: 16,
+        fontSize: TYPOGRAPHY.size.md,
         fontWeight: '600',
         marginLeft: 12,
     },
     ruggedBadge: {
-        backgroundColor: '#F44336',
+        backgroundColor: COLORS.errorRed,
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 8,
         alignSelf: 'flex-start',
     },
     ruggedText: {
-        color: '#fff',
-        fontSize: 12,
+        color: COLORS.white,
+        fontSize: TYPOGRAPHY.size.xs,
         fontWeight: '700',
     },
     explanationContainer: {
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.darkerBackground,
         borderRadius: 10,
         padding: 14,
         marginBottom: 20,
     },
     explanationTitle: {
-        fontSize: 16,
+        fontSize: TYPOGRAPHY.size.md,
         fontWeight: '600',
-        color: '#333',
+        color: COLORS.white,
         marginBottom: 12,
     },
     explanationText: {
-        fontSize: 14,
-        color: '#333',
+        fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.greyMid,
         lineHeight: 20,
     },
     riskFactorsContainer: {
         marginBottom: 20,
     },
     factorsTitle: {
-        fontSize: 16,
+        fontSize: TYPOGRAPHY.size.md,
         fontWeight: '600',
-        color: '#333',
+        color: COLORS.white,
         marginBottom: 12,
     },
     riskItem: {
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.darkerBackground,
         borderRadius: 10,
         padding: 14,
         marginBottom: 10,
@@ -277,9 +279,9 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     riskName: {
-        fontSize: 14,
+        fontSize: TYPOGRAPHY.size.sm,
         fontWeight: '600',
-        color: '#333',
+        color: COLORS.white,
         flex: 1,
     },
     riskLevelBadge: {
@@ -288,27 +290,27 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     riskLevelText: {
-        color: '#fff',
-        fontSize: 10,
+        color: COLORS.white,
+        fontSize: TYPOGRAPHY.size.xs,
         fontWeight: '700',
     },
     riskDescription: {
-        fontSize: 13,
-        color: '#666',
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
         lineHeight: 18,
     },
     holdersContainer: {
         marginTop: 4,
     },
     holdersTitle: {
-        fontSize: 16,
+        fontSize: TYPOGRAPHY.size.md,
         fontWeight: '600',
-        color: '#333',
+        color: COLORS.white,
         marginBottom: 4,
     },
     holdersSubtitle: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.greyMid,
         marginBottom: 12,
     },
     holderItem: {
@@ -318,40 +320,40 @@ const styles = StyleSheet.create({
     },
     holderAddress: {
         width: 120,
-        fontSize: 13,
-        color: '#333',
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.white,
     },
     holderBarContainer: {
         flex: 1,
         height: 6,
-        backgroundColor: '#eee',
+        backgroundColor: COLORS.darkerBackground,
         borderRadius: 3,
         marginHorizontal: 8,
     },
     holderBar: {
         height: '100%',
         borderRadius: 3,
-        backgroundColor: '#4CAF50',
+        backgroundColor: COLORS.brandPrimary,
     },
     insiderBar: {
-        backgroundColor: '#FF9800',
+        backgroundColor: COLORS.brandPurple,
     },
     holderPercentage: {
         width: 50,
-        fontSize: 13,
-        color: '#333',
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.white,
         textAlign: 'right',
     },
     insiderBadge: {
-        backgroundColor: '#FF9800',
+        backgroundColor: COLORS.brandPurple,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
         marginLeft: 8,
     },
     insiderText: {
-        color: '#fff',
-        fontSize: 10,
+        color: COLORS.white,
+        fontSize: TYPOGRAPHY.size.xs,
         fontWeight: '700',
     },
 });
