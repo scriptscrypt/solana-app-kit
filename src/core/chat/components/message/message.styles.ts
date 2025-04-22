@@ -8,153 +8,90 @@ type FlexAlign = 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
 type FlexJustify = 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
 type Overflow = 'visible' | 'hidden' | 'scroll';
 
-export const getMessageBaseStyles = () => ({
-  // Message container
-  messageContainer: {
-    width: '100%' as const,
-    marginBottom: 12,
-  },
-  currentUserMessageContainer: {
-    alignItems: 'flex-end' as FlexAlign,
-  },
-  otherUserMessageContainer: {
-    alignItems: 'flex-start' as FlexAlign,
-  },
-  
-  // Message bubble
-  messageBubble: {
+export function getMessageBaseStyles() {
+  return StyleSheet.create({
+    messageContainer: {
+      marginBottom: 4,
+      marginHorizontal: 10,
+      maxWidth: '90%',
+    },
+    currentUserMessageContainer: {
+      alignSelf: 'flex-end',
+    },
+    otherUserMessageContainer: {
+      alignSelf: 'flex-start',
+    },
+    // Add other styles as needed
+  });
+}
+
+export const messageBubbleStyles = StyleSheet.create({
+  container: {
     padding: 12,
     borderRadius: 18,
-    maxWidth: '80%' as const,
+    marginVertical: 1,
+    maxWidth: '100%',
   },
-  currentUserBubble: {
+  currentUser: {
     backgroundColor: COLORS.brandBlue,
     borderBottomRightRadius: 4,
+    alignSelf: 'flex-end',
   },
-  otherUserBubble: {
+  otherUser: {
     backgroundColor: COLORS.lighterBackground,
     borderBottomLeftRadius: 4,
+    alignSelf: 'flex-start',
   },
-  
-  // Message content
-  messageText: {
+  text: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.md,
-    lineHeight: TYPOGRAPHY.lineHeight.md,
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.regular),
+    fontFamily: TYPOGRAPHY.fontFamily,
+    lineHeight: 20,
   },
-  otherUserMessageText: {
+  otherUserText: {
     color: COLORS.white,
   },
-  
-  // Message header
-  headerContainer: {
-    flexDirection: 'row' as FlexDirection,
-    alignItems: 'center' as FlexAlign,
-    marginBottom: 4,
-    paddingHorizontal: 4,
-  },
-  headerLeft: {
-    flexDirection: 'row' as FlexDirection,
-    alignItems: 'center' as FlexAlign,
-  },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 8,
-  },
-  username: {
-    fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
-    color: COLORS.greyMid,
-  },
-  
-  // Message footer
-  footerContainer: {
-    flexDirection: 'row' as FlexDirection,
-    justifyContent: 'flex-end' as FlexJustify,
-    alignItems: 'center' as FlexAlign,
-    marginTop: 4,
-  },
   timestamp: {
-    fontSize: TYPOGRAPHY.size.xs,
+    fontSize: 10,
     color: COLORS.greyMid,
+    marginTop: 4,
+    alignSelf: 'flex-end',
   },
-  currentUserTimestamp: {
-    color: COLORS.greyLight,
-  },
-  
-  // Media content
-  mediaContainer: {
+  sectionContainer: {
     marginTop: 8,
-    borderRadius: 12,
-    overflow: 'hidden' as Overflow,
+    width: '100%',
   },
-  mediaImage: {
-    width: '100%' as const,
-    height: 200,
+  messageContent: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  imageContainer: {
+    marginTop: 8,
+    width: '100%',
     borderRadius: 12,
+    overflow: 'hidden',
+  },
+  messageImage: {
+    width: 240,
+    height: 180,
+    borderRadius: 12,
+  },
+  imageCaption: {
+    marginTop: 8,
+    fontSize: 14,
+    color: COLORS.white,
+  },
+  retweetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 4,
   },
-  
-  // Special content types
-  specialContentContainer: {
-    maxWidth: '90%' as const,
-    width: '90%' as const,
-    borderRadius: 16,
-    overflow: 'hidden' as Overflow,
-    marginVertical: 6,
+  retweetText: {
+    fontSize: 13,
+    color: COLORS.greyMid,
+    marginLeft: 6,
+    fontWeight: '500',
   },
-  tradeCardContainer: {
-    backgroundColor: COLORS.lighterBackground,
-    borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
-    borderRadius: 16,
-    padding: 10,
-  },
-  nftContainer: {
-    backgroundColor: COLORS.lighterBackground,
-    borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
-    borderRadius: 16,
-    overflow: 'hidden' as Overflow,
-  },
-  
-  // Group messages
-  messageGroup: {
-    marginBottom: 16,
-  },
-  groupHeader: {
-    marginBottom: 8,
-  },
-  
-  // Status indicators
-  readStatus: {
-    marginLeft: 4,
-    opacity: 0.7,
-  }
-});
-
-// Export individual styles for component reuse
-export const messageBubbleStyles = StyleSheet.create<{
-  container: ViewStyle;
-  currentUser: ViewStyle;
-  otherUser: ViewStyle;
-  text: TextStyle;
-  otherUserText: TextStyle;
-  mediaContainer: ViewStyle;
-  mediaImage: ImageStyle;
-  specialContentContainer: ViewStyle;
-}>({
-  container: getMessageBaseStyles().messageBubble as ViewStyle,
-  currentUser: getMessageBaseStyles().currentUserBubble as ViewStyle,
-  otherUser: getMessageBaseStyles().otherUserBubble as ViewStyle,
-  text: getMessageBaseStyles().messageText as TextStyle,
-  otherUserText: getMessageBaseStyles().otherUserMessageText as TextStyle,
-  mediaContainer: getMessageBaseStyles().mediaContainer as ViewStyle,
-  mediaImage: getMessageBaseStyles().mediaImage as ImageStyle,
-  specialContentContainer: getMessageBaseStyles().specialContentContainer as ViewStyle,
 });
 
 export const messageHeaderStyles = StyleSheet.create<{

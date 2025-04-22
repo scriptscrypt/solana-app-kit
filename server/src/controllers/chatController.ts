@@ -267,12 +267,12 @@ export async function getChatMessages(req: Request, res: Response) {
  */
 export async function sendMessage(req: Request, res: Response) {
   try {
-    const { chatId, userId, content, additionalData } = req.body;
+    const { chatId, userId, content, imageUrl, additionalData } = req.body;
     
-    if (!chatId || !userId || !content) {
+    if (!chatId || !userId || (!content && !imageUrl)) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Missing required fields' 
+        error: 'Missing required fields. Message must contain text content or an image.' 
       });
     }
 
@@ -289,16 +289,19 @@ export async function sendMessage(req: Request, res: Response) {
       });
     }
 
-    // Create the message
+    // Create the message with image URL if provided
+    const messageData = {
+      chat_room_id: chatId,
+      sender_id: userId,
+      content: content || '',
+      image_url: imageUrl || null,
+      additional_data: additionalData || null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
     const [message] = await knex('chat_messages')
-      .insert({
-        chat_room_id: chatId,
-        sender_id: userId,
-        content,
-        additional_data: additionalData || null,
-        created_at: new Date(),
-        updated_at: new Date(),
-      })
+      .insert(messageData)
       .returning('*');
 
     // Get sender information
