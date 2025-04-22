@@ -57,31 +57,36 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     if ('nftData' in post && post.nftData) {
       return 'nft';
     }
-    
+
     // Check for message with media
     if ('media' in post && post.media && post.media.length > 0) {
       return 'media';
     }
 
+    // Check for image_url in chat messages
+    if ('image_url' in post && post.image_url) {
+      return 'image';
+    }
+
     // Check for thread post with sections
     if ('sections' in post && post.sections) {
       const sections = post.sections as any[];
-      
+
       // Check if any section has trade data
       if (sections.some(section => section.type === 'TEXT_TRADE' && section.tradeData)) {
         return 'trade';
       }
-      
+
       // Check if any section has NFT listing data
       if (sections.some(section => section.type === 'NFT_LISTING' && section.listingData)) {
         return 'nft';
       }
-      
+
       // Check if any section has media
-      if (sections.some(section => 
-        section.type === 'TEXT_IMAGE' || 
-        section.type === 'TEXT_VIDEO' || 
-        section.imageUrl || 
+      if (sections.some(section =>
+        section.type === 'TEXT_IMAGE' ||
+        section.type === 'TEXT_VIDEO' ||
+        section.imageUrl ||
         section.videoUrl
       )) {
         return 'media';
@@ -97,13 +102,13 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
 
   // Handle thread posts vs direct message data
   const getMessageText = (post: any) => {
-    return 'sections' in post 
-      ? post.sections.map((section: any) => section.text).join('\n') 
+    return 'sections' in post
+      ? post.sections.map((section: any) => section.text).join('\n')
       : post.text || '';
   };
-  
+
   const messageText = getMessageText(postToDisplay);
-  
+
   // Get media from different sources
   const getMediaUrls = (post: any) => {
     if ('media' in post && post.media) {
@@ -116,14 +121,14 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     }
     return [];
   };
-  
+
   const mediaUrls = getMediaUrls(postToDisplay);
   const hasMedia = mediaUrls.length > 0;
 
   // Get trade data from post sections if available
   const getTradeDataFromSections = (post: any) => {
     if ('sections' in post && post.sections) {
-      const tradeSection = post.sections.find((section: any) => 
+      const tradeSection = post.sections.find((section: any) =>
         section.type === 'TEXT_TRADE' && section.tradeData
       );
       return tradeSection?.tradeData;
@@ -134,14 +139,14 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
   // Get NFT data from post sections if available
   const getNftDataFromSections = (post: any) => {
     if ('sections' in post && post.sections) {
-      const nftSection = post.sections.find((section: any) => 
+      const nftSection = post.sections.find((section: any) =>
         section.type === 'NFT_LISTING' && section.listingData
       );
-      
+
       if (nftSection?.listingData) {
         // Get the raw listing data without type conversion
         const listingData = nftSection.listingData;
-        
+
         // Use explicit extraction to ensure we get all the fields correctly
         return {
           id: listingData.mint || nftSection.id || 'unknown-nft',
@@ -157,15 +162,15 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
   };
 
   // Get the appropriate trade data
-  const tradeData = 'tradeData' in postToDisplay 
-    ? postToDisplay.tradeData 
+  const tradeData = 'tradeData' in postToDisplay
+    ? postToDisplay.tradeData
     : getTradeDataFromSections(postToDisplay);
-  
+
   // Get the appropriate NFT data - handle null case safely
-  const rawNftData = 'nftData' in postToDisplay 
-    ? postToDisplay.nftData 
+  const rawNftData = 'nftData' in postToDisplay
+    ? postToDisplay.nftData
     : getNftDataFromSections(postToDisplay);
-    
+
   // Only set nftData if it's non-null to avoid TypeScript errors
   const nftData = rawNftData ? {
     id: rawNftData.id || 'unknown-nft',
@@ -179,14 +184,32 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
   // Render content based on content type
   const renderPostContent = (post: any) => {
     const postContentType = getContentType(post);
-    
+
     switch (postContentType) {
+      case 'image':
+        // Handle single image from chat message
+        return (
+          <View style={styles.messageContent}>
+            <View style={styles.imageContainer}>
+              <IPFSAwareImage
+                source={getValidImageSource(post.image_url)}
+                style={styles.messageImage}
+                defaultSource={DEFAULT_IMAGES.placeholder}
+                resizeMode="cover"
+              />
+            </View>
+            {post.text && post.text.trim() !== '' && (
+              <Text style={[textStyle, styles.imageCaption]}>{post.text}</Text>
+            )}
+          </View>
+        );
+
       case 'trade':
         if (tradeData) {
           return (
-            <MessageTradeCard 
-              tradeData={tradeData} 
-              isCurrentUser={isCurrentUser} 
+            <MessageTradeCard
+              tradeData={tradeData}
+              isCurrentUser={isCurrentUser}
               userAvatar={post.user?.avatar}
             />
           );
@@ -197,7 +220,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
             return (
               <View style={styles.sectionContainer}>
                 {tradeSection.text && <Text style={textStyle}>{tradeSection.text}</Text>}
-                <SectionTrade 
+                <SectionTrade
                   text={tradeSection.text}
                   tradeData={tradeSection.tradeData}
                   user={post.user}
@@ -212,14 +235,14 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
       case 'nft':
         if (nftData) {
           return (
-            <MessageNFT 
-              nftData={nftData} 
+            <MessageNFT
+              nftData={nftData}
               isCurrentUser={isCurrentUser}
               onPress={() => {
                 // Navigate to parent component through event bubbling
                 // ChatScreen will receive this click and open TokenDetailsDrawer
-                const bubbleClickEvent = new CustomEvent('message-click', { 
-                  detail: { message: message, type: 'nft', data: nftData } 
+                const bubbleClickEvent = new CustomEvent('message-click', {
+                  detail: { message: message, type: 'nft', data: nftData }
                 });
                 window.dispatchEvent(bubbleClickEvent);
               }}
@@ -227,16 +250,16 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
           );
         } else if ('sections' in post) {
           // For thread posts with NFT listing sections
-          const nftSections = post.sections.filter((section: any) => 
+          const nftSections = post.sections.filter((section: any) =>
             section.type === 'NFT_LISTING' && section.listingData
           );
-          
+
           if (nftSections.length > 0) {
             return (
               <View style={styles.sectionContainer}>
                 {nftSections.map((section: any, index: number) => (
-                  <SectionNftListing 
-                    key={`nft-${index}`} 
+                  <SectionNftListing
+                    key={`nft-${index}`}
                     listingData={section.listingData}
                     compact={true}
                   />
@@ -257,8 +280,8 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
                   return (
                     <View key={`img-${index}`}>
                       {section.text && <Text style={textStyle}>{section.text}</Text>}
-                      <SectionTextImage 
-                        text={section.text} 
+                      <SectionTextImage
+                        text={section.text}
                         imageUrl={section.imageUrl}
                       />
                     </View>
@@ -267,8 +290,8 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
                   return (
                     <View key={`vid-${index}`}>
                       {section.text && <Text style={textStyle}>{section.text}</Text>}
-                      <SectionTextVideo 
-                        text={section.text} 
+                      <SectionTextVideo
+                        text={section.text}
                         videoUrl={section.videoUrl}
                       />
                     </View>
@@ -283,7 +306,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
           return (
             <View>
               {getMessageText(post) && <Text style={textStyle}>{getMessageText(post)}</Text>}
-              
+
               <View style={styles.mediaContainer}>
                 {getMediaUrls(post).map((mediaUrl: string, index: number) => (
                   <IPFSAwareImage
@@ -300,19 +323,8 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
 
       case 'text':
       default:
-        // If there are sections but no specialized content, render all text
-        if ('sections' in post && post.sections.length > 0) {
-          return (
-            <View>
-              {post.sections.map((section: any, index: number) => (
-                <Text key={`text-${index}`} style={textStyle}>
-                  {section.text}
-                </Text>
-              ))}
-            </View>
-          );
-        }
-        return <Text style={textStyle}>{getMessageText(post)}</Text>;
+        // For plain text messages
+        return <Text style={textStyle}>{messageText}</Text>;
     }
   };
 
@@ -353,8 +365,8 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
           <View style={styles.originalPostHeader}>
             <IPFSAwareImage
               source={
-                message.retweetOf.user?.avatar 
-                  ? getValidImageSource(message.retweetOf.user.avatar) 
+                message.retweetOf.user?.avatar
+                  ? getValidImageSource(message.retweetOf.user.avatar)
                   : DEFAULT_IMAGES.user
               }
               style={styles.originalPostAvatar}
@@ -385,7 +397,13 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
   // For text and media content, wrap in a bubble
   return (
     <View style={bubbleStyle}>
-      {renderPostContent(message)}
+      {isRetweet && !isQuoteRetweet && (
+        <View style={styles.retweetHeader}>
+          <Icons.Retweet width={14} height={14} color={COLORS.greyLight} />
+          <Text style={styles.retweetText}>Reposted</Text>
+        </View>
+      )}
+      {renderPostContent(postToDisplay)}
     </View>
   );
 }
@@ -465,6 +483,32 @@ const styles = StyleSheet.create({
   quoteContent: {
     marginBottom: 8,
     paddingHorizontal: 12,
+  },
+  messageContent: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  imageContainer: {
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  messageImage: {
+    width: 240,
+    height: 180,
+    borderRadius: 8,
+  },
+  retweetText: {
+    fontSize: 13,
+    color: COLORS.greyMid,
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  imageCaption: {
+    marginTop: 8,
+    fontSize: 14,
+    color: COLORS.white,
   },
 });
 

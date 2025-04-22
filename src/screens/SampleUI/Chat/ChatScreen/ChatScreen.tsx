@@ -261,8 +261,8 @@ const ChatScreen: React.FC = () => {
   }, []);
 
   // Modify handleMessageSent to handle AI Agent chat
-  const handleMessageSent = useCallback((content: string) => {
-    if (!address || !content.trim()) return;
+  const handleMessageSent = useCallback((content: string, imageUrl?: string) => {
+    if (!address || (!content.trim() && !imageUrl)) return;
 
     // For AI Agent chat, don't actually send a message
     if (isAIAgentChat) {
@@ -282,7 +282,8 @@ const ChatScreen: React.FC = () => {
     dispatch(sendMessage({
       chatId,
       userId: address,
-      content: content.trim()
+      content: content.trim(),
+      imageUrl: imageUrl, // Include image URL if provided
     })).then((resultAction) => {
       if (sendMessage.fulfilled.match(resultAction)) {
         // Message sent successfully to the API
@@ -506,8 +507,8 @@ const ChatScreen: React.FC = () => {
             : DEFAULT_IMAGES.user,
         },
         text: msg.content,
+        image_url: msg.image_url, // Pass the image URL to the component
         createdAt: msg.created_at,
-        // Add other fields needed for rendering
       }));
     }
   };

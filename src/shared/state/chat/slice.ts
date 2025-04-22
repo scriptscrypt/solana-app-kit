@@ -15,6 +15,7 @@ export interface ChatMessage {
   chat_room_id: string;
   sender_id: string;
   content: string;
+  image_url?: string | null;
   additional_data?: any;
   created_at: string;
   updated_at: string;
@@ -90,12 +91,25 @@ export const fetchChatMessages = createAsyncThunk(
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async ({ chatId, userId, content, additionalData }: { chatId: string; userId: string; content: string; additionalData?: any }, { rejectWithValue }) => {
+  async ({ 
+    chatId, 
+    userId, 
+    content, 
+    imageUrl,
+    additionalData 
+  }: { 
+    chatId: string; 
+    userId: string; 
+    content: string; 
+    imageUrl?: string;
+    additionalData?: any 
+  }, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${SERVER_URL}/api/chat/messages`, {
         chatId,
         userId,
         content,
+        imageUrl,
         additionalData,
       });
       return response.data.message;

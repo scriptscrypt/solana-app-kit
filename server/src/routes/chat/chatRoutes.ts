@@ -7,6 +7,7 @@
  * - Get chat messages
  * - Send messages
  * - Get users for chat creation
+ * - Upload images for chat messages
  */
 import { Router, Request, Response, NextFunction } from 'express';
 import {
@@ -17,6 +18,7 @@ import {
   sendMessage,
   getUsersForChat,
 } from '../../controllers/chatController';
+import { chatImageRouter } from './chatImageRoutes';
 
 const chatRouter = Router();
 
@@ -46,5 +48,8 @@ chatRouter.post('/messages', asyncHandler(sendMessage));
 
 // Get users for chat creation (search)
 chatRouter.get('/users', asyncHandler(getUsersForChat));
+
+// Mount the chat image router
+chatRouter.use('/images', chatImageRouter);
 
 export { chatRouter }; 

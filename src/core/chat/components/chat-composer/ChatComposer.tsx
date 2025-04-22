@@ -41,6 +41,7 @@ import {
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
+import { uploadChatImage } from '../../services/chatImageService';
 
 /**
  * Props for the ChatComposer component
@@ -52,7 +53,7 @@ interface ChatComposerProps {
   /** Optional parent post ID - if present, this composer is for a reply */
   parentId?: string;
   /** Callback fired when a new message is created, with message content */
-  onMessageSent?: (content: string) => void;
+  onMessageSent?: (content: string, imageUrl?: string) => void;
   /** Theme overrides for customizing appearance */
   themeOverrides?: Partial<Record<string, any>>;
   /** Style overrides for specific components */
@@ -84,7 +85,7 @@ interface ChatComposerProps {
  * <ChatComposer
  *   currentUser={user}
  *   parentId="chat-123" // Optional, for replies
- *   onMessageSent={(content) => handleMessageSent(content)}
+ *   onMessageSent={(content, imageUrl) => handleMessageSent(content, imageUrl)}
  *   themeOverrides={{ '--primary-color': '#1D9BF0' }}
  * />
  * ```
@@ -211,13 +212,35 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
 
     // If this is a chat message (not a post), we can use the simplified logic
     if (onMessageSent) {
-      // Pass the text content to the callback
-      onMessageSent(textValue);
+      setIsSubmitting(true);
+      try {
+        let uploadedImageUrl = '';
 
-      // Clear the input
-      setTextValue('');
-      setSelectedImage(null);
-      setSelectedListingNft(null);
+        // If there's an image, upload it first
+        if (selectedImage) {
+          try {
+            uploadedImageUrl = await uploadChatImage(currentUser.id, selectedImage);
+          } catch (error) {
+            console.error('Failed to upload chat image:', error);
+            Alert.alert('Image Upload Error', 'Failed to upload image. Please try again.');
+            setIsSubmitting(false);
+            return;
+          }
+        }
+
+        // Pass both text content and image URL to the callback
+        onMessageSent(textValue, uploadedImageUrl);
+
+        // Clear the input
+        setTextValue('');
+        setSelectedImage(null);
+        setSelectedListingNft(null);
+      } catch (error) {
+        console.error('Error sending message:', error);
+        Alert.alert('Error', 'Failed to send message. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
