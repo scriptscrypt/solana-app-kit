@@ -464,7 +464,7 @@ const NftListingModal = ({
                                         <Text style={modalStyles.errorText}>
                                             {fetchNftsError}
                                         </Text>
-                                    ) : listingItems.length === 0 ? (
+                                    ) : listingItems?.length === 0 ? (
                                         <Text style={modalStyles.emptyText}>
                                             No NFTs found.
                                         </Text>

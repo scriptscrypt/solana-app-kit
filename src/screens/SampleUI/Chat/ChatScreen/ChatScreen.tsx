@@ -21,7 +21,7 @@ import { MessageData, NFTData } from '@/core/chat/components/message/message.typ
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { ThreadUser } from '@/core/thread/types';
-import { ThreadPost } from '@/core/thread/components/thread.types';
+import { ThreadPost, ThreadSection } from '@/core/thread/components/thread.types';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles, TAB_BAR_HEIGHT } from './ChatScreen.styles';
@@ -35,6 +35,8 @@ import TYPOGRAPHY from '@/assets/typography';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+import { fetchChatMessages, sendMessage } from '@/shared/state/chat/slice';
+import socketService from '@/services/socketService';
 
 // Add custom styles for NFT message components
 const additionalStyles = {
@@ -120,12 +122,12 @@ const ChatScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const route = useRoute<ChatScreenRouteProp>();
-  
+
   // Extract chat parameters from route
   const { chatId = 'global', chatName = 'Global Community', isGroup = true } = route.params || {};
-  
+
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  
+
   // State for NFT drawer
   const [showNftDetailsDrawer, setShowNftDetailsDrawer] = useState(false);
   const [selectedNft, setSelectedNft] = useState<{
@@ -136,26 +138,33 @@ const ChatScreen: React.FC = () => {
     nftData?: any;
   } | null>(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
-  
+
   // State for NFT buying
   const [nftLoading, setNftLoading] = useState(false);
   const [nftStatusMsg, setNftStatusMsg] = useState('');
   const [loadingFloor, setLoadingFloor] = useState(false);
-  
-  // Get user info and wallet
+
+  // State for message loading
+  const [loading, setLoading] = useState(true);
+
+  // Get user info and wallet 
   const { address, publicKey, sendTransaction } = useWallet();
   const auth = useAppSelector(state => state.auth);
-  
-  // Get posts from the thread reducer to use as messages
+
+  // Get chat messages from Redux
+  const chatMessages = useAppSelector(state => state.chat.messages[chatId] || []);
+  const isLoadingMessages = useAppSelector(state => state.chat.loadingMessages);
+  const chatError = useAppSelector(state => state.chat.error);
+
+  // Get posts from the thread reducer for global chat
   const allPosts = useAppSelector(state => state.thread.allPosts);
-  const [messages, setMessages] = useState<ThreadPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [globalMessages, setGlobalMessages] = useState<ThreadPost[]>([]);
 
   // Handle back button press
   const handleBack = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
-  
+
   // Format current user info for ChatComposer
   const currentUser: ThreadUser = {
     id: address || 'unknown-user',
@@ -164,39 +173,58 @@ const ChatScreen: React.FC = () => {
     avatar: auth.profilePicUrl ? { uri: auth.profilePicUrl } : DEFAULT_IMAGES.user as ImageSourcePropType,
     verified: false,
   };
-  
-  // Fetch posts on mount to use as messages
+
+  // Connect to WebSocket
+  useEffect(() => {
+    // Skip for global chat since it uses posts
+    if (chatId !== 'global' && address) {
+      // Initialize socket for user
+      socketService.initSocket(address).then(() => {
+        // Join the chat room
+        socketService.joinChat(chatId);
+      });
+
+      // Clean up when leaving the screen
+      return () => {
+        socketService.leaveChat(chatId);
+      };
+    }
+  }, [chatId, address]);
+
+  // Fetch messages when entering the screen
   useEffect(() => {
     setLoading(true);
-    dispatch(fetchAllPosts())
-      .then(() => setLoading(false))
-      .catch(() => setLoading(false));
-  }, [dispatch]);
 
-  // Process posts and convert to chat messages format
+    if (chatId === 'global') {
+      // For Global chat, fetch posts
+      dispatch(fetchAllPosts())
+        .then(() => setLoading(false))
+        .catch(() => setLoading(false));
+    } else if (address) {
+      // For real chats, fetch messages
+      dispatch(fetchChatMessages({ chatId }))
+        .then(() => setLoading(false))
+        .catch(() => setLoading(false));
+    }
+  }, [dispatch, chatId, address]);
+
+  // Process posts and convert to chat messages format for global chat
   useEffect(() => {
-    if (allPosts.length > 0) {
-      // For Global chat, show all messages
-      if (chatId === 'global') {
-        // Filter out retweets and keep only original posts and comments
-        const filteredPosts = allPosts.filter(post => 
-          !post.retweetOf || (post.retweetOf && post.sections && post.sections.length > 0) // Keep quote retweets
-        );
-        
-        // Sort by creation date for proper chat chronology
-        const sortedPosts = [...filteredPosts].sort((a, b) => 
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-        
-        setMessages(sortedPosts);
-      } else {
-        // For other chats, we would filter based on chatId
-        // This is just a placeholder for future implementation
-        setMessages([]);
-      }
+    if (chatId === 'global' && allPosts.length > 0) {
+      // Filter out retweets and keep only original posts and comments
+      const filteredPosts = allPosts.filter(post =>
+        !post.retweetOf || (post.retweetOf && post.sections && post.sections.length > 0) // Keep quote retweets
+      );
+
+      // Sort by creation date for proper chat chronology
+      const sortedPosts = [...filteredPosts].sort((a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      setGlobalMessages(sortedPosts);
     }
   }, [allPosts, chatId]);
-  
+
   // Set up keyboard listeners
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -219,30 +247,56 @@ const ChatScreen: React.FC = () => {
   }, []);
 
   // Handle new message sent
-  const handleMessageSent = useCallback(() => {
-    // In a real app, this would handle the actual message sending
-    // For now, we'll just scroll to the bottom
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  }, []);
+  const handleMessageSent = useCallback((content: string) => {
+    if (!address || !content.trim()) return;
+
+    if (chatId === 'global') {
+      // For global chat, we'd normally create a post
+      // For now, just show a notification since global chat is read-only
+      Alert.alert('Global Chat', 'Global chat messages are currently shown as posts. To create a post, use the Post button in the feed.');
+      return;
+    }
+
+    // Send message via Redux (which will send to API)
+    dispatch(sendMessage({
+      chatId,
+      userId: address,
+      content: content.trim()
+    })).then((resultAction) => {
+      if (sendMessage.fulfilled.match(resultAction)) {
+        // Message sent successfully to the API
+        // Send via WebSocket for real-time display
+        socketService.sendMessage(chatId, resultAction.payload);
+
+        // Scroll to bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      } else if (sendMessage.rejected.match(resultAction)) {
+        // Handle error
+        console.error('Failed to send message:', resultAction.payload);
+        Alert.alert('Error', 'Failed to send message. Please try again.');
+      }
+    });
+  }, [chatId, address, dispatch]);
 
   // Scroll to bottom on initial render and when messages change
   useEffect(() => {
-    if (messages.length > 0) {
+    if ((chatId === 'global' && globalMessages.length > 0) ||
+      (chatId !== 'global' && chatMessages.length > 0)) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: false });
       }, 200);
     }
-  }, [messages]);
-  
+  }, [globalMessages, chatMessages, chatId]);
+
   // Handle opening NFT details drawer
   const handleOpenNftDetails = useCallback((nftData: NFTData & { isCollection?: boolean, collId?: string }) => {
     setDrawerLoading(true);
-    
+
     // Check if this is a collection or regular NFT
     const isCollection = (nftData as any).isCollection && (nftData as any).collId;
-    
+
     setSelectedNft({
       mint: isCollection ? (nftData as any).collId || '' : nftData.mintAddress || '',
       symbol: '',
@@ -257,34 +311,34 @@ const ChatScreen: React.FC = () => {
         collId: isCollection ? (nftData as any).collId : undefined
       }
     });
-    
+
     // Short timeout to ensure smoother opening experience
     setTimeout(() => {
       setDrawerLoading(false);
       setShowNftDetailsDrawer(true);
     }, 300);
   }, []);
-  
+
   // Handle buying an NFT
   const handleBuyNft = useCallback(async (mintAddress: string, owner?: string, priceSol?: number) => {
     if (!mintAddress) {
       Alert.alert('Error', 'No NFT mint address available.');
       return;
     }
-    
+
     if (!publicKey || !address) {
       Alert.alert('Error', 'Wallet not connected.');
       return;
     }
-    
+
     try {
       setNftLoading(true);
       setNftStatusMsg('Preparing buy transaction...');
-      
+
       // Use estimated price if not provided
-      const price = priceSol || 0.1; 
+      const price = priceSol || 0.1;
       const ownerAddress = owner || "";
-      
+
       const signature = await buyNft(
         address,
         mintAddress,
@@ -293,9 +347,9 @@ const ChatScreen: React.FC = () => {
         sendTransaction,
         status => setNftStatusMsg(status)
       );
-      
+
       Alert.alert('Success', 'NFT purchased successfully!');
-      
+
       // Show success notification
       TransactionService.showSuccess(signature, 'nft');
     } catch (err: any) {
@@ -307,7 +361,7 @@ const ChatScreen: React.FC = () => {
       setNftStatusMsg('');
     }
   }, [address, publicKey, sendTransaction]);
-  
+
   // Handle buying a collection floor NFT
   const handleBuyCollectionFloor = useCallback(async (collId: string, collectionName?: string) => {
     if (!collId) {
@@ -333,10 +387,10 @@ const ChatScreen: React.FC = () => {
       );
 
       Alert.alert(
-        'Success', 
+        'Success',
         `Successfully purchased floor NFT from ${collectionName || 'collection'}!`
       );
-      
+
       // Show success notification
       TransactionService.showSuccess(signature, 'nft');
     } catch (err: any) {
@@ -348,7 +402,7 @@ const ChatScreen: React.FC = () => {
       setNftStatusMsg('');
     }
   }, [address, publicKey, sendTransaction]);
-  
+
   // Function to check if a post has NFT listing section
   const hasNftListingSection = (post: ThreadPost) => {
     if (post.sections) {
@@ -356,18 +410,18 @@ const ChatScreen: React.FC = () => {
     }
     return false;
   };
-  
+
   // Function to extract NFT data from post sections
   const getNftDataFromSections = (post: ThreadPost) => {
     if (post.sections) {
-      const nftSection = post.sections.find(section => 
+      const nftSection = post.sections.find(section =>
         section.type === 'NFT_LISTING' && section.listingData
       );
-      
+
       if (nftSection?.listingData) {
         // Get the raw listing data without type conversion
         const listingData = nftSection.listingData;
-        
+
         // Use explicit extraction to ensure we get all the fields correctly
         return {
           id: listingData.mint || nftSection.id || 'unknown-nft',
@@ -385,7 +439,6 @@ const ChatScreen: React.FC = () => {
   };
 
   // Function to convert thread NftListingData to the module's NftListingData type
-  // Similar to what SectionNftListing does
   const convertToNftListingData = (threadListingData: any): NftListingData => {
     return {
       ...threadListingData,
@@ -393,41 +446,59 @@ const ChatScreen: React.FC = () => {
     };
   };
 
+  // Get the messages to display based on chat type
+  const getMessagesToDisplay = () => {
+    if (chatId === 'global') {
+      return globalMessages;
+    } else {
+      // Convert chat messages to a format compatible with the message renderer
+      return chatMessages.map(msg => ({
+        id: msg.id,
+        user: {
+          id: msg.sender_id,
+          username: msg.sender?.username || 'User',
+          avatar: msg.sender?.profile_picture_url
+            ? { uri: msg.sender.profile_picture_url }
+            : DEFAULT_IMAGES.user,
+        },
+        text: msg.content,
+        createdAt: msg.created_at,
+        // Add other fields needed for rendering
+      }));
+    }
+  };
+
   // Render message with ChatMessage component
-  const renderMessage = ({ item }: { item: ThreadPost }) => {
+  const renderMessage = ({ item }: { item: any }) => {
     const isCurrentUser = item.user.id === currentUser.id;
-    
+
     // Show header only for the first message from a user in a sequence
+    const messages = getMessagesToDisplay();
     const index = messages.findIndex(msg => msg.id === item.id);
     const previousMessage = index > 0 ? messages[index - 1] : null;
-    
+
     // Show header if this is the first message or if previous message is from a different user
     const showHeader = !previousMessage || previousMessage.user.id !== item.user.id;
-    
-    // Check if this is a reply/comment to another post
-    const isReply = item.parentId != null && item.parentId !== '';
-    
-    // Check if this message has NFT data
-    const isNftMessage = hasNftListingSection(item);
-    
-    // For NFT messages, we have two rendering options:
-    // 1. Using MessageNFT (chat-like UI but limited data)
-    // 2. Using NftDetailsSection directly (better data but less chat-like)
-    // We'll implement both approaches and use the second one for better data display
-    
-    if (isNftMessage) {
+
+    // Check if this is a reply/comment to another post (only for global chat)
+    const isReply = chatId === 'global' && item.parentId != null && item.parentId !== '';
+
+    // Check if this message has NFT data (only for global chat)
+    const isNftMessage = chatId === 'global' && hasNftListingSection(item);
+
+    if (isNftMessage && chatId === 'global') {
       // Find the NFT listing section
-      const nftSection = item.sections.find(section => 
+      const nftSection = item.sections.find((section: ThreadSection) =>
         section.type === 'NFT_LISTING' && section.listingData
       );
-      
+
       if (nftSection?.listingData) {
         // Convert to the format expected by NftDetailsSection
         const convertedListingData = convertToNftListingData(nftSection.listingData);
-        
+
         // Check if this is a collection
         const isCollection = convertedListingData.isCollection && convertedListingData.collId;
-        
+
         // Option 2: Use NftDetailsSection directly like SectionNftListing does
         return (
           <View style={[
@@ -446,7 +517,7 @@ const ChatScreen: React.FC = () => {
                 <Text style={additionalStyles.username}>{item.user.username}</Text>
               </View>
             )}
-            
+
             <View style={[
               additionalStyles.nftContainer,
               isCurrentUser ? additionalStyles.currentUserNftContainer : additionalStyles.otherUserNftContainer
@@ -464,11 +535,11 @@ const ChatScreen: React.FC = () => {
                       collectionName: convertedListingData.collectionName || '',
                       mintAddress: convertedListingData.mint || ''
                     };
-                    
+
                     // Pass additional data for the drawer via custom attributes
                     (nftDataForDrawer as any).isCollection = convertedListingData.isCollection;
                     (nftDataForDrawer as any).collId = convertedListingData.collId;
-                    
+
                     handleOpenNftDetails(nftDataForDrawer);
                   }
                 }}
@@ -478,7 +549,7 @@ const ChatScreen: React.FC = () => {
                   containerStyle={{ borderWidth: 0, backgroundColor: 'transparent' }}
                 />
               </TouchableOpacity>
-              
+
               {/* Add Buy NFT/Collection Floor button */}
               {isCollection ? (
                 <TouchableOpacity
@@ -519,7 +590,7 @@ const ChatScreen: React.FC = () => {
         );
       }
     }
-    
+
     // For regular messages, use ChatMessage component
     return (
       <View style={[
@@ -532,7 +603,7 @@ const ChatScreen: React.FC = () => {
           currentUser={currentUser}
           onPressMessage={(message) => {
             // Handle message press - for NFT messages we open the drawer
-            if (hasNftListingSection(message as ThreadPost)) {
+            if (chatId === 'global' && hasNftListingSection(message as ThreadPost)) {
               const nftData = getNftDataFromSections(message as ThreadPost);
               if (nftData) {
                 handleOpenNftDetails(nftData);
@@ -569,7 +640,7 @@ const ChatScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-      
+
       {/* Header with Gradient Border - updated to include back button and chat name */}
       <View style={styles.headerContainer}>
         {/* Left: Back button */}
@@ -597,7 +668,7 @@ const ChatScreen: React.FC = () => {
             <Icons.walletIcon width={35} height={35} />
           </TouchableOpacity>
         </View>
-        
+
         {/* Bottom gradient border */}
         <LinearGradient
           colors={['transparent', COLORS.lightBackground]}
@@ -609,13 +680,23 @@ const ChatScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
         style={styles.keyboardAvoidingContainer}>
-        
+
         <View style={styles.innerContainer}>
-          {loading ? (
+          {loading || isLoadingMessages ? (
             <View style={styles.loadingContainer}>
               <Text style={styles.loadingText}>Loading messages...</Text>
             </View>
-          ) : messages.length === 0 && chatId !== 'global' ? (
+          ) : chatError ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{chatError}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => dispatch(fetchChatMessages({ chatId }))}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : getMessagesToDisplay().length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No messages yet</Text>
               <Text style={styles.emptySubtext}>Start the conversation!</Text>
@@ -623,7 +704,7 @@ const ChatScreen: React.FC = () => {
           ) : (
             <FlatList
               ref={flatListRef}
-              data={messages}
+              data={getMessagesToDisplay()}
               renderItem={renderMessage}
               keyExtractor={item => item.id}
               contentContainerStyle={[
@@ -635,7 +716,7 @@ const ChatScreen: React.FC = () => {
               showsVerticalScrollIndicator={true}
             />
           )}
-          
+
           {/* Chat composer with bottom padding for tab bar */}
           <View style={styles.composerContainer}>
             <ChatComposer
@@ -643,13 +724,13 @@ const ChatScreen: React.FC = () => {
               onMessageSent={handleMessageSent}
             />
             {!keyboardVisible && (
-              <View style={[styles.tabBarSpacer, { height: TAB_BAR_HEIGHT }]} />
+              <View style={[styles.tabBarSpacer, { height: 20 }]} />
             )}
           </View>
         </View>
-        
+
       </KeyboardAvoidingView>
-      
+
       {/* NFT Details Drawer */}
       {selectedNft && (
         <TokenDetailsDrawer
