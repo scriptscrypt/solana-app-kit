@@ -232,7 +232,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
       // Text section
       if (textValue.trim()) {
         sections.push({
-          id: 'section-' + Math.random().toString(36).substr(2, 9),
+          id: userPublicKey,
           type: 'TEXT_ONLY' as ThreadSectionType,
           text: textValue.trim(),
         });
@@ -246,7 +246,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
 
           // Once we have the IPFS URL, add it to sections
           sections.push({
-            id: 'section-' + Math.random().toString(36).substr(2, 9),
+            id: userPublicKey,
             type: 'TEXT_IMAGE',
             text: '', // Can be empty or contain caption text
             imageUrl: { uri: uploadedImageUrl },

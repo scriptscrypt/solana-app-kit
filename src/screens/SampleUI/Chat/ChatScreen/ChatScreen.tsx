@@ -286,8 +286,15 @@ const ChatScreen: React.FC = () => {
     })).then((resultAction) => {
       if (sendMessage.fulfilled.match(resultAction)) {
         // Message sent successfully to the API
+        // IMPORTANT: Ensure the sender ID in the WebSocket message matches the authenticated user ID
+        // Create a message object with senderId matching the authenticated user ID (wallet address)
+        const messagePayload = {
+          ...resultAction.payload,
+          senderId: address // Make sure this matches the ID used in socketService.initSocket()
+        };
+
         // Send via WebSocket for real-time display
-        socketService.sendMessage(chatId, resultAction.payload);
+        socketService.sendMessage(chatId, messagePayload);
 
         // Scroll to bottom
         setTimeout(() => {
