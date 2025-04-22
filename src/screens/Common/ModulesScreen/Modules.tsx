@@ -43,7 +43,7 @@ const modules = [
     key: 'launchlab',
     title: 'Launch Lab',
     subtitle: 'Launch Tokens via Rayduim',
-    navigateTo: 'TokenMill', // Placeholder, update as needed
+    navigateTo: 'LaunchlabsScreen',
     iconComponent: Icons.RadyuimIcom,
     backgroundImage: require('@/assets/images/Rayduim_bg.png'),
   },
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     marginBottom: 16,
     marginLeft: 4,
-    textAlign : 'center',
+    textAlign: 'center',
   },
   launchCard: {
     width: '100%',
