@@ -3,7 +3,7 @@ import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
 // Tab bar height constant
-export const TAB_BAR_HEIGHT = 75;
+export const TAB_BAR_HEIGHT = 80;
 
 export const styles = StyleSheet.create({
   container: {
@@ -12,46 +12,45 @@ export const styles = StyleSheet.create({
   },
   // Header styles similar to SwapScreen and Modules
   headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderDarkColor,
-    position: 'relative',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    position: 'relative' as const,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 4,
   },
   leftPlaceholder: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 30,
   },
   titleContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: -1,
+    flex: 1,
+    alignItems: 'center' as const,
   },
   titleText: {
-    fontSize: 18,
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     color: COLORS.white,
-    fontFamily: TYPOGRAPHY.fontFamily,
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: 'bold' as const,
+  },
+  subtitleText: {
+    color: COLORS.lightGrey,
+    fontSize: TYPOGRAPHY.size.xs,
+    marginTop: 2,
   },
   iconsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
   },
   iconButton: {
     marginLeft: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   headerBottomGradient: {
-    position: 'absolute',
+    position: 'absolute' as const,
     bottom: 0,
     left: 0,
     right: 0,
@@ -75,13 +74,44 @@ export const styles = StyleSheet.create({
   },
   innerContainer: {
     flex: 1,
+    flexDirection: 'column' as const,
   },
   messagesContainer: {
-    padding: 16,
     flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: COLORS.lightGrey,
+    fontSize: TYPOGRAPHY.size.md,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.lg,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    color: COLORS.lightGrey,
+    fontSize: TYPOGRAPHY.size.md,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   composerContainer: {
-    width: '100%',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: COLORS.background,
   },
   messageBubble: {
     maxWidth: '80%',
@@ -116,20 +146,20 @@ export const styles = StyleSheet.create({
   },
   // Reply styling
   messageWrapper: {
-    width: '100%',
-    position: 'relative',
+    marginBottom: 16,
+    position: 'relative' as const,
   },
   replyMessageWrapper: {
     marginLeft: 16,
     paddingLeft: 12,
   },
   replyIndicator: {
-    position: 'absolute',
+    position: 'absolute' as const,
     left: 0,
-    top: 10,
+    top: 8,
+    bottom: 8,
     width: 2,
-    height: '80%',
-    backgroundColor: COLORS.brandPurple,
-    borderRadius: 4,
+    backgroundColor: COLORS.borderDarkColor,
+    borderRadius: 1,
   },
 });

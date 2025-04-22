@@ -16,7 +16,7 @@ import { RootState } from '@/shared/state/store';
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
 import { CLUSTER } from '@env';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import TradeModal from '../trade/TradeModal';
+import TradeModal from '../trade/ShareTradeModal';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { DEFAULT_IMAGES, ENDPOINTS } from '@/config/constants';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';

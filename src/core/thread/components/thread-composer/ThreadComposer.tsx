@@ -29,7 +29,7 @@ import { ThreadSection, ThreadSectionType, ThreadUser } from '../../types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
 import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
-import TradeModal from '../trade/TradeModal';
+import TradeModal from '../trade/ShareTradeModal';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { NftListingModal, useFetchNFTs, NftItem } from '../../../../modules/nft';
 import { uploadThreadImage } from '../../services/threadImageService';

@@ -8,6 +8,7 @@ import { PumpfunScreen, PumpSwapScreen } from '@/modules/pumpFun';
 import { TokenMillScreen } from '@/modules/tokenMill';
 import { NftScreen } from '@/modules/nft';
 import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
+import ChatListScreen from '@/screens/SampleUI/Chat/ChatListScreen';
 import OtherProfileScreen from '@/screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen';
 import PostThreadScreen from '@/screens/SampleUI/Threads/PostThreadScreen/PostthreadScreen';
 import FollowersFollowingListScreen from '@/core/profile/components/FollowersFollowingListScreen/FollowersFollowingListScreen';
@@ -25,7 +26,12 @@ export type RootStackParamList = {
   Pumpfun: undefined;
   TokenMill: undefined;
   NftScreen: undefined;
-  ChatScreen: undefined;
+  ChatListScreen: undefined;
+  ChatScreen: {
+    chatId: string;
+    chatName: string;
+    isGroup: boolean;
+  };
   PumpSwap: undefined;
   MercuroScreen: undefined;
   // NEW ROUTE
@@ -53,6 +59,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Pumpfun" component={PumpfunScreen} />
           <Stack.Screen name="TokenMill" component={TokenMillScreen} />
           <Stack.Screen name="NftScreen" component={NftScreen} />
+          <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
           <Stack.Screen name="PumpSwap" component={PumpSwapScreen} />
           <Stack.Screen name="MercuroScreen" component={MercuroScreen} />

@@ -10,11 +10,14 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   TouchableOpacity,
+  Image,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChatComposer, ChatMessage } from '@/core/chat/components';
-import { MessageData } from '@/core/chat/components/message/message.types';
+import { MessageNFT } from '@/core/chat/components/message';
+import { MessageData, NFTData } from '@/core/chat/components/message/message.types';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { ThreadUser } from '@/core/thread/types';
@@ -25,6 +28,88 @@ import { styles, TAB_BAR_HEIGHT } from './ChatScreen.styles';
 import Icons from '@/assets/svgs';
 import COLORS from '@/assets/colors';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
+import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
+import { NftListingData, NftDetailsSection, buyNft, buyCollectionFloor } from '@/modules/nft';
+import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import TYPOGRAPHY from '@/assets/typography';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+
+// Add custom styles for NFT message components
+const additionalStyles = {
+  messageHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginBottom: 4,
+    paddingHorizontal: 8,
+  },
+  avatarContainer: {
+    marginRight: 8,
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  username: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  nftContainer: {
+    width: '90%' as any, // Use any to bypass type checking for width
+    marginVertical: 6,
+    backgroundColor: COLORS.lighterBackground,
+    borderRadius: 16,
+    overflow: 'hidden' as const,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    alignSelf: 'flex-start' as const,
+  },
+  currentUserNftContainer: {
+    alignSelf: 'flex-end' as const,
+    borderBottomRightRadius: 4,
+  },
+  otherUserNftContainer: {
+    alignSelf: 'flex-start' as const,
+    borderBottomLeftRadius: 4,
+  },
+  buyButton: {
+    backgroundColor: COLORS.brandBlue,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    width: '90%' as any, // Use any to bypass type checking for width
+    alignItems: 'center' as const,
+    marginTop: 8,
+    marginBottom: 10,
+    alignSelf: 'center' as const,
+  },
+  floorButton: {
+    backgroundColor: COLORS.brandGreen,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    width: '90%' as any, // Use any to bypass type checking for width
+    alignItems: 'center' as const,
+    marginTop: 8,
+    marginBottom: 10,
+    alignSelf: 'center' as const,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  buyButtonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+};
+
+type ChatScreenRouteProp = RouteProp<RootStackParamList, 'ChatScreen'>;
+type ChatScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatScreen'>;
 
 /**
  * ChatScreen component for displaying a chat interface with real post data
@@ -33,16 +118,44 @@ const ChatScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<ChatScreenNavigationProp>();
+  const route = useRoute<ChatScreenRouteProp>();
+  
+  // Extract chat parameters from route
+  const { chatId = 'global', chatName = 'Global Community', isGroup = true } = route.params || {};
+  
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  // Get user info
-  const { address } = useWallet();
+  
+  // State for NFT drawer
+  const [showNftDetailsDrawer, setShowNftDetailsDrawer] = useState(false);
+  const [selectedNft, setSelectedNft] = useState<{
+    mint: string;
+    symbol: string;
+    name: string;
+    logoURI: string;
+    nftData?: any;
+  } | null>(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  
+  // State for NFT buying
+  const [nftLoading, setNftLoading] = useState(false);
+  const [nftStatusMsg, setNftStatusMsg] = useState('');
+  const [loadingFloor, setLoadingFloor] = useState(false);
+  
+  // Get user info and wallet
+  const { address, publicKey, sendTransaction } = useWallet();
   const auth = useAppSelector(state => state.auth);
   
   // Get posts from the thread reducer to use as messages
   const allPosts = useAppSelector(state => state.thread.allPosts);
   const [messages, setMessages] = useState<ThreadPost[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Handle back button press
+  const handleBack = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+  
   // Format current user info for ChatComposer
   const currentUser: ThreadUser = {
     id: address || 'unknown-user',
@@ -54,25 +167,35 @@ const ChatScreen: React.FC = () => {
   
   // Fetch posts on mount to use as messages
   useEffect(() => {
-    dispatch(fetchAllPosts());
+    setLoading(true);
+    dispatch(fetchAllPosts())
+      .then(() => setLoading(false))
+      .catch(() => setLoading(false));
   }, [dispatch]);
 
   // Process posts and convert to chat messages format
   useEffect(() => {
     if (allPosts.length > 0) {
-      // Filter out retweets and keep only original posts and comments
-      const filteredPosts = allPosts.filter(post => 
-        !post.retweetOf || (post.retweetOf && post.sections && post.sections.length > 0) // Keep quote retweets
-      );
-      
-      // Sort by creation date for proper chat chronology
-      const sortedPosts = [...filteredPosts].sort((a, b) => 
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-      
-      setMessages(sortedPosts);
+      // For Global chat, show all messages
+      if (chatId === 'global') {
+        // Filter out retweets and keep only original posts and comments
+        const filteredPosts = allPosts.filter(post => 
+          !post.retweetOf || (post.retweetOf && post.sections && post.sections.length > 0) // Keep quote retweets
+        );
+        
+        // Sort by creation date for proper chat chronology
+        const sortedPosts = [...filteredPosts].sort((a, b) => 
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        
+        setMessages(sortedPosts);
+      } else {
+        // For other chats, we would filter based on chatId
+        // This is just a placeholder for future implementation
+        setMessages([]);
+      }
     }
-  }, [allPosts]);
+  }, [allPosts, chatId]);
   
   // Set up keyboard listeners
   useEffect(() => {
@@ -112,6 +235,163 @@ const ChatScreen: React.FC = () => {
       }, 200);
     }
   }, [messages]);
+  
+  // Handle opening NFT details drawer
+  const handleOpenNftDetails = useCallback((nftData: NFTData & { isCollection?: boolean, collId?: string }) => {
+    setDrawerLoading(true);
+    
+    // Check if this is a collection or regular NFT
+    const isCollection = (nftData as any).isCollection && (nftData as any).collId;
+    
+    setSelectedNft({
+      mint: isCollection ? (nftData as any).collId || '' : nftData.mintAddress || '',
+      symbol: '',
+      name: nftData.name || 'NFT',
+      logoURI: nftData.image || '',
+      nftData: {
+        name: nftData.name,
+        imageUri: nftData.image,
+        description: nftData.description,
+        collName: nftData.collectionName,
+        isCollection: isCollection,
+        collId: isCollection ? (nftData as any).collId : undefined
+      }
+    });
+    
+    // Short timeout to ensure smoother opening experience
+    setTimeout(() => {
+      setDrawerLoading(false);
+      setShowNftDetailsDrawer(true);
+    }, 300);
+  }, []);
+  
+  // Handle buying an NFT
+  const handleBuyNft = useCallback(async (mintAddress: string, owner?: string, priceSol?: number) => {
+    if (!mintAddress) {
+      Alert.alert('Error', 'No NFT mint address available.');
+      return;
+    }
+    
+    if (!publicKey || !address) {
+      Alert.alert('Error', 'Wallet not connected.');
+      return;
+    }
+    
+    try {
+      setNftLoading(true);
+      setNftStatusMsg('Preparing buy transaction...');
+      
+      // Use estimated price if not provided
+      const price = priceSol || 0.1; 
+      const ownerAddress = owner || "";
+      
+      const signature = await buyNft(
+        address,
+        mintAddress,
+        price,
+        ownerAddress,
+        sendTransaction,
+        status => setNftStatusMsg(status)
+      );
+      
+      Alert.alert('Success', 'NFT purchased successfully!');
+      
+      // Show success notification
+      TransactionService.showSuccess(signature, 'nft');
+    } catch (err: any) {
+      console.error('Error during buy transaction:', err);
+      // Show error notification
+      TransactionService.showError(err);
+    } finally {
+      setNftLoading(false);
+      setNftStatusMsg('');
+    }
+  }, [address, publicKey, sendTransaction]);
+  
+  // Handle buying a collection floor NFT
+  const handleBuyCollectionFloor = useCallback(async (collId: string, collectionName?: string) => {
+    if (!collId) {
+      Alert.alert('Error', 'No collection ID available.');
+      return;
+    }
+
+    if (!publicKey || !address) {
+      Alert.alert('Error', 'Wallet not connected.');
+      return;
+    }
+
+    try {
+      setLoadingFloor(true);
+      setNftLoading(true);
+      setNftStatusMsg('Fetching collection floor...');
+
+      const signature = await buyCollectionFloor(
+        address,
+        collId,
+        sendTransaction,
+        status => setNftStatusMsg(status)
+      );
+
+      Alert.alert(
+        'Success', 
+        `Successfully purchased floor NFT from ${collectionName || 'collection'}!`
+      );
+      
+      // Show success notification
+      TransactionService.showSuccess(signature, 'nft');
+    } catch (err: any) {
+      console.error('Error during buy floor transaction:', err);
+      TransactionService.showError(err);
+    } finally {
+      setNftLoading(false);
+      setLoadingFloor(false);
+      setNftStatusMsg('');
+    }
+  }, [address, publicKey, sendTransaction]);
+  
+  // Function to check if a post has NFT listing section
+  const hasNftListingSection = (post: ThreadPost) => {
+    if (post.sections) {
+      return post.sections.some(section => section.type === 'NFT_LISTING' && section.listingData);
+    }
+    return false;
+  };
+  
+  // Function to extract NFT data from post sections
+  const getNftDataFromSections = (post: ThreadPost) => {
+    if (post.sections) {
+      const nftSection = post.sections.find(section => 
+        section.type === 'NFT_LISTING' && section.listingData
+      );
+      
+      if (nftSection?.listingData) {
+        // Get the raw listing data without type conversion
+        const listingData = nftSection.listingData;
+        
+        // Use explicit extraction to ensure we get all the fields correctly
+        return {
+          id: listingData.mint || nftSection.id || 'unknown-nft',
+          name: listingData.name || 'NFT',
+          description: listingData.collectionDescription || listingData.name || '',
+          image: listingData.image || '',
+          collectionName: listingData.collectionName || '',
+          mintAddress: listingData.mint || '', // This is critical - make sure we get the mint address
+          isCollection: listingData.isCollection || false,
+          collId: listingData.collId || ''
+        };
+      }
+    }
+    return null;
+  };
+
+  // Function to convert thread NftListingData to the module's NftListingData type
+  // Similar to what SectionNftListing does
+  const convertToNftListingData = (threadListingData: any): NftListingData => {
+    return {
+      ...threadListingData,
+      owner: threadListingData.owner || undefined,
+    };
+  };
 
   // Render message with ChatMessage component
   const renderMessage = ({ item }: { item: ThreadPost }) => {
@@ -127,6 +407,120 @@ const ChatScreen: React.FC = () => {
     // Check if this is a reply/comment to another post
     const isReply = item.parentId != null && item.parentId !== '';
     
+    // Check if this message has NFT data
+    const isNftMessage = hasNftListingSection(item);
+    
+    // For NFT messages, we have two rendering options:
+    // 1. Using MessageNFT (chat-like UI but limited data)
+    // 2. Using NftDetailsSection directly (better data but less chat-like)
+    // We'll implement both approaches and use the second one for better data display
+    
+    if (isNftMessage) {
+      // Find the NFT listing section
+      const nftSection = item.sections.find(section => 
+        section.type === 'NFT_LISTING' && section.listingData
+      );
+      
+      if (nftSection?.listingData) {
+        // Convert to the format expected by NftDetailsSection
+        const convertedListingData = convertToNftListingData(nftSection.listingData);
+        
+        // Check if this is a collection
+        const isCollection = convertedListingData.isCollection && convertedListingData.collId;
+        
+        // Option 2: Use NftDetailsSection directly like SectionNftListing does
+        return (
+          <View style={[
+            styles.messageWrapper,
+            isReply && styles.replyMessageWrapper
+          ]}>
+            {isReply && <View style={styles.replyIndicator} />}
+            {showHeader && (
+              <View style={additionalStyles.messageHeader}>
+                <View style={additionalStyles.avatarContainer}>
+                  <Image
+                    source={item.user.avatar || DEFAULT_IMAGES.user}
+                    style={additionalStyles.avatar}
+                  />
+                </View>
+                <Text style={additionalStyles.username}>{item.user.username}</Text>
+              </View>
+            )}
+            
+            <View style={[
+              additionalStyles.nftContainer,
+              isCurrentUser ? additionalStyles.currentUserNftContainer : additionalStyles.otherUserNftContainer
+            ]}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  // Use the same handler that TokenDetailsDrawer uses
+                  if (convertedListingData.mint || (isCollection && convertedListingData.collId)) {
+                    const nftDataForDrawer = {
+                      id: convertedListingData.mint || convertedListingData.collId || '',
+                      name: convertedListingData.name || 'NFT',
+                      description: convertedListingData.collectionDescription || '',
+                      image: convertedListingData.image || '',
+                      collectionName: convertedListingData.collectionName || '',
+                      mintAddress: convertedListingData.mint || ''
+                    };
+                    
+                    // Pass additional data for the drawer via custom attributes
+                    (nftDataForDrawer as any).isCollection = convertedListingData.isCollection;
+                    (nftDataForDrawer as any).collId = convertedListingData.collId;
+                    
+                    handleOpenNftDetails(nftDataForDrawer);
+                  }
+                }}
+              >
+                <NftDetailsSection
+                  listingData={convertedListingData}
+                  containerStyle={{ borderWidth: 0, backgroundColor: 'transparent' }}
+                />
+              </TouchableOpacity>
+              
+              {/* Add Buy NFT/Collection Floor button */}
+              {isCollection ? (
+                <TouchableOpacity
+                  style={[
+                    additionalStyles.floorButton,
+                    (nftLoading || loadingFloor) && additionalStyles.disabledButton
+                  ]}
+                  onPress={() => handleBuyCollectionFloor(
+                    convertedListingData.collId || '',
+                    convertedListingData.collectionName
+                  )}
+                  disabled={nftLoading || loadingFloor}
+                  activeOpacity={0.8}
+                >
+                  <Text style={additionalStyles.buyButtonText}>
+                    {loadingFloor ? 'Finding Floor...' : 'Buy Floor NFT'}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    additionalStyles.buyButton,
+                    nftLoading && additionalStyles.disabledButton
+                  ]}
+                  onPress={() => handleBuyNft(
+                    convertedListingData.mint || '',
+                    convertedListingData.owner,
+                    convertedListingData.priceSol
+                  )}
+                  disabled={nftLoading}
+                  activeOpacity={0.8}
+                >
+                  <Text style={additionalStyles.buyButtonText}>Buy NFT</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        );
+      }
+    }
+    
+    // For regular messages, use ChatMessage component
     return (
       <View style={[
         styles.messageWrapper,
@@ -137,8 +531,19 @@ const ChatScreen: React.FC = () => {
           message={item}
           currentUser={currentUser}
           onPressMessage={(message) => {
-            // In a production app, this would navigate to post details
-            console.log('Message pressed:', message.id);
+            // Handle message press - for NFT messages we open the drawer
+            if (hasNftListingSection(message as ThreadPost)) {
+              const nftData = getNftDataFromSections(message as ThreadPost);
+              if (nftData) {
+                handleOpenNftDetails(nftData);
+              }
+            } else if ('nftData' in message && message.nftData) {
+              // Handle direct NFT data if present (from MessageData type)
+              handleOpenNftDetails(message.nftData);
+            } else {
+              // In a production app, this would navigate to post details
+              console.log('Message pressed:', message.id);
+            }
           }}
           showHeader={showHeader}
           showFooter={true}
@@ -152,21 +557,38 @@ const ChatScreen: React.FC = () => {
     Keyboard.dismiss();
   };
 
+  // Calculate members count for group chats
+  const getMembersCount = () => {
+    // This is just a mock for now - in a real app this would come from the server
+    if (chatId === 'global') return '128 members';
+    if (chatId === 'solana-devs') return '43 members';
+    if (chatId === 'defi-group') return '67 members';
+    return isGroup ? 'Group chat' : '';
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Header with Gradient Border - similar to SwapScreen and ModulesScreen */}
+      {/* Header with Gradient Border - updated to include back button and chat name */}
       <View style={styles.headerContainer}>
-        {/* Left: Placeholder (empty) */}
-        <View style={styles.leftPlaceholder} />
+        {/* Left: Back button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBack}
+        >
+          <Icons.ArrowLeft width={20} height={20} color={COLORS.white} />
+        </TouchableOpacity>
 
-        {/* Center: Title */}
+        {/* Center: Chat Title */}
         <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>Chat</Text>
+          <Text style={styles.titleText}>{chatName}</Text>
+          {isGroup && (
+            <Text style={styles.subtitleText}>{getMembersCount()}</Text>
+          )}
         </View>
 
-        {/* Right: Copy and Wallet Icons */}
+        {/* Right: Icons */}
         <View style={styles.iconsContainer}>
           <TouchableOpacity style={styles.iconButton}>
             <Icons.copyIcon width={16} height={16} />
@@ -189,19 +611,30 @@ const ChatScreen: React.FC = () => {
         style={styles.keyboardAvoidingContainer}>
         
         <View style={styles.innerContainer}>
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={item => item.id}
-            contentContainerStyle={[
-              styles.messagesContainer,
-              { paddingBottom: 20 }
-            ]}
-            scrollEnabled={true}
-            scrollEventThrottle={16}
-            showsVerticalScrollIndicator={true}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading messages...</Text>
+            </View>
+          ) : messages.length === 0 && chatId !== 'global' ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No messages yet</Text>
+              <Text style={styles.emptySubtext}>Start the conversation!</Text>
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={item => item.id}
+              contentContainerStyle={[
+                styles.messagesContainer,
+                { paddingBottom: 20 }
+              ]}
+              scrollEnabled={true}
+              scrollEventThrottle={16}
+              showsVerticalScrollIndicator={true}
+            />
+          )}
           
           {/* Chat composer with bottom padding for tab bar */}
           <View style={styles.composerContainer}>
@@ -216,6 +649,20 @@ const ChatScreen: React.FC = () => {
         </View>
         
       </KeyboardAvoidingView>
+      
+      {/* NFT Details Drawer */}
+      {selectedNft && (
+        <TokenDetailsDrawer
+          visible={showNftDetailsDrawer}
+          onClose={() => setShowNftDetailsDrawer(false)}
+          tokenMint={selectedNft.mint || ''}
+          initialData={{
+            ...selectedNft,
+            isCollection: selectedNft.nftData?.isCollection || false
+          }}
+          loading={drawerLoading}
+        />
+      )}
     </SafeAreaView>
   );
 };

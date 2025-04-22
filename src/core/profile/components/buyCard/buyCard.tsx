@@ -22,7 +22,7 @@ import TYPOGRAPHY from '@/assets/typography';
 
 import { useFetchPortfolio, fixImageUrl } from '@/modules/dataModule/hooks/useFetchTokens';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
-import TradeModal from '../../../thread/components/trade/TradeModal';
+import TradeModal from '../../../thread/components/trade/ShareTradeModal';
 import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
 
 // Import collection search functionality

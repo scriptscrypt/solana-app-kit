@@ -29,7 +29,7 @@ import { ThreadSection, ThreadSectionType, ThreadUser } from '../../../thread/ty
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import TradeModal from '../../../thread/components/trade/TradeModal';
+import TradeModal from '../../../thread/components/trade/ShareTradeModal';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import { NftListingModal, useFetchNFTs, NftItem } from '@/modules/nft';
 import { uploadThreadImage } from '../../../thread/services/threadImageService';
@@ -149,7 +149,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
     const hasContent = textValue.trim() || selectedImage || selectedListingNft;
 
     Animated.timing(fadeAnim, {
-      toValue: hasContent ? 1 : 0,
+      toValue: hasContent ? 1 : 0.8,
       duration: 200,
       useNativeDriver: true,
     }).start();

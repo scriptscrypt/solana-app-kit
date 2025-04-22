@@ -16,6 +16,7 @@ import SwapScreen from '@/screens/SampleUI/Swap';
 import SearchScreen from '@/screens/SampleUI/Threads/SearchScreen';
 import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
 import ModuleScreen from '@/screens/Common/ModulesScreen/Modules';
+import { ChatListScreen } from '@/screens/SampleUI/Chat';
 
 // Platform icons matching PlatformSelectionScreen
 const platformIcons = {
@@ -133,14 +134,19 @@ export default function MainTabs() {
         case 'insta':
           return <FeedScreen key={`insta-${refreshKey}`} />;
         case 'chats':
-          return <ChatScreen key={`chats-${refreshKey}`} />;
+          // Navigate to ChatListScreen instead of showing ChatScreen directly
+          React.useEffect(() => {
+            navigation.navigate('ChatListScreen');
+          }, []);
+          // Return empty view as navigation will handle the rendering
+          return <View style={{ flex: 1 }} />;
         default:
           return <FeedScreen key={`threads-${refreshKey}`} />;
       }
     };
 
     return Component;
-  }, [currentPlatform, refreshKey]);
+  }, [currentPlatform, refreshKey, navigation]);
 
   // Calculate transformations for the menu with smoother curves
   const menuTranslateY = menuAnimation.interpolate({
@@ -343,7 +349,7 @@ export default function MainTabs() {
 
         <Tab.Screen
           name="Search"
-          component={ChatScreen}
+          component={ChatListScreen}
           options={{
             tabBarIcon: ({ focused, size }) => (
               <AnimatedTabIcon

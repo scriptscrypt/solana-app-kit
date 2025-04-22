@@ -139,13 +139,17 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
       );
       
       if (nftSection?.listingData) {
+        // Get the raw listing data without type conversion
+        const listingData = nftSection.listingData;
+        
+        // Use explicit extraction to ensure we get all the fields correctly
         return {
-          id: nftSection.listingData.mint || nftSection.id || 'unknown-nft',
-          name: nftSection.listingData.name || 'NFT',
-          description: nftSection.listingData.name || '', // Use name as description if not available
-          image: nftSection.listingData.image || '',
-          collectionName: nftSection.listingData.collectionName || '',
-          mintAddress: nftSection.listingData.mint || ''
+          id: listingData.mint || nftSection.id || 'unknown-nft',
+          name: listingData.name || 'NFT',
+          description: listingData.collectionDescription || listingData.name || '',
+          image: listingData.image || '',
+          collectionName: listingData.collectionName || '',
+          mintAddress: listingData.mint || '' // This is critical - ensure we get the mint address
         };
       }
     }
@@ -169,7 +173,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     description: rawNftData.description || '',
     image: rawNftData.image || '',
     collectionName: rawNftData.collectionName || '',
-    mintAddress: rawNftData.mintAddress || ''
+    mintAddress: rawNftData.mintAddress || rawNftData.id || '' // Ensure we have the mint address
   } : null;
 
   // Render content based on content type
@@ -211,7 +215,14 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
             <MessageNFT 
               nftData={nftData} 
               isCurrentUser={isCurrentUser}
-              onPress={() => console.log('NFT pressed:', nftData.id)}
+              onPress={() => {
+                // Navigate to parent component through event bubbling
+                // ChatScreen will receive this click and open TokenDetailsDrawer
+                const bubbleClickEvent = new CustomEvent('message-click', { 
+                  detail: { message: message, type: 'nft', data: nftData } 
+                });
+                window.dispatchEvent(bubbleClickEvent);
+              }}
             />
           );
         } else if ('sections' in post) {

@@ -219,7 +219,7 @@ export const styles = StyleSheet.create({
   },
 
   positiveValue: {
-    color: '#00C851', // Keep green for positive values
+    color: COLORS.brandGreen, // Keep green for positive values
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
 

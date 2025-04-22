@@ -36,7 +36,7 @@ export * from './post/PostFooter';
 export * from './post/PostCTA';
 export * from './thread-ancestors/ThreadAncestors';
 export * from './retweet/RetweetPreview';
-export * from './trade/TradeModal';
+export * from './trade/ShareTradeModal';
 export * from './EditPostModal';
 
 // Exporting individual section components
