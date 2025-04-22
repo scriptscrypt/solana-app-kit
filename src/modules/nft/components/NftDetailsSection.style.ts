@@ -1,4 +1,6 @@
 import { StyleSheet } from 'react-native';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 export default StyleSheet.create({
   container: {
@@ -6,24 +8,24 @@ export default StyleSheet.create({
     marginVertical: 4,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.lighterBackground,
     borderRadius: 12,
     padding: 12,
     flexDirection: 'row',
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#eaeaea',
+    borderColor: COLORS.borderDarkColor,
   },
   imageContainer: {
     width: 80,
     height: 80,
     borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: '#f0f3f5',
+    backgroundColor: COLORS.darkerBackground,
   },
   image: {
     width: '100%',
@@ -35,11 +37,12 @@ export default StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f3f5',
+    backgroundColor: COLORS.darkerBackground,
   },
   placeholderText: {
-    color: '#a0a0a0',
-    fontSize: 12,
+    color: COLORS.greyMid,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   infoSection: {
     flex: 1,
@@ -47,36 +50,42 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
   nftTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
     marginBottom: 6,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   collectionName: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.greyMid,
     marginBottom: 4,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   priceText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#00C851',
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    color: COLORS.brandGreen,
     marginBottom: 4,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   lastSale: {
-    fontSize: 13,
-    color: '#666',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyMid,
     marginBottom: 4,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   rarityInfo: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyMid,
     marginBottom: 2,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   collectionDescription: {
-    fontSize: 13,
-    color: '#666',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyMid,
     marginBottom: 6,
-    lineHeight: 18,
+    lineHeight: TYPOGRAPHY.lineHeight.xs,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
 }); 

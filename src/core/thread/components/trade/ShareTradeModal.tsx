@@ -5,18 +5,14 @@ import {
   Modal,
   TouchableOpacity,
   ActivityIndicator,
-  ScrollView,
   Alert,
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   Platform,
-  Image,
-  Clipboard,
   FlatList,
   Animated,
   Dimensions,
 } from 'react-native';
-import { PublicKey, Connection, clusterApiUrl, Cluster } from '@solana/web3.js';
 import {
   ThreadUser,
   TradeData,
@@ -24,15 +20,12 @@ import {
   ThreadSectionType,
   ThreadPost
 } from '../thread.types';
-import SelectTokenModal from './SelectTokenModal';
-import { ENDPOINTS } from '../../../../config/constants';
-import { CLUSTER } from '@env';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   addPostLocally,
   createRootPostAsync,
 } from '@/shared/state/thread/reducer';
-import styles from './tradeModal.style';
+import styles from './ShareTradeModal.style';
 import PastSwapItem from './PastSwapItem';
 import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '@/modules/dataModule/services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -41,8 +34,6 @@ import { TokenInfo } from '@/modules/dataModule/types/tokenTypes';
 import {
   DEFAULT_SOL_TOKEN,
   DEFAULT_USDC_TOKEN,
-  fetchTokenBalance,
-  fetchTokenPrice as fetchTokenPriceFromModule,
   estimateTokenUsdValue,
   ensureCompleteTokenInfo
 } from '../../../../modules/dataModule';
@@ -144,16 +135,17 @@ export default function TradeModal({
   useEffect(() => {
     if (visible) {
       // Animate the drawer sliding up
-      Animated.timing(slideAnimation, {
+      Animated.spring(slideAnimation, {
         toValue: 1,
-        duration: 300,
+        tension: 65,
+        friction: 11,
         useNativeDriver: true,
       }).start();
     } else {
       // Animate the drawer sliding down
       Animated.timing(slideAnimation, {
         toValue: 0,
-        duration: 300,
+        duration: 250,
         useNativeDriver: true,
       }).start();
     }
@@ -163,6 +155,7 @@ export default function TradeModal({
   const translateY = slideAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [height, 0],
+    extrapolate: 'clamp'
   });
 
   /**
@@ -381,75 +374,6 @@ export default function TradeModal({
   );
 
   /**
-   * Allow user to paste from clipboard
-   */
-  const handlePasteFromClipboard = async () => {
-    try {
-      const text = await Clipboard.getString();
-      if (text) {
-        setSolscanTxSig(text.trim());
-      }
-    } catch (error) {
-      console.error('Failed to paste from clipboard:', error);
-    }
-  };
-
-  /**
-   * Share a transaction by its signature
-   */
-  const handlePickTxAndShare = useCallback(async () => {
-    if (!solscanTxSig.trim()) {
-      Alert.alert(
-        'No transaction signature',
-        'Please enter a valid signature.',
-      );
-      return;
-    }
-
-    if (isMounted.current) {
-      setLoading(true);
-      setResultMsg('Preparing to share transaction...');
-      setErrorMsg('');
-    }
-
-    try {
-      const solscanLink = `https://solscan.io/tx/${solscanTxSig}?cluster=mainnet`;
-      const postSections: ThreadSection[] = [
-        {
-          id: 'solscan-' + Math.random().toString(36).substr(2, 9),
-          type: 'TEXT_ONLY' as ThreadSectionType,
-          text: `Check out this interesting transaction: ${solscanLink}`,
-        },
-      ];
-
-      await dispatch(
-        createRootPostAsync({
-          userId: currentUser.id,
-          sections: postSections,
-        }),
-      ).unwrap();
-
-      if (isMounted.current) {
-        setResultMsg('Post created successfully!');
-      }
-
-      onPostCreated && onPostCreated();
-    } catch (err: any) {
-      console.error('Error sharing transaction:', err);
-      if (isMounted.current) {
-        setErrorMsg('Failed to create post');
-      }
-
-      // Show error notification
-      TransactionService.showError(err);
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
-    }
-  }, [dispatch, solscanTxSig, currentUser, onPostCreated]);
-
-  /**
    * Handle selection of a past swap from the PastSwapsTab
    */
   const handlePastSwapSelected = useCallback((swap: SwapTransaction) => {
@@ -572,8 +496,9 @@ export default function TradeModal({
             ]}>
             <TouchableWithoutFeedback>
               <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <View>
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={{ flex: 1 }}>
+                <View style={{ flex: 1 }}>
                   {/* Drag handle for bottom drawer UI */}
                   <View style={styles.dragHandle} />
 
@@ -584,36 +509,31 @@ export default function TradeModal({
                       onPress={handleClose}>
                       <Text style={styles.headerCloseText}>✕</Text>
                     </TouchableOpacity>
+                    {walletAddress && (
+                      <TouchableOpacity
+                        style={styles.refreshIcon}
+                        onPress={forceRefresh}
+                        disabled={refreshing || initialLoading}>
+                        <FontAwesome5
+                          name="sync"
+                          size={14}
+                          color={COLORS.accessoryDarkColor}
+                          style={[
+                            (refreshing || initialLoading) && {
+                              transform: [{ rotate: '45deg' }]
+                            },
+                            refreshing && { opacity: 0.7 }
+                          ]}
+                        />
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   {/* Past Swaps Tab Content */}
-                  <View style={styles.pastSwapsContainer}>
+                  <View style={[styles.pastSwapsContainer, { flex: 1 }]}>
                     {walletAddress ? (
                       <>
                         <View style={styles.pastSwapsContent}>
-                          <View style={styles.pastSwapsHeader}>
-                            <Text style={styles.pastSwapsHeaderText}>
-                              Recent Swaps
-                            </Text>
-                            <TouchableOpacity
-                              style={styles.refreshButton}
-                              onPress={forceRefresh}
-                              disabled={refreshing || initialLoading}
-                            >
-                              <FontAwesome5
-                                name="sync"
-                                size={14}
-                                color={COLORS.accessoryDarkColor}
-                                style={[
-                                  (refreshing || initialLoading) && {
-                                    transform: [{ rotate: '45deg' }]
-                                  },
-                                  refreshing && { opacity: 0.7 }
-                                ]}
-                              />
-                            </TouchableOpacity>
-                          </View>
-
                           {initialLoading ? (
                             <View style={styles.loadingContainer}>
                               <ActivityIndicator size="large" color={COLORS.brandBlue} />
@@ -635,19 +555,18 @@ export default function TradeModal({
                               <Text style={styles.emptySwapsSubtext}>
                                 Complete a token swap to see it here
                               </Text>
+                              <TouchableOpacity 
+                                style={styles.emptyStateRefreshButton}
+                                onPress={forceRefresh}
+                                disabled={refreshing}>
+                                <FontAwesome5 name="sync-alt" size={12} color={COLORS.white} />
+                                <Text style={styles.emptyStateRefreshText}>Refresh</Text>
+                              </TouchableOpacity>
                             </View>
                           ) : (
                             <FlatList
                               data={swaps}
                               renderItem={({ item }) => {
-                                // Debug logging to see what's available
-                                console.log(`[TradeModal] Rendering swap item:`, {
-                                  inputTokenImage: item.inputToken.image,
-                                  inputTokenLogoURI: (item.inputToken as any).logoURI,
-                                  outputTokenImage: item.outputToken.image,
-                                  outputTokenLogoURI: (item.outputToken as any).logoURI
-                                });
-
                                 // Helper function to get token logo URL with fallbacks
                                 const getTokenLogoUrl = (token: any) => {
                                   // Try the properties we know about
@@ -668,7 +587,11 @@ export default function TradeModal({
                                 };
 
                                 return (
-                                  <View style={styles.swapItemContainer}>
+                                  <TouchableOpacity 
+                                    style={styles.swapItemContainer}
+                                    onPress={() => handlePastSwapSelected(item)}
+                                    activeOpacity={0.7}
+                                  >
                                     <PastSwapItem
                                       swap={item}
                                       onSelect={handlePastSwapSelected}
@@ -676,7 +599,7 @@ export default function TradeModal({
                                       inputTokenLogoURI={getTokenLogoUrl(item.inputToken)}
                                       outputTokenLogoURI={getTokenLogoUrl(item.outputToken)}
                                     />
-                                  </View>
+                                  </TouchableOpacity>
                                 );
                               }}
                               keyExtractor={item => item.signature}
@@ -685,6 +608,14 @@ export default function TradeModal({
                               initialNumToRender={5}
                               onRefresh={handleRefresh}
                               refreshing={refreshing}
+                              ListHeaderComponent={
+                                <View style={styles.listHeaderContainer}>
+                                  <Text style={styles.swapsCountText}>
+                                    {swaps.length} {swaps.length === 1 ? 'swap' : 'swaps'} found
+                                  </Text>
+                                  <View style={styles.swapsListDivider} />
+                                </View>
+                              }
                             />
                           )}
                         </View>

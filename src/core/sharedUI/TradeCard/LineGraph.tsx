@@ -56,7 +56,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
   executionTimestamp,
   timestamps,
   userAvatar,
-  executionColor = COLORS.brandPink,
+  executionColor = COLORS.brandGreen,
   isLoading = false,
 }) => {
   // The chart height is set to 130px
@@ -390,7 +390,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
           <Circle
             cx={x}
             cy={y}
-            r={5}
+            r={4}
             fill={COLORS.brandBlue}
             stroke={COLORS.background}
             strokeWidth={2}
@@ -456,13 +456,13 @@ const LineGraph: React.FC<LineGraphProps> = ({
               <>
                 <Defs>
                   <ClipPath id={`avatar-clip-${index}`}>
-                    <Circle cx={x} cy={y} r={8} />
+                    <Circle cx={x} cy={y} r={10} />
                   </ClipPath>
                 </Defs>
                 <Circle
                   cx={x}
                   cy={y}
-                  r={10}
+                  r={11}
                   stroke={executionColor}
                   strokeWidth={2}
                   fill={executionColor}

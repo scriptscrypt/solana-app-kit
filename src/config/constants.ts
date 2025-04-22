@@ -50,4 +50,5 @@ export const DEFAULT_IMAGES: Record<string, any> = {
   user3: require('../assets/images/User3.png'),
   user5: require('../assets/images/user5.png'),
   SENDlogo: require('../assets/images/SENDlogo.png'),
+  groupChat: require('../assets/images/User.png'),
 };
