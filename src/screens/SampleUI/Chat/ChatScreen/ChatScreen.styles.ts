@@ -3,7 +3,7 @@ import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
 // Tab bar height constant
-export const TAB_BAR_HEIGHT = 80;
+export const TAB_BAR_HEIGHT = 0;
 
 export const styles = StyleSheet.create({
   container: {
@@ -109,8 +109,6 @@ export const styles = StyleSheet.create({
   },
   composerContainer: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
     backgroundColor: COLORS.background,
   },
   messageBubble: {

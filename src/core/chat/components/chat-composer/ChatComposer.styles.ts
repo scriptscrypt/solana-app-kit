@@ -7,7 +7,7 @@ export function getChatComposerBaseStyles() {
   return StyleSheet.create({
     composerContainer: {
       flexDirection: 'row',
-      padding: 12,
+      padding: 16,
       paddingBottom: 0,
       backgroundColor: COLORS.background,
       borderTopColor: COLORS.borderDarkColor,
