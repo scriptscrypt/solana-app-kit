@@ -23,15 +23,15 @@ import {
   addPostLocally,
   addReplyLocally,
 } from '@/shared/state/thread/reducer';
-import { getChatComposerBaseStyles } from './ChatComposer.styles'; 
-import { mergeStyles } from '../../utils'; 
+import { getChatComposerBaseStyles } from './ChatComposer.styles';
+import { mergeStyles } from '../../utils';
 import { ThreadSection, ThreadSectionType, ThreadUser } from '../../../thread/types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import TradeModal from '../../../thread/components/trade/ShareTradeModal';
 import { DEFAULT_IMAGES } from '@/config/constants';
-import { NftListingModal, useFetchNFTs, NftItem } from '@/modules/nft';
+import { NftListingModal, NftItem } from '@/modules/nft';
 import { uploadThreadImage } from '../../../thread/services/threadImageService';
 import {
   IPFSAwareImage,
@@ -51,8 +51,8 @@ interface ChatComposerProps {
   currentUser: ThreadUser;
   /** Optional parent post ID - if present, this composer is for a reply */
   parentId?: string;
-  /** Callback fired when a new message is created */
-  onMessageSent?: () => void;
+  /** Callback fired when a new message is created, with message content */
+  onMessageSent?: (content: string) => void;
   /** Theme overrides for customizing appearance */
   themeOverrides?: Partial<Record<string, any>>;
   /** Style overrides for specific components */
@@ -84,7 +84,7 @@ interface ChatComposerProps {
  * <ChatComposer
  *   currentUser={user}
  *   parentId="chat-123" // Optional, for replies
- *   onMessageSent={() => refetchMessages()}
+ *   onMessageSent={(content) => handleMessageSent(content)}
  *   themeOverrides={{ '--primary-color': '#1D9BF0' }}
  * />
  * ```
@@ -131,31 +131,23 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
   const [loadingActiveListings, setLoadingActiveListings] = useState(false);
   const [activeListingsError, setActiveListingsError] = useState<string | null>(null);
 
-  // Show/hide the TradeModal
+  // Trade modal state
   const [showTradeModal, setShowTradeModal] = useState(false);
   const SOL_TO_LAMPORTS = 1_000_000_000;
 
-  // 1. Get base styles (no theme needed)
-  const baseComponentStyles = getChatComposerBaseStyles();
-  
-  // 2. Merge styles using the utility function
-  const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
+  /**
+   * Get base styles for the composer
+   */
+  const baseStyles = getChatComposerBaseStyles();
 
-  // Animation for send button
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  /**
+   * Merge the original styles with user overrides
+   */
+  const styles = mergeStyles(baseStyles, styleOverrides, userStyleSheet);
 
-  // Update the animation value when content changes
-  useEffect(() => {
-    const hasContent = textValue.trim() || selectedImage || selectedListingNft;
-
-    Animated.timing(fadeAnim, {
-      toValue: hasContent ? 1 : 0.8,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [textValue, selectedImage, selectedListingNft, fadeAnim]);
-
-  // Add this function to fetch active listings
+  /**
+   * Fetch active listings for the NFT modal - using direct API call similar to ThreadComposer
+   */
   const fetchActiveListings = useCallback(async () => {
     if (!userPublicKey) return;
     setLoadingActiveListings(true);
@@ -216,6 +208,20 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
    */
   const handleSend = async () => {
     if (!textValue.trim() && !selectedImage && !selectedListingNft) return;
+
+    // If this is a chat message (not a post), we can use the simplified logic
+    if (onMessageSent) {
+      // Pass the text content to the callback
+      onMessageSent(textValue);
+
+      // Clear the input
+      setTextValue('');
+      setSelectedImage(null);
+      setSelectedListingNft(null);
+      return;
+    }
+
+    // The following is only executed for posting to threads
 
     // Show loading indicator
     setIsSubmitting(true);
@@ -305,7 +311,6 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
       setTextValue('');
       setSelectedImage(null);
       setSelectedListingNft(null);
-      onMessageSent && onMessageSent();
     } catch (error: any) {
       console.warn(
         'Network request failed, adding message locally:',
@@ -335,10 +340,8 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
       setTextValue('');
       setSelectedImage(null);
       setSelectedListingNft(null);
-      onMessageSent && onMessageSent();
-    } finally {
-      setIsSubmitting(false);
     }
+    setIsSubmitting(false);
   };
 
   useEffect(() => {
@@ -441,10 +444,13 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
     );
   };
 
+  // Determine if send button should be enabled
+  const canSend = textValue.trim() !== '' || selectedImage !== null || selectedListingNft !== null;
+
   return (
     <View>
       {renderAttachmentPreviews()}
-      
+
       <View style={styles.composerContainer}>
         <View style={styles.inputContainer}>
           <TextInput
@@ -456,7 +462,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
             onChangeText={setTextValue}
             multiline
           />
-          
+
           <View style={styles.iconsContainer}>
             <TouchableOpacity
               onPress={handleMediaPress}
@@ -478,38 +484,25 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
           </View>
         </View>
 
-        <Animated.View style={{
-          opacity: fadeAnim,
-          transform: [{
-            scale: fadeAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.5, 1]
-            })
-          }]
-        }}>
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={isSubmitting || !(textValue.trim() || selectedImage || selectedListingNft)}
-            style={[
-              styles.sendButton,
-              !(textValue.trim() || selectedImage || selectedListingNft) && styles.disabledSendButton
-            ]}>
-            {isSubmitting ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
-            ) : (
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"
-                  fill={COLORS.white}
-                  stroke={COLORS.white}
-                  strokeWidth={1}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-            )}
-          </TouchableOpacity>
-        </Animated.View>
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            !canSend && styles.disabledSendButton,
+          ]}
+          onPress={handleSend}
+          disabled={!canSend || isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M20.01 3.87L3.87 8.25C3.11 8.51 3.15 9.65 3.92 9.85L10.03 11.85L12.03 17.98C12.24 18.74 13.37 18.78 13.63 18.03L20.01 3.87Z"
+                fill="#FFFFFF"
+              />
+            </Svg>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Listing Modal */}
@@ -523,12 +516,11 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         styles={styles} // Pass merged styles down
       />
 
-      {/* Trade Modal */}
       <TradeModal
         visible={showTradeModal}
         onClose={() => setShowTradeModal(false)}
         currentUser={currentUser}
-        onPostCreated={onMessageSent}
+        onPostCreated={() => { }}
       />
     </View>
   );

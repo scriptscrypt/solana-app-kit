@@ -2,8 +2,8 @@ import { StyleSheet } from 'react-native';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
-// Tab bar height constant
-export const TAB_BAR_HEIGHT = 0;
+// Calculate tab bar height for padding
+export const TAB_BAR_HEIGHT = 20;
 
 export const styles = StyleSheet.create({
   container: {
@@ -16,14 +16,14 @@ export const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: COLORS.borderDarkColor,
     position: 'relative' as const,
   },
   backButton: {
     padding: 8,
-    marginRight: 4,
+    borderRadius: 20,
   },
   leftPlaceholder: {
     width: 30,
@@ -35,10 +35,10 @@ export const styles = StyleSheet.create({
   titleText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.lg,
-    fontWeight: 'bold' as const,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
   },
   subtitleText: {
-    color: COLORS.lightGrey,
+    color: COLORS.greyMid,
     fontSize: TYPOGRAPHY.size.xs,
     marginTop: 2,
   },
@@ -47,13 +47,13 @@ export const styles = StyleSheet.create({
     alignItems: 'center' as const,
   },
   iconButton: {
-    marginLeft: 16,
+    marginLeft: 10,
   },
   headerBottomGradient: {
     position: 'absolute' as const,
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: -1,
     height: 1,
   },
   // End of header styles
@@ -87,9 +87,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: COLORS.lightGrey,
-    fontSize: TYPOGRAPHY.size.md,
-    fontFamily: TYPOGRAPHY.fontFamily,
+    color: COLORS.greyMid,
+    marginTop: 10,
   },
   emptyContainer: {
     flex: 1,
@@ -99,17 +98,17 @@ export const styles = StyleSheet.create({
   emptyText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.lg,
-    fontFamily: TYPOGRAPHY.fontFamily,
-    marginBottom: 8,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
   emptySubtext: {
-    color: COLORS.lightGrey,
-    fontSize: TYPOGRAPHY.size.md,
-    fontFamily: TYPOGRAPHY.fontFamily,
+    color: COLORS.greyMid,
+    marginTop: 8,
   },
   composerContainer: {
     paddingHorizontal: 16,
     backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderDarkColor,
   },
   messageBubble: {
     maxWidth: '80%',
@@ -149,15 +148,38 @@ export const styles = StyleSheet.create({
   },
   replyMessageWrapper: {
     marginLeft: 16,
-    paddingLeft: 12,
   },
   replyIndicator: {
     position: 'absolute' as const,
-    left: 0,
-    top: 8,
-    bottom: 8,
+    left: -10,
+    top: 10,
     width: 2,
+    height: '80%',
     backgroundColor: COLORS.borderDarkColor,
     borderRadius: 1,
   },
+  // Error handling styles
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: COLORS.errorRed,
+    fontSize: TYPOGRAPHY.size.md,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: COLORS.brandPrimary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+  }
 });

@@ -18,9 +18,26 @@ import profileImageRouter from './routes/user/userRoutes';
 import { pumpSwapRouter } from './routes/pumpfun/pumpSwapRoutes';
 import turnkeyAuthRouter from './routes/auth/turnkeyAuthRoutes';
 import auraRouter from './routes/aura';
+import { chatRouter } from './routes/chat/chatRoutes';
+import { setupGlobalChat } from './controllers/chatController';
+import http from 'http';
+import { WebSocketService } from './services/websocketService';
 
 const app = express();
 app.use(express.json());
+
+// Create HTTP server for Socket.IO
+const server = http.createServer(app);
+
+// Initialize WebSocket service
+const webSocketService = new WebSocketService(server);
+
+// Make WebSocket service available to the request objects
+// This allows controllers to use the WebSocket service
+app.use((req: any, res, next) => {
+  req.webSocketService = webSocketService;
+  next();
+});
 
 // Test the database connection.
 // Instead of exiting on error, we log the error and continue.
@@ -47,6 +64,9 @@ async function runMigrationsAndStartServer() {
     if (log.length > 0) {
       console.log('Migrations executed:', log);
     }
+    
+    // Setup global chat after migrations
+    await setupGlobalChat();
   } catch (error) {
     console.error('Migration error:', error);
     console.warn('Proceeding without running migrations.');
@@ -63,6 +83,7 @@ app.use('/api/pump-swap', pumpSwapRouter);
 app.use('/api', tokenMillRouter);
 app.use('/api/auth', turnkeyAuthRouter);
 app.use('/api/aura', auraRouter);
+app.use('/api/chat', chatRouter); // Add the chat routes
 
 // app.post('/api/build-compressed-nft-listing-tx', async (req: any, res: any) => {
 //   try {
@@ -83,7 +104,9 @@ const PORT = process.env.PORT || 8080;
 (async function startServer() {
   await testDbConnection();
   await runMigrationsAndStartServer();
-  app.listen(PORT, () => {
+  
+  // Use the HTTP server instead of app.listen
+  server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
   });
 })();

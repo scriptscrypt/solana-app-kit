@@ -10,6 +10,7 @@ import { NftScreen } from '@/modules/nft';
 import LaunchlabsScreen from '@/modules/LaunchLab/screens/LaunchlabsScreen';
 import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
 import ChatListScreen from '@/screens/SampleUI/Chat/ChatListScreen';
+import UserSelectionScreen from '@/screens/SampleUI/Chat/UserSelectionScreen/UserSelectionScreen';
 import OtherProfileScreen from '@/screens/SampleUI/Threads/OtherProfileScreen/OtherProfileScreen';
 import PostThreadScreen from '@/screens/SampleUI/Threads/PostThreadScreen/PostthreadScreen';
 import FollowersFollowingListScreen from '@/core/profile/components/FollowersFollowingListScreen/FollowersFollowingListScreen';
@@ -33,6 +34,7 @@ export type RootStackParamList = {
     chatName: string;
     isGroup: boolean;
   };
+  UserSelectionScreen: undefined;
   PumpSwap: undefined;
   MercuroScreen: undefined;
   LaunchlabsScreen: undefined;
@@ -63,6 +65,7 @@ export default function RootNavigator() {
           <Stack.Screen name="NftScreen" component={NftScreen} />
           <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
           <Stack.Screen name="ChatScreen" component={ChatScreen} />
+          <Stack.Screen name="UserSelectionScreen" component={UserSelectionScreen} />
           <Stack.Screen name="PumpSwap" component={PumpSwapScreen} />
           <Stack.Screen name="MercuroScreen" component={MercuroScreen} />
           <Stack.Screen name="LaunchlabsScreen" component={LaunchlabsScreen} />

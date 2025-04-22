@@ -138,7 +138,7 @@ export const styles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.fontFamily,
   },
   memberCount: {
-    color: COLORS.lightGrey,
+    color: COLORS.greyMid,
     fontSize: TYPOGRAPHY.size.xs,
     fontFamily: TYPOGRAPHY.fontFamily,
     marginTop: 2,
@@ -154,7 +154,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lastMessage: {
-    color: COLORS.lightGrey,
+    color: COLORS.greyMid,
     fontSize: TYPOGRAPHY.size.sm,
     flex: 1,
     marginRight: 8,
@@ -188,6 +188,13 @@ export const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.size.md,
     fontFamily: TYPOGRAPHY.fontFamily,
   },
+  emptySubtext: {
+    color: COLORS.greyMid,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    marginTop: 8,
+    textAlign: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -199,6 +206,31 @@ export const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.size.md,
     fontFamily: TYPOGRAPHY.fontFamily,
     marginTop: 12,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: COLORS.errorRed,
+    fontSize: TYPOGRAPHY.size.md,
+    textAlign: 'center',
+    marginBottom: 16,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  retryButton: {
+    backgroundColor: COLORS.brandPrimary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   fab: {
     position: 'absolute',

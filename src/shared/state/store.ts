@@ -5,6 +5,7 @@ import transactionReducer from './transaction/reducer';
 import usersReducer from './users/reducer';
 import notificationReducer from './notification/reducer';
 import profileReducer from './profile/reducer';
+import chatReducer from './chat/slice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     users: usersReducer,
     notification: notificationReducer,
     profile: profileReducer,
+    chat: chatReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
