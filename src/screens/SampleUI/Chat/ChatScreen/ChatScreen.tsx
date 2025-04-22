@@ -113,6 +113,14 @@ const additionalStyles = {
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'ChatScreen'>;
 type ChatScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatScreen'>;
 
+// AI Agent chat configuration
+const AI_AGENT = {
+  id: 'ai-agent',
+  name: 'AI Assistant',
+  avatar: DEFAULT_IMAGES.user, // Use a default user image instead of SVG
+  initialMessage: "Hey! I'm your AI assistant. I can help you with various tasks like buying/selling tokens, swapping tokens, or providing information about your wallet. How can I assist you today?"
+};
+
 /**
  * ChatScreen component for displaying a chat interface with real post data
  */
@@ -160,6 +168,9 @@ const ChatScreen: React.FC = () => {
   const allPosts = useAppSelector(state => state.thread.allPosts);
   const [globalMessages, setGlobalMessages] = useState<ThreadPost[]>([]);
 
+  // Check if this is the AI Agent chat
+  const isAIAgentChat = chatId === AI_AGENT.id;
+
   // Handle back button press
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -200,6 +211,9 @@ const ChatScreen: React.FC = () => {
       dispatch(fetchAllPosts())
         .then(() => setLoading(false))
         .catch(() => setLoading(false));
+    } else if (chatId === AI_AGENT.id) {
+      // For AI Agent chat, don't fetch messages from DB
+      setLoading(false);
     } else if (address) {
       // For real chats, fetch messages
       dispatch(fetchChatMessages({ chatId }))
@@ -246,9 +260,16 @@ const ChatScreen: React.FC = () => {
     };
   }, []);
 
-  // Handle new message sent
+  // Modify handleMessageSent to handle AI Agent chat
   const handleMessageSent = useCallback((content: string) => {
     if (!address || !content.trim()) return;
+
+    // For AI Agent chat, don't actually send a message
+    if (isAIAgentChat) {
+      // You could implement AI response logic here in the future
+      Alert.alert('AI Assistant', 'This is a demo AI assistant. In a real app, this would connect to an AI service to process your message.');
+      return;
+    }
 
     if (chatId === 'global') {
       // For global chat, we'd normally create a post
@@ -278,17 +299,19 @@ const ChatScreen: React.FC = () => {
         Alert.alert('Error', 'Failed to send message. Please try again.');
       }
     });
-  }, [chatId, address, dispatch]);
+  }, [chatId, address, dispatch, isAIAgentChat]);
 
-  // Scroll to bottom on initial render and when messages change
+  // Modify the scroll to bottom effect
   useEffect(() => {
     if ((chatId === 'global' && globalMessages.length > 0) ||
-      (chatId !== 'global' && chatMessages.length > 0)) {
+      (chatId !== 'global' && chatMessages.length > 0) ||
+      isAIAgentChat) {
+      // Use a longer timeout to ensure the list has fully rendered
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: false });
-      }, 200);
+      }, 500);
     }
-  }, [globalMessages, chatMessages, chatId]);
+  }, [globalMessages, chatMessages, chatId, isAIAgentChat]);
 
   // Handle opening NFT details drawer
   const handleOpenNftDetails = useCallback((nftData: NFTData & { isCollection?: boolean, collId?: string }) => {
@@ -446,8 +469,22 @@ const ChatScreen: React.FC = () => {
     };
   };
 
-  // Get the messages to display based on chat type
+  // Get messages to display based on chat type
   const getMessagesToDisplay = () => {
+    // For AI Agent chat, return a hardcoded message
+    if (isAIAgentChat) {
+      return [{
+        id: 'ai-msg-1',
+        user: {
+          id: 'ai-agent',
+          username: 'AI Assistant',
+          avatar: AI_AGENT.avatar
+        },
+        text: AI_AGENT.initialMessage,
+        createdAt: new Date().toISOString(),
+      }];
+    }
+
     if (chatId === 'global') {
       return globalMessages;
     } else {
@@ -714,6 +751,10 @@ const ChatScreen: React.FC = () => {
               scrollEnabled={true}
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={true}
+              onLayout={() => {
+                // Scroll to end when layout is complete
+                flatListRef.current?.scrollToEnd({ animated: false });
+              }}
             />
           )}
 
