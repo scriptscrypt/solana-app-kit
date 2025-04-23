@@ -78,11 +78,16 @@ export const fetchUserChats = createAsyncThunk(
 
 export const fetchChatMessages = createAsyncThunk(
   'chat/fetchChatMessages',
-  async ({ chatId, limit = 50, before = '' }: { chatId: string; limit?: number; before?: string }, { rejectWithValue }) => {
+  async ({ chatId, limit = 50, before = '', resetUnread = false }: { 
+    chatId: string; 
+    limit?: number; 
+    before?: string;
+    resetUnread?: boolean;
+  }, { rejectWithValue }) => {
     try {
       const url = `${SERVER_URL}/api/chat/chats/${chatId}/messages${before ? `?before=${before}&limit=${limit}` : `?limit=${limit}`}`;
       const response = await axios.get(url);
-      return { chatId, messages: response.data.messages };
+      return { chatId, messages: response.data.messages, resetUnread };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch messages');
     }
@@ -179,6 +184,14 @@ const chatSlice = createSlice({
   reducers: {
     setSelectedChat: (state, action) => {
       state.selectedChatId = action.payload;
+      
+      // Reset unread count for the selected chat
+      if (action.payload) {
+        const chatIndex = state.chats.findIndex(chat => chat.id === action.payload);
+        if (chatIndex !== -1) {
+          state.chats[chatIndex].unreadCount = 0;
+        }
+      }
     },
     receiveMessage: (state, action) => {
       const message = action.payload;
@@ -192,6 +205,26 @@ const chatSlice = createSlice({
       const chatIndex = state.chats.findIndex(chat => chat.id === message.chat_room_id);
       if (chatIndex !== -1) {
         state.chats[chatIndex].lastMessage = message;
+      }
+    },
+    incrementUnreadCount: (state, action) => {
+      const { chatId, senderId } = action.payload;
+      const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+      
+      // Only increment if we found the chat and it's not currently selected
+      if (chatIndex !== -1 && state.selectedChatId !== chatId) {
+        // Initialize to 0 if undefined
+        if (state.chats[chatIndex].unreadCount === undefined) {
+          state.chats[chatIndex].unreadCount = 0;
+        }
+        
+        // Increment the unread count
+        state.chats[chatIndex].unreadCount += 1;
+        
+        // Move this chat to the top of the list (most recent)
+        const updatedChat = state.chats[chatIndex];
+        state.chats.splice(chatIndex, 1); // Remove chat from current position
+        state.chats.unshift(updatedChat); // Add to beginning of array
       }
     },
     clearChatErrors: (state) => {
@@ -222,8 +255,15 @@ const chatSlice = createSlice({
       })
       .addCase(fetchChatMessages.fulfilled, (state, action) => {
         state.loadingMessages = false;
-        const { chatId, messages } = action.payload;
+        const { chatId, messages, resetUnread } = action.payload;
         state.messages[chatId] = messages;
+        
+        if (resetUnread) {
+          const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+          if (chatIndex !== -1) {
+            state.chats[chatIndex].unreadCount = 0;
+          }
+        }
       })
       .addCase(fetchChatMessages.rejected, (state, action) => {
         state.loadingMessages = false;
@@ -263,5 +303,5 @@ const chatSlice = createSlice({
   },
 });
 
-export const { setSelectedChat, receiveMessage, clearChatErrors } = chatSlice.actions;
+export const { setSelectedChat, receiveMessage, incrementUnreadCount, clearChatErrors } = chatSlice.actions;
 export default chatSlice.reducer; 

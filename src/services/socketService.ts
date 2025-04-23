@@ -4,7 +4,7 @@
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL } from '@env';
 import { store } from '@/shared/state/store';
-import { receiveMessage } from '@/shared/state/chat/slice';
+import { receiveMessage, incrementUnreadCount } from '@/shared/state/chat/slice';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -13,6 +13,7 @@ class SocketService {
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
+  private isPersistent: boolean = true; // Keep connection persistent by default
 
   // Initialize the socket connection
   public initSocket(userId: string): Promise<boolean> {
@@ -62,6 +63,15 @@ class SocketService {
         console.log('Active transport:', this.socket?.io.engine.transport.name);
         this.authenticate(userId);
         this.isConnected = true;
+        
+        // Rejoin all active rooms after reconnection
+        if (this.activeRooms.size > 0) {
+          console.log('Rejoining active rooms after reconnection');
+          this.activeRooms.forEach(roomId => {
+            this.joinChat(roomId);
+          });
+        }
+        
         resolve(true);
       });
 
@@ -141,14 +151,27 @@ class SocketService {
       
       // Ensure message has all required fields before dispatching
       if (message && message.id && message.chat_room_id) {
+        // Get currently selected chat from Redux store
+        const state = store.getState();
+        const selectedChatId = state.chat.selectedChatId;
+        
         // Don't dispatch messages sent by the current user (already in state from API response)
         if (message.sender_id === this.userId) {
           console.log('Ignoring own message broadcast from server');
           return;
         }
         
-        // Only dispatch messages from other users
+        // Dispatch to add message to chat's message list
         store.dispatch(receiveMessage(message));
+        
+        // Increment unread count if the message is not for the currently viewed chat
+        if (selectedChatId !== message.chat_room_id) {
+          console.log('Incrementing unread count for chat:', message.chat_room_id);
+          store.dispatch(incrementUnreadCount({
+            chatId: message.chat_room_id,
+            senderId: message.sender_id
+          }));
+        }
       } else {
         console.error('Received malformed message from socket:', message);
       }
@@ -158,13 +181,27 @@ class SocketService {
     this.socket.on('message_broadcast', (message: any) => {
       console.log('Message broadcast received:', message);
       if (message && message.id) {
+        // Get currently selected chat from Redux store
+        const state = store.getState();
+        const selectedChatId = state.chat.selectedChatId;
+        
         // Don't dispatch messages sent by the current user (already in state from API response)
         if (message.sender_id === this.userId || message.senderId === this.userId) {
           console.log('Ignoring own message broadcast');
           return;
         }
         
+        // Dispatch to add message to chat's message list
         store.dispatch(receiveMessage(message));
+        
+        // Increment unread count if the message is not for the currently viewed chat
+        if (selectedChatId !== message.chat_room_id) {
+          console.log('Incrementing unread count for chat:', message.chat_room_id);
+          store.dispatch(incrementUnreadCount({
+            chatId: message.chat_room_id,
+            senderId: message.sender_id || message.senderId
+          }));
+        }
       }
     });
 
@@ -179,11 +216,10 @@ class SocketService {
       console.log('Socket disconnected:', reason);
       this.isConnected = false;
       
-      // Clear active rooms on disconnect
-      this.activeRooms.clear();
+      // Don't clear active rooms on disconnect - we want to rejoin them on reconnect
       
       // Attempt to reconnect if not intentionally closed
-      if (reason !== 'io client disconnect') {
+      if (reason !== 'io client disconnect' && this.isPersistent) {
         console.log('Attempting to reconnect...');
         if (this.userId) {
           setTimeout(() => {
@@ -228,6 +264,20 @@ class SocketService {
     this.activeRooms.add(chatId);
   }
 
+  // Join multiple chat rooms at once
+  public joinChats(chatIds: string[]): void {
+    if (!chatIds || chatIds.length === 0) {
+      return;
+    }
+    
+    console.log('Joining multiple chat rooms:', chatIds);
+    chatIds.forEach(chatId => {
+      if (chatId && !this.activeRooms.has(chatId)) {
+        this.joinChat(chatId);
+      }
+    });
+  }
+
   // Leave a chat room
   public leaveChat(chatId: string): void {
     if (!this.socket || !this.socket.connected) {
@@ -245,18 +295,23 @@ class SocketService {
     this.activeRooms.delete(chatId);
   }
 
+  // Update persistent mode
+  public setPersistentMode(isPersistent: boolean): void {
+    this.isPersistent = isPersistent;
+  }
+
   // Send a message to a chat room
   public sendMessage(chatId: string, message: any): void {
     if (!this.socket || !this.socket.connected) {
-      console.error('Cannot send message via socket: not connected');
-      console.log('Message will still be saved in the database and appear after refresh');
-      // The message will still be sent to the server via the API call in ChatScreen.tsx
-      // (when the user calls dispatch(sendMessage(...)))
+      console.error('Cannot send message: socket not connected');
       return;
     }
 
-    console.log('Sending message to chat room via WebSocket:', chatId, message);
-    // Include chatId with the message payload to ensure the server knows where to broadcast
+    if (!this.activeRooms.has(chatId)) {
+      console.log('Not in room:', chatId, 'joining now...');
+      this.joinChat(chatId);
+    }
+
     this.socket.emit('send_message', { ...message, chatId });
   }
 
@@ -267,15 +322,17 @@ class SocketService {
     this.socket.emit('typing', { chatId, isTyping });
   }
 
-  // Disconnect the socket
+  // Disconnect socket
   public disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-      this.isConnected = false;
-      this.userId = null;
-      this.activeRooms.clear();
-      console.log('Socket disconnected');
+    // Only actually disconnect if we're not in persistent mode
+    if (!this.isPersistent) {
+      if (this.socket) {
+        this.socket.disconnect();
+        this.activeRooms.clear();
+        this.isConnected = false;
+      }
+    } else {
+      console.log('Disconnection requested but persistent mode is enabled, keeping connection active');
     }
   }
 }
