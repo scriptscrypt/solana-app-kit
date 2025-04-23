@@ -7,7 +7,8 @@
     "gcp-build": "echo 'Skipping build: using pre-built dist folder'",
     "dev": "npx tsx watch src/index.ts",
     "build": "npx tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "gcloud app deploy app.yaml"
   },
   "keywords": [],
   "author": "",
@@ -52,5 +53,8 @@
     "@types/node-fetch": "^2.6.12",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
