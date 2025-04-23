@@ -79,7 +79,7 @@ export const styles = StyleSheet.create({
   messagesContainer: {
     flexGrow: 1,
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -143,7 +143,7 @@ export const styles = StyleSheet.create({
   },
   // Reply styling
   messageWrapper: {
-    marginBottom: 16,
+    marginBottom: 8,
     position: 'relative' as const,
   },
   replyMessageWrapper: {

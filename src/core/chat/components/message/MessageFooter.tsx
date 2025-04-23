@@ -31,11 +31,11 @@ function MessageFooter({ message, isCurrentUser }: MessageFooterProps) {
 
   // Get timestamp from different message types
   const timestamp = 'createdAt' in message ? message.createdAt : '';
-  
+
   // Get read status for current user's messages
   const getReadStatus = () => {
     if (!isCurrentUser || !('status' in message)) return null;
-    
+
     switch (message.status) {
       case 'sent':
         return <CheckIcon color="#8F8F8F" />;
@@ -50,15 +50,18 @@ function MessageFooter({ message, isCurrentUser }: MessageFooterProps) {
 
   return (
     <View style={messageFooterStyles.container}>
-      <Text 
-        style={[
-          messageFooterStyles.timestamp, 
-          isCurrentUser && messageFooterStyles.currentUserTimestamp
-        ]}
-      >
-        {formatTimestamp(timestamp)}
-      </Text>
-      
+      {/* Only show timestamp for current user's messages */}
+      {isCurrentUser && (
+        <Text
+          style={[
+            messageFooterStyles.timestamp,
+            isCurrentUser && messageFooterStyles.currentUserTimestamp
+          ]}
+        >
+          {formatTimestamp(timestamp)}
+        </Text>
+      )}
+
       {isCurrentUser && (
         <View style={messageFooterStyles.readStatus}>
           {getReadStatus()}

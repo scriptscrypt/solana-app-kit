@@ -904,7 +904,7 @@ const ChatScreen: React.FC = () => {
 
         {/* Right: Icons and socket status */}
         <View style={styles.iconsContainer}>
-          {renderSocketStatus()}
+          {/* {renderSocketStatus()} */}
           <TouchableOpacity style={styles.iconButton}>
             <Icons.copyIcon width={16} height={16} />
           </TouchableOpacity>
@@ -953,7 +953,7 @@ const ChatScreen: React.FC = () => {
               keyExtractor={item => item.id}
               contentContainerStyle={[
                 styles.messagesContainer,
-                { paddingBottom: 20 }
+                { paddingBottom: 10 }
               ]}
               scrollEnabled={true}
               scrollEventThrottle={16}

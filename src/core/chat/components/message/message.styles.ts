@@ -11,7 +11,7 @@ type Overflow = 'visible' | 'hidden' | 'scroll';
 export function getMessageBaseStyles() {
   return StyleSheet.create({
     messageContainer: {
-      marginBottom: 4,
+      marginBottom: 2,
       marginHorizontal: 10,
       maxWidth: '90%',
     },
@@ -25,16 +25,16 @@ export function getMessageBaseStyles() {
     headerContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 4,
+      marginBottom: 2,
     },
     headerLeft: {
       flexDirection: 'row',
       alignItems: 'center',
     },
     avatar: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
       marginRight: 8,
     },
     username: {
@@ -42,12 +42,20 @@ export function getMessageBaseStyles() {
       fontWeight: '600',
       color: COLORS.greyLight,
     },
+    userInfoContainer: {
+      flexDirection: 'column',
+    },
+    headerTimestamp: {
+      fontSize: 10,
+      color: COLORS.greyMid,
+      marginTop: 0,
+    },
     // Footer styles
     footerContainer: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       alignItems: 'center',
-      marginTop: 2,
+      marginTop: 0,
     },
     timestamp: {
       fontSize: 10,
@@ -64,9 +72,9 @@ export function getMessageBaseStyles() {
 
 export const messageBubbleStyles = StyleSheet.create({
   container: {
-    padding: 12,
+    padding: 8,
     borderRadius: 18,
-    marginVertical: 1,
+    marginVertical: 0,
     maxWidth: '100%',
   },
   currentUser: {
@@ -83,7 +91,7 @@ export const messageBubbleStyles = StyleSheet.create({
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.md,
     fontFamily: TYPOGRAPHY.fontFamily,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   otherUserText: {
     color: COLORS.white,
@@ -91,11 +99,11 @@ export const messageBubbleStyles = StyleSheet.create({
   timestamp: {
     fontSize: 10,
     color: COLORS.greyMid,
-    marginTop: 4,
+    marginTop: 2,
     alignSelf: 'flex-end',
   },
   sectionContainer: {
-    marginTop: 8,
+    marginTop: 6,
     width: '100%',
   },
   messageContent: {
@@ -103,7 +111,7 @@ export const messageBubbleStyles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   imageContainer: {
-    marginTop: 8,
+    marginTop: 6,
     width: '100%',
     borderRadius: 12,
     overflow: 'hidden',
@@ -114,14 +122,14 @@ export const messageBubbleStyles = StyleSheet.create({
     borderRadius: 12,
   },
   imageCaption: {
-    marginTop: 8,
+    marginTop: 6,
     fontSize: 14,
     color: COLORS.white,
   },
   retweetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   retweetText: {
     fontSize: 13,
@@ -136,11 +144,15 @@ export const messageHeaderStyles = StyleSheet.create<{
   left: ViewStyle;
   avatar: ImageStyle;
   username: TextStyle;
+  userInfoContainer: ViewStyle;
+  headerTimestamp: TextStyle;
 }>({
   container: getMessageBaseStyles().headerContainer as ViewStyle,
   left: getMessageBaseStyles().headerLeft as ViewStyle,
   avatar: getMessageBaseStyles().avatar as ImageStyle,
   username: getMessageBaseStyles().username as TextStyle,
+  userInfoContainer: getMessageBaseStyles().userInfoContainer as ViewStyle,
+  headerTimestamp: getMessageBaseStyles().headerTimestamp as TextStyle,
 });
 
 export const messageFooterStyles = StyleSheet.create<{
