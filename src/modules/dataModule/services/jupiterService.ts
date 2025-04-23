@@ -140,10 +140,10 @@ export class JupiterService {
     let transaction: Transaction | VersionedTransaction;
     
     try {
-      transaction = VersionedTransaction.deserialize(txBuffer);
+      transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
       console.log('Deserialized as VersionedTransaction');
     } catch {
-      transaction = Transaction.from(txBuffer);
+      transaction = Transaction.from(new Uint8Array(txBuffer));
       console.log('Deserialized as legacy Transaction');
 
       // Ensure feePayer is set for legacy transactions
@@ -155,7 +155,6 @@ export class JupiterService {
     
     return transaction;
   }
-
   /**
    * Executes a token swap using Jupiter API
    */

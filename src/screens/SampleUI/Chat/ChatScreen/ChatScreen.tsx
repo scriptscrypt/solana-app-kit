@@ -295,12 +295,45 @@ const ChatScreen: React.FC = () => {
   useEffect(() => {
     // Skip for global chat since it uses posts
     if (chatId !== 'global' && chatId !== AI_AGENT.id && address) {
-      connectToSocket();
+      // Set a flag to track initial connection
+      let isInitialConnection = true;
+
+      const connectAndJoinChat = async () => {
+        try {
+          // Connect to socket
+          await connectToSocket();
+
+          if (socketConnected) {
+            // Explicitly leave and rejoin the chat to ensure clean state
+            socketService.leaveChat(chatId);
+            setTimeout(() => {
+              socketService.joinChat(chatId);
+              console.log(`Explicitly rejoined chat ${chatId}`);
+            }, 300);
+          }
+        } catch (error) {
+          console.error('Error connecting to socket:', error);
+        } finally {
+          isInitialConnection = false;
+        }
+      };
+
+      connectAndJoinChat();
+
+      // Set up a periodic check to ensure connection is maintained
+      const connectionInterval = setInterval(() => {
+        if (!socketConnected && address) {
+          console.log('Connection check: attempting reconnect');
+          connectAndJoinChat();
+        }
+      }, 10000); // Check every 10 seconds
 
       // Clean up when leaving the screen
       return () => {
+        clearInterval(connectionInterval);
         if (socketConnected) {
           socketService.leaveChat(chatId);
+          console.log(`Left chat ${chatId} when unmounting`);
           // Don't disconnect completely as the socket might be needed elsewhere
         }
       };
@@ -383,6 +416,18 @@ const ChatScreen: React.FC = () => {
       return;
     }
 
+    // Create message object with all required fields
+    const messagePayload = {
+      chatId: chatId,  // Explicitly include chatId
+      chat_room_id: chatId,  // Add this too for API compatibility
+      userId: address,
+      senderId: address,
+      sender_id: address,
+      content: content.trim(),
+      imageUrl: imageUrl, // Include image URL if provided
+      timestamp: new Date().toISOString(),
+    };
+
     // Send message via Redux (which will send to API)
     dispatch(sendMessage({
       chatId,
@@ -392,18 +437,16 @@ const ChatScreen: React.FC = () => {
     })).then((resultAction) => {
       if (sendMessage.fulfilled.match(resultAction)) {
         // Message sent successfully to the API
+        console.log("Message sent successfully via API, payload:", resultAction.payload);
 
         // If socket connected, send via socket for real-time updates
         if (socketConnected) {
-          // IMPORTANT: Ensure the sender ID in the WebSocket message matches the authenticated user ID
-          // Create a message object with senderId matching the authenticated user ID (wallet address)
-          const messagePayload = {
+          // Send via WebSocket for real-time display with API response data
+          socketService.sendMessage(chatId, {
             ...resultAction.payload,
-            senderId: address // Make sure this matches the ID used in socketService.initSocket()
-          };
-
-          // Send via WebSocket for real-time display
-          socketService.sendMessage(chatId, messagePayload);
+            senderId: address, // Make sure this matches the ID used in socketService.initSocket()
+            chatId: chatId,    // Explicitly include chatId
+          });
         } else {
           // If not connected via socket, add the message to the local state immediately
           // so users don't have to wait for a refresh
