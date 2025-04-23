@@ -35,7 +35,7 @@ import TYPOGRAPHY from '@/assets/typography';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
-import { fetchChatMessages, sendMessage, receiveMessage, setSelectedChat } from '@/shared/state/chat/slice';
+import { fetchChatMessages, sendMessage, receiveMessage } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
 
 // Add these styles before the component
@@ -291,19 +291,6 @@ const ChatScreen: React.FC = () => {
     }
   }, [chatId, address]);
 
-  // When entering the screen, set this chat as selected
-  useEffect(() => {
-    if (chatId && chatId !== 'global' && chatId !== AI_AGENT.id) {
-      // Set as selected chat in Redux
-      dispatch(setSelectedChat(chatId));
-    }
-
-    return () => {
-      // Clear selected chat when leaving
-      dispatch(setSelectedChat(null));
-    };
-  }, [chatId, dispatch]);
-
   // Connect to WebSocket
   useEffect(() => {
     // Skip for global chat since it uses posts
@@ -315,9 +302,6 @@ const ChatScreen: React.FC = () => {
         try {
           // Connect to socket
           await connectToSocket();
-
-          // Set current chat for unread message tracking
-          socketService.setCurrentChat(chatId);
 
           if (socketConnected) {
             // Explicitly leave and rejoin the chat to ensure clean state
@@ -348,10 +332,9 @@ const ChatScreen: React.FC = () => {
       return () => {
         clearInterval(connectionInterval);
         if (socketConnected) {
-          // Don't disconnect completely, just set current chat to null
-          socketService.setCurrentChat(null);
+          socketService.leaveChat(chatId);
           console.log(`Left chat ${chatId} when unmounting`);
-          // Don't disconnect on leave - we want to stay connected for notifications
+          // Don't disconnect completely as the socket might be needed elsewhere
         }
       };
     }
@@ -458,8 +441,12 @@ const ChatScreen: React.FC = () => {
 
         // If socket connected, send via socket for real-time updates
         if (socketConnected) {
-          // Send the message payload received from the API response via WebSocket
-          socketService.sendMessage(chatId, resultAction.payload);
+          // Send via WebSocket for real-time display with API response data
+          socketService.sendMessage(chatId, {
+            ...resultAction.payload,
+            senderId: address, // Make sure this matches the ID used in socketService.initSocket()
+            chatId: chatId,    // Explicitly include chatId
+          });
         } else {
           // If not connected via socket, add the message to the local state immediately
           // so users don't have to wait for a refresh
