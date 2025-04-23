@@ -4,6 +4,20 @@ import { MessageFooterProps } from './message.types';
 import { messageFooterStyles } from './message.styles';
 import Icons from '@/assets/svgs';
 
+// Custom check icons since they don't exist in the Icons object
+const CheckIcon = ({ color = "#8F8F8F" }) => (
+  <View style={{ width: 12, height: 12, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ width: 8, height: 5, borderBottomWidth: 2, borderLeftWidth: 2, borderColor: color, transform: [{ rotate: '-45deg' }] }} />
+  </View>
+);
+
+const DoubleCheckIcon = ({ color = "#8F8F8F" }) => (
+  <View style={{ width: 12, height: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ width: 7, height: 4, borderBottomWidth: 2, borderLeftWidth: 2, borderColor: color, transform: [{ rotate: '-45deg' }, { translateX: 2 }] }} />
+    <View style={{ width: 7, height: 4, borderBottomWidth: 2, borderLeftWidth: 2, borderColor: color, transform: [{ rotate: '-45deg' }, { translateX: -2 }] }} />
+  </View>
+);
+
 function MessageFooter({ message, isCurrentUser }: MessageFooterProps) {
   // Format the timestamp
   const formatTimestamp = (timestamp: string) => {
@@ -24,11 +38,11 @@ function MessageFooter({ message, isCurrentUser }: MessageFooterProps) {
     
     switch (message.status) {
       case 'sent':
-        return <Icons.checkIcon width={12} height={12} color="#8F8F8F" />;
+        return <CheckIcon color="#8F8F8F" />;
       case 'delivered':
-        return <Icons.doubleCheckIcon width={12} height={12} color="#8F8F8F" />;
+        return <DoubleCheckIcon color="#8F8F8F" />;
       case 'read':
-        return <Icons.doubleCheckIcon width={12} height={12} color="#4D9FEC" />;
+        return <DoubleCheckIcon color="#4D9FEC" />;
       default:
         return null;
     }

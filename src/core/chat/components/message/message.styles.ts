@@ -21,7 +21,44 @@ export function getMessageBaseStyles() {
     otherUserMessageContainer: {
       alignSelf: 'flex-start',
     },
-    // Add other styles as needed
+    // Header styles
+    headerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatar: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      marginRight: 8,
+    },
+    username: {
+      fontSize: TYPOGRAPHY.size.sm,
+      fontWeight: '600',
+      color: COLORS.greyLight,
+    },
+    // Footer styles
+    footerContainer: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      marginTop: 2,
+    },
+    timestamp: {
+      fontSize: 10,
+      color: COLORS.greyMid,
+    },
+    currentUserTimestamp: {
+      color: COLORS.greyLight,
+    },
+    readStatus: {
+      marginLeft: 4,
+    },
   });
 }
 

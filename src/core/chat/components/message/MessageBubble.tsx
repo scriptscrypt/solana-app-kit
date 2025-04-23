@@ -14,6 +14,16 @@ import SectionNftListing from '@/core/thread/components/sections/SectionNftListi
 import { DEFAULT_IMAGES } from '@/config/constants';
 import Icons from '@/assets/svgs';
 
+// Custom Retweet icon since it doesn't exist in the Icons object
+const RetweetIcon = ({ width = 14, height = 14, color = COLORS.greyLight }) => (
+  <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+    <View style={{ width: width * 0.7, height: height * 0.7, borderWidth: 1.5, borderColor: color, borderRadius: 2 }}>
+      <View style={{ position: 'absolute', top: -3, right: -3, width: width * 0.4, height: height * 0.4, borderTopWidth: 1.5, borderRightWidth: 1.5, borderColor: color, transform: [{ rotate: '45deg' }] }} />
+      <View style={{ position: 'absolute', bottom: -3, left: -3, width: width * 0.4, height: height * 0.4, borderBottomWidth: 1.5, borderLeftWidth: 1.5, borderColor: color, transform: [{ rotate: '45deg' }] }} />
+    </View>
+  </View>
+);
+
 function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides }: MessageBubbleProps) {
   // Use utility function to merge styles
   const styles = mergeStyles(
@@ -399,7 +409,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     <View style={bubbleStyle}>
       {isRetweet && !isQuoteRetweet && (
         <View style={styles.retweetHeader}>
-          <Icons.Retweet width={14} height={14} color={COLORS.greyLight} />
+          <RetweetIcon width={14} height={14} color={COLORS.greyLight} />
           <Text style={styles.retweetText}>Reposted</Text>
         </View>
       )}
