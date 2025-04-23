@@ -4,7 +4,7 @@
 import { io, Socket } from 'socket.io-client';
 import { SERVER_URL } from '@env';
 import { store } from '@/shared/state/store';
-import { receiveMessage } from '@/shared/state/chat/slice';
+import { receiveMessage, updateUnreadCount } from '@/shared/state/chat/slice';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -13,6 +13,7 @@ class SocketService {
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
+  private currentChatId: string | null = null; // Track which chat is currently open
 
   // Initialize the socket connection
   public initSocket(userId: string): Promise<boolean> {
@@ -62,6 +63,10 @@ class SocketService {
         console.log('Active transport:', this.socket?.io.engine.transport.name);
         this.authenticate(userId);
         this.isConnected = true;
+        
+        // Rejoin all active rooms after reconnection
+        this.rejoinActiveRooms();
+        
         resolve(true);
       });
 
@@ -141,14 +146,19 @@ class SocketService {
       
       // Ensure message has all required fields before dispatching
       if (message && message.id && message.chat_room_id) {
-        // Don't dispatch messages sent by the current user (already in state from API response)
-        if (message.sender_id === this.userId) {
-          console.log('Ignoring own message broadcast from server');
-          return;
-        }
+        // Always dispatch message to update the store
+        store.dispatch(receiveMessage({
+          ...message,
+          _meta: { currentUserId: this.userId }  // Add metadata for the reducer
+        }));
         
-        // Only dispatch messages from other users
-        store.dispatch(receiveMessage(message));
+        // If not in the same chat room, increment unread count
+        if (this.currentChatId !== message.chat_room_id && message.sender_id !== this.userId) {
+          store.dispatch(updateUnreadCount({
+            chatId: message.chat_room_id,
+            increment: true
+          }));
+        }
       } else {
         console.error('Received malformed message from socket:', message);
       }
@@ -158,13 +168,21 @@ class SocketService {
     this.socket.on('message_broadcast', (message: any) => {
       console.log('Message broadcast received:', message);
       if (message && message.id) {
-        // Don't dispatch messages sent by the current user (already in state from API response)
-        if (message.sender_id === this.userId || message.senderId === this.userId) {
-          console.log('Ignoring own message broadcast');
-          return;
-        }
+        // Always dispatch message to update the store
+        store.dispatch(receiveMessage({
+          ...message,
+          _meta: { currentUserId: this.userId }  // Add metadata for the reducer
+        }));
         
-        store.dispatch(receiveMessage(message));
+        // If not in the same chat room, increment unread count
+        if (this.currentChatId !== message.chat_room_id && 
+            message.sender_id !== this.userId && 
+            message.senderId !== this.userId) {
+          store.dispatch(updateUnreadCount({
+            chatId: message.chat_room_id,
+            increment: true
+          }));
+        }
       }
     });
 
@@ -179,8 +197,7 @@ class SocketService {
       console.log('Socket disconnected:', reason);
       this.isConnected = false;
       
-      // Clear active rooms on disconnect
-      this.activeRooms.clear();
+      // Don't clear active rooms on disconnect so we can rejoin them on reconnect
       
       // Attempt to reconnect if not intentionally closed
       if (reason !== 'io client disconnect') {
@@ -245,37 +262,75 @@ class SocketService {
     this.activeRooms.delete(chatId);
   }
 
-  // Send a message to a chat room
-  public sendMessage(chatId: string, message: any): void {
+  // Set which chat is currently being viewed (for unread count tracking)
+  public setCurrentChat(chatId: string | null): void {
+    this.currentChatId = chatId;
+  }
+
+  // Join all user's chat rooms at once (used for initial setup)
+  public joinAllChats(chatIds: string[]): void {
     if (!this.socket || !this.socket.connected) {
-      console.error('Cannot send message via socket: not connected');
-      console.log('Message will still be saved in the database and appear after refresh');
-      // The message will still be sent to the server via the API call in ChatScreen.tsx
-      // (when the user calls dispatch(sendMessage(...)))
+      console.error('Cannot join chats: socket not connected');
       return;
     }
 
-    console.log('Sending message to chat room via WebSocket:', chatId, message);
-    // Include chatId with the message payload to ensure the server knows where to broadcast
-    this.socket.emit('send_message', { ...message, chatId });
+    chatIds.forEach(chatId => {
+      if (!this.activeRooms.has(chatId) && this.socket) {
+        console.log('Joining chat room:', chatId);
+        this.socket.emit('join_chat', { chatId });
+        this.activeRooms.add(chatId);
+      }
+    });
   }
 
-  // Send typing indicator
+  // Private method to rejoin all active rooms after reconnection
+  private rejoinActiveRooms(): void {
+    if (!this.socket || !this.socket.connected) return;
+    
+    console.log(`Rejoining ${this.activeRooms.size} active rooms`);
+    this.activeRooms.forEach(chatId => {
+      if (this.socket) {
+        this.socket.emit('join_chat', { chatId });
+        console.log('Rejoined room:', chatId);
+      }
+    });
+  }
+
+  // Send a message to a chat room
+  public sendMessage(chatId: string, message: any): void {
+    if (!this.socket || !this.socket.connected) {
+      console.error('Cannot send message: socket not connected');
+      return;
+    }
+
+    if (!this.activeRooms.has(chatId)) {
+      console.log('Joining room before sending message:', chatId);
+      this.joinChat(chatId);
+    }
+
+    this.socket.emit('send_message', {
+      chatId,
+      message,
+    });
+  }
+
+  // Send typing indicator to a chat room
   public sendTypingIndicator(chatId: string, isTyping: boolean): void {
     if (!this.socket || !this.socket.connected) return;
-
+    
     this.socket.emit('typing', { chatId, isTyping });
   }
 
-  // Disconnect the socket
+  // Disconnect socket - only used when user logs out
   public disconnect(): void {
     if (this.socket) {
+      // Clear active rooms first
+      this.activeRooms.clear();
       this.socket.disconnect();
       this.socket = null;
       this.isConnected = false;
       this.userId = null;
-      this.activeRooms.clear();
-      console.log('Socket disconnected');
+      this.currentChatId = null;
     }
   }
 }
