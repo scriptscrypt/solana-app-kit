@@ -18,6 +18,9 @@ import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScree
 import IntroScreen from '@/screens/Common/IntroScreen/IntroScreen';
 import LoginScreen from '@/screens/Common/LoginScreen/LoginScreen';
 import { MercuroScreen } from '@/modules/mercuro';
+import socketService from '@/services/socketService';
+import { fetchUserChats } from '@/shared/state/chat/slice';
+import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 
 export type RootStackParamList = {
   IntroScreen: undefined;
@@ -49,10 +52,68 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+  const userId = useSelector((state: RootState) => state.auth.address);
+  const chats = useSelector((state: RootState) => state.chat.chats);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     console.log(`[RootNavigator] isLoggedIn state changed: ${isLoggedIn}`);
   }, [isLoggedIn]);
+
+  // Initialize socket connection and join all chat rooms when user is logged in
+  useEffect(() => {
+    if (isLoggedIn && userId) {
+      console.log('[RootNavigator] User logged in, initializing persistent socket connection');
+
+      // Initialize socket connection with persistent mode
+      socketService.initSocket(userId)
+        .then(connected => {
+          if (connected) {
+            console.log('[RootNavigator] Socket connected successfully');
+            socketService.setPersistentMode(true);
+
+            // Fetch user chats if not already loaded
+            if (chats.length === 0) {
+              dispatch(fetchUserChats(userId))
+                .then((resultAction) => {
+                  if (fetchUserChats.fulfilled.match(resultAction)) {
+                    const userChats = resultAction.payload;
+                    if (userChats && Array.isArray(userChats)) {
+                      // Join all chat rooms
+                      const chatIds = userChats.map(chat => chat.id).filter(Boolean);
+                      if (chatIds.length > 0) {
+                        console.log('[RootNavigator] Joining all chat rooms:', chatIds);
+                        socketService.joinChats(chatIds);
+                      }
+                    }
+                  }
+                })
+                .catch(error => {
+                  console.error('[RootNavigator] Error fetching user chats:', error);
+                });
+            } else {
+              // If chats are already loaded, just join them
+              const chatIds = chats.map(chat => chat.id).filter(Boolean);
+              if (chatIds.length > 0) {
+                console.log('[RootNavigator] Joining existing chat rooms:', chatIds);
+                socketService.joinChats(chatIds);
+              }
+            }
+          } else {
+            console.error('[RootNavigator] Failed to connect socket');
+          }
+        })
+        .catch(error => {
+          console.error('[RootNavigator] Socket initialization error:', error);
+        });
+    }
+
+    // Cleanup function
+    return () => {
+      // We don't disconnect on unmount - this component is always mounted
+      // Only disconnect explicitly on logout
+    };
+  }, [isLoggedIn, userId, dispatch]);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

@@ -37,6 +37,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { fetchChatMessages, sendMessage, receiveMessage } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
+import { setSelectedChat } from '@/shared/state/chat/slice';
 
 // Add these styles before the component
 // Create a complete styles object by extending the base styles
@@ -202,6 +203,17 @@ const ChatScreen: React.FC = () => {
   // Extract chat parameters from route
   const { chatId = 'global', chatName = 'Global Community', isGroup = true } = route.params || {};
 
+  // Set selected chat in Redux when entering
+  useEffect(() => {
+    // Set this chat as selected (to prevent increments of unread counts)
+    dispatch(setSelectedChat(chatId));
+
+    // Clear selected chat when leaving
+    return () => {
+      dispatch(setSelectedChat(null));
+    };
+  }, [dispatch, chatId]);
+
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // State for NFT drawer
@@ -331,10 +343,12 @@ const ChatScreen: React.FC = () => {
       // Clean up when leaving the screen
       return () => {
         clearInterval(connectionInterval);
+        // Note: We don't disconnect the socket when leaving
+        // to maintain persistent connections with all chats
         if (socketConnected) {
-          socketService.leaveChat(chatId);
-          console.log(`Left chat ${chatId} when unmounting`);
-          // Don't disconnect completely as the socket might be needed elsewhere
+          console.log(`Chat ${chatId} will still receive messages in the background`);
+          // Don't leave the chat room as we want to keep receiving messages
+          // Only explicitly leave rooms when user logs out
         }
       };
     }
@@ -354,7 +368,10 @@ const ChatScreen: React.FC = () => {
       setLoading(false);
     } else if (address) {
       // For real chats, fetch messages
-      dispatch(fetchChatMessages({ chatId }))
+      dispatch(fetchChatMessages({
+        chatId,
+        resetUnread: true // Add parameter to indicate this chat should have unread count reset
+      }))
         .then(() => setLoading(false))
         .catch(() => setLoading(false));
     }
@@ -442,11 +459,16 @@ const ChatScreen: React.FC = () => {
         // If socket connected, send via socket for real-time updates
         if (socketConnected) {
           // Send via WebSocket for real-time display with API response data
-          socketService.sendMessage(chatId, {
+          // Make sure to include all required fields
+          const socketPayload = {
             ...resultAction.payload,
             senderId: address, // Make sure this matches the ID used in socketService.initSocket()
+            sender_id: address, // Include both formats to be safe
             chatId: chatId,    // Explicitly include chatId
-          });
+            chat_room_id: chatId // Include both formats to be safe
+          };
+
+          socketService.sendMessage(chatId, socketPayload);
         } else {
           // If not connected via socket, add the message to the local state immediately
           // so users don't have to wait for a refresh

@@ -77,9 +77,14 @@ const ChatListScreen: React.FC = () => {
         console.error('Failed to initialize socket:', err);
       });
 
-      // Clean up on unmount
+      // Set to persistent mode to keep the connection active between screens
+      socketService.setPersistentMode(true);
+
+      // Clean up on unmount - don't fully disconnect, just leave specific rooms if needed
       return () => {
-        socketService.disconnect();
+        // We don't disconnect the socket when leaving this screen
+        // to keep receiving notifications for all chats
+        console.log('Leaving ChatListScreen, but keeping socket connected');
       };
     }
   }, [userId]);
@@ -95,7 +100,19 @@ const ChatListScreen: React.FC = () => {
 
         // Fetch user's chats if user is authenticated
         if (userId) {
-          await dispatch(fetchUserChats(userId)).unwrap();
+          const chatResponse = await dispatch(fetchUserChats(userId)).unwrap();
+
+          // Join all chat rooms after fetching them
+          if (chatResponse && Array.isArray(chatResponse)) {
+            // Extract chat IDs
+            const chatIds = chatResponse.map(chat => chat.id).filter(Boolean);
+
+            // Join all chat rooms
+            if (chatIds.length > 0) {
+              console.log('Joining all user chats:', chatIds);
+              socketService.joinChats(chatIds);
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading chat data:', error);
