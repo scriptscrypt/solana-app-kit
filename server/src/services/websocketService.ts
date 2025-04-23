@@ -16,6 +16,7 @@ interface ChatMessage {
   chatId: string;
   senderId: string;
   content: string;
+  image_url?: string;
   additionalData?: any;
   timestamp: Date;
   sender?: {
@@ -25,30 +26,82 @@ interface ChatMessage {
   };
 }
 
-// Main WebSocket service class
+// Main WebSocket service class                       
 export class WebSocketService {
-  private io: SocketServer;
+  // Change io to public for access from main server file
+  public io: SocketServer;
   private userSocketMap: Map<string, string[]> = new Map(); // userId -> socketIds[]
   private socketUserMap: Map<string, string> = new Map(); // socketId -> userId
 
   constructor(server: HttpServer) {
-    this.io = new SocketServer(server, {
-      cors: {
-        origin: '*', // For development; should be restricted in production
-        methods: ['GET', 'POST'],
-      },
-    });
+    // Configure Socket.IO with better options for production on App Engine Flex
+// In WebSocketService constructor
+this.io = new SocketServer(server, {
+  path: '/socket.io',
+  cors: {
+    origin: '*', // Restrict in production
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true
+  },
+  // App Engine Standard specific settings
+  transports: ['websocket', 'polling'],
+  // Keep connection alive through App Engine proxy
+  pingTimeout: 30000,
+  pingInterval: 20000,
+  upgradeTimeout: 10000,
+  maxHttpBufferSize: 1e6, // 1MB - App Engine Standard has stricter limits
+  // Turn off features not needed/supported in Standard
+  perMessageDeflate: false,
+  serveClient: false,
+  connectTimeout: 20000
+});
 
     this.initializeEventHandlers();
-    console.log('WebSocket service initialized');
+    console.log('WebSocket service initialized with WebSocket and polling support');
+    
+    // Log transport-related details on startup
+    setInterval(() => {
+      const activeSockets = this.io.sockets.sockets.size;
+      console.log(`Active connections: ${activeSockets}`);
+      
+      // Log transport distribution
+      const transports: Record<string, number> = { 'websocket': 0, 'polling': 0 };
+      this.io.sockets.sockets.forEach(socket => {
+        const transport = socket.conn?.transport?.name;
+        if (transport) {
+          transports[transport] = (transports[transport] || 0) + 1;
+        }
+      });
+      
+      console.log('Transport distribution:', transports);
+    }, 60000); // Log every minute
   }
 
   /**
    * Initialize Socket.IO event handlers
    */
   private initializeEventHandlers(): void {
+    // Add additional engine-level error logging
+    this.io.engine.on('initial_headers', (headers: any, req: any) => {
+      // Extract client IP and forwarded info for debugging
+      const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+      const forwardedProto = req.headers['x-forwarded-proto'];
+      console.log(`Socket.IO initial headers for connection attempt from ${clientIp} (proto: ${forwardedProto})`);
+    });
+
     this.io.on('connection', (socket: Socket) => {
-      console.log(`New socket connection: ${socket.id}`);
+      const transport = socket.conn.transport.name; // 'websocket' or 'polling'
+      console.log(`New socket connection: ${socket.id} using transport: ${transport}`);
+      
+      // Keep track of the client's IP for debugging App Engine proxy issues
+      const clientInfo = {
+        transport,
+        ip: socket.handshake.headers['x-forwarded-for'] || socket.handshake.address,
+        secure: socket.handshake.secure,
+        forwardedProto: socket.handshake.headers['x-forwarded-proto'] || 'unknown',
+        userAgent: socket.handshake.headers['user-agent'] || 'unknown'
+      };
+      console.log(`Client info for ${socket.id}:`, clientInfo);
 
       // Authenticate user on connect
       socket.on('authenticate', (data: { userId: string }) => {
@@ -76,9 +129,25 @@ export class WebSocketService {
       });
 
       // Handle disconnect
-      socket.on('disconnect', () => {
+      socket.on('disconnect', (reason) => {
+        console.log(`Socket ${socket.id} disconnected due to: ${reason}`);
         this.handleDisconnect(socket);
       });
+
+      // Handle errors at socket level
+      socket.on('error', (error) => {
+        console.error(`Socket ${socket.id} error:`, error);
+      });
+      
+      // Handle transport upgrade
+      socket.conn.on('upgrade', (transport) => {
+        console.log(`Socket ${socket.id} upgraded transport to: ${transport.name}`);
+      });
+    });
+
+    // Add server-wide connection error handler
+    this.io.engine.on('connection_error', (err: any) => {
+      console.error('Socket.IO engine connection error:', err);
     });
   }
 

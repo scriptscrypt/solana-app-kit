@@ -31,13 +31,27 @@ class SocketService {
       this.reconnectAttempts = 0;
 
       console.log('Initializing socket connection to:', SERVER_URL);
+      
+      // Determine if we should force secure WebSockets based on server URL
+      const forceSecure = SERVER_URL.startsWith('https://');
+
+      // Calculate connection timeout based on attempt number
+      const connectionTimeout = 5000 + (this.reconnectAttempts * 2000);
+      
       this.socket = io(SERVER_URL, {
-        transports: ['websocket'],
+        transports: ['polling'],
         autoConnect: true,
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: this.maxReconnectAttempts,
+        // App Engine Standard specific settings
+        timeout: connectionTimeout,
+        // Don't force SSL - App Engine handles this
+        secure: forceSecure,
+        forceNew: true,
+        path: '/socket.io/',
+        // Remove extraHeaders for Standard
       });
 
       this.setupEventListeners();
@@ -45,21 +59,70 @@ class SocketService {
       // Authenticate after connecting
       this.socket.on('connect', () => {
         console.log('Socket connected, authenticating...');
+        console.log('Active transport:', this.socket?.io.engine.transport.name);
         this.authenticate(userId);
         this.isConnected = true;
         resolve(true);
       });
 
+      // Log transport changes - using any for engine to avoid TypeScript errors
+      if (this.socket && this.socket.io && (this.socket.io.engine as any)) {
+        (this.socket.io.engine as any).on('transportChange', (transport: any) => {
+          console.log('Transport changed from', transport.name, 'to', (this.socket?.io.engine as any).transport.name);
+        });
+      }
+
       this.socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
+        console.error('Connection details:', {
+          url: SERVER_URL,
+          userId: this.userId,
+          attempt: this.reconnectAttempts + 1,
+          error: error.message,
+          transport: this.socket?.io?.engine?.transport?.name || 'unknown'
+        });
+        
         this.isConnected = false;
         this.reconnectAttempts++;
         
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          console.error('Max reconnect attempts reached');
-          resolve(false);
+          console.error('Max reconnect attempts reached, falling back to HTTP polling only');
+          
+          // Last attempt with polling only before giving up
+          if (this.socket) {
+            this.socket.io.opts.transports = ['polling'];
+            this.socket.connect();
+            
+            // Set a timeout for this final attempt
+            setTimeout(() => {
+              if (!this.isConnected) {
+                console.error('Failed to connect even with polling transport');
+                resolve(false);
+              }
+            }, 5000);
+          } else {
+            resolve(false);
+          }
         }
       });
+      
+      // Add additional error event handler
+      this.socket.on('error', (error) => {
+        console.error('Socket general error:', error);
+      });
+      
+      // Add connect timeout handler
+      this.socket.on('connect_timeout', (timeout) => {
+        console.error('Socket connection timeout after', timeout, 'ms');
+      });
+
+      // Set a timeout for initial connection
+      setTimeout(() => {
+        if (!this.isConnected) {
+          console.error('Initial connection timeout, resolving as false');
+          resolve(false);
+        }
+      }, 10000); // 10 second timeout for initial connection
     });
   }
 
@@ -82,11 +145,6 @@ class SocketService {
     this.socket.on('user_typing', (data: { chatId: string; userId: string; isTyping: boolean }) => {
       console.log('User typing:', data);
       // Implement typing indicator in UI if needed
-    });
-
-    // Handle errors
-    this.socket.on('error', (error: any) => {
-      console.error('Socket error:', error);
     });
 
     // Handle disconnection
@@ -146,11 +204,14 @@ class SocketService {
   // Send a message to a chat room
   public sendMessage(chatId: string, message: any): void {
     if (!this.socket || !this.socket.connected) {
-      console.error('Cannot send message: socket not connected');
+      console.error('Cannot send message via socket: not connected');
+      console.log('Message will still be saved in the database and appear after refresh');
+      // The message will still be sent to the server via the API call in ChatScreen.tsx
+      // (when the user calls dispatch(sendMessage(...)))
       return;
     }
 
-    console.log('Sending message to chat room:', chatId, message);
+    console.log('Sending message to chat room via WebSocket:', chatId, message);
     this.socket.emit('send_message', message);
   }
 

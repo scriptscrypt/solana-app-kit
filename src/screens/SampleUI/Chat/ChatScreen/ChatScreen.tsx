@@ -24,7 +24,7 @@ import { ThreadUser } from '@/core/thread/types';
 import { ThreadPost, ThreadSection } from '@/core/thread/components/thread.types';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { styles, TAB_BAR_HEIGHT } from './ChatScreen.styles';
+import { styles as baseStyles, TAB_BAR_HEIGHT } from './ChatScreen.styles';
 import Icons from '@/assets/svgs';
 import COLORS from '@/assets/colors';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
@@ -35,8 +35,76 @@ import TYPOGRAPHY from '@/assets/typography';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
-import { fetchChatMessages, sendMessage } from '@/shared/state/chat/slice';
+import { fetchChatMessages, sendMessage, receiveMessage } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
+
+// Add these styles before the component
+// Create a complete styles object by extending the base styles
+const styles = {
+  ...baseStyles,
+  // Socket status styles
+  socketStatusContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginRight: 8,
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
+  },
+  connectedIndicator: {
+    backgroundColor: COLORS.brandGreen,
+  },
+  errorIndicator: {
+    backgroundColor: COLORS.brandBlue,
+  },
+  socketStatusText: {
+    color: COLORS.brandGreen,
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+  socketErrorText: {
+    color: COLORS.brandBlue,
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+  retryText: {
+    color: COLORS.white,
+    fontSize: 10,
+    opacity: 0.7,
+    marginLeft: 2,
+  },
+  offlineBanner: {
+    backgroundColor: COLORS.darkerBackground,
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.brandBlue,
+    alignItems: 'center' as const,
+  },
+  offlineBannerText: {
+    color: COLORS.white,
+    fontSize: 12,
+    textAlign: 'center' as const,
+    marginBottom: 4,
+  },
+  refreshButton: {
+    backgroundColor: COLORS.darkerBackground,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.greyBorder,
+  },
+  refreshButtonText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+};
 
 // Add custom styles for NFT message components
 const additionalStyles = {
@@ -155,6 +223,11 @@ const ChatScreen: React.FC = () => {
   // State for message loading
   const [loading, setLoading] = useState(true);
 
+  // Socket connection status
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [socketError, setSocketError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+
   // Get user info and wallet 
   const { address, publicKey, sendTransaction } = useWallet();
   const auth = useAppSelector(state => state.auth);
@@ -185,22 +258,54 @@ const ChatScreen: React.FC = () => {
     verified: false,
   };
 
+  // Connect to WebSocket with retry logic
+  const connectToSocket = useCallback(async () => {
+    // Skip for global chat and AI agent chat
+    if (chatId === 'global' || chatId === AI_AGENT.id || !address) {
+      return;
+    }
+
+    try {
+      setIsRetrying(true);
+      // Initialize socket for user
+      const connected = await socketService.initSocket(address);
+
+      if (connected) {
+        // Join the chat room
+        socketService.joinChat(chatId);
+        console.log(`Successfully connected to chat ${chatId} via WebSocket`);
+        setSocketConnected(true);
+        setSocketError(null);
+      } else {
+        // Handle WebSocket connection failure
+        console.warn('WebSocket connection failed, falling back to polling');
+        setSocketConnected(false);
+        setSocketError('Unable to establish real-time connection');
+      }
+    } catch (error: any) {
+      console.error('WebSocket connection error:', error);
+      setSocketConnected(false);
+      setSocketError(error.message || 'Connection error');
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [chatId, address]);
+
   // Connect to WebSocket
   useEffect(() => {
     // Skip for global chat since it uses posts
-    if (chatId !== 'global' && address) {
-      // Initialize socket for user
-      socketService.initSocket(address).then(() => {
-        // Join the chat room
-        socketService.joinChat(chatId);
-      });
+    if (chatId !== 'global' && chatId !== AI_AGENT.id && address) {
+      connectToSocket();
 
       // Clean up when leaving the screen
       return () => {
-        socketService.leaveChat(chatId);
+        if (socketConnected) {
+          socketService.leaveChat(chatId);
+          // Don't disconnect completely as the socket might be needed elsewhere
+        }
       };
     }
-  }, [chatId, address]);
+  }, [chatId, address, connectToSocket, socketConnected]);
 
   // Fetch messages when entering the screen
   useEffect(() => {
@@ -287,15 +392,23 @@ const ChatScreen: React.FC = () => {
     })).then((resultAction) => {
       if (sendMessage.fulfilled.match(resultAction)) {
         // Message sent successfully to the API
-        // IMPORTANT: Ensure the sender ID in the WebSocket message matches the authenticated user ID
-        // Create a message object with senderId matching the authenticated user ID (wallet address)
-        const messagePayload = {
-          ...resultAction.payload,
-          senderId: address // Make sure this matches the ID used in socketService.initSocket()
-        };
 
-        // Send via WebSocket for real-time display
-        socketService.sendMessage(chatId, messagePayload);
+        // If socket connected, send via socket for real-time updates
+        if (socketConnected) {
+          // IMPORTANT: Ensure the sender ID in the WebSocket message matches the authenticated user ID
+          // Create a message object with senderId matching the authenticated user ID (wallet address)
+          const messagePayload = {
+            ...resultAction.payload,
+            senderId: address // Make sure this matches the ID used in socketService.initSocket()
+          };
+
+          // Send via WebSocket for real-time display
+          socketService.sendMessage(chatId, messagePayload);
+        } else {
+          // If not connected via socket, add the message to the local state immediately
+          // so users don't have to wait for a refresh
+          dispatch(receiveMessage(resultAction.payload));
+        }
 
         // Scroll to bottom
         setTimeout(() => {
@@ -307,7 +420,7 @@ const ChatScreen: React.FC = () => {
         Alert.alert('Error', 'Failed to send message. Please try again.');
       }
     });
-  }, [chatId, address, dispatch, isAIAgentChat]);
+  }, [chatId, address, dispatch, isAIAgentChat, socketConnected]);
 
   // Modify the scroll to bottom effect
   useEffect(() => {
@@ -320,6 +433,12 @@ const ChatScreen: React.FC = () => {
       }, 500);
     }
   }, [globalMessages, chatMessages, chatId, isAIAgentChat]);
+
+  // Handle retry for socket connection
+  const handleRetryConnection = useCallback(() => {
+    if (isRetrying) return;
+    connectToSocket();
+  }, [connectToSocket, isRetrying]);
 
   // Handle opening NFT details drawer
   const handleOpenNftDetails = useCallback((nftData: NFTData & { isCollection?: boolean, collId?: string }) => {
@@ -682,6 +801,42 @@ const ChatScreen: React.FC = () => {
     return isGroup ? 'Group chat' : '';
   };
 
+  // Render socket status indicator
+  const renderSocketStatus = () => {
+    if (chatId === 'global' || chatId === AI_AGENT.id) {
+      return null; // No socket needed for these chats
+    }
+
+    if (socketConnected) {
+      return (
+        <View style={styles.socketStatusContainer}>
+          <View style={[styles.statusIndicator, styles.connectedIndicator]} />
+          <Text style={styles.socketStatusText}>Live</Text>
+        </View>
+      );
+    }
+
+    if (socketError) {
+      return (
+        <TouchableOpacity
+          style={styles.socketStatusContainer}
+          onPress={handleRetryConnection}
+          disabled={isRetrying}
+        >
+          <View style={[styles.statusIndicator, styles.errorIndicator]} />
+          <Text style={styles.socketErrorText}>
+            {isRetrying ? 'Connecting...' : 'Offline'}
+          </Text>
+          {!isRetrying && (
+            <Text style={styles.retryText}>Tap to retry</Text>
+          )}
+        </TouchableOpacity>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -704,8 +859,9 @@ const ChatScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Right: Icons */}
+        {/* Right: Icons and socket status */}
         <View style={styles.iconsContainer}>
+          {renderSocketStatus()}
           <TouchableOpacity style={styles.iconButton}>
             <Icons.copyIcon width={16} height={16} />
           </TouchableOpacity>
@@ -764,6 +920,26 @@ const ChatScreen: React.FC = () => {
                 flatListRef.current?.scrollToEnd({ animated: false });
               }}
             />
+          )}
+
+          {!socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id && socketError && (
+            <View style={styles.offlineBanner}>
+              <Text style={styles.offlineBannerText}>
+                Offline mode - Messages will send but you won't see new messages until you refresh
+              </Text>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={() => {
+                  dispatch(fetchChatMessages({ chatId }));
+                  handleRetryConnection();
+                }}
+                disabled={isRetrying}
+              >
+                <Text style={styles.refreshButtonText}>
+                  {isRetrying ? 'Connecting...' : 'Refresh'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
 
           {/* Chat composer with bottom padding for tab bar */}
