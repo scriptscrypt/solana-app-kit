@@ -35,26 +35,29 @@ export class WebSocketService {
 
   constructor(server: HttpServer) {
     // Configure Socket.IO with better options for production on App Engine Flex
-// In WebSocketService constructor
-this.io = new SocketServer(server, {
-  path: '/socket.io',
-  cors: {
-    origin: '*', // Restrict in production
-    methods: ['GET', 'POST', 'OPTIONS'],
-    credentials: true
-  },
-  // App Engine Standard specific settings
-  transports: ['websocket', 'polling'],
-  // Keep connection alive through App Engine proxy
-  pingTimeout: 30000,
-  pingInterval: 20000,
-  upgradeTimeout: 10000,
-  maxHttpBufferSize: 1e6, // 1MB - App Engine Standard has stricter limits
-  // Turn off features not needed/supported in Standard
-  perMessageDeflate: false,
-  serveClient: false,
-  connectTimeout: 20000
-});
+    this.io = new SocketServer(server, {
+      path: '/socket.io',
+      cors: {
+        origin: '*', // Restrict in production
+        methods: ['GET', 'POST', 'OPTIONS'],
+        credentials: true
+      },
+      // App Engine Flex environment settings
+      transports: ['websocket', 'polling'],
+      // Keep connection alive through App Engine proxy
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      upgradeTimeout: 30000,
+      maxHttpBufferSize: 1e6, // 1MB
+      allowUpgrades: true,
+      perMessageDeflate: {
+        threshold: 1024 // Only compress messages larger than 1KB
+      },
+      httpCompression: {
+        threshold: 1024
+      },
+      connectTimeout: 45000
+    });
 
     this.initializeEventHandlers();
     console.log('WebSocket service initialized with WebSocket and polling support');

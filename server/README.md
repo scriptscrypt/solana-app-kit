@@ -107,9 +107,41 @@ yarn start
 This project includes configuration for Google Cloud Platform deployment:
 
 ```bash
-# Deploy to Google Cloud App Engine
+# Deploy to Google Cloud Run
 gcloud app deploy
+
+# OR use the deployment script (after customizing)
+chmod +x deploy.sh
+./deploy.sh
 ```
+
+### Deployment Configuration
+
+Two example configuration files are provided for Google Cloud deployment:
+
+1. `cloudbuild.yaml.example` - Example Cloud Build configuration file
+2. `deploy.sh.example` - Example deployment script
+
+To use these files:
+
+1. Copy the example files to create your own:
+   ```bash
+   cp cloudbuild.yaml.example cloudbuild.yaml
+   cp deploy.sh.example deploy.sh
+   ```
+
+2. Edit the copied files with your own GCP project details, credentials, and configuration
+3. Make the deployment script executable:
+   ```bash
+   chmod +x deploy.sh
+   ```
+
+4. Run the deployment:
+   ```bash
+   ./deploy.sh
+   ```
+
+> **Note**: The actual deployment files (`cloudbuild.yaml` and `deploy.sh`) are included in `.gitignore` to avoid committing sensitive credentials to the repository. Always use the example files as templates to create your own configuration.
 
 Make sure to set up the appropriate GCP credentials and project configuration before deploying.
 
@@ -132,6 +164,8 @@ server/
 ├── uploads/               # Temporary upload directory
 ├── .env                   # Environment variables
 ├── .env.example           # Example environment variables
+├── cloudbuild.yaml.example # Example Cloud Build configuration
+├── deploy.sh.example      # Example deployment script
 ├── package.json           # Project dependencies
 ├── tsconfig.json          # TypeScript configuration
 ├── CONTRIBUTING.md        # Contribution guidelines
