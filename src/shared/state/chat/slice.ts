@@ -191,26 +191,34 @@ const chatSlice = createSlice({
     },
     receiveMessage: (state, action) => {
       const message = action.payload;
-      if (state.messages[message.chat_room_id]) {
+      // Extract the _meta property if present, and clean the message object
+      const meta = message._meta;
+      const cleanMessage = {...message};
+      if (cleanMessage._meta) {
+        delete cleanMessage._meta; // Remove _meta from the stored message
+      }
+      
+      if (state.messages[cleanMessage.chat_room_id]) {
         // Check if this message is already in the array to avoid duplicates
-        const isDuplicate = state.messages[message.chat_room_id].some(m => m.id === message.id);
+        const isDuplicate = state.messages[cleanMessage.chat_room_id].some(m => m.id === cleanMessage.id);
         if (!isDuplicate) {
-          state.messages[message.chat_room_id].push(message);
+          state.messages[cleanMessage.chat_room_id].push(cleanMessage);
         }
       } else {
-        state.messages[message.chat_room_id] = [message];
+        state.messages[cleanMessage.chat_room_id] = [cleanMessage];
       }
       
       // Update last message in chat list
-      const chatIndex = state.chats.findIndex(chat => chat.id === message.chat_room_id);
+      const chatIndex = state.chats.findIndex(chat => chat.id === cleanMessage.chat_room_id);
       if (chatIndex !== -1) {
-        state.chats[chatIndex].lastMessage = message;
+        state.chats[chatIndex].lastMessage = cleanMessage;
         
         // If the chat isn't currently selected and the message is not from the current user,
         // increment unread count only if we're not duplicating a message
-        if (state.selectedChatId !== message.chat_room_id && 
-            message.sender_id !== message._meta?.currentUserId &&
-            !state.messages[message.chat_room_id].some(m => m.id === message.id)) {
+        const currentUserId = meta?.currentUserId;
+        if (state.selectedChatId !== cleanMessage.chat_room_id && 
+            currentUserId && cleanMessage.sender_id !== currentUserId &&
+            !state.messages[cleanMessage.chat_room_id].some(m => m.id === cleanMessage.id)) {
           state.chats[chatIndex].unreadCount = (state.chats[chatIndex].unreadCount || 0) + 1;
         }
       }
@@ -269,8 +277,13 @@ const chatSlice = createSlice({
     builder
       .addCase(sendMessage.fulfilled, (state, action) => {
         const message = action.payload;
+        
         if (state.messages[message.chat_room_id]) {
-          state.messages[message.chat_room_id].push(message);
+          // Check if message is already in the array
+          const isDuplicate = state.messages[message.chat_room_id].some(m => m.id === message.id);
+          if (!isDuplicate) {
+            state.messages[message.chat_room_id].push(message);
+          }
         } else {
           state.messages[message.chat_room_id] = [message];
         }
@@ -279,6 +292,8 @@ const chatSlice = createSlice({
         const chatIndex = state.chats.findIndex(chat => chat.id === message.chat_room_id);
         if (chatIndex !== -1) {
           state.chats[chatIndex].lastMessage = message;
+          
+          // For sent messages, don't increment unread count since they're from the current user
         }
       })
       

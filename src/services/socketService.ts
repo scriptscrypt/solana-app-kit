@@ -308,9 +308,22 @@ class SocketService {
       this.joinChat(chatId);
     }
 
-    this.socket.emit('send_message', {
+    // Log the exact message we're sending to help debug
+    console.log('Sending message via socket:', {
       chatId,
-      message,
+      userId: this.userId,
+      messageId: message.id
+    });
+
+    // The server expects a simple message object with chatId and sender details
+    this.socket.emit('new_message', {
+      id: message.id,
+      chat_room_id: chatId,
+      content: message.content,
+      sender_id: this.userId,
+      created_at: message.created_at || new Date().toISOString(),
+      updated_at: message.updated_at || new Date().toISOString(),
+      image_url: message.image_url
     });
   }
 

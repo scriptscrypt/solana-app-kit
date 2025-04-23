@@ -458,12 +458,8 @@ const ChatScreen: React.FC = () => {
 
         // If socket connected, send via socket for real-time updates
         if (socketConnected) {
-          // Send via WebSocket for real-time display with API response data
-          socketService.sendMessage(chatId, {
-            ...resultAction.payload,
-            senderId: address, // Make sure this matches the ID used in socketService.initSocket()
-            chatId: chatId,    // Explicitly include chatId
-          });
+          // Send the message payload received from the API response via WebSocket
+          socketService.sendMessage(chatId, resultAction.payload);
         } else {
           // If not connected via socket, add the message to the local state immediately
           // so users don't have to wait for a refresh
