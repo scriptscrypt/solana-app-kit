@@ -39,7 +39,7 @@ class SocketService {
       const connectionTimeout = 5000 + (this.reconnectAttempts * 2000);
       
       this.socket = io(SERVER_URL, {
-        transports: ['polling'],
+        transports: ['websocket' , 'polling'],
         autoConnect: true,
         reconnection: true,
         reconnectionDelay: 1000,
@@ -137,8 +137,35 @@ class SocketService {
 
     // New message received
     this.socket.on('new_message', (message: any) => {
-      console.log('New message received:', message);
-      store.dispatch(receiveMessage(message));
+      console.log('New message received via WebSocket:', message);
+      
+      // Ensure message has all required fields before dispatching
+      if (message && message.id && message.chat_room_id) {
+        // Don't dispatch messages sent by the current user (already in state from API response)
+        if (message.sender_id === this.userId) {
+          console.log('Ignoring own message broadcast from server');
+          return;
+        }
+        
+        // Only dispatch messages from other users
+        store.dispatch(receiveMessage(message));
+      } else {
+        console.error('Received malformed message from socket:', message);
+      }
+    });
+
+    // Additional listener for message_broadcast event (server might use a different event name)
+    this.socket.on('message_broadcast', (message: any) => {
+      console.log('Message broadcast received:', message);
+      if (message && message.id) {
+        // Don't dispatch messages sent by the current user (already in state from API response)
+        if (message.sender_id === this.userId || message.senderId === this.userId) {
+          console.log('Ignoring own message broadcast');
+          return;
+        }
+        
+        store.dispatch(receiveMessage(message));
+      }
     });
 
     // User typing indicator
@@ -154,7 +181,24 @@ class SocketService {
       
       // Clear active rooms on disconnect
       this.activeRooms.clear();
+      
+      // Attempt to reconnect if not intentionally closed
+      if (reason !== 'io client disconnect') {
+        console.log('Attempting to reconnect...');
+        if (this.userId) {
+          setTimeout(() => {
+            this.initSocket(this.userId!);
+          }, 2000);
+        }
+      }
     });
+    
+    // Listen for any socket events to help debug (development only)
+    if (process.env.NODE_ENV !== 'production') {
+      this.socket.onAny((event, ...args) => {
+        console.log(`Socket event received: ${event}`, args);
+      });
+    }
   }
 
   // Authenticate with the socket server
@@ -212,7 +256,8 @@ class SocketService {
     }
 
     console.log('Sending message to chat room via WebSocket:', chatId, message);
-    this.socket.emit('send_message', message);
+    // Include chatId with the message payload to ensure the server knows where to broadcast
+    this.socket.emit('send_message', { ...message, chatId });
   }
 
   // Send typing indicator
