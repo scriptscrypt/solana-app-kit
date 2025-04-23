@@ -22,7 +22,7 @@ import COLORS from '@/assets/colors';
 import { styles } from './ChatListScreen.styles';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
-import { fetchUserChats, ChatRoom } from '@/shared/state/chat/slice';
+import { fetchUserChats, ChatRoom, updateUnreadCount } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
 
 type ChatListNavigationProp = StackNavigationProp<RootStackParamList, 'ChatListScreen'>;
@@ -69,20 +69,47 @@ const ChatListScreen: React.FC = () => {
   // Local loading state while fetching initial data
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize Socket connection
+  // Initialize Socket connection and join all chat rooms
   useEffect(() => {
     if (userId) {
       // Initialize the socket connection
-      socketService.initSocket(userId).catch(err => {
-        console.error('Failed to initialize socket:', err);
-      });
+      const setupSocket = async () => {
+        try {
+          // Initialize socket connection
+          const connected = await socketService.initSocket(userId);
 
-      // Clean up on unmount
-      return () => {
-        socketService.disconnect();
+          if (connected) {
+            console.log('Socket connected in ChatListScreen');
+
+            // Null out current chat since we're in the list view
+            socketService.setCurrentChat(null);
+
+            // Join all chats when connection is established and we have chat data
+            if (chats && chats.length > 0) {
+              // Get all chat IDs to join
+              const chatIds = chats.map(chat => chat.id).filter(id =>
+                id !== 'global' && id !== AI_AGENT.id
+              );
+
+              // Join all chat rooms to receive real-time updates
+              if (chatIds.length > 0) {
+                console.log(`Joining ${chatIds.length} chat rooms for real-time updates`);
+                socketService.joinAllChats(chatIds);
+              }
+            }
+          } else {
+            console.warn('Failed to connect to socket in ChatListScreen');
+          }
+        } catch (err) {
+          console.error('Error setting up socket in ChatListScreen:', err);
+        }
       };
+
+      setupSocket();
+
+      // Don't disconnect when unmounting - we want to keep socket connected
     }
-  }, [userId]);
+  }, [userId, chats]);
 
   // Fetch both posts (for global chat) and user's chats
   useEffect(() => {
@@ -245,6 +272,15 @@ const ChatListScreen: React.FC = () => {
 
   // Handle chat item press - navigate to ChatScreen
   const handleChatPress = useCallback((chat: any) => {
+    // Reset unread count when entering a chat
+    if (chat.id !== 'global' && chat.id !== AI_AGENT.id) {
+      // First update the local Redux store
+      dispatch(updateUnreadCount({
+        chatId: chat.id,
+        reset: true
+      }));
+    }
+
     if (chat.id === AI_AGENT.id) {
       handleAIAgentChat();
       return;
@@ -255,7 +291,7 @@ const ChatListScreen: React.FC = () => {
       chatName: chat.name,
       isGroup: chat.type !== 'direct'
     });
-  }, [navigation, handleAIAgentChat]);
+  }, [navigation, handleAIAgentChat, dispatch]);
 
   // Handle new chat button press
   const handleNewChat = useCallback(() => {
