@@ -18,3 +18,5 @@ temp/
 .nyc_output/
 *.tsbuildinfo
 app.yaml
+cloudbuild.yaml
+deploy.sh
