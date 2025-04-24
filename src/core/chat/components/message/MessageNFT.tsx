@@ -27,25 +27,26 @@ interface MessageNFTProps {
 function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
   // Add a hover/press effect state
   const [isPressed, setIsPressed] = useState(false);
-  
+
   // NFT buying states
   const [nftLoading, setNftLoading] = useState(false);
   const [nftStatusMsg, setNftStatusMsg] = useState('');
   const [nftConfirmationVisible, setNftConfirmationVisible] = useState(false);
   const [nftConfirmationMsg, setNftConfirmationMsg] = useState('');
   const [loadingFloor, setLoadingFloor] = useState(false);
-  
+
   const { wallet, address, publicKey, sendTransaction } = useWallet();
-  
+
   // Handle press with visual feedback
   const handlePress = () => {
+    console.log('[MessageNFT] handlePress triggered. Calling onPress prop...');
     setIsPressed(true);
     // Reset press state after short delay
     setTimeout(() => setIsPressed(false), 150);
     // Call the provided onPress handler
     if (onPress) onPress();
   };
-  
+
   /**
    * Handles the NFT purchase process
    */
@@ -54,21 +55,21 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
       Alert.alert('Error', 'No NFT mint address available.');
       return;
     }
-    
+
     if (!publicKey || !address) {
       Alert.alert('Error', 'Wallet not connected.');
       return;
     }
-    
+
     try {
       setNftLoading(true);
       setNftStatusMsg('Preparing buy transaction...');
-      
+
       // Since we don't have owner and price in the NFT data, we'll use simple parameters
       // In a real app, you would get these from the NFT marketplace API
       const estimatedPrice = 0.1; // Example price in SOL
       const owner = ""; // Example owner address
-      
+
       const signature = await buyNft(
         address,
         nftData.mintAddress,
@@ -77,10 +78,10 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
         sendTransaction,
         status => setNftStatusMsg(status)
       );
-      
+
       setNftConfirmationMsg('NFT purchased successfully!');
       setNftConfirmationVisible(true);
-      
+
       // Show success notification
       TransactionService.showSuccess(signature, 'nft');
     } catch (err: any) {
@@ -121,7 +122,7 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
 
       setNftConfirmationMsg(`Successfully purchased floor NFT from ${nftData.collectionName || nftData.name || 'Collection'} collection!`);
       setNftConfirmationVisible(true);
-      
+
       // Show success notification
       TransactionService.showSuccess(signature, 'nft');
     } catch (err: any) {
@@ -136,7 +137,7 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
 
   // Determine if this is a collection or a specific NFT
   const isCollection = nftData.isCollection && nftData.collId;
-  
+
   // Set CTA label based on type
   let ctaLabel = isCollection ? 'Buy Floor NFT' : 'Buy NFT';
   // Set CTA action based on type
@@ -159,7 +160,7 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
             resizeMode="cover"
           />
         </View>
-        
+
         <View style={styles.infoContainer}>
           <View style={styles.titleRow}>
             <Text style={styles.nftName} numberOfLines={1} ellipsizeMode="tail">
@@ -167,19 +168,19 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
             </Text>
             <View style={styles.verifiedBadge} />
           </View>
-          
+
           {nftData.collectionName && (
             <Text style={styles.collectionName} numberOfLines={1}>
               {nftData.collectionName}
             </Text>
           )}
-          
+
           {nftData.description && (
             <Text style={styles.description} numberOfLines={2} ellipsizeMode="tail">
               {nftData.description}
             </Text>
           )}
-          
+
           <View style={styles.footer}>
             {isCollection ? (
               <Text style={styles.collectionText}>Collection ID</Text>
@@ -192,7 +193,7 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
           </View>
         </View>
       </TouchableOpacity>
-      
+
       {/* Buy NFT/Floor CTA Button */}
       <View style={styles.ctaContainer}>
         <TouchableOpacity
@@ -209,14 +210,14 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
           </Text>
         </TouchableOpacity>
       </View>
-      
+
       {/* NFT Loading Modal */}
       <Modal
         visible={nftLoading}
         transparent
         animationType="fade"
         onRequestClose={() => { /* Prevent closing while loading */ }}>
-        <View style={styles.progressOverlay}> 
+        <View style={styles.progressOverlay}>
           <View style={styles.progressContainer}>
             <ActivityIndicator size="large" color={COLORS.brandBlue} />
             {!!nftStatusMsg && (
@@ -249,7 +250,7 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
 
 const styles = StyleSheet.create({
   container: {
-    width: '90%', // Adjusted from 180% to better fit in chat bubbles
+    maxWidth: '100%',
     backgroundColor: COLORS.lighterBackground,
     borderRadius: 16,
     overflow: 'hidden',

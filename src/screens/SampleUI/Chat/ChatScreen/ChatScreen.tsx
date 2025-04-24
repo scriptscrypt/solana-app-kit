@@ -719,22 +719,40 @@ function ChatScreen(): React.ReactElement {
     setDrawerLoading(true);
 
     // Check if this is a collection or regular NFT
-    const isCollection = (nftData as any).isCollection && (nftData as any).collId;
+    const isCollection = nftData.isCollection === true && Boolean(nftData.collId);
 
-    setSelectedNft({
-      mint: isCollection ? (nftData as any).collId || '' : nftData.mintAddress || '',
+    console.log('Opening NFT details drawer for:', {
+      name: nftData.name,
+      isCollection: isCollection,
+      mintAddress: nftData.mintAddress,
+      collId: nftData.collId
+    });
+
+    // Create the object with properly typed properties
+    const drawerData: {
+      mint: string;
+      symbol: string;
+      name: string;
+      logoURI: string;
+      nftData?: any;
+      isCollection?: boolean;
+    } = {
+      mint: isCollection ? nftData.collId || '' : nftData.mintAddress || '',
       symbol: '',
       name: nftData.name || 'NFT',
       logoURI: nftData.image || '',
+      isCollection: isCollection,
       nftData: {
         name: nftData.name,
         imageUri: nftData.image,
         description: nftData.description,
         collName: nftData.collectionName,
         isCollection: isCollection,
-        collId: isCollection ? (nftData as any).collId : undefined
+        collId: isCollection ? nftData.collId : undefined
       }
-    });
+    };
+
+    setSelectedNft(drawerData);
 
     // Short timeout to ensure smoother opening experience
     setTimeout(() => {
@@ -892,6 +910,20 @@ function ChatScreen(): React.ReactElement {
         // Get the raw listing data without type conversion
         const listingData = nftSection.listingData;
 
+        // Explicitly check if this is a collection
+        const isCollection = listingData.isCollection === true ||
+          (listingData.collId != null && listingData.collId !== '');
+
+        // Ensure collection ID is set if this is a collection
+        const collId = isCollection ? (listingData.collId || listingData.mint || '') : '';
+
+        console.log('NFT Listing data:', {
+          isCollection,
+          collId,
+          mint: listingData.mint,
+          name: listingData.name
+        });
+
         // Use explicit extraction to ensure we get all the fields correctly
         return {
           id: listingData.mint || nftSection.id || 'unknown-nft',
@@ -900,8 +932,8 @@ function ChatScreen(): React.ReactElement {
           image: listingData.image || '',
           collectionName: listingData.collectionName || '',
           mintAddress: listingData.mint || '', // This is critical - make sure we get the mint address
-          isCollection: listingData.isCollection || false,
-          collId: listingData.collId || ''
+          isCollection: isCollection,
+          collId: collId
         };
       }
     }
@@ -1190,17 +1222,18 @@ function ChatScreen(): React.ReactElement {
 
     // Handle NFT message rendering logic
     if (isNftMessage && chatId === 'global') {
-      // Find the NFT listing section
-      const nftSection = item.sections.find((section: ThreadSection) =>
-        section.type === 'NFT_LISTING' && section.listingData
-      );
+      // Get NFT data from the message
+      const nftData = getNftDataFromSections(item as ThreadPost);
 
-      if (nftSection?.listingData) {
-        // Convert to the format expected by NftDetailsSection
-        const convertedListingData = convertToNftListingData(nftSection.listingData);
-
-        // Check if this is a collection
-        const isCollection = convertedListingData.isCollection && convertedListingData.collId;
+      if (nftData) {
+        // Debug log to verify NFT data
+        console.log('NFT Data passed to MessageNFT:', {
+          id: nftData.id,
+          name: nftData.name,
+          mintAddress: nftData.mintAddress,
+          isCollection: nftData.isCollection,
+          collId: nftData.collId
+        });
 
         return (
           <View style={[
@@ -1220,74 +1253,14 @@ function ChatScreen(): React.ReactElement {
               </View>
             )}
 
-            <View style={[
-              additionalStyles.nftContainer,
-              isCurrentUser ? additionalStyles.currentUserNftContainer : additionalStyles.otherUserNftContainer
-            ]}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  // Use the same handler that TokenDetailsDrawer uses
-                  if (convertedListingData.mint || (isCollection && convertedListingData.collId)) {
-                    const nftDataForDrawer = {
-                      id: convertedListingData.mint || convertedListingData.collId || '',
-                      name: convertedListingData.name || 'NFT',
-                      description: convertedListingData.collectionDescription || '',
-                      image: convertedListingData.image || '',
-                      collectionName: convertedListingData.collectionName || '',
-                      mintAddress: convertedListingData.mint || ''
-                    };
-
-                    // Pass additional data for the drawer via custom attributes
-                    (nftDataForDrawer as any).isCollection = convertedListingData.isCollection;
-                    (nftDataForDrawer as any).collId = convertedListingData.collId;
-
-                    handleOpenNftDetails(nftDataForDrawer);
-                  }
-                }}
-              >
-                <NftDetailsSection
-                  listingData={convertedListingData}
-                  containerStyle={{ borderWidth: 0, backgroundColor: 'transparent' }}
-                />
-              </TouchableOpacity>
-
-              {/* Add Buy NFT/Collection Floor button */}
-              {isCollection ? (
-                <TouchableOpacity
-                  style={[
-                    additionalStyles.floorButton,
-                    (nftLoading || loadingFloor) && additionalStyles.disabledButton
-                  ]}
-                  onPress={() => handleBuyCollectionFloor(
-                    convertedListingData.collId || '',
-                    convertedListingData.collectionName
-                  )}
-                  disabled={nftLoading || loadingFloor}
-                  activeOpacity={0.8}
-                >
-                  <Text style={additionalStyles.buyButtonText}>
-                    {loadingFloor ? 'Finding Floor...' : 'Buy Floor NFT'}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    additionalStyles.buyButton,
-                    nftLoading && additionalStyles.disabledButton
-                  ]}
-                  onPress={() => handleBuyNft(
-                    convertedListingData.mint || '',
-                    convertedListingData.owner,
-                    convertedListingData.priceSol
-                  )}
-                  disabled={nftLoading}
-                  activeOpacity={0.8}
-                >
-                  <Text style={additionalStyles.buyButtonText}>Buy NFT</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <MessageNFT
+              nftData={nftData}
+              isCurrentUser={isCurrentUser}
+              onPress={() => {
+                console.log('NFT pressed, opening details drawer');
+                handleOpenNftDetails(nftData);
+              }}
+            />
           </View>
         );
       }

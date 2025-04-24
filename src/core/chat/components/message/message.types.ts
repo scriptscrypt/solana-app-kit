@@ -20,6 +20,8 @@ export interface NFTData {
   image: string;
   collectionName?: string;
   mintAddress?: string;
+  isCollection?: boolean;
+  collId?: string;
 }
 
 export interface MessageData {

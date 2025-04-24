@@ -175,33 +175,48 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
       return null;
     }
 
-    // Check if rawNftData is NftListingData (from additional_data)
-    if ('mint' in rawNftData || 'collId' in rawNftData) {
-      // It's likely NftListingData or similar
-      const listing = rawNftData as NftListingData;
+    // Check if rawNftData is NftListingData (from additional_data or getNftDataFromSections)
+    // Use presence of collId or isCollection to determine if it's collection data
+    if (('collId' in rawNftData && rawNftData.collId) || ('isCollection' in rawNftData && rawNftData.isCollection)) {
+      const listing = rawNftData as Partial<NftListingData> & { isCollection?: boolean; collId?: string; mint?: string; description?: string; }; // Add description to type
       return {
-        id: listing.mint || listing.collId || 'unknown-id', // Use mint or collId as ID
+        id: listing.collId || listing.mint || 'unknown-id', // Prioritize collId if available
         name: listing.name || 'NFT Listing',
-        description: listing.collectionDescription || '', // Use collection desc if available
+        description: listing.collectionDescription || listing.description || '', // Now safely accessed
         image: listing.image || listing.collectionImage || '',
         collectionName: listing.collectionName || '',
-        // mintAddress is not directly available in NftListingData, use mint
-        mintAddress: listing.mint || '',
+        mintAddress: listing.mint || '', // Keep mint address if present
+        isCollection: listing.isCollection || false, // Preserve isCollection flag
+        collId: listing.collId || '', // Preserve collection ID
       };
     }
+
     // Check if it's the older NFTData structure (if still used directly on message)
     else if ('id' in rawNftData && 'mintAddress' in rawNftData) {
       // It's likely the original NFTData structure
-      return rawNftData as NFTData;
+      // Ensure we return isCollection and collId if they exist, defaulting to false/empty
+      return {
+        ...rawNftData,
+        isCollection: ('isCollection' in rawNftData && rawNftData.isCollection) || false,
+        collId: ('collId' in rawNftData && rawNftData.collId) || ''
+      } as NFTData;
     }
 
     // Fallback if structure is unexpected
     console.warn('Unexpected rawNftData structure:', rawNftData);
-    return null;
+    // Attempt a basic mapping as a fallback
+    return {
+      id: ('id' in rawNftData ? rawNftData.id : null) || ('mint' in rawNftData ? rawNftData.mint : null) || 'unknown-fallback-id',
+      name: ('name' in rawNftData ? rawNftData.name : null) || 'Unknown NFT',
+      image: ('image' in rawNftData ? rawNftData.image : null) || '',
+      mintAddress: ('mint' in rawNftData ? rawNftData.mint : null) || '',
+      isCollection: ('isCollection' in rawNftData && rawNftData.isCollection) || false,
+      collId: ('collId' in rawNftData ? rawNftData.collId : null) || '',
+    };
 
   }, [rawNftData]);
   // Log 3.3: Harmonized nftData
-  if (nftData) console.log(`[MessageBubble] Message ID ${message.id} - Harmonized nftData:`, nftData);
+  if (nftData) console.log(`[MessageBubble] Message ID ${message.id} - Harmonized nftData:`, JSON.stringify(nftData)); // Stringify for better logging
 
   // Update renderPostContent to handle potential null source from additional_data
   const renderPostContent = (post: any) => {
@@ -246,7 +261,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
       case 'nft':
         if (nftData) {
           console.log(`[MessageBubble] Message ID ${message.id} - Rendering MessageNFT`);
-          return <MessageNFT nftData={nftData} isCurrentUser={isCurrentUser} onPress={() => { console.log('NFT Clicked', nftData); /* Trigger drawer opening */ }} />;
+          return <MessageNFT nftData={nftData} isCurrentUser={isCurrentUser} />;
         } else {
           console.log(`[MessageBubble] Message ID ${message.id} - ContentType is 'nft' but nftData is null/falsy.`);
         }
