@@ -25,13 +25,13 @@ import {
 } from '@/shared/state/thread/reducer';
 import { getChatComposerBaseStyles } from './ChatComposer.styles';
 import { mergeStyles } from '../../utils';
-import { ThreadSection, ThreadSectionType, ThreadUser } from '../../../thread/types';
+import { ThreadSection, ThreadSectionType, ThreadUser, TradeData, ThreadPost } from '../../../thread/types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import TradeModal from '../../../thread/components/trade/ShareTradeModal';
 import { DEFAULT_IMAGES } from '@/config/constants';
-import { NftListingModal, NftItem } from '@/modules/nft';
+import { NftListingModal, NftItem, NftListingData } from '@/modules/nft';
 import { uploadThreadImage } from '../../../thread/services/threadImageService';
 import {
   IPFSAwareImage,
@@ -42,6 +42,7 @@ import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
 import { uploadChatImage } from '../../services/chatImageService';
+import { sendMessage } from '@/shared/state/chat/slice';
 
 /**
  * Props for the ChatComposer component
@@ -62,6 +63,8 @@ interface ChatComposerProps {
   userStyleSheet?: { [key: string]: object };
   /** Ref to expose the input focus method */
   ref?: React.Ref<{ focus: () => void }>;
+  /** Optional chat context - if provided, shares go to this chat */
+  chatContext?: { chatId: string };
 }
 
 /**
@@ -94,6 +97,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
   currentUser,
   parentId,
   onMessageSent,
+  chatContext,
   themeOverrides,
   styleOverrides,
   userStyleSheet,
@@ -208,15 +212,13 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
    * Message sending logic
    */
   const handleSend = async () => {
-    if (!textValue.trim() && !selectedImage && !selectedListingNft) return;
+    if (!textValue.trim() && !selectedImage) return;
 
-    // If this is a chat message (not a post), we can use the simplified logic
+    // If called from ChatScreen (onMessageSent is provided)
     if (onMessageSent) {
       setIsSubmitting(true);
       try {
         let uploadedImageUrl = '';
-
-        // If there's an image, upload it first
         if (selectedImage) {
           try {
             uploadedImageUrl = await uploadChatImage(currentUser.id, selectedImage);
@@ -227,14 +229,9 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
             return;
           }
         }
-
-        // Pass both text content and image URL to the callback
         onMessageSent(textValue, uploadedImageUrl);
-
-        // Clear the input
         setTextValue('');
         setSelectedImage(null);
-        setSelectedListingNft(null);
       } catch (error) {
         console.error('Error sending message:', error);
         Alert.alert('Error', 'Failed to send message. Please try again.');
@@ -470,6 +467,128 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
   // Determine if send button should be enabled
   const canSend = textValue.trim() !== '' || selectedImage !== null || selectedListingNft !== null;
 
+  // Define the onShare handler for NFT modal
+  const handleShareNft = useCallback(async (data: NftListingData) => {
+    if (chatContext) {
+      // Share to Chat
+      console.log(`[ChatComposer] Sharing NFT to chat ${chatContext.chatId}`);
+      setIsSubmitting(true);
+      try {
+        await dispatch(sendMessage({
+          chatId: chatContext.chatId,
+          userId: currentUser.id,
+          content: '', // Can be empty when sending structured data
+          additionalData: { nftData: data }, // Send NFT data here
+        })).unwrap();
+        // Optionally clear composer or give feedback
+      } catch (error) {
+        console.error('Failed to send NFT message:', error);
+        Alert.alert('Error', 'Could not share NFT to chat.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // Share to Feed (existing logic)
+      console.log('[ChatComposer] Sharing NFT to feed');
+
+      // Ensure owner is string | null for ThreadSection
+      const threadListingData = {
+        ...data,
+        owner: data.owner || null, // Convert undefined owner to null
+      };
+
+      const sections: ThreadSection[] = [{
+        id: 'section-' + Math.random().toString(36).substr(2, 9),
+        type: 'NFT_LISTING' as ThreadSectionType,
+        listingData: threadListingData // Use the corrected data object
+      }];
+
+      // Add default text if needed
+      sections.push({
+        id: 'text-' + Math.random().toString(36).substr(2, 9),
+        type: 'TEXT_ONLY' as ThreadSectionType,
+        text: `Sharing ${data.isCollection ? 'collection' : 'NFT'}: ${data.name}`
+      });
+
+      // Create user object for fallback
+      const user: ThreadUser = {
+        id: currentUser.id,
+        username: currentUser.username || 'Anonymous',
+        handle: currentUser.handle || '@anonymous',
+        verified: currentUser.verified || false,
+        avatar: currentUser.avatar || DEFAULT_IMAGES.user,
+      };
+
+      const fallbackPost: ThreadPost = {
+        id: 'local-' + Math.random().toString(36).substr(2, 9),
+        user: user,
+        sections,
+        createdAt: new Date().toISOString(),
+        replies: [],
+        reactionCount: 0,
+        retweetCount: 0,
+        quoteCount: 0,
+      };
+      setIsSubmitting(true);
+      try {
+        await dispatch(createRootPostAsync({
+          userId: currentUser.id,
+          sections,
+          // localId if needed for optimistic updates
+        })).unwrap();
+      } catch (error: any) {
+        console.warn('Feed post failed, adding locally', error);
+        dispatch(addPostLocally(fallbackPost));
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  }, [chatContext, currentUser, dispatch]); // Added currentUser to dependency array
+
+  // Define the onShare handler for Trade modal
+  const handleShareTrade = useCallback(async (data: TradeData) => {
+    if (chatContext) {
+      // Share to Chat
+      console.log(`[ChatComposer] Sharing Trade to chat ${chatContext.chatId}`);
+      setIsSubmitting(true);
+      try {
+        await dispatch(sendMessage({
+          chatId: chatContext.chatId,
+          userId: currentUser.id,
+          content: '',
+          additionalData: { tradeData: data }, // Send Trade data here
+        })).unwrap();
+      } catch (error) {
+        console.error('Failed to send trade message:', error);
+        Alert.alert('Error', 'Could not share trade to chat.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // Share to Feed (existing logic)
+      console.log('[ChatComposer] Sharing Trade to feed');
+      const sections: ThreadSection[] = [{
+        id: 'section-' + Math.random().toString(36).substr(2, 9),
+        type: 'TEXT_TRADE',
+        tradeData: data,
+        text: `Executed a trade: ${data.inputSymbol} -> ${data.outputSymbol}`
+      }];
+      const fallbackPost = { /* ... create fallback ... */ };
+      setIsSubmitting(true);
+      try {
+        await dispatch(createRootPostAsync({
+          userId: currentUser.id,
+          sections,
+        })).unwrap();
+      } catch (error: any) {
+        console.warn('Feed post failed, adding locally', error);
+        dispatch(addPostLocally(fallbackPost));
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  }, [chatContext, currentUser.id, dispatch]);
+
   return (
     <View>
       {renderAttachmentPreviews()}
@@ -532,18 +651,18 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
       <NftListingModal
         visible={showListingModal}
         onClose={() => setShowListingModal(false)}
-        onSelectListing={handleSelectListing}
+        onShare={handleShareNft}
         listingItems={activeListings}
         loadingListings={loadingActiveListings}
         fetchNftsError={activeListingsError}
-        styles={styles} // Pass merged styles down
+        styles={styles}
       />
 
       <TradeModal
         visible={showTradeModal}
         onClose={() => setShowTradeModal(false)}
+        onShare={handleShareTrade}
         currentUser={currentUser}
-        onPostCreated={() => { }}
       />
     </View>
   );

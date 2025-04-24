@@ -96,6 +96,8 @@ export interface NftListingData {
   collectionImage?: string;
   /** Collection description */
   collectionDescription?: string;
+  /** Whether the NFT is compressed */
+  isCompressed?: boolean;
 }
 
 /**
