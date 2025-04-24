@@ -6,6 +6,8 @@
  * - Create chat rooms
  * - Get messages for a chat room
  * - Send messages
+ * - Edit messages
+ * - Delete messages
  */
 import { Request, Response } from 'express';
 import knex from '../db/knex';
@@ -388,6 +390,133 @@ export async function getUsersForChat(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('[Get Users For Chat Error]', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Edit an existing message
+ */
+export async function editMessage(req: Request, res: Response) {
+  console.log(`[Edit Message] Request received for messageId: ${req.params.messageId}`);
+  console.log(`[Edit Message] Request body:`, req.body);
+
+  try {
+    const { messageId } = req.params;
+    const { userId, content } = req.body;
+    
+    if (!messageId || !userId || !content) {
+      console.error('[Edit Message] Missing required fields');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      });
+    }
+
+    // Check if message exists and belongs to the user
+    const message = await knex('chat_messages')
+      .where('id', messageId)
+      // Ensure sender_id is compared correctly
+      .whereRaw('LOWER(sender_id) = LOWER(?)', [userId]) 
+      .first();
+
+    console.log(`[Edit Message] Found message:`, message);
+
+    if (!message) {
+      console.error(`[Edit Message] Message not found or user ${userId} not authorized`);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Message not found or you are not authorized to edit it' 
+      });
+    }
+
+    // Update the message
+    const [updatedMessage] = await knex('chat_messages')
+      .where('id', messageId)
+      .update({
+        content,
+        updated_at: new Date()
+      })
+      .returning('*');
+
+    console.log(`[Edit Message] Message updated successfully:`, updatedMessage);
+
+    // Get sender information
+    const sender = await knex('users')
+      .where('id', updatedMessage.sender_id)
+      .first('id', 'username', 'profile_picture_url');
+
+    // Return the updated message with sender info
+    return res.json({ 
+      success: true, 
+      message: {
+        ...updatedMessage,
+        sender
+      }
+    });
+  } catch (error: any) {
+    console.error('[Edit Message Error]', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
+ * Delete a message
+ */
+export async function deleteMessage(req: Request, res: Response) {
+  console.log(`[Delete Message] Request received for messageId: ${req.params.messageId}`);
+  console.log(`[Delete Message] Request body:`, req.body);
+  
+  try {
+    const { messageId } = req.params;
+    const { userId } = req.body;
+    
+    if (!messageId || !userId) {
+      console.error('[Delete Message] Missing required fields');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      });
+    }
+
+    // Check if message exists and belongs to the user
+    const message = await knex('chat_messages')
+      .where('id', messageId)
+      // Ensure sender_id is compared correctly (case-insensitive)
+      .whereRaw('LOWER(sender_id) = LOWER(?)', [userId]) 
+      .first();
+
+    console.log(`[Delete Message] Found message:`, message);
+
+    if (!message) {
+      console.error(`[Delete Message] Message not found or user ${userId} not authorized`);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Message not found or you are not authorized to delete it' 
+      });
+    }
+
+    // Soft delete the message
+    await knex('chat_messages')
+      .where('id', messageId)
+      .update({
+        is_deleted: true,
+        // Keep original content? No, update to deleted state.
+        content: '[This message has been deleted]',
+        updated_at: new Date()
+      });
+
+    console.log(`[Delete Message] Message ${messageId} marked as deleted`);
+
+    // Return the chatId along with the messageId for client-side updates
+    return res.json({ 
+      success: true, 
+      messageId,
+      chatId: message.chat_room_id, // Add chatId to the response
+      message: 'Message deleted successfully' 
+    });
+  } catch (error: any) {
+    console.error('[Delete Message Error]', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 } 

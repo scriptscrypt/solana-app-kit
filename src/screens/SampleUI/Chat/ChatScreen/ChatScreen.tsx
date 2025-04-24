@@ -12,6 +12,12 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Modal,
+  TextInput,
+  Pressable,
+  GestureResponderEvent,
+  Dimensions,
+  StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,13 +41,19 @@ import TYPOGRAPHY from '@/assets/typography';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
-import { fetchChatMessages, sendMessage, receiveMessage } from '@/shared/state/chat/slice';
+import {
+  fetchChatMessages,
+  sendMessage,
+  receiveMessage,
+  editMessage,
+  deleteMessage,
+  setSelectedChat
+} from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
-import { setSelectedChat } from '@/shared/state/chat/slice';
 
 // Add these styles before the component
 // Create a complete styles object by extending the base styles
-const styles = {
+const styles = StyleSheet.create({
   ...baseStyles,
   // Socket status styles
   socketStatusContainer: {
@@ -105,7 +117,130 @@ const styles = {
     fontSize: 12,
     fontWeight: '600' as const,
   },
-};
+
+  // Add styles for message actions modal
+  messageActionsModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  messageActionsContainer: {
+    width: '80%' as const,
+    backgroundColor: COLORS.darkerBackground,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.greyBorder,
+  },
+  messageActionsTitle: {
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: '600' as const,
+    marginBottom: 16,
+    textAlign: 'center' as const,
+  },
+  messageAction: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+  editAction: {
+    backgroundColor: COLORS.brandBlue,
+  },
+  deleteAction: {
+    backgroundColor: '#FF3B30',
+  },
+  cancelAction: {
+    backgroundColor: COLORS.greyBorder,
+  },
+  actionText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '500' as const,
+    marginLeft: 8,
+  },
+  actionIcon: {
+    width: 20,
+    height: 20,
+  },
+
+  // Edit message drawer styles (Simplified)
+  editDrawer: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.lighterBackground,
+    borderTopLeftRadius: 12, // Slightly smaller radius
+    borderTopRightRadius: 12,
+    padding: 16, // Reduced padding
+    paddingBottom: 0,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderDarkColor,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: -2 }, // Smaller shadow
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  editDrawerHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: 12, // Reduced margin
+  },
+  editDrawerTitle: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md, // Smaller title
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  closeButton: {
+    padding: 4, // Smaller padding
+  },
+  editInput: {
+    backgroundColor: COLORS.background,
+    borderRadius: 6, // Smaller radius
+    color: COLORS.white,
+    paddingHorizontal: 12, // Reduced padding
+    paddingVertical: 10, // Reduced padding
+    fontSize: TYPOGRAPHY.size.sm, // Smaller font
+    fontFamily: TYPOGRAPHY.fontFamily,
+    minHeight: 60, // Reduced min height
+    textAlignVertical: 'top' as const,
+    marginBottom: 12, // Reduced margin
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+  },
+  editButtons: {
+    flexDirection: 'row' as const,
+    justifyContent: 'flex-end' as const,
+    marginBottom: 8, // Reduced margin
+  },
+  editCancelButton: {
+    paddingVertical: 8, // Reduced padding
+    paddingHorizontal: 14, // Reduced padding
+    borderRadius: 6,
+    marginRight: 8,
+    backgroundColor: COLORS.lightBackground,
+  },
+  editSaveButton: {
+    paddingVertical: 8, // Reduced padding
+    paddingHorizontal: 16, // Reduced padding
+    borderRadius: 6,
+    backgroundColor: COLORS.brandBlue,
+  },
+  buttonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm, // Smaller font
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+});
 
 // Add custom styles for NFT message components
 const additionalStyles = {
@@ -179,6 +314,60 @@ const additionalStyles = {
   },
 };
 
+// Update Message context menu styles
+const messageActionStyles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Darker overlay
+    zIndex: 1000,
+  },
+  popup: {
+    position: 'absolute',
+    minWidth: 180, // Give it a minimum width
+    maxWidth: '60%',
+    backgroundColor: COLORS.lighterBackground, // Use theme color
+    borderRadius: 8,
+    paddingVertical: 8, // Reduce vertical padding
+    paddingHorizontal: 12,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 8,
+    zIndex: 1001,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10, // Adjust padding
+  },
+  actionText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm, // Use typography size
+    fontFamily: TYPOGRAPHY.fontFamily,
+    marginLeft: 12,
+  },
+  actionTextDelete: {
+    color: COLORS.errorRed, // Use error color for delete
+    fontSize: TYPOGRAPHY.size.sm,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    marginLeft: 12,
+  },
+  actionDivider: {
+    height: 1,
+    backgroundColor: COLORS.borderDarkColor, // Use theme border color
+    marginVertical: 4, // Reduce divider margin
+  },
+  iconContainer: {
+    width: 20,
+    alignItems: 'center',
+  }
+});
+
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'ChatScreen'>;
 type ChatScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatScreen'>;
 
@@ -190,10 +379,29 @@ const AI_AGENT = {
   initialMessage: "Hey! I'm your AI assistant. I can help you with various tasks like buying/selling tokens, swapping tokens, or providing information about your wallet. How can I assist you today?"
 };
 
+// Add this debugging function near the top of the component
+const debugMessageStructure = (message: any) => {
+  // Create a simplified version of the message to log
+  const simplifiedMessage = {
+    id: message.id,
+    sender_id: message.sender_id,
+    user: message.user ? {
+      id: message.user.id,
+      username: message.user.username
+    } : undefined,
+    sender: message.sender,
+    content: message.content || message.text,
+    is_deleted: message.is_deleted
+  };
+
+  // console.log('Message structure:', JSON.stringify(simplifiedMessage, null, 2));
+  return message;
+};
+
 /**
  * ChatScreen component for displaying a chat interface with real post data
  */
-const ChatScreen: React.FC = () => {
+function ChatScreen(): React.ReactElement {
   const dispatch = useAppDispatch();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
@@ -691,15 +899,196 @@ const ChatScreen: React.FC = () => {
             : DEFAULT_IMAGES.user,
         },
         text: msg.content,
-        image_url: msg.image_url, // Pass the image URL to the component
+        image_url: msg.image_url,
         createdAt: msg.created_at,
+        is_deleted: msg.is_deleted,
       }));
     }
   };
 
-  // Render message with ChatMessage component
+  // Add state for message actions (edit/delete)
+  const [selectedMessage, setSelectedMessage] = useState<any | null>(null);
+  const [showMessageActions, setShowMessageActions] = useState(false);
+  const [showEditDrawer, setShowEditDrawer] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [isEditingMessage, setIsEditingMessage] = useState(false);
+
+  // Replace the handleMessageLongPress function with this improved version
+  const [messageContextPosition, setMessageContextPosition] = useState({ x: 0, y: 0 });
+
+  // Handle message long press with position tracking for context menu
+  const handleMessageLongPress = useCallback((message: any, event: GestureResponderEvent) => {
+    console.log('Long press handler called for message:', message.id);
+
+    if (!message) {
+      console.error('No message object provided to long press handler');
+      return;
+    }
+
+    // Don't show actions for global chat or AI chat
+    if (chatId === 'global' || chatId === AI_AGENT.id) {
+      console.log('Cannot edit/delete messages in global or AI chat');
+      return;
+    }
+
+    // Determine if this is the current user's message
+    const isCurrentUserMessage =
+      (message.user?.id === address) ||
+      (message.sender_id === address) ||
+      (message.senderId === address);
+
+    if (!isCurrentUserMessage) {
+      console.log('Cannot edit/delete messages from other users');
+      console.log('Message user ID:', message.user?.id);
+      console.log('Message sender ID:', message.sender_id || message.senderId);
+      console.log('Current user ID:', address);
+      return;
+    }
+
+    // Don't show actions for deleted messages
+    if (message.is_deleted) {
+      console.log('Cannot edit/delete already deleted messages');
+      return;
+    }
+
+    // Position the context menu in a good location
+    if (event && event.nativeEvent) {
+      const { pageX, pageY } = event.nativeEvent;
+      console.log('Touch position:', pageX, pageY);
+
+      // Adjust position to make sure menu is visible
+      const adjustedX = Math.min(pageX, Dimensions.get('window').width - 200);
+      const adjustedY = Math.min(pageY, Dimensions.get('window').height - 150);
+
+      setMessageContextPosition({
+        x: adjustedX,
+        y: adjustedY
+      });
+    } else {
+      // Fallback to center position if no event data
+      setMessageContextPosition({
+        x: Dimensions.get('window').width / 2 - 100,
+        y: Dimensions.get('window').height / 2 - 75
+      });
+    }
+
+    // Set the selected message and show actions
+    setSelectedMessage(message);
+    setShowMessageActions(true);
+    console.log('Message actions should now be visible for message:', message.id);
+  }, [address, chatId]);
+
+  // Handle edit message
+  const handleEditMessage = useCallback(() => {
+    setShowMessageActions(false);
+
+    if (selectedMessage) {
+      setEditedContent(selectedMessage.text || selectedMessage.content || '');
+      setShowEditDrawer(true);
+    }
+  }, [selectedMessage]);
+
+  // Handle save edited message
+  const handleSaveEditedMessage = useCallback(() => {
+    if (!selectedMessage || !address || !editedContent.trim()) {
+      console.log('[handleSaveEditedMessage] Aborted: Missing selectedMessage, address, or content.');
+      return;
+    }
+
+    setIsEditingMessage(true);
+    console.log(`[handleSaveEditedMessage] Dispatching editMessage: messageId=${selectedMessage.id}, userId=${address}`);
+
+    dispatch(editMessage({
+      messageId: selectedMessage.id,
+      userId: address,
+      content: editedContent.trim()
+    })).then((resultAction) => {
+      console.log('[handleSaveEditedMessage] Result action:', resultAction);
+      if (editMessage.fulfilled.match(resultAction)) {
+        // Message edited successfully
+        console.log("[handleSaveEditedMessage] Message edited successfully:", resultAction.payload);
+
+        // If socket connected, emit message update (if socketService supports this)
+        if (socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id) {
+          // Send a message to the socket if your service supports it
+          // NOTE: The following line is commented out because socketService may not have sendEvent
+          // Instead, we'll let the server update other clients via the REST API
+          // socketService.emit('message_edited', { ... });
+        }
+
+        // Close the drawer
+        setShowEditDrawer(false);
+        setSelectedMessage(null);
+        setEditedContent('');
+      } else {
+        console.error('[handleSaveEditedMessage] Failed to edit message:', resultAction.payload || resultAction.error);
+        Alert.alert('Error', `Failed to edit message: ${resultAction.payload || resultAction.error?.message || 'Unknown error'}`);
+      }
+      setIsEditingMessage(false);
+    });
+  }, [selectedMessage, address, editedContent, dispatch, socketConnected, chatId]);
+
+  // Handle delete message
+  const handleDeleteMessage = useCallback(() => {
+    setShowMessageActions(false);
+
+    if (!selectedMessage || !address) {
+      console.log('[handleDeleteMessage] Aborted: Missing selectedMessage or address.');
+      return;
+    }
+
+    console.log(`[handleDeleteMessage] Showing confirmation for messageId=${selectedMessage.id}`);
+
+    // Show confirmation dialog
+    Alert.alert(
+      'Delete Message',
+      'Are you sure you want to delete this message? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => console.log('[handleDeleteMessage] Delete cancelled')
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            console.log(`[handleDeleteMessage] Dispatching deleteMessage: messageId=${selectedMessage.id}, userId=${address}`);
+            dispatch(deleteMessage({
+              messageId: selectedMessage.id,
+              userId: address
+            })).then((resultAction) => {
+              console.log('[handleDeleteMessage] Result action:', resultAction);
+              if (deleteMessage.fulfilled.match(resultAction)) {
+                // Message deleted successfully
+                console.log("[handleDeleteMessage] Message deleted successfully");
+
+                // If socket connected, we could notify other clients, but we'll let the server handle it
+                // NOTE: The following lines are commented out because socketService may not have sendEvent
+                // if (socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id) {
+                //   socketService.emit('message_deleted', { ... });
+                // }
+
+                setSelectedMessage(null);
+              } else {
+                console.error('[handleDeleteMessage] Failed to delete message:', resultAction.payload || resultAction.error);
+                Alert.alert('Error', `Failed to delete message: ${resultAction.payload || resultAction.error?.message || 'Unknown error'}`);
+              }
+            });
+          }
+        }
+      ]
+    );
+  }, [selectedMessage, address, dispatch, socketConnected, chatId]);
+
+  // Update the renderMessage function to use the debug function
   const renderMessage = ({ item }: { item: any }) => {
-    const isCurrentUser = item.user.id === currentUser.id;
+    // Debug logging for message structure
+    if (Math.random() < 0.1) {
+      debugMessageStructure(item);
+    }
+
+    const isCurrentUser = item.user?.id === currentUser.id || item.sender_id === address;
 
     // Show header only for the first message from a user in a sequence
     const messages = getMessagesToDisplay();
@@ -707,14 +1096,15 @@ const ChatScreen: React.FC = () => {
     const previousMessage = index > 0 ? messages[index - 1] : null;
 
     // Show header if this is the first message or if previous message is from a different user
-    const showHeader = !previousMessage || previousMessage.user.id !== item.user.id;
+    const showHeader = !previousMessage || previousMessage.user?.id !== item.user?.id;
 
     // Check if this is a reply/comment to another post (only for global chat)
     const isReply = chatId === 'global' && item.parentId != null && item.parentId !== '';
 
     // Check if this message has NFT data (only for global chat)
-    const isNftMessage = chatId === 'global' && hasNftListingSection(item);
+    const isNftMessage = chatId === 'global' && hasNftListingSection(item as ThreadPost);
 
+    // Handle NFT message rendering logic
     if (isNftMessage && chatId === 'global') {
       // Find the NFT listing section
       const nftSection = item.sections.find((section: ThreadSection) =>
@@ -728,7 +1118,6 @@ const ChatScreen: React.FC = () => {
         // Check if this is a collection
         const isCollection = convertedListingData.isCollection && convertedListingData.collId;
 
-        // Option 2: Use NftDetailsSection directly like SectionNftListing does
         return (
           <View style={[
             styles.messageWrapper,
@@ -820,31 +1209,34 @@ const ChatScreen: React.FC = () => {
       }
     }
 
-    // For regular messages, use ChatMessage component
+    // For regular messages, render ChatMessage and pass the onLongPress handler
     return (
       <View style={[
         styles.messageWrapper,
-        isReply && styles.replyMessageWrapper
+        isReply && styles.replyMessageWrapper,
       ]}>
         {isReply && <View style={styles.replyIndicator} />}
+
+        {/* Render ChatMessage, passing down the long press handler */}
         <ChatMessage
           message={item}
           currentUser={currentUser}
           onPressMessage={(message) => {
-            // Handle message press - for NFT messages we open the drawer
+            // Handle NFT message press (regular press is handled inside ChatMessage now)
             if (chatId === 'global' && hasNftListingSection(message as ThreadPost)) {
               const nftData = getNftDataFromSections(message as ThreadPost);
               if (nftData) {
                 handleOpenNftDetails(nftData);
               }
-            } else if ('nftData' in message && message.nftData) {
-              // Handle direct NFT data if present (from MessageData type)
-              handleOpenNftDetails(message.nftData);
-            } else {
-              // In a production app, this would navigate to post details
-              console.log('Message pressed:', message.id);
             }
           }}
+          // Pass the long press handler only for current user's messages 
+          // in non-global/AI chats
+          onLongPress={
+            isCurrentUser && chatId !== 'global' && chatId !== AI_AGENT.id
+              ? (e) => handleMessageLongPress(item, e)
+              : undefined
+          }
           showHeader={showHeader}
           showFooter={true}
         />
@@ -901,6 +1293,21 @@ const ChatScreen: React.FC = () => {
 
     return null;
   };
+
+  // Modify the polling interval effect to avoid a variable name conflict
+  useEffect(() => {
+    if (socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id) {
+      // Set up a polling interval to refresh messages periodically
+      // This is a fallback in case socket events aren't fully implemented
+      const interval = setInterval(() => {
+        dispatch(fetchChatMessages({ chatId }));
+      }, 15000); // Poll every 15 seconds
+
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [socketConnected, chatId, dispatch]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1021,6 +1428,105 @@ const ChatScreen: React.FC = () => {
 
       </KeyboardAvoidingView>
 
+      {/* Message Actions Modal */}
+      {showMessageActions && (
+        <>
+          <TouchableWithoutFeedback onPress={() => setShowMessageActions(false)}>
+            <View style={messageActionStyles.overlay} />
+          </TouchableWithoutFeedback>
+
+          <View
+            style={[
+              messageActionStyles.popup,
+              {
+                top: messageContextPosition.y,
+                left: messageContextPosition.x,
+              }
+            ]}
+          >
+            {/* Edit Action - No Icon */}
+            <TouchableOpacity
+              style={messageActionStyles.actionItem}
+              onPress={handleEditMessage}
+            >
+              <Text style={[messageActionStyles.actionText, { marginLeft: 0 }]}>Edit Message</Text>
+            </TouchableOpacity>
+
+            <View style={messageActionStyles.actionDivider} />
+
+            {/* Delete Action - No Icon */}
+            <TouchableOpacity
+              style={messageActionStyles.actionItem}
+              onPress={handleDeleteMessage}
+            >
+              <Text style={[messageActionStyles.actionTextDelete, { marginLeft: 0 }]}>Delete Message</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+      {/* Edit Message Drawer */}
+      {showEditDrawer && (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1100
+          }}
+        >
+          <View style={[styles.editDrawer, { paddingBottom: insets.bottom + 16 }]}>
+            <View style={styles.editDrawerHeader}>
+              <Text style={styles.editDrawerTitle}>Edit Message</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowEditDrawer(false)}
+              >
+                {/* Use simple 'X' text as close icon */}
+                <Text style={{ color: COLORS.greyMid, fontSize: 18, fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.editInput}
+              value={editedContent}
+              onChangeText={setEditedContent}
+              multiline
+              placeholder="Edit your message..."
+              placeholderTextColor={COLORS.greyMid}
+              autoFocus
+              selectionColor={COLORS.brandBlue}
+            />
+
+            <View style={styles.editButtons}>
+              <TouchableOpacity
+                style={styles.editCancelButton}
+                onPress={() => setShowEditDrawer(false)}
+                disabled={isEditingMessage}
+              >
+                <Text style={[styles.buttonText, { color: COLORS.greyMid }]}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.editSaveButton,
+                  (!editedContent.trim() || isEditingMessage) && { opacity: 0.5 }
+                ]}
+                onPress={handleSaveEditedMessage}
+                disabled={!editedContent.trim() || isEditingMessage}
+              >
+                <Text style={styles.buttonText}>
+                  {isEditingMessage ? 'Saving...' : 'Save Changes'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      )}
+
       {/* NFT Details Drawer */}
       {selectedNft && (
         <TokenDetailsDrawer
@@ -1036,6 +1542,6 @@ const ChatScreen: React.FC = () => {
       )}
     </SafeAreaView>
   );
-};
+}
 
 export default ChatScreen;

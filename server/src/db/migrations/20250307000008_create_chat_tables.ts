@@ -5,8 +5,10 @@
  * - chat_rooms: Stores information about chat conversations
  * - chat_messages: Stores individual messages in chat rooms
  */
-import { Knex } from 'knex';
+// import { Knex } from 'knex'; // Old import
+import Knex from 'knex'; // Try default import
 
+// Adjust type hint for the knex parameter if needed based on default import
 export async function up(knex: Knex): Promise<void> {
   // Create chat_rooms table
   await knex.schema.createTable('chat_rooms', (table) => {
@@ -36,12 +38,13 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('chat_room_id').notNullable().references('id').inTable('chat_rooms').onDelete('CASCADE');
     table.string('sender_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.text('content').notNullable();
-    table.jsonb('additional_data').nullable(); // For attachments, NFTs, etc.
-    table.boolean('is_deleted').defaultTo(false);
+    table.string('image_url').nullable(); // Added for image messages
+    table.jsonb('additional_data').nullable(); // For things like NFT data, trade data, etc.
+    table.boolean('is_deleted').defaultTo(false); // Soft delete flag
     table.timestamps(true, true);
     
-    // Index for faster queries
-    table.index(['chat_room_id', 'created_at']);
+    // Add index for faster querying of messages in a chat room
+    table.index('chat_room_id');
   });
 }
 

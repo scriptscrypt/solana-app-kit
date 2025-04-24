@@ -19,6 +19,7 @@ export interface ChatMessage {
   additional_data?: any;
   created_at: string;
   updated_at: string;
+  is_deleted?: boolean;
   sender?: {
     id: string;
     username: string;
@@ -177,6 +178,62 @@ export const fetchUsersForChat = createAsyncThunk(
   }
 );
 
+export const editMessage = createAsyncThunk(
+  'chat/editMessage',
+  async ({ 
+    messageId, 
+    userId, 
+    content 
+  }: { 
+    messageId: string; 
+    userId: string; 
+    content: string; 
+  }, { rejectWithValue }) => {
+    console.log(`[Thunk editMessage] Editing message ${messageId} for user ${userId}`);
+    try {
+      const response = await axios.put(`${SERVER_URL}/api/chat/messages/${messageId}`, {
+        userId,
+        content,
+      });
+      console.log(`[Thunk editMessage] Success:`, response.data);
+      return response.data.message;
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to edit message';
+      console.error(`[Thunk editMessage] Error:`, errorMsg, error.response?.data);
+      return rejectWithValue(errorMsg);
+    }
+  }
+);
+
+export const deleteMessage = createAsyncThunk(
+  'chat/deleteMessage',
+  async ({ 
+    messageId, 
+    userId 
+  }: { 
+    messageId: string; 
+    userId: string; 
+  }, { rejectWithValue }) => {
+    console.log(`[Thunk deleteMessage] Deleting message ${messageId} for user ${userId}`);
+    try {
+      const response = await axios.delete(`${SERVER_URL}/api/chat/messages/${messageId}`, {
+        data: { userId } // For DELETE requests, data needs to be passed as { data: ... }
+      });
+      console.log(`[Thunk deleteMessage] Success:`, response.data);
+      // Make sure response.data includes chatId as added in the controller
+      if (!response.data || !response.data.chatId) {
+        console.error('[Thunk deleteMessage] Error: Server response missing chatId');
+        return rejectWithValue('Server error: Missing chat ID in response');
+      }
+      return { messageId, chatId: response.data.chatId };
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to delete message';
+      console.error(`[Thunk deleteMessage] Error:`, errorMsg, error.response?.data);
+      return rejectWithValue(errorMsg);
+    }
+  }
+);
+
 // Create slice
 const chatSlice = createSlice({
   name: 'chat',
@@ -299,6 +356,63 @@ const chatSlice = createSlice({
       .addCase(fetchUsersForChat.rejected, (state, action) => {
         state.loadingUsers = false;
         state.error = action.payload as string;
+      });
+    
+    // Edit message
+    builder
+      .addCase(editMessage.fulfilled, (state, action) => {
+        const updatedMessage = action.payload;
+        const chatId = updatedMessage.chat_room_id;
+        
+        if (state.messages[chatId]) {
+          // Find and update the message
+          const messageIndex = state.messages[chatId].findIndex(
+            msg => msg.id === updatedMessage.id
+          );
+          
+          if (messageIndex !== -1) {
+            state.messages[chatId][messageIndex] = updatedMessage;
+          }
+          
+          // If this was the last message, update it in the chats list too
+          const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+          if (chatIndex !== -1 && 
+              state.chats[chatIndex].lastMessage && 
+              state.chats[chatIndex].lastMessage.id === updatedMessage.id) {
+            state.chats[chatIndex].lastMessage = updatedMessage;
+          }
+        }
+      })
+      
+    // Delete message
+    builder
+      .addCase(deleteMessage.fulfilled, (state, action) => {
+        const { messageId, chatId } = action.payload;
+        
+        if (state.messages[chatId]) {
+          // Option 1: Remove the message completely
+          // state.messages[chatId] = state.messages[chatId].filter(msg => msg.id !== messageId);
+          
+          // Option 2: Update the message content to show it's been deleted
+          const messageIndex = state.messages[chatId].findIndex(msg => msg.id === messageId);
+          if (messageIndex !== -1) {
+            state.messages[chatId][messageIndex] = {
+              ...state.messages[chatId][messageIndex],
+              content: '[This message has been deleted]',
+              is_deleted: true
+            };
+          }
+          
+          // If this was the last message, update it in the chats list too
+          const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+          if (chatIndex !== -1 && 
+              state.chats[chatIndex].lastMessage && 
+              state.chats[chatIndex].lastMessage.id === messageId) {
+            if (messageIndex !== -1) {
+              state.chats[chatIndex].lastMessage = state.messages[chatId][messageIndex];
+            }
+          }
+        }
       });
   },
 });

@@ -1,8 +1,10 @@
 import * as path from 'path';
-import { Knex } from 'knex';
+// import { Knex } from 'knex'; // Old import
+import Knex from 'knex'; // Try default import
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Use Knex.Config type (might need adjustment if default import changes things)
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'pg',
