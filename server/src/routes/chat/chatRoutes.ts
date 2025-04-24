@@ -8,6 +8,8 @@
  * - Send messages
  * - Get users for chat creation
  * - Upload images for chat messages
+ * - Edit messages
+ * - Delete messages
  */
 import { Router, Request, Response, NextFunction } from 'express';
 import {
@@ -17,6 +19,8 @@ import {
   getChatMessages,
   sendMessage,
   getUsersForChat,
+  editMessage,
+  deleteMessage,
 } from '../../controllers/chatController';
 import { chatImageRouter } from './chatImageRoutes';
 
@@ -46,10 +50,16 @@ chatRouter.get('/chats/:chatId/messages', asyncHandler(getChatMessages));
 // Send a message to a chat
 chatRouter.post('/messages', asyncHandler(sendMessage));
 
+// Edit a message
+chatRouter.put('/messages/:messageId', asyncHandler(editMessage));
+
+// Delete a message
+chatRouter.delete('/messages/:messageId', asyncHandler(deleteMessage));
+
 // Get users for chat creation (search)
 chatRouter.get('/users', asyncHandler(getUsersForChat));
 
-// Mount the chat image router
+// Mount the chat image router **AFTER** specific message routes
 chatRouter.use('/images', chatImageRouter);
 
 export { chatRouter }; 
