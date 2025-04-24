@@ -79,12 +79,13 @@ function MessageTradeCard({ tradeData, userAvatar, isCurrentUser }: MessageTrade
         initialActiveTab="PAST_SWAPS"
         initialInputToken={{ address: tradeData.inputMint }}
         initialOutputToken={{ address: tradeData.outputMint }}
-        onPostCreated={() => setShowTradeModal(false)}
+        onShare={() => {
+          setShowTradeModal(false);
+        }}
       />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     width: '90%',

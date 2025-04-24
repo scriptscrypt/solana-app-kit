@@ -1,6 +1,9 @@
 import { ImageSourcePropType, TextStyle, ViewStyle } from 'react-native';
 import { ThreadPost, ThreadUser } from '@/core/thread/components/thread.types';
 import { TradeData } from '@/core/sharedUI/TradeCard/TradeCard';
+import { NftListingData as ModuleNftListingData } from '@/modules/nft/types';
+
+export type NftListingData = ModuleNftListingData;
 
 export interface MessageUser {
   id: string;
@@ -27,6 +30,11 @@ export interface MessageData {
   media?: string[];
   isCurrentUser?: boolean;
   status?: 'sent' | 'delivered' | 'read';
+  image_url?: string | null;
+  additional_data?: {
+    tradeData?: TradeData;
+    nftData?: NftListingData;
+  } | null;
   
   // Message content types
   contentType?: 'text' | 'media' | 'trade' | 'nft' | 'mixed';

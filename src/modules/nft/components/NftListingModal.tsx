@@ -27,7 +27,7 @@ import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
 // Import types from our module
-import { NftItem, NftListingModalProps, CollectionResult } from '../types';
+import { NftItem, NftListingModalProps, CollectionResult, NftListingData } from '../types';
 
 // Import services and utils
 import { searchCollections } from '../services/nftService';
@@ -39,18 +39,24 @@ const ITEM_WIDTH = (width * 0.9 - 30) / 3; // Added more padding
 const SOL_TO_LAMPORTS = 1_000_000_000;
 const DRAWER_HEIGHT = height * 0.8; // Drawer takes up 80% of screen height
 
+// Update Props Interface
+interface UpdatedNftListingModalProps extends Omit<NftListingModalProps, 'onSelectListing'> {
+    // Rename onSelectListing to a more generic onShare callback
+    onShare: (data: NftListingData) => void;
+}
+
 /**
  * Drawer for displaying NFT listings and allowing users to select NFTs
  */
 const NftListingModal = ({
     visible,
     onClose,
-    onSelectListing,
+    onShare, // Use the new onShare prop
     listingItems,
     loadingListings,
     fetchNftsError,
     styles,
-}: NftListingModalProps) => {
+}: UpdatedNftListingModalProps) => { // Use updated props type
     // Animation for drawer slide up
     const slideAnim = useRef(new Animated.Value(DRAWER_HEIGHT)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -200,78 +206,25 @@ const NftListingModal = ({
             return;
         }
 
-        try {
-            // Create the NFT listing section with collection data
-            const sections: ThreadSection[] = [
-                {
-                    id: 'section-' + Math.random().toString(36).substr(2, 9),
-                    type: 'NFT_LISTING' as ThreadSectionType,
-                    listingData: {
-                        collId: collection.collId,
-                        owner: userPublicKey,
-                        name: collection.name,
-                        image: fixImageUrl(collection.imageUri),
-                        isCollection: true,
-                        collectionName: collection.name,
-                        collectionImage: fixImageUrl(collection.imageUri),
-                        collectionDescription: collection.description
-                    },
-                }
-            ];
+        // Create the NFT listing data structure for a collection
+        const listingData: NftListingData = {
+            collId: collection.collId,
+            owner: userPublicKey,
+            name: collection.name,
+            image: fixImageUrl(collection.imageUri),
+            isCollection: true,
+            collectionName: collection.name,
+            collectionImage: fixImageUrl(collection.imageUri),
+            collectionDescription: collection.description,
+        };
 
-            // Add a text section about the collection
-            sections.push({
-                id: 'section-' + Math.random().toString(36).substr(2, 9),
-                type: 'TEXT_ONLY' as ThreadSectionType,
-                text: `Check out this awesome collection: ${collection.name}! 🔥`
-            });
+        // Call the generic onShare callback
+        onShare(listingData);
 
-            // Create a proper user object that satisfies ThreadUser
-            const user: ThreadUser = {
-                id: userPublicKey,
-                username: userName || 'Anonymous',
-                handle: userPublicKey
-                    ? '@' + userPublicKey.slice(0, 6) + '...' + userPublicKey.slice(-4)
-                    : '@anonymous',
-                verified: true,
-                avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
-            };
-
-            // Create a fallback post with proper typing
-            const fallbackPost = {
-                id: 'local-' + Math.random().toString(36).substr(2, 9),
-                userId: userPublicKey,
-                user,
-                sections,
-                createdAt: new Date().toISOString(),
-                replies: [],
-                reactionCount: 0,
-                retweetCount: 0,
-                quoteCount: 0,
-            };
-
-            try {
-                // Create a root post with the NFT listing
-                await dispatch(
-                    createRootPostAsync({
-                        userId: userPublicKey,
-                        sections,
-                    })
-                ).unwrap();
-
-                TransactionService.showSuccess('post_created', 'nft');
-            } catch (error: any) {
-                console.warn('Network request failed, adding post locally:', error.message);
-                dispatch(addPostLocally(fallbackPost));
-                Alert.alert('Limited Connectivity', 'Your post was saved locally.');
-            }
-        } catch (err: any) {
-            console.error('Error sharing collection:', err);
-            TransactionService.showError(err);
-        } finally {
-            setShowShareModal(false);
-            setSelectedCollection(null);
-        }
+        // Close modals
+        setShowShareModal(false);
+        setSelectedCollection(null);
+        handleClose(); // Close the main modal too
     };
 
     // Render a grid item (just the image)
@@ -280,10 +233,11 @@ const NftListingModal = ({
             <TouchableOpacity
                 style={modalStyles.gridItem}
                 onPress={() => {
-                    console.log('Collection selected:', item);
-                    setSelectedCollection(item);
-                    setShowShareModal(true);
-                }}>
+                    console.log('Collection selected for sharing:', item);
+                    // Call onShare directly for collections now
+                    shareNftCollection(item);
+                }}
+            >
                 <Image
                     source={{ uri: fixImageUrl(item.imageUri) }}
                     style={modalStyles.gridImage}
@@ -293,57 +247,25 @@ const NftListingModal = ({
         );
     };
 
-    // Share Modal UI
-    const renderShareModal = () => {
-        if (!selectedCollection) return null;
-        return (
-            <Modal
-                visible={showShareModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => {
-                    setShowShareModal(false);
-                    setSelectedCollection(null);
-                }}>
-                <Pressable
-                    style={modalStyles.shareModalOverlay}
-                    onPress={() => {
-                        setShowShareModal(false);
-                        setSelectedCollection(null);
-                    }}>
-                    <Pressable
-                        style={modalStyles.shareModalContent}
-                        onPress={e => e.stopPropagation()}>
-                        <Text style={modalStyles.shareModalTitle}>Share Collection</Text>
-                        <Text style={modalStyles.shareModalText}>
-                            Collection: {selectedCollection.name}
-                        </Text>
-                        <Image
-                            source={{ uri: fixImageUrl(selectedCollection.imageUri) }}
-                            style={modalStyles.shareModalImage}
-                            resizeMode="cover"
-                        />
-                        <Text style={modalStyles.shareModalDescription} numberOfLines={3}>
-                            {selectedCollection.description || "No description available"}
-                        </Text>
-                        <TouchableOpacity
-                            style={modalStyles.shareButton}
-                            onPress={() => {
-                                shareNftCollection(selectedCollection);
-                            }}>
-                            <Text style={modalStyles.shareButtonText}>Share to Feed</Text>
-                        </TouchableOpacity>
-                    </Pressable>
-                </Pressable>
-            </Modal>
-        );
-    };
-
     // Modified render for NFT listing items to include transaction option
     const renderNftItem = ({ item }: { item: NftItem }) => (
         <TouchableOpacity
             style={modalStyles.listingCard}
-            onPress={() => onSelectListing(item)}>
+            onPress={() => {
+                const listingData: NftListingData = {
+                    mint: item.mint,
+                    owner: address || '', // Current user is the one listing/sharing
+                    priceSol: item.priceSol, // Use price if available
+                    name: item.name,
+                    image: item.image,
+                    collectionName: item.collection,
+                    isCompressed: item.isCompressed,
+                    isCollection: false, // This is a single NFT, not a collection
+                };
+                onShare(listingData);
+                handleClose(); // Close modal after selection
+            }}
+        >
             {/* Add a container with relative positioning to hold the image and badge */}
             <View style={modalStyles.imageContainer}>
                 <Image
@@ -542,9 +464,6 @@ const NftListingModal = ({
                     </View>
                 </Animated.View>
             </View>
-
-            {/* Share confirmation modal */}
-            {renderShareModal()}
         </Modal>
     );
 };
@@ -765,63 +684,6 @@ const defaultStyles = StyleSheet.create({
         fontSize: TYPOGRAPHY.size.sm,
         fontFamily: TYPOGRAPHY.fontFamily,
         color: COLORS.white,
-    },
-    // Share modal styles
-    shareModalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    shareModalContent: {
-        width: '80%',
-        backgroundColor: COLORS.background,
-        borderRadius: 10,
-        padding: 20,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: COLORS.borderDarkColor,
-    },
-    shareModalTitle: {
-        fontSize: TYPOGRAPHY.size.lg,
-        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
-        marginBottom: 15,
-        color: COLORS.white,
-        fontFamily: TYPOGRAPHY.fontFamily,
-    },
-    shareModalText: {
-        fontSize: TYPOGRAPHY.size.md,
-        marginVertical: 5,
-        textAlign: 'center',
-        color: COLORS.white,
-        fontFamily: TYPOGRAPHY.fontFamily,
-    },
-    shareModalImage: {
-        width: 150,
-        height: 150,
-        borderRadius: 8,
-        marginVertical: 10,
-    },
-    shareModalDescription: {
-        fontSize: TYPOGRAPHY.size.sm,
-        color: COLORS.greyMid,
-        textAlign: 'center',
-        marginVertical: 5,
-        paddingHorizontal: 10,
-        fontFamily: TYPOGRAPHY.fontFamily,
-    },
-    shareButton: {
-        marginTop: 20,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        backgroundColor: COLORS.brandPrimary,
-        borderRadius: 20,
-    },
-    shareButtonText: {
-        color: COLORS.white,
-        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
-        fontSize: TYPOGRAPHY.size.md,
-        fontFamily: TYPOGRAPHY.fontFamily,
     },
     // Add styles for the new action button
     actionButton: {

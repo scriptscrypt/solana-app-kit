@@ -22,7 +22,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChatComposer, ChatMessage } from '@/core/chat/components';
-import { MessageNFT } from '@/core/chat/components/message';
+import { MessageNFT, MessageTradeCard } from '@/core/chat/components/message';
 import { MessageData, NFTData } from '@/core/chat/components/message/message.types';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
@@ -50,6 +50,7 @@ import {
   setSelectedChat
 } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
+import { TradeData } from '@/core/sharedUI/TradeCard/TradeCard';
 
 // Add these styles before the component
 // Create a complete styles object by extending the base styles
@@ -834,6 +835,52 @@ function ChatScreen(): React.ReactElement {
     return false;
   };
 
+  // Function to check if a post or message has trade data
+  const hasTradeData = (message: any) => {
+    // Check if it's in additional_data
+    if (message.additional_data && message.additional_data.tradeData) {
+      return true;
+    }
+
+    // Check if it's directly in the message
+    if (message.tradeData) {
+      return true;
+    }
+
+    // Check if it's in the sections (for ThreadPost)
+    if (message.sections) {
+      return message.sections.some((section: ThreadSection) =>
+        section.type === 'TEXT_TRADE' && section.tradeData);
+    }
+
+    return false;
+  };
+
+  // Function to extract trade data from a message
+  const getTradeDataFromMessage = (message: any): TradeData | null => {
+    // Check if it's in additional_data
+    if (message.additional_data && message.additional_data.tradeData) {
+      return message.additional_data.tradeData;
+    }
+
+    // Check if it's directly in the message
+    if (message.tradeData) {
+      return message.tradeData;
+    }
+
+    // Check if it's in the sections (for ThreadPost)
+    if (message.sections) {
+      const tradeSection = message.sections.find((section: ThreadSection) =>
+        section.type === 'TEXT_TRADE' && section.tradeData);
+
+      if (tradeSection?.tradeData) {
+        return tradeSection.tradeData;
+      }
+    }
+
+    return null;
+  };
+
   // Function to extract NFT data from post sections
   const getNftDataFromSections = (post: ThreadPost) => {
     if (post.sections) {
@@ -902,6 +949,7 @@ function ChatScreen(): React.ReactElement {
         image_url: msg.image_url,
         createdAt: msg.created_at,
         is_deleted: msg.is_deleted,
+        additional_data: msg.additional_data,
       }));
     }
   };
@@ -1104,6 +1152,42 @@ function ChatScreen(): React.ReactElement {
     // Check if this message has NFT data (only for global chat)
     const isNftMessage = chatId === 'global' && hasNftListingSection(item as ThreadPost);
 
+    // Check if this is a trade message
+    const isTradeMessage = hasTradeData(item);
+
+    // Handle Trade message rendering logic
+    if (isTradeMessage) {
+      const tradeData = getTradeDataFromMessage(item);
+
+      if (tradeData) {
+        return (
+          <View style={[
+            styles.messageWrapper,
+            isReply && styles.replyMessageWrapper
+          ]}>
+            {isReply && <View style={styles.replyIndicator} />}
+            {showHeader && (
+              <View style={additionalStyles.messageHeader}>
+                <View style={additionalStyles.avatarContainer}>
+                  <Image
+                    source={item.user?.avatar || DEFAULT_IMAGES.user}
+                    style={additionalStyles.avatar}
+                  />
+                </View>
+                <Text style={additionalStyles.username}>{item.user?.username || 'User'}</Text>
+              </View>
+            )}
+
+            <MessageTradeCard
+              tradeData={tradeData}
+              isCurrentUser={isCurrentUser}
+              userAvatar={item.user?.avatar || DEFAULT_IMAGES.user}
+            />
+          </View>
+        );
+      }
+    }
+
     // Handle NFT message rendering logic
     if (isNftMessage && chatId === 'global') {
       // Find the NFT listing section
@@ -1295,19 +1379,22 @@ function ChatScreen(): React.ReactElement {
   };
 
   // Modify the polling interval effect to avoid a variable name conflict
-  useEffect(() => {
-    if (socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id) {
-      // Set up a polling interval to refresh messages periodically
-      // This is a fallback in case socket events aren't fully implemented
-      const interval = setInterval(() => {
-        dispatch(fetchChatMessages({ chatId }));
-      }, 15000); // Poll every 15 seconds
+  // useEffect(() => {
+  //   if (socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id) {
+  //     // Set up a polling interval to refresh messages periodically
+  //     // This is a fallback in case socket events aren't fully implemented
+  //     const interval = setInterval(() => {
+  //       // Only fetch messages if we're not already loading
+  //       if (!isLoadingMessages) {
+  //         dispatch(fetchChatMessages({ chatId }));
+  //       }
+  //     }, 60000); // Reduced polling frequency from 15s to 60s to prevent excessive refreshes
 
-      return () => {
-        clearInterval(interval);
-      };
-    }
-  }, [socketConnected, chatId, dispatch]);
+  //     return () => {
+  //       clearInterval(interval);
+  //     };
+  //   }
+  // }, [socketConnected, chatId, dispatch, isLoadingMessages]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1419,6 +1506,7 @@ function ChatScreen(): React.ReactElement {
             <ChatComposer
               currentUser={currentUser}
               onMessageSent={handleMessageSent}
+              chatContext={{ chatId: chatId }}
             />
             {!keyboardVisible && (
               <View style={[styles.tabBarSpacer, { height: 20 }]} />

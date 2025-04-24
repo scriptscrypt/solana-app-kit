@@ -49,15 +49,15 @@ const { height } = Dimensions.get('window');
  */
 type TabOption = 'PAST_SWAPS';
 
-interface TradeModalProps {
+interface UpdatedTradeModalProps {
   /** Whether the modal is visible */
   visible: boolean;
   /** Callback fired when the modal is closed */
   onClose: () => void;
   /** Current user information */
   currentUser: ThreadUser;
-  /** Callback fired when a trade post is created */
-  onPostCreated?: () => void;
+  /** Generic callback fired when a trade is ready to be shared */
+  onShare: (data: TradeData) => void;
   /** Initial input token for the trade */
   initialInputToken?: Partial<TokenInfo>;
   /** Initial output token for the trade */
@@ -79,12 +79,12 @@ export default function TradeModal({
   visible,
   onClose,
   currentUser,
-  onPostCreated,
+  onShare,
   initialInputToken,
   initialOutputToken,
   disableTabs,
   initialActiveTab,
-}: TradeModalProps) {
+}: UpdatedTradeModalProps) {
   const dispatch = useAppDispatch();
   // Use our wallet hook
   const { publicKey: userPublicKey, connected } = useWallet();
@@ -263,115 +263,41 @@ export default function TradeModal({
   }, [onClose, initialActiveTab]);
 
   /**
-   * Create post from a past swap transaction
+   * Create trade data object from a past swap transaction
    */
-  const sharePastSwapInFeed = useCallback(
-    async (swap: SwapTransaction) => {
-      try {
-        if (isMounted.current) {
-          setLoading(true);
-          setResultMsg('Creating post...');
-        }
+  const createTradeDataFromSwap = useCallback(async (swap: SwapTransaction): Promise<TradeData> => {
+    const inputQty = swap.inputToken.amount / Math.pow(10, swap.inputToken.decimals);
+    const outputQty = swap.outputToken.amount / Math.pow(10, swap.outputToken.decimals);
+    const timestampMs = swap.timestamp < 10000000000 ? swap.timestamp * 1000 : swap.timestamp;
 
-        // Format amounts properly
-        const inputQty = swap.inputToken.amount / Math.pow(10, swap.inputToken.decimals);
-        const outputQty = swap.outputToken.amount / Math.pow(10, swap.outputToken.decimals);
+    const inputUsdValue = await estimateTokenUsdValue(
+      swap.inputToken.amount,
+      swap.inputToken.decimals,
+      swap.inputToken.mint,
+      swap.inputToken.symbol
+    );
+    const outputUsdValue = await estimateTokenUsdValue(
+      swap.outputToken.amount,
+      swap.outputToken.decimals,
+      swap.outputToken.mint,
+      swap.outputToken.symbol
+    );
 
-        // Convert timestamp to milliseconds if needed (Helius provides timestamps in seconds)
-        const timestampMs = swap.timestamp < 10000000000
-          ? swap.timestamp * 1000  // Convert to milliseconds if in seconds
-          : swap.timestamp;
-
-        // Estimate USD values
-        const inputUsdValue = await estimateTokenUsdValue(
-          swap.inputToken.amount,
-          swap.inputToken.decimals,
-          swap.inputToken.mint,
-          swap.inputToken.symbol
-        );
-
-        const outputUsdValue = await estimateTokenUsdValue(
-          swap.outputToken.amount,
-          swap.outputToken.decimals,
-          swap.outputToken.mint,
-          swap.outputToken.symbol
-        );
-
-        // Create trade data object
-        const tradeData: TradeData = {
-          inputMint: swap.inputToken.mint,
-          outputMint: swap.outputToken.mint,
-          aggregator: 'Jupiter',
-          inputSymbol: swap.inputToken.symbol || 'Unknown',
-          inputQuantity: inputQty.toFixed(4),
-          inputUsdValue,
-          outputSymbol: swap.outputToken.symbol || 'Unknown',
-          inputAmountLamports: swap.inputToken.amount.toString(),
-          outputAmountLamports: swap.outputToken.amount.toString(),
-          outputQuantity: outputQty.toFixed(4),
-          outputUsdValue,
-          executionTimestamp: timestampMs,
-        };
-
-        // Generate a post with the trade data
-        const localId = 'local-' + Math.random().toString(36).substr(2, 9);
-        const postSections: ThreadSection[] = [
-          {
-            id: 'swap-post-' + Math.random().toString(36).substr(2, 9),
-            type: 'TEXT_TRADE' as ThreadSectionType,
-            tradeData,
-            text: `I executed a trade: ${inputQty.toFixed(4)} ${swap.inputToken.symbol || 'tokens'
-              } → ${outputQty.toFixed(4)} ${swap.outputToken.symbol || 'tokens'}!`,
-          },
-        ];
-
-        // Create local post
-        const newLocalPost: ThreadPost = {
-          id: localId,
-          user: currentUser,
-          sections: postSections,
-          createdAt: new Date().toISOString(),
-          parentId: undefined,
-          replies: [],
-          reactionCount: 0,
-          retweetCount: 0,
-          quoteCount: 0,
-        };
-
-        // Insert locally and then dispatch to server
-        dispatch(addPostLocally(newLocalPost));
-        await dispatch(
-          createRootPostAsync({
-            userId: currentUser.id,
-            sections: postSections,
-            localId,
-          }),
-        ).unwrap();
-
-        if (isMounted.current) {
-          setResultMsg('Past swap shared successfully!');
-        }
-
-        onPostCreated && onPostCreated();
-
-        // Close the modal after successful share
-        setTimeout(() => handleClose(), 1500);
-      } catch (err: any) {
-        console.error('[sharePastSwapInFeed] Error =>', err);
-        if (isMounted.current) {
-          setErrorMsg('Failed to share past swap');
-        }
-
-        // Show error notification
-        TransactionService.showError(err);
-      } finally {
-        if (isMounted.current) {
-          setLoading(false);
-        }
-      }
-    },
-    [dispatch, currentUser, onPostCreated, handleClose],
-  );
+    return {
+      inputMint: swap.inputToken.mint,
+      outputMint: swap.outputToken.mint,
+      aggregator: 'Jupiter', // Or derive from swap data if possible
+      inputSymbol: swap.inputToken.symbol || 'Unknown',
+      inputQuantity: inputQty.toFixed(4),
+      inputUsdValue,
+      outputSymbol: swap.outputToken.symbol || 'Unknown',
+      inputAmountLamports: swap.inputToken.amount.toString(),
+      outputAmountLamports: swap.outputToken.amount.toString(),
+      outputQuantity: outputQty.toFixed(4),
+      outputUsdValue,
+      executionTimestamp: timestampMs,
+    };
+  }, []);
 
   /**
    * Handle selection of a past swap from the PastSwapsTab
@@ -454,9 +380,9 @@ export default function TradeModal({
   }, [visible, walletAddress, handleRefresh]);
 
   /**
-   * Share the selected past swap
+   * Share the selected past swap using the onShare callback
    */
-  const handleSharePastSwap = useCallback(() => {
+  const handleSharePastSwap = useCallback(async () => {
     if (!selectedPastSwap) {
       Alert.alert('No swap selected', 'Please select a swap to share.');
       return;
@@ -464,15 +390,35 @@ export default function TradeModal({
 
     if (isMounted.current) {
       setLoading(true);
+      setResultMsg('Preparing share...');
     }
 
-    sharePastSwapInFeed(selectedPastSwap)
-      .finally(() => {
-        if (isMounted.current) {
-          setLoading(false);
-        }
-      });
-  }, [selectedPastSwap, sharePastSwapInFeed]);
+    try {
+      // Create the trade data object from the selected swap
+      const tradeData = await createTradeDataFromSwap(selectedPastSwap);
+
+      // Call the parent's onShare handler
+      await onShare(tradeData);
+
+      if (isMounted.current) {
+        setResultMsg('Trade shared!');
+      }
+
+      // Close the modal after successful share
+      setTimeout(() => handleClose(), 1000);
+
+    } catch (err: any) {
+      console.error('[handleSharePastSwap] Error =>', err);
+      if (isMounted.current) {
+        setErrorMsg('Failed to share past swap');
+      }
+      TransactionService.showError(err);
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
+  }, [selectedPastSwap, onShare, handleClose, createTradeDataFromSwap]);
 
   return (
     <Modal
@@ -555,7 +501,7 @@ export default function TradeModal({
                               <Text style={styles.emptySwapsSubtext}>
                                 Complete a token swap to see it here
                               </Text>
-                              <TouchableOpacity 
+                              <TouchableOpacity
                                 style={styles.emptyStateRefreshButton}
                                 onPress={forceRefresh}
                                 disabled={refreshing}>
@@ -587,7 +533,7 @@ export default function TradeModal({
                                 };
 
                                 return (
-                                  <TouchableOpacity 
+                                  <TouchableOpacity
                                     style={styles.swapItemContainer}
                                     onPress={() => handlePastSwapSelected(item)}
                                     activeOpacity={0.7}

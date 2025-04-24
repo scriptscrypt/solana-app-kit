@@ -271,10 +271,25 @@ export async function sendMessage(req: Request, res: Response) {
   try {
     const { chatId, userId, content, imageUrl, additionalData } = req.body;
     
-    if (!chatId || !userId || (!content && !imageUrl)) {
+    // Updated Validation:
+    // Check for essential IDs first
+    if (!chatId || !userId) {
+       return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required chatId or userId.' 
+      });
+    }
+    
+    // Now check if *any* content type is present
+    const hasText = content && content.trim() !== '';
+    const hasImage = !!imageUrl;
+    const hasTradeData = additionalData && !!additionalData.tradeData;
+    const hasNftData = additionalData && !!additionalData.nftData;
+
+    if (!hasText && !hasImage && !hasTradeData && !hasNftData) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Missing required fields. Message must contain text content or an image.' 
+        error: 'Message must contain text, an image, trade data, or NFT data.' 
       });
     }
 

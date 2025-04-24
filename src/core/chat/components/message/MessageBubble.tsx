@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MessageBubbleProps } from './message.types';
+import { MessageBubbleProps, MessageData, NFTData, NftListingData } from './message.types';
 import { messageBubbleStyles } from './message.styles';
 import { mergeStyles } from '@/core/thread/utils';
-import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { IPFSAwareImage, getValidImageSource, fixIPFSUrl } from '@/shared/utils/IPFSImage';
 import MessageTradeCard from './MessageTradeCard';
 import MessageNFT from './MessageNFT';
 import COLORS from '@/assets/colors';
@@ -13,6 +13,7 @@ import SectionTrade from '@/core/thread/components/sections/SectionTrade';
 import SectionNftListing from '@/core/thread/components/sections/SectionNftListing';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import Icons from '@/assets/svgs';
+import { ThreadPost } from '@/core/thread/components/thread.types';
 
 // Custom Retweet icon since it doesn't exist in the Icons object
 const RetweetIcon = ({ width = 14, height = 14, color = COLORS.greyLight }) => (
@@ -25,6 +26,9 @@ const RetweetIcon = ({ width = 14, height = 14, color = COLORS.greyLight }) => (
 );
 
 function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides }: MessageBubbleProps) {
+  // Log 1: Incoming message structure
+  console.log('[MessageBubble] Received message prop:', JSON.stringify(message, null, 2));
+
   // Use utility function to merge styles
   const styles = mergeStyles(
     messageBubbleStyles,
@@ -32,12 +36,18 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     undefined
   );
 
+  // Determine the actual data source, safely checking for additional_data
+  const hasAdditionalData = 'additional_data' in message && message.additional_data !== null && message.additional_data !== undefined;
+  const messageDataSource = hasAdditionalData ? message.additional_data : message;
+  // Log 1.1: Determined data source
+  // console.log('[MessageBubble] Determined messageDataSource:', messageDataSource);
+
   // Check if this is a retweet
   const isRetweet = 'retweetOf' in message && message.retweetOf !== undefined && message.retweetOf !== null;
   const isQuoteRetweet = isRetweet && 'sections' in message && message.sections && message.sections.length > 0;
 
-  // For retweets, we'll use the original post for content
-  const postToDisplay = isRetweet && message.retweetOf ? message.retweetOf : message;
+  // Use the determined data source for display
+  const postToDisplay = isRetweet && message.retweetOf ? message.retweetOf : messageDataSource;
 
   // Determine message style based on sender
   const bubbleStyle = [
@@ -51,81 +61,53 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     !isCurrentUser && styles.otherUserText
   ];
 
-  // Get content type - either from contentType property or infer from post data
-  const getContentType = (post: any) => {
-    // If post has explicit contentType, use it
-    if ('contentType' in post && post.contentType) {
-      return post.contentType;
+  // Update getContentType to check additional_data safely
+  const getContentType = (msg: MessageData | ThreadPost): string => {
+    const source = ('additional_data' in msg && msg.additional_data) ? msg.additional_data : msg;
+
+    // Type guard to ensure source is not null/undefined if it came from additional_data
+    if (!source) return 'text';
+
+    if ('contentType' in source && source.contentType) return source.contentType;
+    // Check specific data fields if they exist on the source
+    if ('tradeData' in source && source.tradeData) return 'trade';
+    if ('nftData' in source && source.nftData) return 'nft';
+    if ('media' in source && source.media && source.media.length > 0) return 'media';
+    if ('image_url' in source && source.image_url) return 'image';
+
+    if ('sections' in source && source.sections) {
+      const sections = source.sections as any[];
+      if (sections.some(section => section.type === 'TEXT_TRADE' && section.tradeData)) return 'trade';
+      if (sections.some(section => section.type === 'NFT_LISTING' && section.listingData)) return 'nft';
+      if (sections.some(section => section.type === 'TEXT_IMAGE' || section.imageUrl || section.type === 'TEXT_VIDEO' || section.videoUrl)) return 'media';
     }
 
-    // Check for tradeData
-    if ('tradeData' in post && post.tradeData) {
-      return 'trade';
-    }
-
-    // Check for nftData
-    if ('nftData' in post && post.nftData) {
-      return 'nft';
-    }
-
-    // Check for message with media
-    if ('media' in post && post.media && post.media.length > 0) {
-      return 'media';
-    }
-
-    // Check for image_url in chat messages
-    if ('image_url' in post && post.image_url) {
-      return 'image';
-    }
-
-    // Check for thread post with sections
-    if ('sections' in post && post.sections) {
-      const sections = post.sections as any[];
-
-      // Check if any section has trade data
-      if (sections.some(section => section.type === 'TEXT_TRADE' && section.tradeData)) {
-        return 'trade';
-      }
-
-      // Check if any section has NFT listing data
-      if (sections.some(section => section.type === 'NFT_LISTING' && section.listingData)) {
-        return 'nft';
-      }
-
-      // Check if any section has media
-      if (sections.some(section =>
-        section.type === 'TEXT_IMAGE' ||
-        section.type === 'TEXT_VIDEO' ||
-        section.imageUrl ||
-        section.videoUrl
-      )) {
-        return 'media';
-      }
-    }
-
-    // Default to text
     return 'text';
   };
 
-  // Get content based on type for the appropriate post (original for retweets, or the current post)
-  const contentType = getContentType(postToDisplay);
+  const contentType = getContentType(message);
+  // Log 2: Determined content type
+  console.log(`[MessageBubble] Message ID ${message.id} - Determined contentType: ${contentType}`);
 
-  // Handle thread posts vs direct message data
+  // Update getMessageText to check additional_data safely
   const getMessageText = (post: any) => {
-    return 'sections' in post
-      ? post.sections.map((section: any) => section.text).join('\n')
-      : post.text || '';
+    const source = ('additional_data' in post && post.additional_data) ? post.additional_data : post;
+    if (!source) return '';
+    return ('sections' in source && source.sections)
+      ? source.sections.map((section: any) => section.text).join('\n')
+      : ('text' in source ? source.text : '') || '';
   };
 
   const messageText = getMessageText(postToDisplay);
 
-  // Get media from different sources
+  // Update getMediaUrls to check additional_data safely
   const getMediaUrls = (post: any) => {
-    if ('media' in post && post.media) {
-      return post.media;
-    } else if ('sections' in post) {
-      // Extract media URLs from thread post sections
-      return post.sections
+    const source = ('additional_data' in post && post.additional_data) ? post.additional_data : post;
+    if (!source) return [];
+    if ('media' in source && source.media) {
+      return source.media;
+    } else if ('sections' in source && source.sections) {
+      return source.sections
         .filter((section: any) => section.type === 'TEXT_IMAGE' || section.imageUrl)
         .map((section: any) => section.imageUrl || '');
     }
@@ -135,7 +117,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
   const mediaUrls = getMediaUrls(postToDisplay);
   const hasMedia = mediaUrls.length > 0;
 
-  // Get trade data from post sections if available
+  // Get trade data (check additional_data first)
   const getTradeDataFromSections = (post: any) => {
     if ('sections' in post && post.sections) {
       const tradeSection = post.sections.find((section: any) =>
@@ -146,7 +128,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     return null;
   };
 
-  // Get NFT data from post sections if available
+  // Get NFT data (check additional_data first)
   const getNftDataFromSections = (post: any) => {
     if ('sections' in post && post.sections) {
       const nftSection = post.sections.find((section: any) =>
@@ -171,171 +153,124 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     return null;
   };
 
-  // Get the appropriate trade data
-  const tradeData = 'tradeData' in postToDisplay
-    ? postToDisplay.tradeData
-    : getTradeDataFromSections(postToDisplay);
+  // Update tradeData retrieval with null check
+  const tradeData =
+    (hasAdditionalData && messageDataSource && 'tradeData' in messageDataSource ? messageDataSource.tradeData :
+      (postToDisplay && 'tradeData' in postToDisplay && postToDisplay.tradeData) ||
+      getTradeDataFromSections(postToDisplay)) || null; // Default to null
+  // Log 3.1: Extracted tradeData
+  if (tradeData) console.log(`[MessageBubble] Message ID ${message.id} - Extracted tradeData:`, tradeData);
 
-  // Get the appropriate NFT data - handle null case safely
-  const rawNftData = 'nftData' in postToDisplay
-    ? postToDisplay.nftData
-    : getNftDataFromSections(postToDisplay);
+  // Update nftData retrieval with null check
+  const rawNftData =
+    (hasAdditionalData && messageDataSource && 'nftData' in messageDataSource ? messageDataSource.nftData :
+      (postToDisplay && 'nftData' in postToDisplay && postToDisplay.nftData) ||
+      getNftDataFromSections(postToDisplay)) || null; // Default to null
+  // Log 3.2: Extracted rawNftData
+  // if (rawNftData) console.log(`[MessageBubble] Message ID ${message.id} - Extracted rawNftData:`, rawNftData);
 
-  // Only set nftData if it's non-null to avoid TypeScript errors
-  const nftData = rawNftData ? {
-    id: rawNftData.id || 'unknown-nft',
-    name: rawNftData.name || 'NFT',
-    description: rawNftData.description || '',
-    image: rawNftData.image || '',
-    collectionName: rawNftData.collectionName || '',
-    mintAddress: rawNftData.mintAddress || rawNftData.id || '' // Ensure we have the mint address
-  } : null;
+  // Harmonize rawNftData into the NFTData structure expected by MessageNFT
+  const nftData: NFTData | null = useMemo(() => {
+    if (!rawNftData) {
+      return null;
+    }
 
-  // Render content based on content type
+    // Check if rawNftData is NftListingData (from additional_data)
+    if ('mint' in rawNftData || 'collId' in rawNftData) {
+      // It's likely NftListingData or similar
+      const listing = rawNftData as NftListingData;
+      return {
+        id: listing.mint || listing.collId || 'unknown-id', // Use mint or collId as ID
+        name: listing.name || 'NFT Listing',
+        description: listing.collectionDescription || '', // Use collection desc if available
+        image: listing.image || listing.collectionImage || '',
+        collectionName: listing.collectionName || '',
+        // mintAddress is not directly available in NftListingData, use mint
+        mintAddress: listing.mint || '',
+      };
+    }
+    // Check if it's the older NFTData structure (if still used directly on message)
+    else if ('id' in rawNftData && 'mintAddress' in rawNftData) {
+      // It's likely the original NFTData structure
+      return rawNftData as NFTData;
+    }
+
+    // Fallback if structure is unexpected
+    console.warn('Unexpected rawNftData structure:', rawNftData);
+    return null;
+
+  }, [rawNftData]);
+  // Log 3.3: Harmonized nftData
+  if (nftData) console.log(`[MessageBubble] Message ID ${message.id} - Harmonized nftData:`, nftData);
+
+  // Update renderPostContent to handle potential null source from additional_data
   const renderPostContent = (post: any) => {
-    const postContentType = getContentType(post);
+    // Determine the source safely
+    const source = ('additional_data' in post && post.additional_data) ? post.additional_data : post;
+
+    // If source is null (e.g., from additional_data being null), render nothing or fallback
+    if (!source) {
+      // console.warn("RenderPostContent received null source");
+      return null;
+    }
+
+    const postContentType = getContentType(post); // Get type from original message structure
+    // Log 4: Path taken in renderPostContent
+    console.log(`[MessageBubble] Message ID ${message.id} - renderPostContent executing case: ${postContentType}`);
 
     switch (postContentType) {
       case 'image':
-        // Handle single image from chat message
         return (
           <View style={styles.messageContent}>
             <View style={styles.imageContainer}>
               <IPFSAwareImage
-                source={getValidImageSource(post.image_url)}
+                source={getValidImageSource(source.image_url)}
                 style={styles.messageImage}
                 defaultSource={DEFAULT_IMAGES.placeholder}
                 resizeMode="cover"
               />
             </View>
-            {post.text && post.text.trim() !== '' && (
-              <Text style={[textStyle, styles.imageCaption]}>{post.text}</Text>
+            {'text' in source && source.text && source.text.trim() !== '' && (
+              <Text style={[textStyle, styles.imageCaption]}>{source.text}</Text>
             )}
           </View>
         );
-
       case 'trade':
         if (tradeData) {
-          return (
-            <MessageTradeCard
-              tradeData={tradeData}
-              isCurrentUser={isCurrentUser}
-              userAvatar={post.user?.avatar}
-            />
-          );
-        } else if ('sections' in post) {
-          // Render trade section directly for more complex trade data
-          const tradeSection = post.sections.find((section: any) => section.type === 'TEXT_TRADE');
-          if (tradeSection) {
-            return (
-              <View style={styles.sectionContainer}>
-                {tradeSection.text && <Text style={textStyle}>{tradeSection.text}</Text>}
-                <SectionTrade
-                  text={tradeSection.text}
-                  tradeData={tradeSection.tradeData}
-                  user={post.user}
-                  createdAt={post.createdAt}
-                />
-              </View>
-            );
-          }
+          console.log(`[MessageBubble] Message ID ${message.id} - Rendering MessageTradeCard`);
+          return <MessageTradeCard tradeData={tradeData} isCurrentUser={isCurrentUser} userAvatar={('user' in post && post.user?.avatar) || ('user' in source && source.user?.avatar)} />;
+        } else {
+          console.log(`[MessageBubble] Message ID ${message.id} - ContentType is 'trade' but tradeData is null/falsy.`);
         }
         break;
-
       case 'nft':
         if (nftData) {
-          return (
-            <MessageNFT
-              nftData={nftData}
-              isCurrentUser={isCurrentUser}
-              onPress={() => {
-                // Navigate to parent component through event bubbling
-                // ChatScreen will receive this click and open TokenDetailsDrawer
-                const bubbleClickEvent = new CustomEvent('message-click', {
-                  detail: { message: message, type: 'nft', data: nftData }
-                });
-                window.dispatchEvent(bubbleClickEvent);
-              }}
-            />
-          );
-        } else if ('sections' in post) {
-          // For thread posts with NFT listing sections
-          const nftSections = post.sections.filter((section: any) =>
-            section.type === 'NFT_LISTING' && section.listingData
-          );
-
-          if (nftSections.length > 0) {
-            return (
-              <View style={styles.sectionContainer}>
-                {nftSections.map((section: any, index: number) => (
-                  <SectionNftListing
-                    key={`nft-${index}`}
-                    listingData={section.listingData}
-                    compact={true}
-                  />
-                ))}
-              </View>
-            );
-          }
+          console.log(`[MessageBubble] Message ID ${message.id} - Rendering MessageNFT`);
+          return <MessageNFT nftData={nftData} isCurrentUser={isCurrentUser} onPress={() => { console.log('NFT Clicked', nftData); /* Trigger drawer opening */ }} />;
+        } else {
+          console.log(`[MessageBubble] Message ID ${message.id} - ContentType is 'nft' but nftData is null/falsy.`);
         }
         break;
-
       case 'media':
-        if ('sections' in post) {
-          // Render each section appropriately
-          return (
-            <View>
-              {post.sections.map((section: any, index: number) => {
-                if (section.type === 'TEXT_IMAGE' || section.imageUrl) {
-                  return (
-                    <View key={`img-${index}`}>
-                      {section.text && <Text style={textStyle}>{section.text}</Text>}
-                      <SectionTextImage
-                        text={section.text}
-                        imageUrl={section.imageUrl}
-                      />
-                    </View>
-                  );
-                } else if (section.type === 'TEXT_VIDEO' || section.videoUrl) {
-                  return (
-                    <View key={`vid-${index}`}>
-                      {section.text && <Text style={textStyle}>{section.text}</Text>}
-                      <SectionTextVideo
-                        text={section.text}
-                        videoUrl={section.videoUrl}
-                      />
-                    </View>
-                  );
-                }
-                return null;
-              })}
+        const mediaDataSource = ('sections' in source && source.sections) ? source : post;
+        return (
+          <View>
+            {getMessageText(mediaDataSource) && <Text style={textStyle}>{getMessageText(mediaDataSource)}</Text>}
+            <View style={styles.mediaContainer}>
+              {getMediaUrls(mediaDataSource).map((mediaUrl: string, index: number) => (
+                <IPFSAwareImage key={`media-${index}`} source={getValidImageSource(mediaUrl)} style={styles.mediaImage} resizeMode="cover" />
+              ))}
             </View>
-          );
-        } else {
-          // Basic media rendering
-          return (
-            <View>
-              {getMessageText(post) && <Text style={textStyle}>{getMessageText(post)}</Text>}
-
-              <View style={styles.mediaContainer}>
-                {getMediaUrls(post).map((mediaUrl: string, index: number) => (
-                  <IPFSAwareImage
-                    key={`media-${index}`}
-                    source={getValidImageSource(mediaUrl)}
-                    style={styles.mediaImage}
-                    resizeMode="cover"
-                  />
-                ))}
-              </View>
-            </View>
-          );
-        }
-
+          </View>
+        );
       case 'text':
       default:
-        // For plain text messages
-        return <Text style={textStyle}>{messageText}</Text>;
+        // Ensure text is accessed safely from the correct source
+        const textToShow = ('text' in source) ? source.text : ('text' in post ? post.text : '');
+        console.log(`[MessageBubble] Message ID ${message.id} - Rendering default text case.`);
+        return <Text style={textStyle}>{textToShow}</Text>;
     }
+    return null; // Add default return null
   };
 
   // If this is a retweet, show it with the retweet header
@@ -401,10 +336,16 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
 
   // For trade and NFT content, return without the bubble container
   if (contentType === 'trade' || contentType === 'nft') {
-    return renderPostContent(message);
+    console.log(`[MessageBubble] Message ID ${message.id} - Rendering Trade/NFT content (potentially without bubble)`);
+    return (
+      <View style={bubbleStyle}>
+        {renderPostContent(postToDisplay)}
+      </View>
+    );
   }
 
   // For text and media content, wrap in a bubble
+  console.log(`[MessageBubble] Message ID ${message.id} - Rendering standard content within bubble`);
   return (
     <View style={bubbleStyle}>
       {isRetweet && !isQuoteRetweet && (
