@@ -10,7 +10,7 @@ class SocketService {
   private socket: Socket | null = null;
   private userId: string | null = null;
   private activeRooms: Set<string> = new Set();
-  private isConnected: boolean = false;
+  private _isConnected: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private isPersistent: boolean = true; // Keep connection persistent by default
@@ -18,7 +18,7 @@ class SocketService {
   // Initialize the socket connection
   public initSocket(userId: string): Promise<boolean> {
     return new Promise((resolve) => {
-      if (this.socket && this.isConnected && this.userId === userId) {
+      if (this.socket && this._isConnected && this.userId === userId) {
         console.log('Socket already connected for user', userId);
         resolve(true);
         return;
@@ -62,7 +62,7 @@ class SocketService {
         console.log('Socket connected, authenticating...');
         console.log('Active transport:', this.socket?.io.engine.transport.name);
         this.authenticate(userId);
-        this.isConnected = true;
+        this._isConnected = true;
         
         // Rejoin all active rooms after reconnection
         if (this.activeRooms.size > 0) {
@@ -92,7 +92,7 @@ class SocketService {
           transport: this.socket?.io?.engine?.transport?.name || 'unknown'
         });
         
-        this.isConnected = false;
+        this._isConnected = false;
         this.reconnectAttempts++;
         
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -105,7 +105,7 @@ class SocketService {
             
             // Set a timeout for this final attempt
             setTimeout(() => {
-              if (!this.isConnected) {
+              if (!this._isConnected) {
                 console.error('Failed to connect even with polling transport');
                 resolve(false);
               }
@@ -128,7 +128,7 @@ class SocketService {
 
       // Set a timeout for initial connection
       setTimeout(() => {
-        if (!this.isConnected) {
+        if (!this._isConnected) {
           console.error('Initial connection timeout, resolving as false');
           resolve(false);
         }
@@ -214,7 +214,7 @@ class SocketService {
     // Handle disconnection
     this.socket.on('disconnect', (reason: string) => {
       console.log('Socket disconnected:', reason);
-      this.isConnected = false;
+      this._isConnected = false;
       
       // Don't clear active rooms on disconnect - we want to rejoin them on reconnect
       
@@ -329,7 +329,7 @@ class SocketService {
       if (this.socket) {
         this.socket.disconnect();
         this.activeRooms.clear();
-        this.isConnected = false;
+        this._isConnected = false;
       }
     } else {
       console.log('Disconnection requested but persistent mode is enabled, keeping connection active');
