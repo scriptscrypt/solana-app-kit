@@ -186,7 +186,8 @@ const ChatListScreen: React.FC = () => {
       avatar: AI_AGENT.avatar,
     };
 
-    // Create global chat item
+    // Create global chat item - commented out as requested
+    /*
     const globalChat = {
       id: 'global',
       name: 'Global Community',
@@ -205,6 +206,7 @@ const ChatListScreen: React.FC = () => {
       avatar: DEFAULT_IMAGES.groupChat,
       memberCount: getTotalUserCount(), // Add the total user count
     };
+    */
 
     // Filter and format API chats
     const apiChats = chats.map(chat => {
@@ -249,8 +251,8 @@ const ChatListScreen: React.FC = () => {
       };
     });
 
-    // Return AI Agent first, then global, then other chats
-    return [aiAgentChat, globalChat, ...apiChats];
+    // Return AI Agent first, then other chats (global chat is commented out)
+    return [aiAgentChat, ...apiChats];
   }, [chats, userId, allPosts.length, getGlobalChatLastMessage, getGlobalChatTime, getTotalUserCount]);
 
   // Filter chats based on search query
@@ -290,8 +292,16 @@ const ChatListScreen: React.FC = () => {
     const isDirect = item.type === 'direct';
     const isAI = item.id === AI_AGENT.id;
 
-    // For direct chats, get online status (mock for now)
-    let isOnline = isDirect ? Math.random() > 0.5 : false; // Random for demo purposes
+    // For direct chats, get online status from the user's is_active property
+    let isOnline = false;
+    
+    // Check if the user is actually online based on is_active property
+    if (isDirect && item.participants) {
+      const otherParticipant = item.participants.find((p: any) => p.id !== userId);
+      if (otherParticipant) {
+        isOnline = otherParticipant.is_active === true;
+      }
+    }
 
     // Always show AI as online
     if (isAI) {
