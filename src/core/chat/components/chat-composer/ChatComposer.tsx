@@ -43,6 +43,7 @@ import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
 import { uploadChatImage } from '../../services/chatImageService';
 import { sendMessage } from '@/shared/state/chat/slice';
+import socketService from '@/services/socketService';
 
 /**
  * Props for the ChatComposer component
@@ -474,13 +475,28 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
       console.log(`[ChatComposer] Sharing NFT to chat ${chatContext.chatId}`);
       setIsSubmitting(true);
       try {
-        await dispatch(sendMessage({
+        // Send via API
+        const resultAction = await dispatch(sendMessage({
           chatId: chatContext.chatId,
           userId: currentUser.id,
           content: '', // Can be empty when sending structured data
           additionalData: { nftData: data }, // Send NFT data here
         })).unwrap();
-        // Optionally clear composer or give feedback
+
+        // If successful and we have socket connection, also send via socket for real-time updates
+        if (resultAction && resultAction.id) {
+          // Create a message payload for the socket that includes all necessary data
+          const socketPayload = {
+            ...resultAction,
+            senderId: currentUser.id,
+            sender_id: currentUser.id,
+            chatId: chatContext.chatId,
+            chat_room_id: chatContext.chatId
+          };
+
+          // Send via socket (if connected)
+          socketService.sendMessage(chatContext.chatId, socketPayload);
+        }
       } catch (error) {
         console.error('Failed to send NFT message:', error);
         Alert.alert('Error', 'Could not share NFT to chat.');
@@ -543,7 +559,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         setIsSubmitting(false);
       }
     }
-  }, [chatContext, currentUser, dispatch]); // Added currentUser to dependency array
+  }, [chatContext, currentUser, dispatch]);
 
   // Define the onShare handler for Trade modal
   const handleShareTrade = useCallback(async (data: TradeData) => {
@@ -552,12 +568,28 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
       console.log(`[ChatComposer] Sharing Trade to chat ${chatContext.chatId}`);
       setIsSubmitting(true);
       try {
-        await dispatch(sendMessage({
+        // Send via API
+        const resultAction = await dispatch(sendMessage({
           chatId: chatContext.chatId,
           userId: currentUser.id,
           content: '',
           additionalData: { tradeData: data }, // Send Trade data here
         })).unwrap();
+
+        // If successful and we have socket connection, also send via socket for real-time updates
+        if (resultAction && resultAction.id) {
+          // Create a message payload for the socket that includes all necessary data
+          const socketPayload = {
+            ...resultAction,
+            senderId: currentUser.id,
+            sender_id: currentUser.id,
+            chatId: chatContext.chatId,
+            chat_room_id: chatContext.chatId
+          };
+
+          // Send via socket (if connected)
+          socketService.sendMessage(chatContext.chatId, socketPayload);
+        }
       } catch (error) {
         console.error('Failed to send trade message:', error);
         Alert.alert('Error', 'Could not share trade to chat.');

@@ -8,6 +8,7 @@ export interface ChatParticipant {
   username: string;
   profile_picture_url: string | null;
   is_admin?: boolean;
+  is_active?: boolean;
 }
 
 export interface ChatMessage {
@@ -50,6 +51,7 @@ interface ChatState {
   loadingMessages: boolean;
   loadingUsers: boolean;
   error: string | null;
+  onlineUsers: { [userId: string]: boolean };
 }
 
 // Initial state
@@ -62,6 +64,7 @@ const initialState: ChatState = {
   loadingMessages: false,
   loadingUsers: false,
   error: null,
+  onlineUsers: {},
 };
 
 // Async Thunks
@@ -230,6 +233,17 @@ export const deleteMessage = createAsyncThunk(
       const errorMsg = error.response?.data?.error || error.message || 'Failed to delete message';
       console.error(`[Thunk deleteMessage] Error:`, errorMsg, error.response?.data);
       return rejectWithValue(errorMsg);
+    }
+  }
+);
+
+export const updateUserOnlineStatus = createAsyncThunk(
+  'chat/updateUserOnlineStatus',
+  async (payload: { userId: string; isOnline: boolean }, { rejectWithValue }) => {
+    try {
+      return payload;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to update user online status');
     }
   }
 );
@@ -414,6 +428,22 @@ const chatSlice = createSlice({
           }
         }
       });
+    
+    // Update user online status
+    builder.addCase(updateUserOnlineStatus.fulfilled, (state, action) => {
+      const { userId, isOnline } = action.payload;
+      state.onlineUsers[userId] = isOnline;
+      
+      // Also update the is_active property on participants
+      state.chats.forEach(chat => {
+        if (chat.participants) {
+          const participant = chat.participants.find(p => p.id === userId);
+          if (participant) {
+            participant.is_active = isOnline;
+          }
+        }
+      });
+    });
   },
 });
 

@@ -335,6 +335,41 @@ class SocketService {
       console.log('Disconnection requested but persistent mode is enabled, keeping connection active');
     }
   }
+
+  // Update the isConnected method to be public
+  public isConnected(): boolean {
+    return !!this.socket && this.socket.connected;
+  }
+
+  // Add an emit method to send events
+  public emit(event: string, data: any): void {
+    if (this.isConnected()) {
+      this.socket!.emit(event, data);
+    } else {
+      console.warn(`Cannot emit "${event}" - socket not connected`);
+    }
+  }
+
+  // Add subscribeToEvent and unsubscribeFromEvent methods
+  public subscribeToEvent(event: string, callback: (data: any) => void): void {
+    if (!this.socket) {
+      console.warn(`Cannot subscribe to "${event}" - socket not initialized`);
+      return;
+    }
+    
+    this.socket.on(event, callback);
+    console.log(`Subscribed to ${event} events`);
+  }
+
+  public unsubscribeFromEvent(event: string, callback: (data: any) => void): void {
+    if (!this.socket) {
+      console.warn(`Cannot unsubscribe from "${event}" - socket not initialized`);
+      return;
+    }
+    
+    this.socket.off(event, callback);
+    console.log(`Unsubscribed from ${event} events`);
+  }
 }
 
 // Create singleton instance

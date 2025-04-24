@@ -22,7 +22,7 @@ import COLORS from '@/assets/colors';
 import { styles } from './ChatListScreen.styles';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
-import { fetchUserChats, ChatRoom } from '@/shared/state/chat/slice';
+import { fetchUserChats, ChatRoom, updateUserOnlineStatus } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
 
 type ChatListNavigationProp = StackNavigationProp<RootStackParamList, 'ChatListScreen'>;
@@ -69,6 +69,9 @@ const ChatListScreen: React.FC = () => {
   // Local loading state while fetching initial data
   const [isLoading, setIsLoading] = useState(true);
 
+  // State to track online users
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+
   // Initialize Socket connection
   useEffect(() => {
     if (userId) {
@@ -80,14 +83,61 @@ const ChatListScreen: React.FC = () => {
       // Set to persistent mode to keep the connection active between screens
       socketService.setPersistentMode(true);
 
-      // Clean up on unmount - don't fully disconnect, just leave specific rooms if needed
+      // Send online status when entering chat list
+      sendOnlineStatus(true);
+
+      // Listen for user status changes
+      const handleUserStatusChange = (data: { userId: string, isOnline: boolean }) => {
+        console.log('User status change:', data);
+        setOnlineUsers(prev => {
+          if (data.isOnline) {
+            // Add user to online users if not already there
+            return prev.includes(data.userId) ? prev : [...prev, data.userId];
+          } else {
+            // Remove user from online users
+            return prev.filter(id => id !== data.userId);
+          }
+        });
+
+        // Update user status in Redux for persistence
+        dispatch(updateUserOnlineStatus({
+          userId: data.userId,
+          isOnline: data.isOnline
+        }));
+      };
+
+      // Subscribe to user status events
+      socketService.subscribeToEvent('user_status_change', handleUserStatusChange);
+
+      // Clean up on unmount
       return () => {
-        // We don't disconnect the socket when leaving this screen
-        // to keep receiving notifications for all chats
+        // Send offline status when leaving chat list
+        sendOnlineStatus(false);
+
+        // Unsubscribe from status events
+        socketService.unsubscribeFromEvent('user_status_change', handleUserStatusChange);
+
         console.log('Leaving ChatListScreen, but keeping socket connected');
       };
     }
-  }, [userId]);
+  }, [userId, dispatch]);
+
+  // Helper function to send online status
+  const sendOnlineStatus = (isOnline: boolean) => {
+    if (userId) {
+      console.log(`Sending user ${isOnline ? 'online' : 'offline'} status`);
+      socketService.emit('user_status', {
+        userId: userId,
+        isOnline: isOnline
+      });
+
+      // Also update in Redux
+      dispatch(updateUserOnlineStatus({
+        userId: userId,
+        isOnline: isOnline
+      }));
+    }
+  };
 
   // Fetch both posts (for global chat) and user's chats
   useEffect(() => {
@@ -292,14 +342,15 @@ const ChatListScreen: React.FC = () => {
     const isDirect = item.type === 'direct';
     const isAI = item.id === AI_AGENT.id;
 
-    // For direct chats, get online status from the user's is_active property
+    // For direct chats, check online status
     let isOnline = false;
-    
-    // Check if the user is actually online based on is_active property
+
+    // Check if the user is actually online based on our tracked online users array
     if (isDirect && item.participants) {
       const otherParticipant = item.participants.find((p: any) => p.id !== userId);
       if (otherParticipant) {
-        isOnline = otherParticipant.is_active === true;
+        // Check both the is_active property and our runtime onlineUsers array
+        isOnline = otherParticipant.is_active === true || onlineUsers.includes(otherParticipant.id);
       }
     }
 
