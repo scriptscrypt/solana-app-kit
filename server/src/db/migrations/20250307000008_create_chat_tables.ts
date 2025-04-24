@@ -5,8 +5,8 @@
  * - chat_rooms: Stores information about chat conversations
  * - chat_messages: Stores individual messages in chat rooms
  */
-// import { Knex } from 'knex'; // Old import
-import Knex from 'knex'; // Try default import
+import { Knex } from 'knex'; // Old import
+// import Knex from 'knex'; // Try default import
 
 // Adjust type hint for the knex parameter if needed based on default import
 export async function up(knex: Knex): Promise<void> {

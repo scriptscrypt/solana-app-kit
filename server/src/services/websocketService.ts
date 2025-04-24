@@ -131,6 +131,11 @@ export class WebSocketService {
         this.handleTypingIndicator(socket, data);
       });
 
+      // Handle user status
+      socket.on('user_status', (data: { userId: string, isOnline: boolean }) => {
+        this.handleUserStatus(socket, data);
+      });
+
       // Handle disconnect
       socket.on('disconnect', (reason) => {
         console.log(`Socket ${socket.id} disconnected due to: ${reason}`);
@@ -250,26 +255,56 @@ export class WebSocketService {
   }
 
   /**
+   * Handle user online status
+   */
+  private handleUserStatus(socket: Socket, data: { userId: string, isOnline: boolean }): void {
+    const userId = this.socketUserMap.get(socket.id);
+    
+    // Verify the user is authenticated and the userId matches
+    if (!userId || userId !== data.userId) {
+      socket.emit('error', { message: 'User ID mismatch or not authenticated' });
+      return;
+    }
+    
+    console.log(`User ${userId} status changed to ${data.isOnline ? 'online' : 'offline'}`);
+    
+    // Broadcast to all connected clients that this user's status changed
+    // This is a global broadcast to all sockets
+    this.io.emit('user_status_change', {
+      userId: data.userId,
+      isOnline: data.isOnline
+    });
+  }
+
+  /**
    * Handle socket disconnect
    */
   private handleDisconnect(socket: Socket): void {
     const userId = this.socketUserMap.get(socket.id);
     if (!userId) return;
-    
-    console.log(`User ${userId} disconnected from socket ${socket.id}`);
-    
-    // Remove socket from user's socket list
+
+    // Remove this socket from user's socket list
     const userSockets = this.userSocketMap.get(userId) || [];
     const updatedSockets = userSockets.filter(id => id !== socket.id);
     
-    if (updatedSockets.length > 0) {
-      this.userSocketMap.set(userId, updatedSockets);
-    } else {
-      // If no sockets left, remove user entirely
+    // Remove userId -> socketId mapping if no sockets left
+    if (updatedSockets.length === 0) {
       this.userSocketMap.delete(userId);
+      
+      // Broadcast that user is offline
+      this.io.emit('user_status_change', {
+        userId,
+        isOnline: false
+      });
+      
+      console.log(`User ${userId} is now fully offline (no active sockets)`);
+    } else {
+      // User still has active sockets
+      this.userSocketMap.set(userId, updatedSockets);
+      console.log(`User ${userId} still has ${updatedSockets.length} active sockets`);
     }
     
-    // Remove socket from socket-user map
+    // Remove socketId -> userId mapping
     this.socketUserMap.delete(socket.id);
   }
 
