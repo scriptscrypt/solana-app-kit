@@ -6,25 +6,9 @@ import ProfileTabs from './ProfileTabs/ProfileTabs';
 
 import { styles as profileStyles } from './profile.style';
 import COLORS from '../../../assets/colors';
-import { UserProfileData, ProfileViewProps } from '../types';
+import { UserProfileData, ProfileViewProps, ExtendedProfileViewProps, WalletAction } from '../types/index';
 import { ThreadPost } from '@/core/thread/types';
 import { PortfolioData, AssetItem } from '@/modules/dataModule';
-
-// If TypeScript still complains, explicitly extend the imported type
-interface ExtendedProfileViewProps extends ProfileViewProps {
-  onEditPost?: (post: ThreadPost) => void;
-  onShareProfile?: () => void;
-  onLogout?: () => void;
-}
-
-// Define Action type locally if not exported
-interface WalletAction {
-  type: string;
-  timestamp: string;
-  // Add other expected fields based on usage in ActionsPage
-  data?: any;
-  metadata?: any;
-}
 
 // Pure component that only renders when props actually change
 const ProfileInfoMemo = memo(UserProfileInfo);

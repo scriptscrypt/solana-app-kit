@@ -2,13 +2,13 @@
  * Custom hook for profile following functionality
  */
 import { useState, useCallback, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../../../hooks/useReduxHooks';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { 
   fetchFollowers, 
   fetchFollowing, 
   checkIfUserFollowsMe,
 } from '../services/profileService';
-import { followUser, unfollowUser } from '../../../state/users/reducer';
+import { followUser, unfollowUser } from '@/shared/state/users/reducer';
 
 /**
  * Hook for handling follow/unfollow functionality
@@ -31,7 +31,9 @@ export function useProfileFollow(userWallet: string, currentWallet: string) {
   const [isFollowStatusLoading, setIsFollowStatusLoading] = useState(true);
   
   // Check if the current user is already following this profile
-  const followingReducerState = useAppSelector((state) => state.users.following);
+  const currentUserProfile = useAppSelector((state) => 
+    currentWallet ? state.users.byId[currentWallet] : undefined
+  );
   
   // Load followers
   const loadFollowers = useCallback(async () => {
@@ -92,23 +94,24 @@ export function useProfileFollow(userWallet: string, currentWallet: string) {
       setAreTheyFollowingMe(theyFollowMe);
       
       // Check if we're following them
-      const iAmFollowing = followingReducerState.some(
-        (address) => address === userWallet
-      );
+      const iAmFollowing = currentUserProfile?.following?.includes(userWallet) || false;
       setAmIFollowing(iAmFollowing);
     } catch (error) {
       console.error('Error checking follow status:', error);
     } finally {
       setIsFollowStatusLoading(false);
     }
-  }, [userWallet, currentWallet, followingReducerState]);
+  }, [userWallet, currentWallet, currentUserProfile]);
 
   // Follow a user
   const handleFollowUser = useCallback(async () => {
     if (!userWallet || !currentWallet || userWallet === currentWallet) return;
     
     try {
-      await dispatch(followUser(userWallet));
+      await dispatch(followUser({ 
+        followerId: currentWallet, 
+        followingId: userWallet 
+      }));
       setAmIFollowing(true);
       // Update followers list
       setFollowersList((prev) => [
@@ -125,7 +128,10 @@ export function useProfileFollow(userWallet: string, currentWallet: string) {
     if (!userWallet || !currentWallet || userWallet === currentWallet) return;
     
     try {
-      await dispatch(unfollowUser(userWallet));
+      await dispatch(unfollowUser({ 
+        followerId: currentWallet, 
+        followingId: userWallet
+      }));
       setAmIFollowing(false);
       // Update followers list
       setFollowersList((prev) => 
@@ -165,4 +171,4 @@ export function useProfileFollow(userWallet: string, currentWallet: string) {
     refreshFollowers: loadFollowers,
     refreshFollowing: loadFollowing,
   };
-} 
+}

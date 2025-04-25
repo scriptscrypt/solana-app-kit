@@ -3,7 +3,7 @@ import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
 import type {
   ThreadPost,
   ThreadSection,
-} from '../../core/thread/components/thread.types';
+} from '@/core/thread/components/thread.types';
 import {allposts as fallbackPosts} from '../../mocks/posts';
 import {SERVER_URL} from '@env';
 
@@ -523,19 +523,21 @@ export const threadSlice = createSlice({
       }
 
       // If this post is a reply, decrement the parent's quoteCount
-      if (parentId) {
-        function decrementQuote(posts: ThreadPost[]): boolean {
-          for (const p of posts) {
-            if (p.id === parentId) {
-              if (p.quoteCount > 0) p.quoteCount -= 1;
-              return true;
-            }
-            if (p.replies.length > 0) {
-              if (decrementQuote(p.replies)) return true;
-            }
+      // Helper function moved outside the if block
+      const decrementQuote = (posts: ThreadPost[]): boolean => {
+        for (const p of posts) {
+          if (p.id === parentId) {
+            if (p.quoteCount > 0) p.quoteCount -= 1;
+            return true;
           }
-          return false;
+          if (p.replies.length > 0) {
+            if (decrementQuote(p.replies)) return true;
+          }
         }
+        return false;
+      };
+      
+      if (parentId) {
         decrementQuote(state.allPosts);
       }
     });

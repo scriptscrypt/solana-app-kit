@@ -1,6 +1,7 @@
 import { Connection, Transaction, VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { TokenInfo } from '../types/tokenTypes';
 import { JupiterService, JupiterSwapResponse } from './jupiterService';
+import { RaydiumService } from '../../raydium/services/raydiumService';
 
 export type SwapProvider = 'Jupiter' | 'Raydium' | 'PumpSwap';
 
@@ -14,6 +15,7 @@ export interface TradeResponse {
 
 export interface SwapCallback {
   statusCallback: (status: string) => void;
+  isComponentMounted?: () => boolean;
 }
 
 /**
@@ -21,8 +23,8 @@ export interface SwapCallback {
  * 
  * This service delegates to provider-specific services based on the requested provider:
  * - Jupiter: JupiterService in dataModule
+ * - Raydium: RaydiumService in raydium module
  * - PumpSwap: PumpSwapService in pumpFun module (future)
- * - Raydium: RaydiumService in a future module
  */
 export class TradeService {
   /**
@@ -55,13 +57,20 @@ export class TradeService {
             callbacks
           );
           
+        case 'Raydium':
+          // Use RaydiumService for Raydium swaps
+          return await RaydiumService.executeSwap(
+            inputToken,
+            outputToken,
+            inputAmount,
+            walletPublicKey,
+            sendTransaction,
+            callbacks
+          );
+          
         case 'PumpSwap':
           // In the future, this will use PumpSwapService
           throw new Error('PumpSwap integration not yet implemented');
-          
-        case 'Raydium':
-          // In the future, this will use RaydiumService
-          throw new Error('Raydium integration not yet implemented');
           
         default:
           throw new Error(`Unsupported swap provider: ${provider}`);

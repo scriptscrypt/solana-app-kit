@@ -11,6 +11,7 @@ import { launchRouter } from './routes/pumpfun/pumpfunLaunch';
 // import { buildCompressedNftListingTx } from './utils/compressedNftListing';
 import knex from './db/knex';
 import jupiterSwapRouter from './routes/swap/jupiterSwapRoutes';
+import raydiumSwapRouter from './routes/swap/raydiumSwapRoutes';
 import { threadImageRouter } from './routes/feed/threadImageRoutes';
 import tokenMillRouter from './routes/tokenmill/tokenMillRoutes';
 import { threadRouter } from './routes/feed/threadRoutes';
@@ -164,6 +165,7 @@ app.get('/api/websocket-status', (req, res) => {
 app.use('/api/pumpfun', launchRouter);
 app.use('/api', threadRouter);
 app.use('/api/jupiter', jupiterSwapRouter);
+app.use('/api/raydium', raydiumSwapRouter);
 app.use('/api/profile', profileImageRouter);
 app.use('/api/thread/images', threadImageRouter);
 app.use('/api/pump-swap', pumpSwapRouter);

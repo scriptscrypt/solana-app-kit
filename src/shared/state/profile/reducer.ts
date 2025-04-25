@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import { HELIUS_API_KEY, HELIUS_STAKED_API_KEY } from '@env';
-import { Action, fetchWalletActionsAsync } from '@/core/profile/services/profileActions';
+import { fetchWalletActionsAsync } from '@/core/profile/services/profileActions';
+import { Action } from '@/core/profile/types/index';
 
 interface ProfileState {
   actions: {
@@ -87,8 +88,8 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
       
       if (hasTokenInputs && hasTokenOutputs) {
         // Extract token symbols if available
-        const inputToken = swap.tokenInputs[0];
-        const outputToken = swap.tokenOutputs[0];
+        const inputToken = swap.tokenInputs![0];
+        const outputToken = swap.tokenOutputs![0];
         
         const inputAmount = inputToken.rawTokenAmount?.tokenAmount 
           ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
@@ -109,7 +110,7 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
         };
       } else if (swap.nativeInput && hasTokenOutputs) {
         // SOL to token swap
-        const outputToken = swap.tokenOutputs[0];
+        const outputToken = swap.tokenOutputs![0];
         const outputAmount = outputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(outputToken.rawTokenAmount.tokenAmount) / Math.pow(10, outputToken.rawTokenAmount.decimals || 0)
           : 0;
@@ -118,13 +119,13 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
           swapType: 'SOL_TO_TOKEN',
           inputSymbol: 'SOL',
           outputSymbol: truncateAddress(outputToken.mint),
-          inputAmount: swap.nativeInput.amount / 1_000_000_000, // lamports to SOL
+          inputAmount: Number(swap.nativeInput.amount) / 1_000_000_000, // lamports to SOL
           outputAmount,
           direction: swap.nativeInput.account === walletAddress ? 'OUT' : 'IN'
         };
       } else if (hasTokenInputs && swap.nativeOutput) {
         // Token to SOL swap
-        const inputToken = swap.tokenInputs[0];
+        const inputToken = swap.tokenInputs![0];
         const inputAmount = inputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
           : 0;
@@ -134,7 +135,7 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
           inputSymbol: truncateAddress(inputToken.mint),
           outputSymbol: 'SOL',
           inputAmount,
-          outputAmount: swap.nativeOutput.amount / 1_000_000_000, // lamports to SOL
+          outputAmount: Number(swap.nativeOutput.amount) / 1_000_000_000, // lamports to SOL
           direction: inputToken.userAccount === walletAddress ? 'OUT' : 'IN'
         };
       }
@@ -167,8 +168,7 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
         direction: transfer.fromUserAccount === walletAddress ? 'OUT' : 'IN',
         counterparty: transfer.fromUserAccount === walletAddress 
           ? truncateAddress(transfer.toUserAccount)
-          : truncateAddress(transfer.fromUserAccount),
-        decimals: transfer.decimals || 0
+          : truncateAddress(transfer.fromUserAccount)
       };
     }
     

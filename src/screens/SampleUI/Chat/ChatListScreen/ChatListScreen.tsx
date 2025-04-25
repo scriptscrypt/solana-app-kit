@@ -182,12 +182,11 @@ const ChatListScreen: React.FC = () => {
     const latestPost = [...allPosts]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
+    // Extract text from the first TEXT_ONLY or TEXT_IMAGE section, or any section with text
+    const postText = latestPost.sections.find(s => s.text)?.text || "Shared a post";
+    
     return latestPost.user.username + ": " +
-      (latestPost.text ?
-        (latestPost.text.length > 30 ?
-          latestPost.text.substring(0, 30) + '...' :
-          latestPost.text) :
-        "Shared a post");
+      (postText.length > 30 ? postText.substring(0, 30) + '...' : postText);
   }, [allPosts]);
 
   const getGlobalChatTime = useCallback(() => {
