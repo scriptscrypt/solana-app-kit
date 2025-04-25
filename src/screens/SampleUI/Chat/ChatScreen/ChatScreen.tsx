@@ -900,7 +900,7 @@ function ChatScreen(): React.ReactElement {
   };
 
   // Function to extract NFT data from post sections
-  const getNftDataFromSections = (post: ThreadPost) => {
+  const getNftDataFromSections = (post: ThreadPost): NFTData | null => {
     if (post.sections) {
       const nftSection = post.sections.find(section =>
         section.type === 'NFT_LISTING' && section.listingData
@@ -908,7 +908,7 @@ function ChatScreen(): React.ReactElement {
 
       if (nftSection?.listingData) {
         // Get the raw listing data without type conversion
-        const listingData = nftSection.listingData;
+        const listingData = nftSection.listingData as any; // Use 'any' temporarily for broader access
 
         // Explicitly check if this is a collection
         const isCollection = listingData.isCollection === true ||
@@ -917,24 +917,40 @@ function ChatScreen(): React.ReactElement {
         // Ensure collection ID is set if this is a collection
         const collId = isCollection ? (listingData.collId || listingData.mint || '') : '';
 
-        console.log('NFT Listing data:', {
-          isCollection,
-          collId,
-          mint: listingData.mint,
-          name: listingData.name
-        });
+        console.log('[getNftDataFromSections] Raw listingData:', listingData);
 
-        // Use explicit extraction to ensure we get all the fields correctly
-        return {
-          id: listingData.mint || nftSection.id || 'unknown-nft',
+        // Map the raw listing data to the enhanced NFTData interface
+        const nftData: NFTData = {
+          id: isCollection ? collId : listingData.mint || nftSection.id || 'unknown-nft',
           name: listingData.name || 'NFT',
-          description: listingData.collectionDescription || listingData.name || '',
-          image: listingData.image || '',
+          description: listingData.description || listingData.collectionDescription || '',
+          image: listingData.image || listingData.collectionImage || '',
           collectionName: listingData.collectionName || '',
-          mintAddress: listingData.mint || '', // This is critical - make sure we get the mint address
+          mintAddress: isCollection ? undefined : listingData.mint || '', // Only set mintAddress if it's not a collection
           isCollection: isCollection,
-          collId: collId
+          collId: isCollection ? collId : undefined,
+
+          // NFT specific details (extract if available)
+          owner: listingData.owner,
+          rarityRankTN: listingData.rarityRankTN,
+          numMints: listingData.numMints,
+          attributes: listingData.attributes,
+          listing: listingData.listing,
+          lastSale: listingData.lastSale,
+
+          // Collection specific details (extract if available)
+          slugDisplay: listingData.slugDisplay,
+          slugMe: listingData.slugMe,
+          stats: listingData.stats,
+          tokenCount: listingData.tokenCount,
+          tensorVerified: listingData.tensorVerified,
+          discord: listingData.discord,
+          twitter: listingData.twitter,
+          website: listingData.website,
         };
+
+        console.log('[getNftDataFromSections] Mapped NFTData:', JSON.stringify(nftData, null, 2));
+        return nftData;
       }
     }
     return null;
@@ -1192,30 +1208,41 @@ function ChatScreen(): React.ReactElement {
       const tradeData = getTradeDataFromMessage(item);
 
       if (tradeData) {
-        return (
-          <View style={[
-            styles.messageWrapper,
-            isReply && styles.replyMessageWrapper
-          ]}>
-            {isReply && <View style={styles.replyIndicator} />}
-            {showHeader && (
-              <View style={additionalStyles.messageHeader}>
-                <View style={additionalStyles.avatarContainer}>
-                  <Image
-                    source={item.user?.avatar || DEFAULT_IMAGES.user}
-                    style={additionalStyles.avatar}
-                  />
-                </View>
-                <Text style={additionalStyles.username}>{item.user?.username || 'User'}</Text>
-              </View>
-            )}
+        // Conditionally attach onLongPress to the container view
+        const longPressHandler = isCurrentUser && chatId !== 'global' && chatId !== AI_AGENT.id
+          ? (e: GestureResponderEvent) => handleMessageLongPress(item, e)
+          : undefined;
 
-            <MessageTradeCard
-              tradeData={tradeData}
-              isCurrentUser={isCurrentUser}
-              userAvatar={item.user?.avatar || DEFAULT_IMAGES.user}
-            />
-          </View>
+        return (
+          <TouchableOpacity
+            onLongPress={longPressHandler}
+            activeOpacity={0.9} // Set activeOpacity to avoid visual feedback if no handler
+            disabled={!longPressHandler} // Disable touchable if no handler
+          >
+            <View style={[
+              styles.messageWrapper,
+              isReply && styles.replyMessageWrapper
+            ]}>
+              {isReply && <View style={styles.replyIndicator} />}
+              {showHeader && (
+                <View style={additionalStyles.messageHeader}>
+                  <View style={additionalStyles.avatarContainer}>
+                    <Image
+                      source={item.user?.avatar || DEFAULT_IMAGES.user}
+                      style={additionalStyles.avatar}
+                    />
+                  </View>
+                  <Text style={additionalStyles.username}>{item.user?.username || 'User'}</Text>
+                </View>
+              )}
+
+              <MessageTradeCard
+                tradeData={tradeData}
+                isCurrentUser={isCurrentUser}
+                userAvatar={item.user?.avatar || DEFAULT_IMAGES.user}
+              />
+            </View>
+          </TouchableOpacity>
         );
       }
     }
@@ -1232,7 +1259,10 @@ function ChatScreen(): React.ReactElement {
           name: nftData.name,
           mintAddress: nftData.mintAddress,
           isCollection: nftData.isCollection,
-          collId: nftData.collId
+          collId: nftData.collId,
+          // Add a few more fields to verify they are being passed
+          owner: nftData.owner,
+          stats: nftData.stats
         });
 
         return (

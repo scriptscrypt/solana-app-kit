@@ -5,23 +5,69 @@ import { NftListingData as ModuleNftListingData } from '@/modules/nft/types';
 
 export type NftListingData = ModuleNftListingData;
 
+// Define more detailed interfaces based on TokenDetailsDrawer expectations
+export interface NFTAttribute {
+  trait_type: string;
+  value: string;
+}
+
+export interface NFTListing {
+  price?: string | number; // Lamports or SOL - needs conversion in drawer?
+  // other listing details...
+}
+
+export interface NFTLastSale {
+  price?: string | number; // Lamports or SOL - needs conversion in drawer?
+  // other sale details...
+}
+
+export interface CollectionStats {
+  floorPrice?: number; // Assumed SOL
+  numListed?: number;
+  pctListed?: number;
+  volume24h?: string | number; // Assumed lamports
+  volume7d?: string | number; // Assumed lamports
+  volumeAll?: string | number; // Assumed lamports
+  salesAll?: number;
+  // other stats...
+}
+
+// Extend NFTData with detailed fields
+export interface NFTData {
+  id: string; // Could be mintAddress or collection ID
+  name: string;
+  description?: string;
+  image: string;
+  collectionName?: string;
+  mintAddress?: string; // For individual NFTs
+  isCollection?: boolean;
+  collId?: string; // For collections
+
+  // NFT specific details (optional)
+  owner?: string;
+  rarityRankTN?: number;
+  numMints?: number; // Total items in collection (for rarity context)
+  attributes?: NFTAttribute[];
+  listing?: NFTListing;
+  lastSale?: NFTLastSale;
+
+  // Collection specific details (optional)
+  slugDisplay?: string; // Tensor slug
+  slugMe?: string; // ME slug
+  stats?: CollectionStats;
+  tokenCount?: number; // Alternative to numMints
+  tensorVerified?: boolean;
+  discord?: string;
+  twitter?: string;
+  website?: string;
+}
+
 export interface MessageUser {
   id: string;
   username: string;
   handle?: string;
   avatar?: ImageSourcePropType;
   verified?: boolean;
-}
-
-export interface NFTData {
-  id: string;
-  name: string;
-  description?: string;
-  image: string;
-  collectionName?: string;
-  mintAddress?: string;
-  isCollection?: boolean;
-  collId?: string;
 }
 
 export interface MessageData {

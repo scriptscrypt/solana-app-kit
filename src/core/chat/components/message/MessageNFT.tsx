@@ -6,17 +6,12 @@ import TYPOGRAPHY from '@/assets/typography';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import { buyNft, buyCollectionFloor } from '@/modules/nft';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
+// Import the shared NFTData interface
+import { NFTData } from './message.types';
 
-interface NFTData {
-  id: string;
-  name: string;
-  description?: string;
-  image: string;
-  collectionName?: string;
-  mintAddress?: string;
-  isCollection?: boolean;  // Flag to indicate if this is a collection
-  collId?: string;         // Collection ID for floor buying
-}
+// Removed local interface definitions (NFTAttribute, NFTListing, NFTLastSale, CollectionStats, NFTData)
+// They are now imported from message.types.ts
 
 interface MessageNFTProps {
   nftData: NFTData;
@@ -35,15 +30,32 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
   const [nftConfirmationMsg, setNftConfirmationMsg] = useState('');
   const [loadingFloor, setLoadingFloor] = useState(false);
 
+  // Token Details Drawer states
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [selectedTokenMint, setSelectedTokenMint] = useState<string | null>(null);
+
   const { wallet, address, publicKey, sendTransaction } = useWallet();
 
-  // Handle press with visual feedback
-  const handlePress = () => {
-    console.log('[MessageNFT] handlePress triggered. Calling onPress prop...');
+  // Determine if this is a collection or a specific NFT early on
+  const isCollection = !!(nftData.isCollection && nftData.collId);
+  const displayMint = isCollection ? nftData.collId : nftData.mintAddress;
+
+  // Handle press with visual feedback and open drawer
+  const handleCardPress = () => {
+    console.log('[MessageNFT] Card pressed. Opening Token Details Drawer...');
     setIsPressed(true);
     // Reset press state after short delay
     setTimeout(() => setIsPressed(false), 150);
-    // Call the provided onPress handler
+
+    if (displayMint) {
+      setSelectedTokenMint(displayMint);
+      setIsDrawerVisible(true);
+    } else {
+      console.warn('[MessageNFT] Cannot open drawer: No mint address or collection ID found.');
+      Alert.alert('Error', 'Cannot display details for this item.');
+    }
+
+    // Call the original onPress handler if provided
     if (onPress) onPress();
   };
 
@@ -98,8 +110,8 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
    * Handles buying the floor NFT from a collection
    */
   const handleBuyCollectionFloor = async () => {
-    if (!nftData.isCollection || !nftData.collId) {
-      Alert.alert('Error', 'No collection data available.');
+    if (!nftData.collId) { // Check collId directly
+      Alert.alert('Error', 'No collection ID available.');
       return;
     }
 
@@ -135,13 +147,48 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
     }
   };
 
-  // Determine if this is a collection or a specific NFT
-  const isCollection = nftData.isCollection && nftData.collId;
-
   // Set CTA label based on type
   let ctaLabel = isCollection ? 'Buy Floor NFT' : 'Buy NFT';
   // Set CTA action based on type
   const onCtaPress = isCollection ? handleBuyCollectionFloor : handleBuyNft;
+
+  // Prepare initial data for the drawer
+  const drawerInitialData = {
+    name: nftData.name,
+    logoURI: nftData.image, // Use NFT image as logoURI
+    isCollection: isCollection,
+    // Pass relevant data based on type
+    collectionData: isCollection ? {
+      // Basic
+      name: nftData.collectionName || nftData.name,
+      description: nftData.description,
+      // Detailed
+      slugDisplay: nftData.slugDisplay,
+      slugMe: nftData.slugMe,
+      stats: nftData.stats,
+      tokenCount: nftData.tokenCount || nftData.numMints, // Pass either
+      numMints: nftData.numMints, // Also pass numMints if available
+      tensorVerified: nftData.tensorVerified,
+      discord: nftData.discord,
+      twitter: nftData.twitter,
+      website: nftData.website,
+      // Pass floor price directly if available at top level too
+      floorPrice: nftData.stats?.floorPrice,
+    } : undefined,
+    nftData: !isCollection ? {
+      // Basic
+      description: nftData.description,
+      collName: nftData.collectionName,
+      name: nftData.name, // Pass name here too if needed by drawer
+      // Detailed
+      owner: nftData.owner,
+      rarityRankTN: nftData.rarityRankTN,
+      numMints: nftData.numMints, // For rarity context
+      attributes: nftData.attributes,
+      listing: nftData.listing,
+      lastSale: nftData.lastSale,
+    } : undefined,
+  };
 
   return (
     <View style={[
@@ -151,7 +198,7 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
     ]}>
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={handlePress}
+        onPress={handleCardPress}
       >
         <View style={styles.imageContainer}>
           <IPFSAwareImage
@@ -188,13 +235,12 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
               <Text style={styles.mintText}>Mint</Text>
             )}
             <Text style={styles.mintAddress} numberOfLines={1} ellipsizeMode="middle">
-              {isCollection ? nftData.collId : nftData.mintAddress || 'Unknown address'}
+              {displayMint || 'Unknown address'}
             </Text>
           </View>
         </View>
       </TouchableOpacity>
 
-      {/* Buy NFT/Floor CTA Button */}
       <View style={styles.ctaContainer}>
         <TouchableOpacity
           style={[
@@ -211,7 +257,6 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
         </TouchableOpacity>
       </View>
 
-      {/* NFT Loading Modal */}
       <Modal
         visible={nftLoading}
         transparent
@@ -227,7 +272,6 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
         </View>
       </Modal>
 
-      {/* NFT Confirmation Modal */}
       <Modal
         visible={nftConfirmationVisible}
         transparent
@@ -244,6 +288,16 @@ function MessageNFT({ nftData, isCurrentUser, onPress }: MessageNFTProps) {
           </View>
         </View>
       </Modal>
+
+      {selectedTokenMint && (
+        <TokenDetailsDrawer
+          visible={isDrawerVisible}
+          onClose={() => setIsDrawerVisible(false)}
+          tokenMint={selectedTokenMint}
+          initialData={drawerInitialData}
+          loading={false}
+        />
+      )}
     </View>
   );
 }
