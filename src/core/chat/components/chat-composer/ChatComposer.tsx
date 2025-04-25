@@ -66,6 +66,12 @@ interface ChatComposerProps {
   ref?: React.Ref<{ focus: () => void }>;
   /** Optional chat context - if provided, shares go to this chat */
   chatContext?: { chatId: string };
+  /** Optional controlled input value */
+  inputValue?: string;
+  /** Optional callback for input changes */
+  onInputChange?: (value: string) => void;
+  /** Optional flag to disable the composer */
+  disabled?: boolean;
 }
 
 /**
@@ -102,6 +108,9 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
   themeOverrides,
   styleOverrides,
   userStyleSheet,
+  inputValue,
+  onInputChange,
+  disabled = false,
 }, ref) => {
   const dispatch = useAppDispatch();
   const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
@@ -122,7 +131,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
   // Use the wallet address from useWallet
   const userPublicKey = address || null;
 
-  // Basic composer state
+  // Internal state for text, unless controlled by inputValue prop
   const [textValue, setTextValue] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,6 +150,25 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
   const [showTradeModal, setShowTradeModal] = useState(false);
   const SOL_TO_LAMPORTS = 1_000_000_000;
 
+  // Deconstruct the new props with defaults
+  const { inputValue: propsInputValue, onInputChange: propsOnInputChange, disabled: propsDisabled = false } = {
+    inputValue: inputValue,
+    onInputChange: onInputChange,
+    disabled: disabled
+  };
+
+  // Determine the text to display/use based on whether input is controlled
+  const currentTextValue = propsInputValue !== undefined ? propsInputValue : textValue;
+
+  // Handle text input changes
+  const handleTextChange = (newText: string) => {
+    if (propsOnInputChange) {
+      propsOnInputChange(newText);
+    } else {
+      setTextValue(newText);
+    }
+  };
+
   /**
    * Get base styles for the composer
    */
@@ -150,6 +178,11 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
    * Merge the original styles with user overrides
    */
   const styles = mergeStyles(baseStyles, styleOverrides, userStyleSheet);
+
+  /**
+   * Use Animated API for attach button animation
+   */
+  const attachButtonAnim = useRef(new Animated.Value(0)).current;
 
   /**
    * Fetch active listings for the NFT modal - using direct API call similar to ThreadComposer
@@ -213,7 +246,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
    * Message sending logic
    */
   const handleSend = async () => {
-    if (!textValue.trim() && !selectedImage) return;
+    if (!currentTextValue.trim() && !selectedImage) return;
 
     // If called from ChatScreen (onMessageSent is provided)
     if (onMessageSent) {
@@ -230,7 +263,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
             return;
           }
         }
-        onMessageSent(textValue, uploadedImageUrl);
+        onMessageSent(currentTextValue, uploadedImageUrl);
         setTextValue('');
         setSelectedImage(null);
       } catch (error) {
@@ -248,66 +281,13 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
     setIsSubmitting(true);
 
     try {
-      const sections: ThreadSection[] = [];
+      const sections = prepareSections(currentTextValue);
+      let post: ThreadPost | null = null;
 
-      // Text section
-      if (textValue.trim()) {
-        sections.push({
-          id: userPublicKey,
-          type: 'TEXT_ONLY' as ThreadSectionType,
-          text: textValue.trim(),
-        });
+      // Ensure currentUser ID is set
+      if (!currentUser.id) {
+        throw new Error("Cannot create post: Current user ID is missing.");
       }
-
-      // Image section - upload image to IPFS first
-      if (selectedImage) {
-        try {
-          // First upload the image to IPFS
-          const uploadedImageUrl = await uploadThreadImage(currentUser.id, selectedImage);
-
-          // Once we have the IPFS URL, add it to sections
-          sections.push({
-            id: userPublicKey,
-            type: 'TEXT_IMAGE',
-            text: '', // Can be empty or contain caption text
-            imageUrl: { uri: uploadedImageUrl },
-          });
-        } catch (error) {
-          console.error('Failed to upload image:', error);
-          Alert.alert('Image Upload Error', 'Failed to upload image. Please try again.');
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      // NFT listing
-      if (selectedListingNft) {
-        sections.push({
-          id: 'section-' + Math.random().toString(36).substr(2, 9),
-          type: 'NFT_LISTING',
-          listingData: {
-            mint: selectedListingNft.mint,
-            owner: currentUser.id, // wallet address
-            priceSol: undefined, // or logic if you have a price
-            name: selectedListingNft.name,
-            image: selectedListingNft.image,
-          },
-        });
-      }
-
-      // Fallback post if network fails
-      const fallbackPost = {
-        id: 'local-' + Math.random().toString(36).substr(2, 9),
-        userId: currentUser.id,
-        user: currentUser,
-        sections,
-        createdAt: new Date().toISOString(),
-        parentId: parentId ?? undefined,
-        replies: [],
-        reactionCount: 0,
-        retweetCount: 0,
-        quoteCount: 0,
-      };
 
       if (parentId) {
         // create a reply by passing only the user id
@@ -328,10 +308,15 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         ).unwrap();
       }
 
-      // Clear composer
-      setTextValue('');
+      // Reset internal state if not controlled
+      if (propsInputValue === undefined) {
+        setTextValue('');
+      }
+      // Always reset image and listing
       setSelectedImage(null);
       setSelectedListingNft(null);
+
+      // Optionally, scroll to the new post or provide feedback
     } catch (error: any) {
       console.warn(
         'Network request failed, adding message locally:',
@@ -341,7 +326,6 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
       // Create a local fallback post with the sections we have
       const fallbackPost = {
         id: 'local-' + Math.random().toString(36).substr(2, 9),
-        userId: currentUser.id,
         user: currentUser,
         sections: [], // We can't add the sections here because we don't have the image URLs
         createdAt: new Date().toISOString(),
@@ -466,7 +450,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
   };
 
   // Determine if send button should be enabled
-  const canSend = textValue.trim() !== '' || selectedImage !== null || selectedListingNft !== null;
+  const canSend = currentTextValue.trim() !== '' || selectedImage !== null || selectedListingNft !== null;
 
   // Define the onShare handler for NFT modal
   const handleShareNft = useCallback(async (data: NftListingData) => {
@@ -605,7 +589,17 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         tradeData: data,
         text: `Executed a trade: ${data.inputSymbol} -> ${data.outputSymbol}`
       }];
-      const fallbackPost = { /* ... create fallback ... */ };
+      const fallbackPost = {
+        id: 'local-' + Math.random().toString(36).substr(2, 9),
+        user: currentUser,
+        sections: [], // We can't add the sections here because we don't have the image URLs
+        createdAt: new Date().toISOString(),
+        parentId: parentId ?? undefined,
+        replies: [],
+        reactionCount: 0,
+        retweetCount: 0,
+        quoteCount: 0,
+      };
       setIsSubmitting(true);
       try {
         await dispatch(createRootPostAsync({
@@ -621,6 +615,40 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
     }
   }, [chatContext, currentUser.id, dispatch]);
 
+  /**
+   * Prepare sections for Thread submission
+   */
+  const prepareSections = (currentText: string): ThreadSection[] => {
+    const sections: ThreadSection[] = [];
+
+    if (currentText.trim()) {
+      sections.push({
+        id: 'section-' + Math.random().toString(36).substr(2, 9),
+        type: 'TEXT_ONLY',
+        text: currentText.trim(),
+      });
+    }
+
+    // Note: Image upload logic is handled within handleSend for threads
+
+    // NFT listing
+    if (selectedListingNft) {
+      sections.push({
+        id: 'section-' + Math.random().toString(36).substr(2, 9),
+        type: 'NFT_LISTING',
+        listingData: {
+          mint: selectedListingNft.mint,
+          owner: currentUser.id, // wallet address
+          priceSol: undefined, // or logic if you have a price
+          name: selectedListingNft.name,
+          image: selectedListingNft.image,
+        },
+      });
+    }
+
+    return sections;
+  };
+
   return (
     <View>
       {renderAttachmentPreviews()}
@@ -632,8 +660,8 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
             style={styles.composerInput}
             placeholder={parentId ? 'Reply...' : "Type a message..."}
             placeholderTextColor="#999"
-            value={textValue}
-            onChangeText={setTextValue}
+            value={currentTextValue}
+            onChangeText={handleTextChange}
             multiline
           />
 

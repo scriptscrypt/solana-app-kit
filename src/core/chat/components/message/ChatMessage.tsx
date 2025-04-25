@@ -1,16 +1,24 @@
 import React, { useMemo } from 'react';
-import { View, Pressable, GestureResponderEvent } from 'react-native';
+import { View, Pressable, GestureResponderEvent, Text, TextStyle } from 'react-native';
 import { ChatMessageProps } from './message.types';
 import { getMessageBaseStyles } from './message.styles';
 import { mergeStyles } from '@/core/thread/utils';
 import MessageBubble from './MessageBubble';
 import MessageHeader from './MessageHeader';
-import MessageFooter from './MessageFooter';
 
 // Update ChatMessageProps to include onLongPress
 interface ExtendedChatMessageProps extends ChatMessageProps {
   onLongPress?: (event: GestureResponderEvent) => void; // Optional long press handler
 }
+
+/**
+ * Formats a timestamp into a readable format
+ */
+const formatTime = (timestamp: Date | string | undefined): string => {
+  if (!timestamp) return '';
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 function ChatMessage({
   message,
@@ -20,7 +28,7 @@ function ChatMessage({
   themeOverrides,
   styleOverrides,
   showHeader = true,
-  showFooter = true,
+  showFooter = false, // Change default to false since we're showing timestamp in the bubble
 }: ExtendedChatMessageProps) {
   // Determine if this message is from the current user
   const isCurrentUser = useMemo(() => {
@@ -103,6 +111,27 @@ function ChatMessage({
     return true;
   }, [showFooter, contentType]);
 
+  // Get timestamp from different message types
+  const timestamp = 'createdAt' in message ? message.createdAt : new Date();
+
+  // Get font family from text style if available
+  const fontFamily = styleOverrides?.text && (styleOverrides.text as TextStyle).fontFamily;
+
+  // Extend MessageBubble props to include timestamp
+  const messageBubbleProps = {
+    message,
+    isCurrentUser,
+    themeOverrides,
+    styleOverrides: {
+      ...styleOverrides,
+      // Add padding at the bottom to make room for timestamp
+      container: {
+        paddingBottom: 22,
+        ...(styleOverrides?.container || {})
+      }
+    }
+  };
+
   return (
     <View style={containerStyle}>
       {/* Only show header for messages from other users */}
@@ -125,20 +154,24 @@ function ChatMessage({
           opacity: pressed ? 0.7 : 1,
         }]}
       >
-        <MessageBubble
-          message={message}
-          isCurrentUser={isCurrentUser}
-          themeOverrides={themeOverrides}
-          styleOverrides={styleOverrides}
-        />
+        <View style={{ position: 'relative' }}>
+          <MessageBubble
+            {...messageBubbleProps}
+          />
+          
+          {/* Timestamp inside the message bubble */}
+          <Text style={{
+            position: 'absolute',
+            bottom: 8,
+            right: 12,
+            fontSize: 10,
+            color: isCurrentUser ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+            fontFamily: fontFamily,
+          }}>
+            {formatTime(timestamp)}
+          </Text>
+        </View>
       </Pressable>
-
-      {shouldShowFooter && (
-        <MessageFooter
-          message={message}
-          isCurrentUser={isCurrentUser}
-        />
-      )}
     </View>
   );
 }

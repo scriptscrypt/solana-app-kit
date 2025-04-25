@@ -227,7 +227,7 @@ const BuySection: React.FC<BuySectionProps> = ({ userPublicKey, userWallet }) =>
         let transaction: Transaction | VersionedTransaction;
         if (txObj.txV0) {
           const txBuffer = Buffer.from(txObj.txV0.data, 'base64');
-          transaction = VersionedTransaction.deserialize(txBuffer);
+          transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
           console.log(`Deserialized versioned transaction #${i + 1}`);
         } else if (txObj.tx) {
           const txBuffer = Buffer.from(txObj.tx.data, 'base64');

@@ -7,10 +7,6 @@ import { IPFSAwareImage, getValidImageSource, fixIPFSUrl } from '@/shared/utils/
 import MessageTradeCard from './MessageTradeCard';
 import MessageNFT from './MessageNFT';
 import COLORS from '@/assets/colors';
-import SectionTextImage from '@/core/thread/components/sections/SectionTextImage';
-import SectionTextVideo from '@/core/thread/components/sections/SectionTextVideo';
-import SectionTrade from '@/core/thread/components/sections/SectionTrade';
-import SectionNftListing from '@/core/thread/components/sections/SectionNftListing';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import Icons from '@/assets/svgs';
 import { ThreadPost } from '@/core/thread/components/thread.types';
@@ -27,7 +23,7 @@ const RetweetIcon = ({ width = 14, height = 14, color = COLORS.greyLight }) => (
 
 function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides }: MessageBubbleProps) {
   // Log 1: Incoming message structure
-  console.log('[MessageBubble] Received message prop:', JSON.stringify(message, null, 2));
+  // console.log('[MessageBubble] Received message prop:', JSON.stringify(message, null, 2));
 
   // Use utility function to merge styles
   const styles = mergeStyles(
@@ -87,8 +83,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
 
   const contentType = getContentType(message);
   // Log 2: Determined content type
-  console.log(`[MessageBubble] Message ID ${message.id} - Determined contentType: ${contentType}`);
-
   // Update getMessageText to check additional_data safely
   const getMessageText = (post: any) => {
     const source = ('additional_data' in post && post.additional_data) ? post.additional_data : post;
@@ -159,8 +153,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
       (postToDisplay && 'tradeData' in postToDisplay && postToDisplay.tradeData) ||
       getTradeDataFromSections(postToDisplay)) || null; // Default to null
   // Log 3.1: Extracted tradeData
-  if (tradeData) console.log(`[MessageBubble] Message ID ${message.id} - Extracted tradeData:`, tradeData);
-
   // Update nftData retrieval with null check
   const rawNftData =
     (hasAdditionalData && messageDataSource && 'nftData' in messageDataSource ? messageDataSource.nftData :
@@ -216,7 +208,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
 
   }, [rawNftData]);
   // Log 3.3: Harmonized nftData
-  if (nftData) console.log(`[MessageBubble] Message ID ${message.id} - Harmonized nftData:`, JSON.stringify(nftData)); // Stringify for better logging
 
   // Update renderPostContent to handle potential null source from additional_data
   const renderPostContent = (post: any) => {
@@ -230,8 +221,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     }
 
     const postContentType = getContentType(post); // Get type from original message structure
-    // Log 4: Path taken in renderPostContent
-    console.log(`[MessageBubble] Message ID ${message.id} - renderPostContent executing case: ${postContentType}`);
 
     switch (postContentType) {
       case 'image':
@@ -252,7 +241,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
         );
       case 'trade':
         if (tradeData) {
-          console.log(`[MessageBubble] Message ID ${message.id} - Rendering MessageTradeCard`);
           return <MessageTradeCard tradeData={tradeData} isCurrentUser={isCurrentUser} userAvatar={('user' in post && post.user?.avatar) || ('user' in source && source.user?.avatar)} />;
         } else {
           console.log(`[MessageBubble] Message ID ${message.id} - ContentType is 'trade' but tradeData is null/falsy.`);
@@ -260,7 +248,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
         break;
       case 'nft':
         if (nftData) {
-          console.log(`[MessageBubble] Message ID ${message.id} - Rendering MessageNFT`);
           return <MessageNFT nftData={nftData} isCurrentUser={isCurrentUser} />;
         } else {
           console.log(`[MessageBubble] Message ID ${message.id} - ContentType is 'nft' but nftData is null/falsy.`);
@@ -282,7 +269,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
       default:
         // Ensure text is accessed safely from the correct source
         const textToShow = ('text' in source) ? source.text : ('text' in post ? post.text : '');
-        console.log(`[MessageBubble] Message ID ${message.id} - Rendering default text case.`);
         return <Text style={textStyle}>{textToShow}</Text>;
     }
     return null; // Add default return null
@@ -351,7 +337,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
 
   // For trade and NFT content, return without the bubble container
   if (contentType === 'trade' || contentType === 'nft') {
-    console.log(`[MessageBubble] Message ID ${message.id} - Rendering Trade/NFT content (potentially without bubble)`);
     return (
       <View style={bubbleStyle}>
         {renderPostContent(postToDisplay)}
@@ -360,7 +345,6 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
   }
 
   // For text and media content, wrap in a bubble
-  console.log(`[MessageBubble] Message ID ${message.id} - Rendering standard content within bubble`);
   return (
     <View style={bubbleStyle}>
       {isRetweet && !isQuoteRetweet && (
@@ -373,109 +357,5 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     </View>
   );
 }
-
-// Additional styles for the component
-const styles = StyleSheet.create({
-  mediaContainer: {
-    marginTop: 8,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  mediaImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 4,
-  },
-  sectionContainer: {
-    width: '100%',
-    marginVertical: 4,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  // Retweet styles
-  retweetContainer: {
-    width: '100%',
-    marginBottom: 12,
-  },
-  retweetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    paddingLeft: 6,
-    paddingTop: 4,
-  },
-  retweetIcon: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.greyMid,
-  },
-  retweetHeaderText: {
-    fontSize: 13,
-    color: COLORS.greyMid,
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  originalPostContainer: {
-    width: '95%',
-    alignSelf: 'center',
-    borderRadius: 12,
-    backgroundColor: COLORS.lighterBackground,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
-  },
-  originalPostHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  originalPostAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 8,
-  },
-  originalPostUsername: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-  originalPostHandle: {
-    fontSize: 12,
-    color: COLORS.greyMid,
-  },
-  quoteContent: {
-    marginBottom: 8,
-    paddingHorizontal: 12,
-  },
-  messageContent: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    width: '100%',
-  },
-  imageContainer: {
-    marginTop: 8,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  messageImage: {
-    width: 240,
-    height: 180,
-    borderRadius: 8,
-  },
-  retweetText: {
-    fontSize: 13,
-    color: COLORS.greyMid,
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  imageCaption: {
-    marginTop: 8,
-    fontSize: 14,
-    color: COLORS.white,
-  },
-});
 
 export default MessageBubble; 

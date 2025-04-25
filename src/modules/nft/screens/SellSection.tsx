@@ -463,7 +463,7 @@ const SellSection: React.FC<SellSectionProps> = ({
           const txObj = data.txs[i];
           if (txObj.txV0) {
             const txBuffer = Buffer.from(txObj.txV0.data, 'base64');
-            transaction = VersionedTransaction.deserialize(txBuffer);
+            transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
           } else if (txObj.tx) {
             const txBuffer = Buffer.from(txObj.tx.data, 'base64');
             transaction = Transaction.from(txBuffer);
