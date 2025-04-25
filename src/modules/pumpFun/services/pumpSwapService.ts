@@ -28,6 +28,7 @@ export interface SwapParams extends Omit<OriginalSwapParams, 'direction'> {
 }
 
 const API_BASE_URL = SERVER_URL;
+console.log('[pumpSwapService] Top level: API_BASE_URL =', API_BASE_URL); // Log immediately
 
 /**
  * Create a new pool
@@ -422,69 +423,120 @@ export async function swapTokens({
   onStatusUpdate,
 }: SwapParams & {
   connection: Connection;
-  solanaWallet: StandardWallet | any;
+  // Make this more flexible to accept any wallet that can be used with TransactionService
+  solanaWallet: StandardWallet | { 
+    signAndSendTransaction?: (transaction: any) => Promise<string>;
+    request?: (args: { method: string; params: any }) => Promise<any>;
+  } | any;
   onStatusUpdate?: (status: string) => void;
 }): Promise<string> {
+  console.log('[pumpSwapService] --- Entered swapTokens ---');
+  console.log('[pumpSwapService] API_BASE_URL:', API_BASE_URL);
+  
   try {
+    console.log('[pumpSwapService] Step 1: Calling onStatusUpdate');
     onStatusUpdate?.('Preparing swap transaction...');
     
-    const response = await fetch(`${API_BASE_URL}/api/pump-swap/build-swap`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        pool,
-        inputAmount: amount,
-        direction,
-        slippage,
-        userPublicKey,
-      }),
-    });
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to perform swap');
-    }
-
-    onStatusUpdate?.('Transaction received, sending to wallet...');
+    console.log('[pumpSwapService] Step 2: Preparing request body');
     
-    // Create a filtered status callback that prevents error messages
-    const filteredCallback = (status: string) => {
-      if (!status.startsWith('Error:') && !status.includes('failed:')) {
-        onStatusUpdate?.(status);
-      } else {
-        onStatusUpdate?.('Processing transaction...');
-      }
+    // Convert PublicKey to string if needed
+    const userPubkeyString = typeof userPublicKey === 'string' 
+      ? userPublicKey 
+      : userPublicKey.toString();
+    
+    console.log('[pumpSwapService] User public key:', userPubkeyString);
+    
+    const requestBodyPayload = {
+      pool,
+      inputAmount: amount,
+      direction,
+      slippage,
+      userPublicKey: userPubkeyString
     };
-
-    const signature = await TransactionService.signAndSendTransaction(
-      { type: 'base64', data: data.data.transaction },
-      solanaWallet,
-      { 
-        connection,
-        statusCallback: filteredCallback
+    
+    console.log('[pumpSwapService] Step 3: Request payload:', JSON.stringify(requestBodyPayload, null, 2));
+    
+    try {
+      console.log('[pumpSwapService] Step 4: Making API request to:', `${API_BASE_URL}/api/pump-swap/build-swap`);
+      const response = await fetch(`${API_BASE_URL}/api/pump-swap/build-swap`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBodyPayload),
+      });
+      
+      console.log('[pumpSwapService] Step 5: API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[pumpSwapService] API error response:', errorText);
+        throw new Error(`Server responded with status ${response.status}: ${errorText}`);
       }
-    );
-    
-    onStatusUpdate?.('Swap completed successfully!');
-    return signature;
+      
+      const data = await response.json();
+      console.log('[pumpSwapService] Step 6: API response received (success =', data.success, ')');
+      
+      if (!data.success) {
+        console.error('[pumpSwapService] API reported failure:', data.error);
+        throw new Error(data.error || 'Failed to perform swap');
+      }
+      
+      if (!data.data || !data.data.transaction) {
+        console.error('[pumpSwapService] Missing transaction data in response');
+        throw new Error('Server returned invalid transaction data');
+      }
+      
+      console.log('[pumpSwapService] Step 7: Received transaction from server, sending to wallet...');
+      onStatusUpdate?.('Transaction received, sending to wallet...');
+      
+      // Create a filtered status callback that prevents error messages
+      const filteredCallback = (status: string) => {
+        console.log('[pumpSwapService] Transaction status update:', status);
+        if (!status.startsWith('Error:') && !status.includes('failed:')) {
+          onStatusUpdate?.(status);
+        } else {
+          console.error('[pumpSwapService] Error status received but filtered from UI:', status);
+          onStatusUpdate?.('Processing transaction...');
+        }
+      };
+      
+      console.log('[pumpSwapService] Step 8: Calling TransactionService.signAndSendTransaction');
+      const signature = await TransactionService.signAndSendTransaction(
+        { type: 'base64', data: data.data.transaction },
+        solanaWallet,
+        { 
+          connection,
+          statusCallback: filteredCallback
+        }
+      );
+      
+      console.log('[pumpSwapService] Step 9: Transaction signature received:', signature);
+      onStatusUpdate?.('Swap completed successfully!');
+      return signature;
+    } catch (fetchError) {
+      console.error('[pumpSwapService] Fetch error caught:', fetchError);
+      if (fetchError instanceof Error) {
+        console.error('[pumpSwapService] Fetch Error Name:', fetchError.name);
+        console.error('[pumpSwapService] Fetch Error Message:', fetchError.message);
+        if (fetchError.stack) {
+          console.error('[pumpSwapService] Fetch Error Stack:', fetchError.stack);
+        }
+      }
+      throw fetchError;
+    }
   } catch (error) {
-    console.error('Error in swapTokens:', error);
-    
-    // Extract specific error information for better error messages
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    // Check for insufficient funds or token balance errors
-    if (errorMessage.includes('insufficient funds') || errorMessage.includes('0x1')) {
-      const friendlyError = new Error('Insufficient token balance to complete this swap.');
-      onStatusUpdate?.(`Transaction failed: ${friendlyError.message}`);
-      throw friendlyError;
+    console.error('[pumpSwapService] Error caught in swapTokens:', error);
+    if (error instanceof Error) {
+      console.error('[pumpSwapService] Error Name:', error.name);
+      console.error('[pumpSwapService] Error Message:', error.message);
+      if (error.stack) {
+        console.error('[pumpSwapService] Error Stack:', error.stack);
+      }
     }
     
-    // Don't send raw error through status update
-    onStatusUpdate?.('Transaction failed');
-    TransactionService.showError(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    onStatusUpdate?.(`Transaction failed: ${errorMessage}`);
     throw error;
   }
 }

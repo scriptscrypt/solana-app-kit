@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Clipboard,
+  Linking,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,6 +51,7 @@ export default function SwapScreen() {
   const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
   const [selectingWhichSide, setSelectingWhichSide] = useState<'input' | 'output'>('input');
   const [poolAddress, setPoolAddress] = useState(''); // Add state for PumpSwap pool address
+  const [slippage, setSlippage] = useState(10); // Add state for slippage, default to 10%
 
   // Token States
   const [inputToken, setInputToken] = useState<TokenInfo>(DEFAULT_SOL_TOKEN);
@@ -453,18 +455,23 @@ export default function SwapScreen() {
 
   // Execute swap
   const handleSwap = useCallback(async () => {
+    console.log('[SwapScreen] Swap button clicked, provider:', activeProvider);
+
     if (!connected || !userPublicKey) {
+      console.log('[SwapScreen] Error: Wallet not connected');
       Alert.alert('Wallet not connected', 'Please connect your wallet first.');
       return;
     }
 
     if (isNaN(parseFloat(inputValue)) || parseFloat(inputValue) <= 0) {
+      console.log('[SwapScreen] Error: Invalid amount input:', inputValue);
       Alert.alert('Invalid amount', 'Please enter a valid amount to swap.');
       return;
     }
 
     // Check if the selected provider is implemented
     if (!isProviderAvailable(activeProvider)) {
+      console.log('[SwapScreen] Error: Provider not available:', activeProvider);
       Alert.alert(
         'Provider Not Available',
         `${activeProvider} integration is coming soon! Please use Jupiter, Raydium, or PumpSwap for now.`
@@ -474,6 +481,7 @@ export default function SwapScreen() {
 
     // For PumpSwap, check if pool address is provided
     if (activeProvider === 'PumpSwap' && !poolAddress) {
+      console.log('[SwapScreen] Error: PumpSwap selected but no pool address provided');
       Alert.alert(
         'Pool Address Required',
         'Please enter a pool address for PumpSwap.'
@@ -481,12 +489,21 @@ export default function SwapScreen() {
       return;
     }
 
+    console.log('[SwapScreen] Starting swap with:', {
+      provider: activeProvider,
+      inputToken: inputToken.symbol,
+      outputToken: outputToken.symbol,
+      amount: inputValue,
+      poolAddress: activeProvider === 'PumpSwap' ? poolAddress : 'N/A'
+    });
+
     setLoading(true);
     setResultMsg('');
     setErrorMsg('');
 
     try {
       // Execute the swap using the trade service with the selected provider
+      console.log('[SwapScreen] Calling TradeService.executeSwap');
       const response = await TradeService.executeSwap(
         inputToken,
         outputToken,
@@ -495,6 +512,7 @@ export default function SwapScreen() {
         sendTransaction,
         {
           statusCallback: (status) => {
+            console.log('[SwapScreen] Status update:', status);
             if (isMounted.current) {
               setResultMsg(status);
             }
@@ -503,11 +521,14 @@ export default function SwapScreen() {
         },
         activeProvider,
         // Pass pool address for PumpSwap
-        activeProvider === 'PumpSwap' ? { poolAddress } : undefined
+        activeProvider === 'PumpSwap' ? { poolAddress, slippage } : undefined
       );
+
+      console.log('[SwapScreen] TradeService.executeSwap response:', response);
 
       if (response.success && response.signature) {
         if (isMounted.current) {
+          console.log('[SwapScreen] Swap successful! Signature:', response.signature);
           setResultMsg(`Swap successful!`);
           setSolscanTxSig(response.signature);
 
@@ -523,32 +544,80 @@ export default function SwapScreen() {
           );
         }
       } else {
+        console.log('[SwapScreen] Swap response not successful:', response);
         throw new Error(response.error?.toString() || 'Transaction failed');
       }
     } catch (err: any) {
-      console.error('Swap error:', err);
+      console.error('[SwapScreen] Swap error caught:', err);
+      console.error('[SwapScreen] Error details:', JSON.stringify(err, null, 2));
 
       if (isMounted.current) {
-        // Handle operation cancelled differently - no need to show error
-        if (err.message === 'Operation cancelled') {
-          console.log('Swap cancelled due to screen navigation');
-        } else {
-          // Format error message for user
-          let errorMessage = 'Swap failed. ';
-          if (err.message.includes('signature verification')) {
-            errorMessage += 'Please try again.';
-          } else if (err.message.includes('0x1771')) {
-            errorMessage += 'Insufficient balance or price impact too high.';
-          } else {
-            errorMessage += err.message;
-          }
+        // Format error message for user
+        let errorMessage = 'Swap failed. ';
+        let mayHaveSucceeded = false;
 
-          setErrorMsg(errorMessage);
+        if (err.message.includes('signature verification')) {
+          errorMessage += 'Please try again.';
+        } else if (err.message.includes('0x1771')) {
+          errorMessage += 'Insufficient balance or price impact too high.';
+        } else if (err.message.includes('ExceededSlippage') || err.message.includes('0x1774')) {
+          errorMessage += 'Price impact too high. Try increasing your slippage tolerance.';
+        } else if (err.message.includes('confirmation failed') || err.message.includes('may have succeeded')) {
+          // Handle the case where transaction might have succeeded
+          mayHaveSucceeded = true;
+
+          // Extract signature if available
+          const signatureMatch = err.message.match(/Signature: ([a-zA-Z0-9]+)/);
+          const signature = signatureMatch ? signatureMatch[1] : null;
+
+          if (signature) {
+            errorMessage = 'Transaction sent but confirmation timed out. ';
+            setSolscanTxSig(signature);
+
+            // Show a different alert for this case
+            Alert.alert(
+              'Transaction Status Uncertain',
+              'Your transaction was sent but confirmation timed out. It may have succeeded. You can check the status on Solscan.',
+              [
+                {
+                  text: 'View on Solscan',
+                  onPress: () => {
+                    // Open transaction on Solscan
+                    const url = `https://solscan.io/tx/${signature}`;
+                    Linking.openURL(url).catch(err => {
+                      console.error('[SwapScreen] Error opening Solscan URL:', err);
+                    });
+                  }
+                },
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    setInputValue('0');
+                    fetchBalance();
+                  }
+                }
+              ]
+            );
+
+            // Return early so we don't show the standard error alert
+            return;
+          } else {
+            errorMessage += 'Your transaction may have succeeded but confirmation timed out. Check your wallet for changes.';
+          }
+        } else {
+          errorMessage += err.message;
+        }
+
+        console.log('[SwapScreen] Setting error message:', errorMessage);
+        setErrorMsg(errorMessage);
+
+        if (!mayHaveSucceeded) {
           Alert.alert('Swap Failed', errorMessage);
         }
       }
     } finally {
       if (isMounted.current) {
+        console.log('[SwapScreen] Swap process completed, resetting loading state');
         setLoading(false);
       }
     }
@@ -563,6 +632,7 @@ export default function SwapScreen() {
     estimatedOutputAmount,
     activeProvider,
     poolAddress,
+    slippage,
     isProviderAvailable,
     loading
   ]);
@@ -679,6 +749,39 @@ export default function SwapScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+              </View>
+            )}
+
+            {/* PumpSwap Slippage Selector */}
+            {activeProvider === 'PumpSwap' && (
+              <View style={styles.poolAddressContainer}>
+                <Text style={styles.poolAddressLabel}>Slippage Tolerance</Text>
+                <View style={styles.slippageButtonsContainer}>
+                  {[1, 3, 5, 10, 15, 25].map((value) => (
+                    <TouchableOpacity
+                      key={`slippage-${value}`}
+                      style={[
+                        styles.slippageButton,
+                        slippage === value && styles.slippageButtonActive
+                      ]}
+                      onPress={() => setSlippage(value)}
+                    >
+                      <Text
+                        style={[
+                          styles.slippageButtonText,
+                          slippage === value && styles.slippageButtonTextActive
+                        ]}
+                      >
+                        {value}%
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <View style={styles.pumpSwapWarningContainer}>
+                  <Text style={styles.pumpSwapWarningText}>
+                    ⚠️ Warning: This pool may have very high price impact. Trades are executed with extreme slippage tolerance for successful execution.
+                  </Text>
+                </View>
               </View>
             )}
 
@@ -841,7 +944,9 @@ export default function SwapScreen() {
                   <TouchableOpacity onPress={() => {
                     // Open transaction on Solscan
                     const url = `https://solscan.io/tx/${solscanTxSig}`;
-                    // Add your URL opener here if needed
+                    Linking.openURL(url).catch(err => {
+                      console.error('[SwapScreen] Error opening Solscan URL:', err);
+                    });
                   }}>
                     <Text style={[styles.swapInfoValue, { color: COLORS.brandPrimary }]}>
                       View on Solscan
