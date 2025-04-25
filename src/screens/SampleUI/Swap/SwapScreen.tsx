@@ -13,7 +13,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Clipboard,
-  StyleSheet,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,11 +23,11 @@ import { styles } from './SwapScreen.styles';
 import COLORS from '@/assets/colors';
 import SelectTokenModal from './SelectTokenModal';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import { 
+import {
   TokenInfo,
-  DEFAULT_SOL_TOKEN, 
-  DEFAULT_USDC_TOKEN, 
-  fetchTokenBalance, 
+  DEFAULT_SOL_TOKEN,
+  DEFAULT_USDC_TOKEN,
+  fetchTokenBalance,
   fetchTokenPrice,
   ensureCompleteTokenInfo,
   estimateTokenUsdValue
@@ -44,13 +43,14 @@ const swapProviders: SwapProvider[] = ['Jupiter', 'Raydium', 'PumpSwap'];
 export default function SwapScreen() {
   const navigation = useNavigation();
   const { publicKey: userPublicKey, connected, sendTransaction } = useWallet();
-  
+
   // UI States
   const [activeProvider, setActiveProvider] = useState<SwapProvider>('Jupiter');
   const [inputValue, setInputValue] = useState('5');
   const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
   const [selectingWhichSide, setSelectingWhichSide] = useState<'input' | 'output'>('input');
-  
+  const [poolAddress, setPoolAddress] = useState(''); // Add state for PumpSwap pool address
+
   // Token States
   const [inputToken, setInputToken] = useState<TokenInfo>(DEFAULT_SOL_TOKEN);
   const [outputToken, setOutputToken] = useState<TokenInfo>(DEFAULT_USDC_TOKEN);
@@ -58,13 +58,13 @@ export default function SwapScreen() {
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [currentTokenPrice, setCurrentTokenPrice] = useState<number | null>(null);
   const [estimatedOutputAmount, setEstimatedOutputAmount] = useState<string>('');
-  
+
   // Transaction States
   const [loading, setLoading] = useState(false);
   const [resultMsg, setResultMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [solscanTxSig, setSolscanTxSig] = useState(''); // For completed transactions
-  
+
   // Refs
   const isMounted = useRef(true);
   const pendingTokenOps = useRef<{ input: boolean, output: boolean }>({ input: false, output: false });
@@ -229,15 +229,15 @@ export default function SwapScreen() {
 
       if (selectingWhichSide === 'input') {
         console.log('[SwapScreen] Input token changed to', completeToken.symbol);
-        
+
         // Update input token state
         setInputToken(completeToken);
         pendingTokenOps.current.input = false;
-        
+
         // Reset input value and fetch new balance
         setInputValue('0');
         setCurrentBalance(null);
-        
+
         // Fetch balance and price for new token with small delay
         setTimeout(async () => {
           if (isMounted.current && userPublicKey) {
@@ -307,7 +307,7 @@ export default function SwapScreen() {
 
     try {
       const balance = await fetchBalance();
-      
+
       if (isMounted.current) {
         setLoading(false);
         setResultMsg("");
@@ -345,26 +345,26 @@ export default function SwapScreen() {
       // Get prices for both tokens
       const inputPrice = await getTokenPrice(inputToken);
       const outputPrice = await getTokenPrice(outputToken);
-      
+
       if (inputPrice && outputPrice && isMounted.current) {
         const inputValueNum = parseFloat(inputValue);
-        
+
         // Calculate USD value
         const inputValueUsd = inputValueNum * inputPrice;
-        
+
         // Calculate output amount based on equivalent USD value (minus simulated 0.3% fee)
         const estimatedOutput = (inputValueUsd / outputPrice) * 0.997;
-        
+
         // Format the number properly based on token decimals
         setEstimatedOutputAmount(estimatedOutput.toFixed(outputToken.decimals <= 6 ? outputToken.decimals : 6));
-        
+
         console.log(`[SwapScreen] Estimate: ${inputValueNum} ${inputToken.symbol} (${inputPrice} USD) → ${estimatedOutput} ${outputToken.symbol} (${outputPrice} USD)`);
       }
     } catch (error) {
       console.error('[SwapScreen] Error estimating swap:', error);
     }
   }, [connected, inputValue, getTokenPrice, inputToken, outputToken]);
-  
+
   // Calculate USD value for a given token amount
   const calculateUsdValue = useCallback((amount: string, tokenPrice: number | null) => {
     if (!tokenPrice || !amount || isNaN(parseFloat(amount))) {
@@ -372,10 +372,10 @@ export default function SwapScreen() {
     }
     return `$${(parseFloat(amount) * tokenPrice).toFixed(2)}`;
   }, []);
-  
+
   // Calculate USD value for output token
   const [outputTokenUsdValue, setOutputTokenUsdValue] = useState('$0.00');
-  
+
   // Update output token USD value when estimated amount changes
   useEffect(() => {
     const updateOutputUsdValue = async () => {
@@ -388,20 +388,20 @@ export default function SwapScreen() {
         setOutputTokenUsdValue('$0.00');
       }
     };
-    
+
     updateOutputUsdValue();
   }, [estimatedOutputAmount, outputToken, getTokenPrice, calculateUsdValue]);
-  
+
   // Calculate conversion rate
   const getConversionRate = useCallback(() => {
     if (!inputToken || !outputToken || !estimatedOutputAmount || parseFloat(inputValue || '0') <= 0) {
       return `1 ${inputToken.symbol} = 0 ${outputToken.symbol}`;
     }
-    
+
     const inputAmt = parseFloat(inputValue);
     const outputAmt = parseFloat(estimatedOutputAmount);
     const rate = outputAmt / inputAmt;
-    
+
     return `1 ${inputToken.symbol} = ${rate.toFixed(6)} ${outputToken.symbol}`;
   }, [inputToken, outputToken, inputValue, estimatedOutputAmount]);
 
@@ -420,11 +420,11 @@ export default function SwapScreen() {
       setInputValue(prev => prev.slice(0, -1) || '0');
       return;
     }
-    
+
     if (key === '.') {
       if (inputValue.includes('.')) return;
     }
-    
+
     if (inputValue === '0' && key !== '.') {
       setInputValue(key);
     } else {
@@ -432,23 +432,51 @@ export default function SwapScreen() {
     }
   };
 
+  // Check if a provider is available for selection
+  const isProviderAvailable = useCallback((provider: SwapProvider) => {
+    // Now Jupiter, Raydium, and PumpSwap are fully implemented
+    return provider === 'Jupiter' || provider === 'Raydium' || provider === 'PumpSwap';
+  }, []);
+
+  // Check if the swap button should be enabled
+  const isSwapButtonEnabled = useCallback(() => {
+    if (!connected || loading) return false;
+
+    // Check if the provider is available
+    if (!isProviderAvailable(activeProvider)) return false;
+
+    // For PumpSwap, we need a pool address
+    if (activeProvider === 'PumpSwap' && !poolAddress) return false;
+
+    return true;
+  }, [connected, loading, activeProvider, isProviderAvailable, poolAddress]);
+
   // Execute swap
   const handleSwap = useCallback(async () => {
     if (!connected || !userPublicKey) {
       Alert.alert('Wallet not connected', 'Please connect your wallet first.');
       return;
     }
-    
+
     if (isNaN(parseFloat(inputValue)) || parseFloat(inputValue) <= 0) {
       Alert.alert('Invalid amount', 'Please enter a valid amount to swap.');
       return;
     }
 
     // Check if the selected provider is implemented
-    if (activeProvider !== 'Jupiter' && activeProvider !== 'Raydium') {
+    if (!isProviderAvailable(activeProvider)) {
       Alert.alert(
         'Provider Not Available',
-        `${activeProvider} integration is coming soon! Please use Jupiter or Raydium for now.`
+        `${activeProvider} integration is coming soon! Please use Jupiter, Raydium, or PumpSwap for now.`
+      );
+      return;
+    }
+
+    // For PumpSwap, check if pool address is provided
+    if (activeProvider === 'PumpSwap' && !poolAddress) {
+      Alert.alert(
+        'Pool Address Required',
+        'Please enter a pool address for PumpSwap.'
       );
       return;
     }
@@ -473,21 +501,25 @@ export default function SwapScreen() {
           },
           isComponentMounted: () => isMounted.current
         },
-        activeProvider
+        activeProvider,
+        // Pass pool address for PumpSwap
+        activeProvider === 'PumpSwap' ? { poolAddress } : undefined
       );
 
       if (response.success && response.signature) {
         if (isMounted.current) {
           setResultMsg(`Swap successful!`);
           setSolscanTxSig(response.signature);
-          
+
           Alert.alert(
-            'Swap Successful', 
+            'Swap Successful',
             `Successfully swapped ${inputValue} ${inputToken.symbol} for approximately ${estimatedOutputAmount} ${outputToken.symbol}`,
-            [{ text: 'OK', onPress: () => {
-              setInputValue('0');
-              fetchBalance();
-            }}]
+            [{
+              text: 'OK', onPress: () => {
+                setInputValue('0');
+                fetchBalance();
+              }
+            }]
           );
         }
       } else {
@@ -529,7 +561,10 @@ export default function SwapScreen() {
     sendTransaction,
     fetchBalance,
     estimatedOutputAmount,
-    activeProvider
+    activeProvider,
+    poolAddress,
+    isProviderAvailable,
+    loading
   ]);
 
   // Allow user to paste from clipboard (for transaction signatures)
@@ -544,20 +579,14 @@ export default function SwapScreen() {
     }
   };
 
-  // Check if a provider is available for selection
-  const isProviderAvailable = useCallback((provider: SwapProvider) => {
-    // Now both Jupiter and Raydium are fully implemented
-    return provider === 'Jupiter' || provider === 'Raydium';
-  }, []);
-
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
-        
+
         {/* Header with Gradient Border */}
         <View style={styles.headerContainer}>
           {/* Left: Placeholder (empty) */}
@@ -577,18 +606,18 @@ export default function SwapScreen() {
               <Icons.walletIcon width={35} height={35} />
             </TouchableOpacity>
           </View>
-          
+
           {/* Bottom gradient border */}
           <LinearGradient
             colors={['transparent', COLORS.lightBackground]}
             style={styles.headerBottomGradient}
           />
         </View>
-        
+
         <View style={styles.contentContainer}>
-          <ScrollView 
+          <ScrollView
             style={styles.fullWidthScroll}
-            bounces={false} 
+            bounces={false}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 250 }} // Extra padding for keypad
           >
@@ -599,10 +628,10 @@ export default function SwapScreen() {
                   key={provider}
                   style={[
                     styles.providerButton,
-                    activeProvider === provider && { 
-                      backgroundColor: COLORS.lightBackground, 
-                      borderWidth: 1, 
-                      borderColor: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white 
+                    activeProvider === provider && {
+                      backgroundColor: COLORS.lightBackground,
+                      borderWidth: 1,
+                      borderColor: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white
                     },
                     !isProviderAvailable(provider) && { opacity: 0.5 }
                   ]}
@@ -615,7 +644,7 @@ export default function SwapScreen() {
                       }
                     } else {
                       Alert.alert(
-                        'Coming Soon', 
+                        'Coming Soon',
                         `${provider} integration is coming soon!`
                       );
                     }
@@ -624,8 +653,8 @@ export default function SwapScreen() {
                   <Text
                     style={[
                       styles.providerButtonText,
-                      activeProvider === provider && { 
-                        color: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white 
+                      activeProvider === provider && {
+                        color: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white
                       }
                     ]}
                     numberOfLines={1}
@@ -636,12 +665,28 @@ export default function SwapScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            
+
+            {/* PumpSwap Pool Address Input */}
+            {activeProvider === 'PumpSwap' && (
+              <View style={styles.poolAddressContainer}>
+                <Text style={styles.poolAddressLabel}>Pool Address</Text>
+                <TextInput
+                  style={styles.poolAddressInput}
+                  placeholder="Enter PumpSwap pool address"
+                  placeholderTextColor={COLORS.greyDark}
+                  value={poolAddress}
+                  onChangeText={setPoolAddress}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
+
             {/* Swap Container with Input and Output */}
             <View style={styles.swapContainer}>
               {/* Input Token (From) */}
               <View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.tokenRow}
                   onPress={() => {
                     setSelectingWhichSide('input');
@@ -662,7 +707,7 @@ export default function SwapScreen() {
                       {inputToken.symbol}
                     </Text>
                     <Text style={styles.tokenBalance} numberOfLines={1} ellipsizeMode="tail">
-                      {currentBalance !== null 
+                      {currentBalance !== null
                         ? `Balance: ${currentBalance.toFixed(6)} ${inputToken.symbol}`
                         : connected ? 'Loading...' : 'Connect wallet'}
                     </Text>
@@ -678,21 +723,21 @@ export default function SwapScreen() {
                   </View>
                 </TouchableOpacity>
               </View>
-              
+
               {/* Swap Button - Positioned to overlap both cards */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.swapButton}
                 onPress={() => {
                   // Swap tokens
                   const temp = inputToken;
                   setInputToken(outputToken);
                   setOutputToken(temp);
-                  
+
                   // Reset values
                   setInputValue('0');
                   setEstimatedOutputAmount('0');
                   setOutputTokenUsdValue('$0.00');
-                  
+
                   // Update balances and prices for new input token
                   if (userPublicKey) {
                     fetchBalance(outputToken);
@@ -702,10 +747,10 @@ export default function SwapScreen() {
               >
                 <Icons.SwapIcon width={36} height={36} />
               </TouchableOpacity>
-              
+
               {/* Output Token (To) */}
               <View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.tokenRow}
                   onPress={() => {
                     setSelectingWhichSide('output');
@@ -740,14 +785,14 @@ export default function SwapScreen() {
               </View>
 
               {/* Max Button */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.maxButtonContainer}
                 onPress={handleMaxButtonClick}
               >
                 <Text style={styles.maxButtonText}>MAX</Text>
               </TouchableOpacity>
             </View>
-            
+
             {/* Status Messages */}
             {loading && (
               <View style={styles.statusContainer}>
@@ -757,7 +802,7 @@ export default function SwapScreen() {
                 </Text>
               </View>
             )}
-            
+
             {errorMsg ? (
               <View style={styles.errorContainer}>
                 <Text style={styles.errorText} numberOfLines={2} ellipsizeMode="tail">
@@ -765,7 +810,7 @@ export default function SwapScreen() {
                 </Text>
               </View>
             ) : null}
-            
+
             {/* Additional Swap Info */}
             <View style={styles.swapInfoContainer}>
               <View style={styles.swapInfoRow}>
@@ -806,7 +851,7 @@ export default function SwapScreen() {
               )}
             </View>
           </ScrollView>
-          
+
           {/* Keypad */}
           <View style={styles.keypadContainer}>
             <View style={styles.keypadRow}>
@@ -854,24 +899,25 @@ export default function SwapScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           {/* Swap Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.swapActionButton,
-              (!connected || loading || !isProviderAvailable(activeProvider)) && { opacity: 0.6 }
-            ]} 
+              !isSwapButtonEnabled() && { opacity: 0.6 }
+            ]}
             onPress={handleSwap}
-            disabled={!connected || loading || !isProviderAvailable(activeProvider)}
+            disabled={!isSwapButtonEnabled()}
           >
             <Text style={styles.swapActionButtonText}>
-              {!connected ? 'Connect Wallet to Swap' : 
+              {!connected ? 'Connect Wallet to Swap' :
                 !isProviderAvailable(activeProvider) ? `${activeProvider} Coming Soon` :
-                loading ? 'Swapping...' : `Swap via ${activeProvider}`}
+                  activeProvider === 'PumpSwap' && !poolAddress ? 'Enter Pool Address' :
+                    loading ? 'Swapping...' : `Swap via ${activeProvider}`}
             </Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* Token Selection Modal */}
         <SelectTokenModal
           visible={showSelectTokenModal}

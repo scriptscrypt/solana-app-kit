@@ -48,6 +48,26 @@ export const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.size.sm,
     fontWeight: String(TYPOGRAPHY.medium) as any,
   },
+  poolAddressContainer: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    backgroundColor: COLORS.lightBackground,
+    borderRadius: 12,
+    padding: 12,
+  },
+  poolAddressLabel: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: String(TYPOGRAPHY.medium) as any,
+    marginBottom: 8,
+  },
+  poolAddressInput: {
+    backgroundColor: COLORS.lighterBackground,
+    borderRadius: 8,
+    padding: 12,
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+  },
   swapContainer: {
     marginHorizontal: 20,
     marginBottom: 16,
