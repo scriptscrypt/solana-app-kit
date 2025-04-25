@@ -679,6 +679,7 @@ const BuyCard: React.FC<BuyCardProps> = ({
         initialInputToken={tradeModalData.initialInputToken}
         initialOutputToken={tradeModalData.initialOutputToken}
         initialActiveTab="PAST_SWAPS"
+        onShare={() => {}}
       />
 
       {/* Portfolio Modal */}

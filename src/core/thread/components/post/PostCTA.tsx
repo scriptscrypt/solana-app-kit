@@ -336,7 +336,7 @@ export default function PostCTA({
           initialActiveTab="PAST_SWAPS"
           initialInputToken={{ address: tradeData.inputMint }}
           initialOutputToken={{ address: tradeData.outputMint }}
-          onPostCreated={() => setShowTradeModal(false)}
+          onShare={() => setShowTradeModal(false)}
         />
       )}
 

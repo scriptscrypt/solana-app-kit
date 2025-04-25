@@ -7,7 +7,7 @@ import CoinDetailPage from '@/screens/SampleUI/Threads/CoinDetailPage/CoinDetail
 import { PumpfunScreen, PumpSwapScreen } from '@/modules/pumpFun';
 import { TokenMillScreen } from '@/modules/tokenMill';
 import { NftScreen } from '@/modules/nft';
-import LaunchlabsScreen from '@/modules/LaunchLab/screens/LaunchlabsScreen';
+import LaunchlabsScreen from '@/modules/raydium/screens/LaunchlabsScreen';
 import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
 import ChatListScreen from '@/screens/SampleUI/Chat/ChatListScreen';
 import UserSelectionScreen from '@/screens/SampleUI/Chat/UserSelectionScreen/UserSelectionScreen';

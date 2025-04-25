@@ -19,8 +19,8 @@ import {
   createRetweetAsync,
   addRetweetLocally,
   updatePostAsync,
-} from '../../../../state/thread/reducer';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useReduxHooks';
+} from '@/shared/state/thread/reducer';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { nanoid } from '@reduxjs/toolkit';
 
 /**
@@ -102,7 +102,7 @@ export default function RetweetDrawer({
     if (visible) {
       // If editing an existing quote retweet, populate the text field with existing quote
       if (existingRetweet && existingRetweet.sections && existingRetweet.sections.length > 0) {
-        const quoteSection = existingRetweet.sections.find(s => s.type === 'TEXT_ONLY');
+        const quoteSection = existingRetweet.sections.find((s: { type: string }) => s.type === 'TEXT_ONLY');
         if (quoteSection && quoteSection.text) {
           setRetweetText(quoteSection.text);
           setShowQuoteInput(true);

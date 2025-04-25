@@ -3,63 +3,8 @@
  * Handles profile-related API calls and data transformations for wallet actions
  */
 
-import { TransactionEvents } from '../types';
-import COLORS from '../../../assets/colors';
-
-/**
- * Action data model representing a wallet transaction/activity
- */
-export interface Action {
-  id: string;
-  type: string;
-  timestamp: number;
-  description?: string;
-  amount?: number;
-  symbol?: string;
-  signature: string;
-  status: 'success' | 'failed';
-  events?: TransactionEvents;
-  source?: string;
-  fee?: number;
-  feePayer?: string;
-  transactionType?: string;
-  nativeTransfers?: Array<{
-    fromUserAccount: string;
-    toUserAccount: string;
-    amount: number;
-  }>;
-  tokenTransfers?: Array<{
-    fromUserAccount: string;
-    toUserAccount: string;
-    fromTokenAccount: string;
-    toTokenAccount: string;
-    tokenAmount: number;
-    mint: string;
-    tokenName?: string;
-    symbol?: string;
-  }>;
-  accountData?: Array<{
-    account: string;
-    name?: string;
-    nativeBalanceChange?: number;
-    // other account properties
-  }>;
-  // Enriched data properties for displaying transaction info
-  enrichedData?: {
-    direction: 'IN' | 'OUT' | 'NEUTRAL';
-    counterparty?: string;
-    swapType?: string;
-    inputSymbol?: string;
-    outputSymbol?: string;
-    inputAmount?: number;
-    outputAmount?: number;
-    transferType?: string;
-    amount?: number;
-    tokenSymbol?: string;
-    decimals?: number;
-  };
-  enrichedType?: string;
-}
+import COLORS from '@/assets/colors';
+import { Action, TransactionEvents } from '../types/index';
 
 /**
  * Format SOL amount from lamports
