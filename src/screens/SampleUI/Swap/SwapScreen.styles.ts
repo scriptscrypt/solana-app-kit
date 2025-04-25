@@ -332,6 +332,12 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 0, // Remove border since we're using gradient
     position: 'relative', // For proper positioning of the gradient
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   leftPlaceholder: {
     width: 36, // Same width as profileContainer in Thread.tsx for balance
   },

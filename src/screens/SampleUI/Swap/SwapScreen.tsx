@@ -15,7 +15,8 @@ import {
   Clipboard,
   Linking,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { PublicKey } from '@solana/web3.js';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,25 +38,58 @@ import { TradeService, SwapProvider } from '@/modules/dataModule/services/tradeS
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 import Icons from '@/assets/svgs';
 import TYPOGRAPHY from '@/assets/typography';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+
+// Define types for navigation and route
+type SwapScreenRouteProp = RouteProp<RootStackParamList, 'SwapScreen'>;
+type SwapScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SwapScreen'>;
 
 // Swap providers
 const swapProviders: SwapProvider[] = ['Jupiter', 'Raydium', 'PumpSwap'];
 
 export default function SwapScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<SwapScreenNavigationProp>();
+  const route = useRoute<SwapScreenRouteProp>();
   const { publicKey: userPublicKey, connected, sendTransaction } = useWallet();
 
+  // Get parameters from route if they exist
+  const routeParams = route.params || {};
+  
+  // Handle back button press
+  const handleBack = useCallback(() => {
+    // Check if we can go back before attempting to navigate
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      // We're in a tab, so there's nowhere to go back to
+      // You could show a message, do nothing, or handle in another way
+      console.log('Already at root level of navigation, cannot go back');
+    }
+  }, [navigation]);
+  
   // UI States
   const [activeProvider, setActiveProvider] = useState<SwapProvider>('Jupiter');
-  const [inputValue, setInputValue] = useState('5');
+  const [inputValue, setInputValue] = useState(routeParams.inputAmount || '5');
   const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
   const [selectingWhichSide, setSelectingWhichSide] = useState<'input' | 'output'>('input');
   const [poolAddress, setPoolAddress] = useState(''); // Add state for PumpSwap pool address
   const [slippage, setSlippage] = useState(10); // Add state for slippage, default to 10%
 
-  // Token States
-  const [inputToken, setInputToken] = useState<TokenInfo>(DEFAULT_SOL_TOKEN);
-  const [outputToken, setOutputToken] = useState<TokenInfo>(DEFAULT_USDC_TOKEN);
+  // Token States - Initialize with route params if available
+  const [inputToken, setInputToken] = useState<TokenInfo>(routeParams.inputToken as TokenInfo || DEFAULT_SOL_TOKEN);
+  const [outputToken, setOutputToken] = useState<TokenInfo>(
+    routeParams.outputToken ? 
+    { 
+      ...DEFAULT_USDC_TOKEN, 
+      address: routeParams.outputToken.address,
+      symbol: routeParams.outputToken.symbol || 'Unknown',
+      // Preserve the original logo URL if provided
+      logoURI: routeParams.outputToken.logoURI || DEFAULT_USDC_TOKEN.logoURI,
+      // Preserve the original name if provided
+      name: routeParams.outputToken.name || routeParams.outputToken.symbol || 'Unknown Token'
+    } : 
+    DEFAULT_USDC_TOKEN
+  );
   const [tokensInitialized, setTokensInitialized] = useState(false);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [currentTokenPrice, setCurrentTokenPrice] = useState<number | null>(null);
@@ -91,10 +125,81 @@ export default function SwapScreen() {
     try {
       // Mark operations as pending
       pendingTokenOps.current = { input: true, output: true };
-      console.log('[SwapScreen] Initializing tokens...');
+      console.log('[SwapScreen] Initializing tokens...', routeParams);
 
-      const completeInputToken = await ensureCompleteTokenInfo(DEFAULT_SOL_TOKEN);
-      const completeOutputToken = await ensureCompleteTokenInfo(DEFAULT_USDC_TOKEN);
+      // Use tokens from route params if available, otherwise use defaults
+      let startingInputToken = DEFAULT_SOL_TOKEN;
+      if (routeParams.inputToken) {
+        // If we have a partial token from the route, create a token object with it
+        if (routeParams.inputToken.address) {
+          console.log('[SwapScreen] Using input token from route params:', routeParams.inputToken);
+          startingInputToken = {
+            ...DEFAULT_SOL_TOKEN,  // Start with default values
+            ...routeParams.inputToken, // Override with provided values
+          };
+        }
+      }
+      
+      // For output token, if we have route params, create a proper token info object
+      let startingOutputToken = DEFAULT_USDC_TOKEN;
+      if (routeParams.outputToken && routeParams.outputToken.address) {
+        console.log('[SwapScreen] Using output token from route params:', routeParams.outputToken);
+        startingOutputToken = {
+          ...DEFAULT_USDC_TOKEN, // Use default as base
+          address: routeParams.outputToken.address,
+          symbol: routeParams.outputToken.symbol || 'Unknown',
+          // Preserve the original logo URL if provided
+          logoURI: routeParams.outputToken.logoURI || DEFAULT_USDC_TOKEN.logoURI,
+          // Preserve the original name if provided
+          name: routeParams.outputToken.name || routeParams.outputToken.symbol || 'Unknown Token'
+        };
+      }
+
+      // Fetch complete token information including logos, decimals, etc.
+      console.log('[SwapScreen] Fetching token details for:', 
+        startingInputToken.symbol, 
+        startingOutputToken.symbol
+      );
+      
+      // Save the original values before fetching complete info
+      const origInputSymbol = startingInputToken.symbol;
+      const origInputLogoURI = startingInputToken.logoURI;
+      
+      const origOutputSymbol = startingOutputToken.symbol;
+      const origOutputLogoURI = startingOutputToken.logoURI;
+      const origOutputName = startingOutputToken.name;
+      
+      // Get complete token information
+      const completeInputToken = await ensureCompleteTokenInfo(startingInputToken);
+      const completeOutputToken = await ensureCompleteTokenInfo(startingOutputToken);
+      
+      // Preserve the original symbols if they were specified in route params
+      if (routeParams.inputToken?.symbol && routeParams.inputToken.symbol !== completeInputToken.symbol) {
+        console.log(`[SwapScreen] Preserving original input symbol: ${routeParams.inputToken.symbol}`);
+        completeInputToken.symbol = routeParams.inputToken.symbol;
+      }
+      
+      if (routeParams.outputToken?.symbol && routeParams.outputToken.symbol !== completeOutputToken.symbol) {
+        console.log(`[SwapScreen] Preserving original output symbol: ${routeParams.outputToken.symbol}`);
+        completeOutputToken.symbol = routeParams.outputToken.symbol;
+      }
+      
+      // Preserve original logo URLs if they were provided
+      if (origInputLogoURI && origInputLogoURI !== '') {
+        console.log('[SwapScreen] Preserving original input token logo');
+        completeInputToken.logoURI = origInputLogoURI;
+      }
+      
+      if (origOutputLogoURI && origOutputLogoURI !== '') {
+        console.log('[SwapScreen] Preserving original output token logo');
+        completeOutputToken.logoURI = origOutputLogoURI;
+      }
+      
+      // Preserve original name if provided
+      if (origOutputName && origOutputName !== completeOutputToken.name) {
+        console.log('[SwapScreen] Preserving original output token name');
+        completeOutputToken.name = origOutputName;
+      }
 
       if (isMounted.current) {
         // Batch state updates to reduce rerenders
@@ -102,6 +207,12 @@ export default function SwapScreen() {
         setOutputToken(completeOutputToken);
         pendingTokenOps.current = { input: false, output: false };
         setTokensInitialized(true);
+
+        // If route provided an amount, set it
+        if (routeParams.inputAmount) {
+          console.log('[SwapScreen] Setting input amount from route:', routeParams.inputAmount);
+          setInputValue(routeParams.inputAmount);
+        }
 
         // Fetch balance and price
         if (userPublicKey) {
@@ -121,14 +232,24 @@ export default function SwapScreen() {
       console.error('[SwapScreen] Error initializing tokens:', error);
       pendingTokenOps.current = { input: false, output: false };
     }
-  }, [userPublicKey]);
+  }, [userPublicKey, routeParams]);
 
-  // Initialize tokens on component mount
+  // Initialize tokens on component mount or when route params change
   useEffect(() => {
     if (!tokensInitialized) {
       initializeTokens();
+    } else if (routeParams.shouldInitialize) {
+      // If the component needs to re-initialize with new route params
+      console.log('[SwapScreen] Re-initializing from route params', routeParams);
+      setTokensInitialized(false); // This will trigger initializeTokens() in the next effect
+      
+      // Clear the shouldInitialize flag to prevent re-initialization loops
+      if (route.params) {
+        // Update the route params to remove shouldInitialize
+        navigation.setParams({ ...route.params, shouldInitialize: false });
+      }
     }
-  }, [tokensInitialized, initializeTokens]);
+  }, [tokensInitialized, initializeTokens, routeParams, route.params, navigation]);
 
   // Handle visibility changes to reset states and initialize tokens if needed
   useEffect(() => {
@@ -659,8 +780,17 @@ export default function SwapScreen() {
 
         {/* Header with Gradient Border */}
         <View style={styles.headerContainer}>
-          {/* Left: Placeholder (empty) */}
-          <View style={styles.leftPlaceholder} />
+          {/* Left: Back Button or Placeholder */}
+          {navigation.canGoBack() ? (
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={handleBack}
+            >
+              <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.leftPlaceholder} />
+          )}
 
           {/* Center: "Swap Via" text */}
           <View style={styles.titleContainer}>
