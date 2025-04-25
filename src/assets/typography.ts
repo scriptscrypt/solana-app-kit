@@ -35,10 +35,29 @@ const TYPOGRAPHY = {
   // Letter spacing (-1.1%)
   letterSpacing: -0.011,
 
+  // Type for React Native fontWeight
+  fontWeightType: 'normal' as FontWeight,
+  
   // Helper function to convert typography weight to string format for React Native
-  fontWeightToString: (weight: number): "400" | "500" | "600" | "700" => {
-    return String(weight) as "400" | "500" | "600" | "700";
+  fontWeightToString: (weight: number): FontWeight => {
+    return String(weight) as FontWeight;
+  },
+  
+  // Pre-converted font weights to use directly in styles
+  get weights() {
+    return {
+      regular: this.fontWeightToString(this.regular),
+      medium: this.fontWeightToString(this.medium),
+      semiBold: this.fontWeightToString(this.semiBold),
+      bold: this.fontWeightToString(this.bold)
+    };
   }
 };
 
-export default TYPOGRAPHY; 
+// Define the type for React Native fontWeight property to satisfy TypeScript
+type FontWeight = 
+  | 'normal' | 'bold' 
+  | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'
+  | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+
+export default TYPOGRAPHY;

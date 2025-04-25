@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { useEnvError } from '../context/EnvErrorContext';
-import { useDevMode } from '../context/DevModeContext';
+import { useEnvError } from '@/context/EnvErrorContext';
+import { useDevMode } from '@/context/DevModeContext';
 
 /**
  * Hook to check if required environment variables are present for a specific screen/feature

@@ -2,9 +2,8 @@
  * Custom hook for fetching and managing profile actions/transactions
  */
 import { useState, useCallback, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../../../hooks/useReduxHooks';
-import { fetchWalletActionsWithCache, pruneOldActionData } from '../../../state/profile/reducer';
-import { Action } from '../utils/profileActionsUtils';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
+import { fetchWalletActionsWithCache, pruneOldActionData } from '@/shared/state/profile/reducer';
 
 /**
  * Hook that manages profile actions/transactions
@@ -18,7 +17,7 @@ export function useProfileActions(walletAddress: string | undefined) {
   const profileActions = useAppSelector(state => state.profile.actions);
 
   // Extract values with error handling
-  const myActions: Action[] = walletAddress 
+  const myActions = walletAddress 
     ? (profileActions.data[walletAddress] || [])
     : [];
     
@@ -32,7 +31,7 @@ export function useProfileActions(walletAddress: string | undefined) {
     if (!walletAddress) return;
     
     try {
-      await dispatch(fetchWalletActionsWithCache(walletAddress));
+      await dispatch(fetchWalletActionsWithCache({ walletAddress }));
       
       // Prune old action data after fetching new data
       // This helps keep the store optimized

@@ -45,7 +45,7 @@ export const useThread = (initialPosts: ThreadPost[] = []) => {
             
             // Also check replies recursively
             if (post.replies && post.replies.length > 0) {
-              const updatedReplies = addReplyToParent(post.replies, newPostData.parentId, createdPost);
+              const updatedReplies = addReplyToParent(post.replies, newPostData.parentId!, createdPost);
               if (updatedReplies !== post.replies) {
                 return { ...post, replies: updatedReplies };
               }

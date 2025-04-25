@@ -445,10 +445,10 @@ export default function SwapScreen() {
     }
 
     // Check if the selected provider is implemented
-    if (activeProvider !== 'Jupiter') {
+    if (activeProvider !== 'Jupiter' && activeProvider !== 'Raydium') {
       Alert.alert(
         'Provider Not Available',
-        `${activeProvider} integration is coming soon! Please use Jupiter for now.`
+        `${activeProvider} integration is coming soon! Please use Jupiter or Raydium for now.`
       );
       return;
     }
@@ -470,7 +470,8 @@ export default function SwapScreen() {
             if (isMounted.current) {
               setResultMsg(status);
             }
-          }
+          },
+          isComponentMounted: () => isMounted.current
         },
         activeProvider
       );
@@ -496,18 +497,23 @@ export default function SwapScreen() {
       console.error('Swap error:', err);
 
       if (isMounted.current) {
-        // Format error message for user
-        let errorMessage = 'Swap failed. ';
-        if (err.message.includes('signature verification')) {
-          errorMessage += 'Please try again.';
-        } else if (err.message.includes('0x1771')) {
-          errorMessage += 'Insufficient balance or price impact too high.';
+        // Handle operation cancelled differently - no need to show error
+        if (err.message === 'Operation cancelled') {
+          console.log('Swap cancelled due to screen navigation');
         } else {
-          errorMessage += err.message;
-        }
+          // Format error message for user
+          let errorMessage = 'Swap failed. ';
+          if (err.message.includes('signature verification')) {
+            errorMessage += 'Please try again.';
+          } else if (err.message.includes('0x1771')) {
+            errorMessage += 'Insufficient balance or price impact too high.';
+          } else {
+            errorMessage += err.message;
+          }
 
-        setErrorMsg(errorMessage);
-        Alert.alert('Swap Failed', errorMessage);
+          setErrorMsg(errorMessage);
+          Alert.alert('Swap Failed', errorMessage);
+        }
       }
     } finally {
       if (isMounted.current) {
@@ -540,8 +546,8 @@ export default function SwapScreen() {
 
   // Check if a provider is available for selection
   const isProviderAvailable = useCallback((provider: SwapProvider) => {
-    // Only Jupiter is fully implemented for now
-    return provider === 'Jupiter';
+    // Now both Jupiter and Raydium are fully implemented
+    return provider === 'Jupiter' || provider === 'Raydium';
   }, []);
 
   return (
@@ -593,12 +599,20 @@ export default function SwapScreen() {
                   key={provider}
                   style={[
                     styles.providerButton,
-                    activeProvider === provider && { backgroundColor: COLORS.lightBackground, borderWidth: 1, borderColor: COLORS.white },
+                    activeProvider === provider && { 
+                      backgroundColor: COLORS.lightBackground, 
+                      borderWidth: 1, 
+                      borderColor: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white 
+                    },
                     !isProviderAvailable(provider) && { opacity: 0.5 }
                   ]}
                   onPress={() => {
                     if (isProviderAvailable(provider)) {
                       setActiveProvider(provider);
+                      // Reset the output estimate when changing providers
+                      if (parseFloat(inputValue) > 0) {
+                        estimateSwap();
+                      }
                     } else {
                       Alert.alert(
                         'Coming Soon', 
@@ -610,7 +624,9 @@ export default function SwapScreen() {
                   <Text
                     style={[
                       styles.providerButtonText,
-                      activeProvider === provider && { color: COLORS.white }
+                      activeProvider === provider && { 
+                        color: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white 
+                      }
                     ]}
                     numberOfLines={1}
                     ellipsizeMode="tail"
@@ -766,6 +782,12 @@ export default function SwapScreen() {
                 <Text style={styles.swapInfoLabel}>Price Impact</Text>
                 <Text style={styles.swapInfoValue}>
                   <Text style={{ color: COLORS.brandPrimary }}>~0.05%</Text>
+                </Text>
+              </View>
+              <View style={styles.swapInfoRow}>
+                <Text style={styles.swapInfoLabel}>Provider</Text>
+                <Text style={[styles.swapInfoValue, { color: COLORS.brandPrimary }]}>
+                  {activeProvider}
                 </Text>
               </View>
               {solscanTxSig && (

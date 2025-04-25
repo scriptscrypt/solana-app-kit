@@ -614,7 +614,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         })).unwrap();
       } catch (error: any) {
         console.warn('Feed post failed, adding locally', error);
-        dispatch(addPostLocally(fallbackPost));
+        dispatch(addPostLocally(fallbackPost as ThreadPost));
       } finally {
         setIsSubmitting(false);
       }

@@ -529,7 +529,18 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
       <NftListingModal
         visible={showListingModal}
         onClose={() => setShowListingModal(false)}
-        onSelectListing={handleSelectListing}
+        onShare={(listingData) => {
+          // Convert from NftListingData to NftItem for our internal usage
+          const nftItem: NftItem = {
+            mint: listingData.mint || '',
+            name: listingData.name || '',
+            image: listingData.image || '',
+            collection: listingData.collectionName,
+            isCompressed: listingData.isCompressed,
+            priceSol: listingData.priceSol
+          };
+          handleSelectListing(nftItem);
+        }}
         listingItems={activeListings}
         loadingListings={loadingActiveListings}
         fetchNftsError={activeListingsError}
@@ -540,8 +551,23 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
       <TradeModal
         visible={showTradeModal}
         onClose={() => setShowTradeModal(false)}
+        onShare={(tradeData) => {
+          // Handle the trade data here
+          // Create a section with the trade data
+          const section: ThreadSection = {
+            id: 'section-' + Math.random().toString(36).substr(2, 9),
+            type: 'TEXT_TRADE',
+            tradeData,
+          };
+          
+          // You can process the section here or add it to state
+          // For now, simply close the modal
+          setShowTradeModal(false);
+          
+          // If needed, you can call onPostCreated here
+          onPostCreated && onPostCreated();
+        }}
         currentUser={currentUser}
-        onPostCreated={onPostCreated}
       />
     </View>
   );
