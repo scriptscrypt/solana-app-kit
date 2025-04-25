@@ -319,6 +319,7 @@ export const styles = StyleSheet.create({
   },
   fullWidthScroll: {
     width: '100%',
+    maxHeight : '60%'
   },
   headerContainer: {
     flexDirection: 'row',
