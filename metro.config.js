@@ -18,6 +18,10 @@ config.resolver = {
     ...config.resolver.extraNodeModules,
     crypto: require.resolve('expo-crypto'),
     fs: path.resolve(__dirname, './src/shared/utils/fsPolyfill.js'),
+    'text-encoding': require.resolve('text-encoding'),
+    stream: require.resolve('stream-browserify'),
+    // Add web streams API polyfill
+    'web-streams-polyfill': require.resolve('web-streams-polyfill'),
   },
 };
 

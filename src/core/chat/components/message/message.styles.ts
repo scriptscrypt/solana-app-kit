@@ -76,6 +76,7 @@ export const messageBubbleStyles = StyleSheet.create({
     borderRadius: 18,
     marginVertical: 0,
     maxWidth: '100%',
+    minWidth: 100,
   },
   currentUser: {
     backgroundColor: COLORS.brandBlue,

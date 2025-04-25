@@ -1,6 +1,8 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
+
+const { width, height } = Dimensions.get('window');
 
 // Calculate tab bar height for padding
 export const TAB_BAR_HEIGHT = 20;
@@ -181,5 +183,33 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.sm,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
-  }
+  },
+  // Decorative elements
+  decorCircle1: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(50, 212, 222, 0.1)',
+    top: -50,
+    left: -50,
+    opacity: 0.5,
+  },
+  decorCircle2: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(181, 145, 255, 0.04)',
+    bottom: 100,
+    right: -100,
+  },
+  glow1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    top: height * 0.3,
+    left: -width * 0.2,
+  },
 });

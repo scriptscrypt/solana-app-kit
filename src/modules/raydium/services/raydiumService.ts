@@ -97,7 +97,7 @@ export class RaydiumService {
       
       let transaction: Transaction | VersionedTransaction;
       try {
-        transaction = VersionedTransaction.deserialize(txBuffer);
+        transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
       } catch (e) {
         transaction = Transaction.from(txBuffer);
         transaction.feePayer = walletPublicKey;

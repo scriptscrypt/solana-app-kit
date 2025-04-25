@@ -378,8 +378,8 @@ export async function buyNft(
       let transaction: Transaction | VersionedTransaction;
 
       if (txObj.txV0) {
-        const txBuffer = Buffer.from(txObj.txV0.data, 'base64');
-        transaction = VersionedTransaction.deserialize(txBuffer as unknown as Uint8Array);
+        const txBuffer = new Uint8Array(Buffer.from(txObj.txV0.data, 'base64'));
+        transaction = VersionedTransaction.deserialize(txBuffer);
       } else if (txObj.tx) {
         const txBuffer = Buffer.from(txObj.tx.data, 'base64');
         transaction = Transaction.from(txBuffer);

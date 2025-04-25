@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChatComposer, ChatMessage } from '@/core/chat/components';
+import { ChatComposer, ChatMessage, AgenticChatContainer } from '@/core/chat/components';
 import { MessageNFT, MessageTradeCard } from '@/core/chat/components/message';
 import { MessageData, NFTData } from '@/core/chat/components/message/message.types';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
@@ -43,7 +43,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import {
   fetchChatMessages,
-  sendMessage,
+  sendMessage as sendReduxMessage,
   receiveMessage,
   editMessage,
   deleteMessage,
@@ -51,6 +51,9 @@ import {
 } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
 import { TradeData } from '@/core/sharedUI/TradeCard/TradeCard';
+import { useChat } from '@/modules/solanaAgentKit/hooks/useChat';
+import { generateUUID } from '@/modules/solanaAgentKit/lib/utils';
+import type { Message } from 'ai';
 
 // Add these styles before the component
 // Create a complete styles object by extending the base styles
@@ -465,6 +468,58 @@ function ChatScreen(): React.ReactElement {
   // Check if this is the AI Agent chat
   const isAIAgentChat = chatId === AI_AGENT.id;
 
+  // Use the useChat hook for the AI agent chat
+  const {
+    messages: aiMessages,
+    input: aiInput,
+    setInput: setAiInput,
+    handleSubmit: handleAiSubmit,
+    sendMessage: sendAiMessage,
+    isLoading: aiLoading,
+    error: aiError,
+    status: aiStatus,
+    currentOperation: aiCurrentOperation,
+  } = useChat({
+    id: 'ai-agent', // Use a specific ID for the AI chat
+    initialMessages: !isAIAgentChat ? [] : [{
+      id: 'ai-init-msg',
+      role: 'assistant',
+      content: AI_AGENT.initialMessage,
+      parts: [{ type: 'text', text: AI_AGENT.initialMessage }],
+    }],
+    // Since it's AI chat, we assume it doesn't exist in DB, so isExistingChat=false
+    isExistingChat: false,
+  });
+
+  // State to manage the AI composer input (separate from the hook's internal input)
+  const [composerInput, setComposerInput] = useState('');
+
+  // Handle sending message specifically for AI chat
+  const handleAiMessageSent = useCallback((content: string, imageUrl?: string) => {
+    if (!address) {
+      Alert.alert('Error', 'Wallet not connected. Cannot chat with AI.');
+      return;
+    }
+    if (!content.trim() && !imageUrl) return;
+
+    // Create a new message object in the format expected by useChat
+    const newMessage: Message = {
+      id: generateUUID(),
+      content: content.trim(),
+      role: 'user',
+      parts: [{ type: 'text' as const, text: content.trim() }],
+      // TODO: Handle image URLs if needed for AI chat in the future
+      // experimental_attachments: imageUrl ? [{ contentType: 'image/png', url: imageUrl }] : [],
+    };
+
+    // Use the sendMessage function from the useChat hook
+    sendAiMessage(newMessage);
+
+    // Clear the composer input
+    setComposerInput('');
+
+  }, [address, sendAiMessage]);
+
   // Handle back button press
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -478,6 +533,18 @@ function ChatScreen(): React.ReactElement {
     avatar: auth.profilePicUrl ? { uri: auth.profilePicUrl } : DEFAULT_IMAGES.user as ImageSourcePropType,
     verified: false,
   };
+
+  // Memoize the current user object to prevent recreation on each render
+  const currentUserMemo = useMemo(() => ({
+    id: address || '',
+    username: auth.username || 'You',
+    avatar: auth.profilePicUrl ? { uri: auth.profilePicUrl } : DEFAULT_IMAGES.user
+  }), [address, auth.username, auth.profilePicUrl]);
+
+  // Extract the avatar source for stable reference
+  const currentUserAvatar = useMemo(() => 
+    auth.profilePicUrl ? { uri: auth.profilePicUrl } : DEFAULT_IMAGES.user, 
+  [auth.profilePicUrl]);
 
   // Connect to WebSocket with retry logic
   const connectToSocket = useCallback(async () => {
@@ -624,89 +691,72 @@ function ChatScreen(): React.ReactElement {
     };
   }, []);
 
-  // Modify handleMessageSent to handle AI Agent chat
+  // Conditionally choose the message sending function based on chat type
   const handleMessageSent = useCallback((content: string, imageUrl?: string) => {
-    if (!address || (!content.trim() && !imageUrl)) return;
-
-    // For AI Agent chat, don't actually send a message
     if (isAIAgentChat) {
-      // You could implement AI response logic here in the future
-      Alert.alert('AI Assistant', 'This is a demo AI assistant. In a real app, this would connect to an AI service to process your message.');
-      return;
-    }
+      handleAiMessageSent(content, imageUrl);
+    } else {
+      // Original message sending logic for non-AI chats
+      if (!address || (!content.trim() && !imageUrl)) return;
 
-    if (chatId === 'global') {
-      // For global chat, we'd normally create a post
-      // For now, just show a notification since global chat is read-only
-      Alert.alert('Global Chat', 'Global chat messages are currently shown as posts. To create a post, use the Post button in the feed.');
-      return;
-    }
-
-    // Create message object with all required fields
-    const messagePayload = {
-      chatId: chatId,  // Explicitly include chatId
-      chat_room_id: chatId,  // Add this too for API compatibility
-      userId: address,
-      senderId: address,
-      sender_id: address,
-      content: content.trim(),
-      imageUrl: imageUrl, // Include image URL if provided
-      timestamp: new Date().toISOString(),
-    };
-
-    // Send message via Redux (which will send to API)
-    dispatch(sendMessage({
-      chatId,
-      userId: address,
-      content: content.trim(),
-      imageUrl: imageUrl, // Include image URL if provided
-    })).then((resultAction) => {
-      if (sendMessage.fulfilled.match(resultAction)) {
-        // Message sent successfully to the API
-        console.log("Message sent successfully via API, payload:", resultAction.payload);
-
-        // If socket connected, send via socket for real-time updates
-        if (socketConnected) {
-          // Send via WebSocket for real-time display with API response data
-          // Make sure to include all required fields
-          const socketPayload = {
-            ...resultAction.payload,
-            senderId: address, // Make sure this matches the ID used in socketService.initSocket()
-            sender_id: address, // Include both formats to be safe
-            chatId: chatId,    // Explicitly include chatId
-            chat_room_id: chatId // Include both formats to be safe
-          };
-
-          socketService.sendMessage(chatId, socketPayload);
-        } else {
-          // If not connected via socket, add the message to the local state immediately
-          // so users don't have to wait for a refresh
-          dispatch(receiveMessage(resultAction.payload));
-        }
-
-        // Scroll to bottom
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      } else if (sendMessage.rejected.match(resultAction)) {
-        // Handle error
-        console.error('Failed to send message:', resultAction.payload);
-        Alert.alert('Error', 'Failed to send message. Please try again.');
+      if (chatId === 'global') {
+        Alert.alert('Global Chat', 'Global chat messages are currently shown as posts. To create a post, use the Post button in the feed.');
+        return;
       }
-    });
-  }, [chatId, address, dispatch, isAIAgentChat, socketConnected]);
+
+      const messagePayload = {
+        chatId: chatId,
+        chat_room_id: chatId,
+        userId: address,
+        senderId: address,
+        sender_id: address,
+        content: content.trim(),
+        imageUrl: imageUrl,
+        timestamp: new Date().toISOString(),
+      };
+
+      dispatch(sendReduxMessage({ // Use renamed Redux function
+        chatId,
+        userId: address,
+        content: content.trim(),
+        imageUrl: imageUrl,
+      })).then((resultAction) => {
+        if (sendReduxMessage.fulfilled.match(resultAction)) {
+          console.log("Message sent successfully via API, payload:", resultAction.payload);
+          if (socketConnected) {
+            const socketPayload = {
+              ...resultAction.payload,
+              senderId: address,
+              sender_id: address,
+              chatId: chatId,
+              chat_room_id: chatId
+            };
+            socketService.sendMessage(chatId, socketPayload);
+          } else {
+            dispatch(receiveMessage(resultAction.payload));
+          }
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        } else if (sendReduxMessage.rejected.match(resultAction)) {
+          console.error('Failed to send message:', resultAction.payload);
+          Alert.alert('Error', 'Failed to send message. Please try again.');
+        }
+      });
+    }
+  }, [chatId, address, dispatch, isAIAgentChat, socketConnected, handleAiMessageSent]);
 
   // Modify the scroll to bottom effect
   useEffect(() => {
     if ((chatId === 'global' && globalMessages.length > 0) ||
-      (chatId !== 'global' && chatMessages.length > 0) ||
-      isAIAgentChat) {
+      (chatId !== 'global' && !isAIAgentChat && chatMessages.length > 0) ||
+      (isAIAgentChat && aiMessages.length > 0)) {
       // Use a longer timeout to ensure the list has fully rendered
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: false });
       }, 500);
     }
-  }, [globalMessages, chatMessages, chatId, isAIAgentChat]);
+  }, [globalMessages, chatMessages, aiMessages, chatId, isAIAgentChat]);
 
   // Handle retry for socket connection
   const handleRetryConnection = useCallback(() => {
@@ -964,20 +1014,28 @@ function ChatScreen(): React.ReactElement {
     };
   };
 
-  // Get messages to display based on chat type
-  const getMessagesToDisplay = () => {
-    // For AI Agent chat, return a hardcoded message
+  // Use the memoized current user object in the displayMessages selector
+  const displayMessages = useMemo(() => {
+    // For AI Agent chat, return messages from useChat hook
     if (isAIAgentChat) {
-      return [{
-        id: 'ai-msg-1',
+      // Map AI SDK messages to the format ChatMessage expects
+      return aiMessages.map((msg: Message) => ({
+        id: msg.id,
         user: {
-          id: 'ai-agent',
-          username: 'AI Assistant',
-          avatar: AI_AGENT.avatar
+          id: msg.role === 'user' ? currentUserMemo.id : 'ai-agent',
+          username: msg.role === 'user' ? currentUserMemo.username : 'AI Assistant',
+          avatar: msg.role === 'user' ? currentUserAvatar : AI_AGENT.avatar,
         },
-        text: AI_AGENT.initialMessage,
-        createdAt: new Date().toISOString(),
-      }];
+        // Extract text content - handle potential non-string content if needed
+        text: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+        // Use createdAt if available, otherwise use current time as fallback
+        createdAt: msg.createdAt?.toISOString() || new Date().toISOString(),
+        // Add other fields if needed, e.g., image_url, is_deleted
+        image_url: undefined,
+        is_deleted: false,
+        // Pass parts for potential richer rendering later
+        parts: msg.parts,
+      }));
     }
 
     if (chatId === 'global') {
@@ -1000,7 +1058,7 @@ function ChatScreen(): React.ReactElement {
         additional_data: msg.additional_data,
       }));
     }
-  };
+  }, [isAIAgentChat, aiMessages, chatId, globalMessages, chatMessages, currentUserMemo, currentUserAvatar, AI_AGENT.avatar]);
 
   // Add state for message actions (edit/delete)
   const [selectedMessage, setSelectedMessage] = useState<any | null>(null);
@@ -1028,12 +1086,12 @@ function ChatScreen(): React.ReactElement {
     }
 
     // Determine if this is the current user's message
-    const isCurrentUserMessage =
+    const isCurrentUser =
       (message.user?.id === address) ||
       (message.sender_id === address) ||
       (message.senderId === address);
 
-    if (!isCurrentUserMessage) {
+    if (!isCurrentUser) {
       console.log('Cannot edit/delete messages from other users');
       console.log('Message user ID:', message.user?.id);
       console.log('Message sender ID:', message.sender_id || message.senderId);
@@ -1181,15 +1239,20 @@ function ChatScreen(): React.ReactElement {
   const renderMessage = ({ item }: { item: any }) => {
     // Debug logging for message structure
     if (Math.random() < 0.1) {
-      debugMessageStructure(item);
+      // Skip debug for AI messages for now, as format is different
+      if (!isAIAgentChat) {
+        debugMessageStructure(item);
+      }
     }
 
-    const isCurrentUser = item.user?.id === currentUser.id || item.sender_id === address;
+    // Adjust isCurrentUser check for AI chat
+    const isCurrentUser = isAIAgentChat
+      ? item.user?.id === currentUser.id
+      : (item.user?.id === currentUser.id || item.sender_id === address);
 
     // Show header only for the first message from a user in a sequence
-    const messages = getMessagesToDisplay();
-    const index = messages.findIndex(msg => msg.id === item.id);
-    const previousMessage = index > 0 ? messages[index - 1] : null;
+    const index = displayMessages.findIndex((msg: any) => msg.id === item.id);
+    const previousMessage = index > 0 ? displayMessages[index - 1] : null;
 
     // Show header if this is the first message or if previous message is from a different user
     const showHeader = !previousMessage || previousMessage.user?.id !== item.user?.id;
@@ -1315,12 +1378,15 @@ function ChatScreen(): React.ReactElement {
               if (nftData) {
                 handleOpenNftDetails(nftData);
               }
+            } else if (isAIAgentChat) {
+              // Handle potential actions specific to AI messages in the future
+              console.log('AI message pressed:', message);
             }
           }}
           // Pass the long press handler only for current user's messages 
           // in non-global/AI chats
           onLongPress={
-            isCurrentUser && chatId !== 'global' && chatId !== AI_AGENT.id
+            isCurrentUser && chatId !== 'global' // Allow long press for AI messages
               ? (e) => handleMessageLongPress(item, e)
               : undefined
           }
@@ -1381,27 +1447,136 @@ function ChatScreen(): React.ReactElement {
     return null;
   };
 
-  // Modify the polling interval effect to avoid a variable name conflict
-  // useEffect(() => {
-  //   if (socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id) {
-  //     // Set up a polling interval to refresh messages periodically
-  //     // This is a fallback in case socket events aren't fully implemented
-  //     const interval = setInterval(() => {
-  //       // Only fetch messages if we're not already loading
-  //       if (!isLoadingMessages) {
-  //         dispatch(fetchChatMessages({ chatId }));
-  //       }
-  //     }, 60000); // Reduced polling frequency from 15s to 60s to prevent excessive refreshes
+  // Function to render different chat content based on chat type
+  const renderChatContent = () => {
+    // For AI Agent chat, render the AgenticChatContainer
+    if (isAIAgentChat) {
+      return (
+        <AgenticChatContainer
+          messages={aiMessages}
+          isLoading={aiLoading}
+          error={aiError}
+          status={aiStatus}
+          currentOperation={aiCurrentOperation || "Processing your request..."}
+          currentUser={currentUser}
+          aiUser={{
+            id: AI_AGENT.id,
+            name: AI_AGENT.name,
+            avatar: AI_AGENT.avatar,
+          }}
+          onSendMessage={handleAiMessageSent}
+          inputValue={composerInput}
+          setInputValue={setComposerInput}
+        />
+      );
+    }
 
-  //     return () => {
-  //       clearInterval(interval);
-  //     };
-  //   }
-  // }, [socketConnected, chatId, dispatch, isLoadingMessages]);
+    // For loading states in regular chats
+    if (loading || (isLoadingMessages && !isAIAgentChat)) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading messages...</Text>
+        </View>
+      );
+    }
+
+    // For error states in regular chats
+    if (chatError && !isAIAgentChat) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{chatError}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => {
+              dispatch(fetchChatMessages({ chatId }));
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    // For empty chat states
+    if (displayMessages.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No messages yet</Text>
+          <Text style={styles.emptySubtext}>Start the conversation!</Text>
+        </View>
+      );
+    }
+
+    // For regular chats with messages
+    return (
+      <>
+        <FlatList
+          ref={flatListRef}
+          data={displayMessages}
+          renderItem={renderMessage}
+          keyExtractor={item => item.id}
+          contentContainerStyle={[
+            styles.messagesContainer,
+            { paddingBottom: 10 }
+          ]}
+          scrollEnabled={true}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={true}
+          onLayout={() => {
+            // Scroll to end when layout is complete
+            flatListRef.current?.scrollToEnd({ animated: false });
+          }}
+        />
+        
+        {!socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id && socketError && (
+          <View style={styles.offlineBanner}>
+            <Text style={styles.offlineBannerText}>
+              Offline mode - Messages will send but you won't see new messages until you refresh
+            </Text>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={() => {
+                dispatch(fetchChatMessages({ chatId }));
+                handleRetryConnection();
+              }}
+              disabled={isRetrying}
+            >
+              <Text style={styles.refreshButtonText}>
+                {isRetrying ? 'Connecting...' : 'Refresh'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Chat composer with bottom padding for tab bar - Only for non-AI chats */}
+        <View style={styles.composerContainer}>
+          <ChatComposer
+            currentUser={currentUser}
+            onMessageSent={handleMessageSent}
+            chatContext={{ chatId: chatId }}
+            disabled={false}
+          />
+          {!keyboardVisible && (
+            <View style={[styles.tabBarSpacer, { height: 20 }]} />
+          )}
+        </View>
+      </>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
+
+      {/* Decorative background elements */}
+      <View style={styles.decorCircle1} />
+      <View style={styles.decorCircle2} />
+      <LinearGradient
+        colors={['rgba(50, 212, 222, 0.05)', 'transparent']}
+        style={styles.glow1}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
 
       {/* Header with Gradient Border - updated to include back button and chat name */}
       <View style={styles.headerContainer}>
@@ -1441,80 +1616,12 @@ function ChatScreen(): React.ReactElement {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // Adjust offset
         style={styles.keyboardAvoidingContainer}>
 
         <View style={styles.innerContainer}>
-          {loading || isLoadingMessages ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading messages...</Text>
-            </View>
-          ) : chatError ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{chatError}</Text>
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={() => dispatch(fetchChatMessages({ chatId }))}
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : getMessagesToDisplay().length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No messages yet</Text>
-              <Text style={styles.emptySubtext}>Start the conversation!</Text>
-            </View>
-          ) : (
-            <FlatList
-              ref={flatListRef}
-              data={getMessagesToDisplay()}
-              renderItem={renderMessage}
-              keyExtractor={item => item.id}
-              contentContainerStyle={[
-                styles.messagesContainer,
-                { paddingBottom: 10 }
-              ]}
-              scrollEnabled={true}
-              scrollEventThrottle={16}
-              showsVerticalScrollIndicator={true}
-              onLayout={() => {
-                // Scroll to end when layout is complete
-                flatListRef.current?.scrollToEnd({ animated: false });
-              }}
-            />
-          )}
-
-          {!socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id && socketError && (
-            <View style={styles.offlineBanner}>
-              <Text style={styles.offlineBannerText}>
-                Offline mode - Messages will send but you won't see new messages until you refresh
-              </Text>
-              <TouchableOpacity
-                style={styles.refreshButton}
-                onPress={() => {
-                  dispatch(fetchChatMessages({ chatId }));
-                  handleRetryConnection();
-                }}
-                disabled={isRetrying}
-              >
-                <Text style={styles.refreshButtonText}>
-                  {isRetrying ? 'Connecting...' : 'Refresh'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Chat composer with bottom padding for tab bar */}
-          <View style={styles.composerContainer}>
-            <ChatComposer
-              currentUser={currentUser}
-              onMessageSent={handleMessageSent}
-              chatContext={{ chatId: chatId }}
-            />
-            {!keyboardVisible && (
-              <View style={[styles.tabBarSpacer, { height: 20 }]} />
-            )}
-          </View>
+          {/* Render appropriate chat content based on chat type */}
+          {renderChatContent()}
         </View>
 
       </KeyboardAvoidingView>
@@ -1581,39 +1688,44 @@ function ChatScreen(): React.ReactElement {
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              style={styles.editInput}
-              value={editedContent}
-              onChangeText={setEditedContent}
-              multiline
-              placeholder="Edit your message..."
-              placeholderTextColor={COLORS.greyMid}
-              autoFocus
-              selectionColor={COLORS.brandBlue}
-            />
+            {/* Only show edit controls if NOT AI Chat */}
+            {!isAIAgentChat && (
+              <>
+                <TextInput
+                  style={styles.editInput}
+                  value={editedContent}
+                  onChangeText={setEditedContent}
+                  multiline
+                  placeholder="Edit your message..."
+                  placeholderTextColor={COLORS.greyMid}
+                  autoFocus
+                  selectionColor={COLORS.brandBlue}
+                />
 
-            <View style={styles.editButtons}>
-              <TouchableOpacity
-                style={styles.editCancelButton}
-                onPress={() => setShowEditDrawer(false)}
-                disabled={isEditingMessage}
-              >
-                <Text style={[styles.buttonText, { color: COLORS.greyMid }]}>Cancel</Text>
-              </TouchableOpacity>
+                <View style={styles.editButtons}>
+                  <TouchableOpacity
+                    style={styles.editCancelButton}
+                    onPress={() => setShowEditDrawer(false)}
+                    disabled={isEditingMessage}
+                  >
+                    <Text style={[styles.buttonText, { color: COLORS.greyMid }]}>Cancel</Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.editSaveButton,
-                  (!editedContent.trim() || isEditingMessage) && { opacity: 0.5 }
-                ]}
-                onPress={handleSaveEditedMessage}
-                disabled={!editedContent.trim() || isEditingMessage}
-              >
-                <Text style={styles.buttonText}>
-                  {isEditingMessage ? 'Saving...' : 'Save Changes'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.editSaveButton,
+                      (!editedContent.trim() || isEditingMessage) && { opacity: 0.5 }
+                    ]}
+                    onPress={handleSaveEditedMessage}
+                    disabled={!editedContent.trim() || isEditingMessage}
+                  >
+                    <Text style={styles.buttonText}>
+                      {isEditingMessage ? 'Saving...' : 'Save Changes'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </KeyboardAvoidingView>
       )}
