@@ -3,7 +3,7 @@
  */
 import { Connection, Cluster, clusterApiUrl, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { Buffer } from 'buffer';
-import { TENSOR_API_KEY, CLUSTER } from '@env';
+import { TENSOR_API_KEY, CLUSTER, HELIUS_STAKED_URL } from '@env';
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 import { CollectionData, NftItem } from '../types';
 import { ENDPOINTS } from '../../../config/constants';
@@ -342,7 +342,7 @@ export async function buyNft(
   try {
     if (onStatus) onStatus('Fetching blockhash...');
 
-    const rpcUrl = ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
+    const rpcUrl = HELIUS_STAKED_URL || clusterApiUrl(CLUSTER as Cluster);
     const connection = new Connection(rpcUrl, 'confirmed');
     const { blockhash } = await connection.getRecentBlockhash();
     
@@ -379,7 +379,7 @@ export async function buyNft(
 
       if (txObj.txV0) {
         const txBuffer = Buffer.from(txObj.txV0.data, 'base64');
-        transaction = VersionedTransaction.deserialize(txBuffer);
+        transaction = VersionedTransaction.deserialize(txBuffer as unknown as Uint8Array);
       } else if (txObj.tx) {
         const txBuffer = Buffer.from(txObj.tx.data, 'base64');
         transaction = Transaction.from(txBuffer);
