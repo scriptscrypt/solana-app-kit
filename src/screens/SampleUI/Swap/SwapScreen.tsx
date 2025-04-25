@@ -757,7 +757,7 @@ export default function SwapScreen() {
               <View style={styles.poolAddressContainer}>
                 <Text style={styles.poolAddressLabel}>Slippage Tolerance</Text>
                 <View style={styles.slippageButtonsContainer}>
-                  {[1, 3, 5, 10, 15, 25].map((value) => (
+                  {[1, 3, 5, 10, 15,20, 25,30].map((value) => (
                     <TouchableOpacity
                       key={`slippage-${value}`}
                       style={[
