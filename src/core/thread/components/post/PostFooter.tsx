@@ -421,14 +421,14 @@ export default function PostFooter({
     }
     return (
       <View style={reactionStyles.existingReactionsContainer}>
-        {Object.entries(updatedPost.reactions).map(([emoji, count], index) => (
+        {Object.entries(updatedPost.reactions || {}).map(([emoji, count], index) => (
           <View key={emoji} style={reactionStyles.reactionPill}>
             <View style={reactionStyles.emojiCircle}>
               <Text style={reactionStyles.reactionEmoji}>{emoji}</Text>
             </View>
-            {index === Object.entries(updatedPost.reactions).length - 1 && (
+            {index === Object.entries(updatedPost.reactions || {}).length - 1 && (
               <Text style={reactionStyles.totalCount}>
-                {Object.values(updatedPost.reactions).reduce((a: number, b) => a + (typeof b === 'number' ? b : 0), 0)}
+                {Object.values(updatedPost.reactions || {}).reduce((a: number, b) => a + (typeof b === 'number' ? b : 0), 0)}
               </Text>
             )}
           </View>

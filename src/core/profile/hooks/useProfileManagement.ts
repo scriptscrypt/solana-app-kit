@@ -4,30 +4,16 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert, Platform } from 'react-native';
-import { useAppDispatch } from '../../../hooks/useReduxHooks';
+import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { 
   updateProfilePic, 
   updateUsername, 
   updateDescription,
   attachCoinToProfile,
   removeAttachedCoin
-} from '../../../state/auth/reducer';
+} from '@/shared/state/auth/reducer';
 import { uploadProfileAvatar } from '../services/profileService';
-
-interface ProfileData {
-  profilePicUrl: string;
-  username: string;
-  description: string;
-  attachmentData?: {
-    coin?: {
-      mint: string;
-      symbol?: string;
-      name?: string;
-      image?: string;
-      description?: string;
-    }
-  };
-}
+import { ProfileData } from '../types/index';
 
 /**
  * Hook for managing profile data and actions
@@ -36,6 +22,9 @@ interface ProfileData {
  */
 export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
   const dispatch = useAppDispatch();
+  
+  // Get the current user ID from Redux state
+  const userId = useAppSelector(state => state.auth.address || '');
   
   // Local state for profile data
   const [profilePicUrl, setProfilePicUrl] = useState<string>(initialProfileData.profilePicUrl || '');
@@ -123,7 +112,7 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
     
     setIsUpdatingUsername(true);
     try {
-      await dispatch(updateUsername(newUsername));
+      await dispatch(updateUsername({ userId, newUsername }));
       setUsername(newUsername);
     } catch (error) {
       console.error('Error updating username:', error);
@@ -131,7 +120,7 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
     } finally {
       setIsUpdatingUsername(false);
     }
-  }, [dispatch]);
+  }, [dispatch, userId]);
 
   /**
    * Update profile description/bio
@@ -140,7 +129,7 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
   const handleUpdateDescription = useCallback(async (newDescription: string) => {
     setIsUpdatingDescription(true);
     try {
-      await dispatch(updateDescription(newDescription));
+      await dispatch(updateDescription({ userId, newDescription }));
       setDescription(newDescription);
     } catch (error) {
       console.error('Error updating description:', error);
@@ -148,7 +137,7 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
     } finally {
       setIsUpdatingDescription(false);
     }
-  }, [dispatch]);
+  }, [dispatch, userId]);
 
   /**
    * Attach a token/coin to profile
@@ -163,8 +152,13 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
   }) => {
     setIsUpdatingAttachment(true);
     try {
-      await dispatch(attachCoinToProfile(coinData));
-      setAttachmentData(prev => ({
+      await dispatch(attachCoinToProfile({
+        userId,
+        attachmentData: {
+          coin: coinData
+        }
+      }));
+      setAttachmentData((prev: any) => ({
         ...prev,
         coin: coinData
       }));
@@ -174,7 +168,7 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
     } finally {
       setIsUpdatingAttachment(false);
     }
-  }, [dispatch]);
+  }, [dispatch, userId]);
 
   /**
    * Remove attached coin from profile
@@ -182,8 +176,8 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
   const handleRemoveAttachedCoin = useCallback(async () => {
     setIsUpdatingAttachment(true);
     try {
-      await dispatch(removeAttachedCoin());
-      setAttachmentData(prev => {
+      await dispatch(removeAttachedCoin({ userId }));
+      setAttachmentData((prev: any) => {
         const newData = { ...prev };
         delete newData.coin;
         return newData;
@@ -194,7 +188,7 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
     } finally {
       setIsUpdatingAttachment(false);
     }
-  }, [dispatch]);
+  }, [dispatch, userId]);
 
   return {
     // Profile data
@@ -216,4 +210,4 @@ export function useProfileManagement(initialProfileData: Partial<ProfileData>) {
     handleAttachCoin,
     handleRemoveAttachedCoin,
   };
-} 
+}

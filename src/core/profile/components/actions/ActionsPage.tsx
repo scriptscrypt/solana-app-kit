@@ -13,15 +13,14 @@ import ActionDetailModal from './ActionDetailModal';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  Action,
   formatSolAmount,
   formatTokenAmount,
   truncateAddress,
   getTimeAgo,
   extractAmountFromDescription,
-  getTransactionTypeInfo
+  getTransactionTypeInfo,
 } from '../../utils/profileActionsUtils';
-import { ActionsPageProps } from '../../types/index';
+import { Action, ActionsPageProps } from '../../types/index';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchWalletActionsWithCache } from '@/shared/state/profile/reducer';
 import COLORS from '@/assets/colors';

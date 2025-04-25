@@ -1,7 +1,7 @@
 // File: src/utils/jitoBundling.ts
 import { VersionedTransaction } from '@solana/web3.js';
 import { Buffer } from 'buffer';
-import { ENDPOINTS } from '../../config/constants';
+import { ENDPOINTS } from '@/config/constants';
 
 export interface JitoBundleResponse {
   jsonrpc: string;
