@@ -72,6 +72,14 @@ import PumpFunIcon from './Pumpfun_logo.svg';
 import RadyuimIcom from './Rayduim_icon.svg'
 import TokenMillIcon from './Tokenmill_icon.svg'
 
+// Login elements right
+import RightRectangle from './login-elements-right/rectangle-right.svg';
+import RightSwap from './login-elements-right/swap-right.svg';
+import RightBoomerang from './login-elements-right/boomerang-right.svg';
+import RightGrid from './login-elements-right/grid-right.svg';
+import RightZigzag from './login-elements-right/zigzag-right.svg';
+import RightEllipse from './login-elements-right/ellipse-right.svg';
+
 export default {
   SolanaDot,
   SplashText,
@@ -145,5 +153,13 @@ export default {
   SwapNavIconSelected,
   PumpFunIcon,
   RadyuimIcom,
-  TokenMillIcon
+  TokenMillIcon,
+  
+  // Login elements right
+  RightRectangle,
+  RightSwap,
+  RightBoomerang,
+  RightGrid,
+  RightZigzag,
+  RightEllipse
 };
