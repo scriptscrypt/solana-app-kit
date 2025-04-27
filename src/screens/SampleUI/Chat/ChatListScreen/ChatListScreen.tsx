@@ -9,6 +9,9 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  Platform,
+  StatusBar as RNStatusBar,
+  StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,13 +22,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import Icons from '@/assets/svgs';
 import COLORS from '@/assets/colors';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { styles } from './ChatListScreen.styles';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
 import { fetchUserChats, ChatRoom, updateUserOnlineStatus } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
+import { ProfileAvatarView } from '@/core/thread/components/post/PostHeader';
 
 type ChatListNavigationProp = StackNavigationProp<RootStackParamList, 'ChatListScreen'>;
+
+// Android-specific styles
+const androidStyles = StyleSheet.create({
+  statusBarPlaceholder: {
+    height: RNStatusBar.currentHeight || 24,
+    backgroundColor: COLORS.background,
+  },
+  headerContainer: {
+    paddingTop: 8, // Additional padding for Android camera hole
+  },
+  fabAdjusted: {
+    bottom: 90, // Adjusted position to appear above the navigation bar
+  }
+});
 
 // Function to format relative time
 const formatRelativeTime = (dateString: string) => {
@@ -184,7 +203,7 @@ const ChatListScreen: React.FC = () => {
 
     // Extract text from the first TEXT_ONLY or TEXT_IMAGE section, or any section with text
     const postText = latestPost.sections.find(s => s.text)?.text || "Shared a post";
-    
+
     return latestPost.user.username + ": " +
       (postText.length > 30 ? postText.substring(0, 30) + '...' : postText);
   }, [allPosts]);
@@ -341,22 +360,61 @@ const ChatListScreen: React.FC = () => {
     const isDirect = item.type === 'direct';
     const isAI = item.id === AI_AGENT.id;
 
-    // For direct chats, check online status
+    // For direct chats, check online status and get participant info
     let isOnline = false;
+    let participantUser = null;
 
-    // Check if the user is actually online based on our tracked online users array
     if (isDirect && item.participants) {
       const otherParticipant = item.participants.find((p: any) => p.id !== userId);
       if (otherParticipant) {
-        // Check both the is_active property and our runtime onlineUsers array
         isOnline = otherParticipant.is_active === true || onlineUsers.includes(otherParticipant.id);
+        // Construct a user object compatible with ProfileAvatarView
+        participantUser = {
+          id: otherParticipant.id,
+          username: otherParticipant.username,
+          handle: otherParticipant.username, // Use username as handle if needed
+          avatar: otherParticipant.profile_picture_url // Pass the raw URL
+            ? getValidImageSource(otherParticipant.profile_picture_url)
+            : DEFAULT_IMAGES.user,
+          verified: false, // Assuming not verified for now
+        };
       }
     }
 
     // Always show AI as online
     if (isAI) {
       isOnline = true;
+      // Construct user object for AI
+      participantUser = {
+        id: AI_AGENT.id,
+        username: AI_AGENT.name,
+        handle: 'ai-assistant',
+        avatar: getValidImageSource(AI_AGENT.avatar), // Use AI avatar
+        verified: true, // Maybe mark AI as verified?
+      };
     }
+
+    // For group chats, we might need a generic group avatar representation
+    // or potentially show stacked avatars if design allows (complex)
+    // For now, create a dummy user for groups if participantUser is null
+    if (!participantUser && !isDirect && !isAI) {
+      participantUser = {
+        id: item.id,
+        username: item.name,
+        handle: 'group-chat',
+        avatar: getValidImageSource(DEFAULT_IMAGES.groupChat), // Default group chat image
+        verified: false,
+      };
+    }
+
+    // Fallback user if somehow participantUser is still null
+    const displayUser = participantUser || {
+      id: item.id,
+      username: item.name,
+      handle: 'unknown',
+      avatar: getValidImageSource(DEFAULT_IMAGES.user),
+      verified: false,
+    };
 
     return (
       <TouchableOpacity
@@ -366,10 +424,11 @@ const ChatListScreen: React.FC = () => {
       >
         {/* Avatar with online/group indicator */}
         <View style={styles.avatarContainer}>
-          <Image
-            source={item.avatar}
-            style={styles.avatar}
-            resizeMode="cover"
+          {/* Use ProfileAvatarView */}
+          <ProfileAvatarView
+            user={displayUser} // Pass the constructed user object
+            style={styles.avatar} // Apply existing avatar styles
+            size={styles.avatar.width} // Pass the size from styles
           />
           {!isDirect && !isAI ? (
             <View style={styles.groupIndicator}>
@@ -419,110 +478,120 @@ const ChatListScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={[
-        styles.container,
-        { paddingBottom: Math.max(insets.bottom, 65) } // Account for bottom tab bar
-      ]}>
-        <StatusBar style="light" />
+    <>
+      {Platform.OS === 'android' && <View style={androidStyles.statusBarPlaceholder} />}
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[
+          styles.container,
+          { paddingBottom: Math.max(insets.bottom, 65) } // Account for bottom tab bar
+        ]}>
+          <StatusBar style="light" />
 
-        {/* Header with Gradient Border */}
-        <View style={styles.headerContainer}>
-          {/* Left: Placeholder (empty) */}
-          <View style={styles.leftPlaceholder} />
+          {/* Header with Gradient Border */}
+          <View style={[
+            styles.headerContainer,
+            Platform.OS === 'android' && androidStyles.headerContainer
+          ]}>
+            {/* Left: Placeholder (empty) */}
+            <View style={styles.leftPlaceholder} />
 
-          {/* Center: Title */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>Messages</Text>
-          </View>
+            {/* Center: Title */}
+            <View style={styles.titleContainer}>
+              <Text style={styles.titleText}>Messages</Text>
+            </View>
 
-          {/* Right: Icons */}
-          <View style={styles.iconsContainer}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Icons.copyIcon width={16} height={16} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Icons.walletIcon width={35} height={35} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Bottom gradient border */}
-          <LinearGradient
-            colors={['transparent', COLORS.lightBackground]}
-            style={styles.headerBottomGradient}
-          />
-        </View>
-
-        {/* Search bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Icons.searchIcon width={16} height={16} color={COLORS.lightGrey} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search users or messages"
-              placeholderTextColor={COLORS.lightGrey}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity
-                onPress={() => setSearchQuery('')}
-                style={styles.clearButton}
-              >
-                <Icons.cross width={14} height={14} color={COLORS.lightGrey} />
+            {/* Right: Icons */}
+            <View style={styles.iconsContainer}>
+              <TouchableOpacity style={styles.iconButton}>
+                <Icons.copyIcon width={16} height={16} />
               </TouchableOpacity>
-            ) : null}
+              <TouchableOpacity style={styles.iconButton}>
+                <Icons.walletIcon width={35} height={35} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom gradient border */}
+            <LinearGradient
+              colors={['transparent', COLORS.lightBackground]}
+              style={styles.headerBottomGradient}
+            />
           </View>
+
+          {/* Search bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+              <Icons.searchIcon width={16} height={16} color={COLORS.lightGrey} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search users or messages"
+                placeholderTextColor={COLORS.lightGrey}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery ? (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.clearButton}
+                >
+                  <Icons.cross width={14} height={14} color={COLORS.lightGrey} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+
+          {/* Chat list */}
+          {isLoading || loadingChats ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.brandBlue} />
+              <Text style={styles.loadingText}>Loading chats...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => dispatch(fetchUserChats(userId))}
+              >
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredChats}
+              renderItem={renderChatItem}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.chatListContainer}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    {searchQuery ? 'No chats found' : 'No conversations yet'}
+                  </Text>
+                  <Text style={styles.emptySubtext}>
+                    {searchQuery
+                      ? 'Try a different search term'
+                      : 'Start chatting with other users by tapping the button below'}
+                  </Text>
+                </View>
+              }
+            />
+          )}
+
+          {/* Floating action button to start new chat - adjusted for bottom bar */}
+          <TouchableOpacity
+            style={[
+              styles.fab,
+              { bottom: Math.max(24, insets.bottom + 16) },
+              Platform.OS === 'android' && androidStyles.fabAdjusted
+            ]}
+            onPress={handleNewChat}
+            activeOpacity={0.8}
+          >
+            <Icons.MessageIcon width={24} height={24} color={COLORS.white} />
+          </TouchableOpacity>
         </View>
-
-        {/* Chat list */}
-        {isLoading || loadingChats ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.brandBlue} />
-            <Text style={styles.loadingText}>Loading chats...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => dispatch(fetchUserChats(userId))}
-            >
-              <Text style={styles.retryText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredChats}
-            renderItem={renderChatItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.chatListContainer}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  {searchQuery ? 'No chats found' : 'No conversations yet'}
-                </Text>
-                <Text style={styles.emptySubtext}>
-                  {searchQuery
-                    ? 'Try a different search term'
-                    : 'Start chatting with other users by tapping the button below'}
-                </Text>
-              </View>
-            }
-          />
-        )}
-
-        {/* Floating action button to start new chat - adjusted for bottom bar */}
-        <TouchableOpacity
-          style={[styles.fab, { bottom: Math.max(24, insets.bottom + 16) }]}
-          onPress={handleNewChat}
-          activeOpacity={0.8}
-        >
-          <Icons.MessageIcon width={24} height={24} color={COLORS.white} />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 

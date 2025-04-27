@@ -14,12 +14,14 @@ import {
   Platform,
   Clipboard,
   Linking,
+  StyleSheet,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { PublicKey } from '@solana/web3.js';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar as RNStatusBar } from 'react-native';
 
 import { styles } from './SwapScreen.styles';
 import COLORS from '@/assets/colors';
@@ -40,6 +42,17 @@ import Icons from '@/assets/svgs';
 import TYPOGRAPHY from '@/assets/typography';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 
+// Android-specific styles
+const androidStyles = StyleSheet.create({
+  statusBarPlaceholder: {
+    height: StatusBar.currentHeight || 24,
+    backgroundColor: COLORS.background,
+  },
+  headerContainer: {
+    paddingTop: 8, // Additional padding for Android camera hole
+  }
+});
+
 // Define types for navigation and route
 type SwapScreenRouteProp = RouteProp<RootStackParamList, 'SwapScreen'>;
 type SwapScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SwapScreen'>;
@@ -54,7 +67,7 @@ export default function SwapScreen() {
 
   // Get parameters from route if they exist
   const routeParams = route.params || {};
-  
+
   // Handle back button press
   const handleBack = useCallback(() => {
     // Check if we can go back before attempting to navigate
@@ -66,7 +79,7 @@ export default function SwapScreen() {
       console.log('Already at root level of navigation, cannot go back');
     }
   }, [navigation]);
-  
+
   // UI States
   const [activeProvider, setActiveProvider] = useState<SwapProvider>('Jupiter');
   const [inputValue, setInputValue] = useState(routeParams.inputAmount || '5');
@@ -78,17 +91,17 @@ export default function SwapScreen() {
   // Token States - Initialize with route params if available
   const [inputToken, setInputToken] = useState<TokenInfo>(routeParams.inputToken as TokenInfo || DEFAULT_SOL_TOKEN);
   const [outputToken, setOutputToken] = useState<TokenInfo>(
-    routeParams.outputToken ? 
-    { 
-      ...DEFAULT_USDC_TOKEN, 
-      address: routeParams.outputToken.address,
-      symbol: routeParams.outputToken.symbol || 'Unknown',
-      // Preserve the original logo URL if provided
-      logoURI: routeParams.outputToken.logoURI || DEFAULT_USDC_TOKEN.logoURI,
-      // Preserve the original name if provided
-      name: routeParams.outputToken.name || routeParams.outputToken.symbol || 'Unknown Token'
-    } : 
-    DEFAULT_USDC_TOKEN
+    routeParams.outputToken ?
+      {
+        ...DEFAULT_USDC_TOKEN,
+        address: routeParams.outputToken.address,
+        symbol: routeParams.outputToken.symbol || 'Unknown',
+        // Preserve the original logo URL if provided
+        logoURI: routeParams.outputToken.logoURI || DEFAULT_USDC_TOKEN.logoURI,
+        // Preserve the original name if provided
+        name: routeParams.outputToken.name || routeParams.outputToken.symbol || 'Unknown Token'
+      } :
+      DEFAULT_USDC_TOKEN
   );
   const [tokensInitialized, setTokensInitialized] = useState(false);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
@@ -139,7 +152,7 @@ export default function SwapScreen() {
           };
         }
       }
-      
+
       // For output token, if we have route params, create a proper token info object
       let startingOutputToken = DEFAULT_USDC_TOKEN;
       if (routeParams.outputToken && routeParams.outputToken.address) {
@@ -156,45 +169,45 @@ export default function SwapScreen() {
       }
 
       // Fetch complete token information including logos, decimals, etc.
-      console.log('[SwapScreen] Fetching token details for:', 
-        startingInputToken.symbol, 
+      console.log('[SwapScreen] Fetching token details for:',
+        startingInputToken.symbol,
         startingOutputToken.symbol
       );
-      
+
       // Save the original values before fetching complete info
       const origInputSymbol = startingInputToken.symbol;
       const origInputLogoURI = startingInputToken.logoURI;
-      
+
       const origOutputSymbol = startingOutputToken.symbol;
       const origOutputLogoURI = startingOutputToken.logoURI;
       const origOutputName = startingOutputToken.name;
-      
+
       // Get complete token information
       const completeInputToken = await ensureCompleteTokenInfo(startingInputToken);
       const completeOutputToken = await ensureCompleteTokenInfo(startingOutputToken);
-      
+
       // Preserve the original symbols if they were specified in route params
       if (routeParams.inputToken?.symbol && routeParams.inputToken.symbol !== completeInputToken.symbol) {
         console.log(`[SwapScreen] Preserving original input symbol: ${routeParams.inputToken.symbol}`);
         completeInputToken.symbol = routeParams.inputToken.symbol;
       }
-      
+
       if (routeParams.outputToken?.symbol && routeParams.outputToken.symbol !== completeOutputToken.symbol) {
         console.log(`[SwapScreen] Preserving original output symbol: ${routeParams.outputToken.symbol}`);
         completeOutputToken.symbol = routeParams.outputToken.symbol;
       }
-      
+
       // Preserve original logo URLs if they were provided
       if (origInputLogoURI && origInputLogoURI !== '') {
         console.log('[SwapScreen] Preserving original input token logo');
         completeInputToken.logoURI = origInputLogoURI;
       }
-      
+
       if (origOutputLogoURI && origOutputLogoURI !== '') {
         console.log('[SwapScreen] Preserving original output token logo');
         completeOutputToken.logoURI = origOutputLogoURI;
       }
-      
+
       // Preserve original name if provided
       if (origOutputName && origOutputName !== completeOutputToken.name) {
         console.log('[SwapScreen] Preserving original output token name');
@@ -242,7 +255,7 @@ export default function SwapScreen() {
       // If the component needs to re-initialize with new route params
       console.log('[SwapScreen] Re-initializing from route params', routeParams);
       setTokensInitialized(false); // This will trigger initializeTokens() in the next effect
-      
+
       // Clear the shouldInitialize flag to prevent re-initialization loops
       if (route.params) {
         // Update the route params to remove shouldInitialize
@@ -775,391 +788,397 @@ export default function SwapScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" />
+      <>
+        {Platform.OS === 'android' && <View style={androidStyles.statusBarPlaceholder} />}
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="light-content" />
 
-        {/* Header with Gradient Border */}
-        <View style={styles.headerContainer}>
-          {/* Left: Back Button or Placeholder */}
-          {navigation.canGoBack() ? (
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={handleBack}
+          {/* Header with Gradient Border */}
+          <View style={[
+            styles.headerContainer,
+            Platform.OS === 'android' && androidStyles.headerContainer
+          ]}>
+            {/* Left: Back Button or Placeholder */}
+            {navigation.canGoBack() ? (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleBack}
+              >
+                <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.leftPlaceholder} />
+            )}
+
+            {/* Center: "Swap Via" text */}
+            <View style={styles.titleContainer}>
+              <Text style={styles.titleText}>Swap Via</Text>
+            </View>
+
+            {/* Right: Copy and Wallet Icons */}
+            <View style={styles.iconsContainer}>
+              <TouchableOpacity style={styles.iconButton}>
+                <Icons.copyIcon width={16} height={16} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <Icons.walletIcon width={35} height={35} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Bottom gradient border */}
+            <LinearGradient
+              colors={['transparent', COLORS.lightBackground]}
+              style={styles.headerBottomGradient}
+            />
+          </View>
+
+          <View style={styles.contentContainer}>
+            <ScrollView
+              style={styles.fullWidthScroll}
+              bounces={false}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 250 }} // Extra padding for keypad
             >
-              <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.leftPlaceholder} />
-          )}
-
-          {/* Center: "Swap Via" text */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>Swap Via</Text>
-          </View>
-
-          {/* Right: Copy and Wallet Icons */}
-          <View style={styles.iconsContainer}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Icons.copyIcon width={16} height={16} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Icons.walletIcon width={35} height={35} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Bottom gradient border */}
-          <LinearGradient
-            colors={['transparent', COLORS.lightBackground]}
-            style={styles.headerBottomGradient}
-          />
-        </View>
-
-        <View style={styles.contentContainer}>
-          <ScrollView
-            style={styles.fullWidthScroll}
-            bounces={false}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 250 }} // Extra padding for keypad
-          >
-            {/* Swap Providers */}
-            <View style={styles.providerButtons}>
-              {swapProviders.map(provider => (
-                <TouchableOpacity
-                  key={provider}
-                  style={[
-                    styles.providerButton,
-                    activeProvider === provider && {
-                      backgroundColor: COLORS.lightBackground,
-                      borderWidth: 1,
-                      borderColor: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white
-                    },
-                    !isProviderAvailable(provider) && { opacity: 0.5 }
-                  ]}
-                  onPress={() => {
-                    if (isProviderAvailable(provider)) {
-                      setActiveProvider(provider);
-                      // Reset the output estimate when changing providers
-                      if (parseFloat(inputValue) > 0) {
-                        estimateSwap();
+              {/* Swap Providers */}
+              <View style={styles.providerButtons}>
+                {swapProviders.map(provider => (
+                  <TouchableOpacity
+                    key={provider}
+                    style={[
+                      styles.providerButton,
+                      activeProvider === provider && {
+                        backgroundColor: COLORS.lightBackground,
+                        borderWidth: 1,
+                        borderColor: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white
+                      },
+                      !isProviderAvailable(provider) && { opacity: 0.5 }
+                    ]}
+                    onPress={() => {
+                      if (isProviderAvailable(provider)) {
+                        setActiveProvider(provider);
+                        // Reset the output estimate when changing providers
+                        if (parseFloat(inputValue) > 0) {
+                          estimateSwap();
+                        }
+                      } else {
+                        Alert.alert(
+                          'Coming Soon',
+                          `${provider} integration is coming soon!`
+                        );
                       }
-                    } else {
-                      Alert.alert(
-                        'Coming Soon',
-                        `${provider} integration is coming soon!`
-                      );
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.providerButtonText,
+                        activeProvider === provider && {
+                          color: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white
+                        }
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {provider}{!isProviderAvailable(provider) ? ' (soon)' : ''}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* PumpSwap Pool Address Input */}
+              {activeProvider === 'PumpSwap' && (
+                <View style={styles.poolAddressContainer}>
+                  <Text style={styles.poolAddressLabel}>Pool Address</Text>
+                  <TextInput
+                    style={styles.poolAddressInput}
+                    placeholder="Enter PumpSwap pool address"
+                    placeholderTextColor={COLORS.greyDark}
+                    value={poolAddress}
+                    onChangeText={setPoolAddress}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              )}
+
+              {/* PumpSwap Slippage Selector */}
+              {activeProvider === 'PumpSwap' && (
+                <View style={styles.poolAddressContainer}>
+                  <Text style={styles.poolAddressLabel}>Slippage Tolerance</Text>
+                  <View style={styles.slippageButtonsContainer}>
+                    {[1, 3, 5, 10, 15, 20, 25, 30].map((value) => (
+                      <TouchableOpacity
+                        key={`slippage-${value}`}
+                        style={[
+                          styles.slippageButton,
+                          slippage === value && styles.slippageButtonActive
+                        ]}
+                        onPress={() => setSlippage(value)}
+                      >
+                        <Text
+                          style={[
+                            styles.slippageButtonText,
+                            slippage === value && styles.slippageButtonTextActive
+                          ]}
+                        >
+                          {value}%
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <View style={styles.pumpSwapWarningContainer}>
+                    <Text style={styles.pumpSwapWarningText}>
+                      ⚠️ Warning: This pool may have very high price impact. Trades are executed with extreme slippage tolerance for successful execution.
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Swap Container with Input and Output */}
+              <View style={styles.swapContainer}>
+                {/* Input Token (From) */}
+                <View>
+                  <TouchableOpacity
+                    style={styles.tokenRow}
+                    onPress={() => {
+                      setSelectingWhichSide('input');
+                      setShowSelectTokenModal(true);
+                    }}
+                  >
+                    {inputToken.logoURI ? (
+                      <Image source={{ uri: inputToken.logoURI }} style={styles.tokenIcon} />
+                    ) : (
+                      <View style={[styles.tokenIcon, { backgroundColor: COLORS.lighterBackground, justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 10 }}>
+                          {inputToken.symbol?.charAt(0) || '?'}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.tokenInfo}>
+                      <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
+                        {inputToken.symbol}
+                      </Text>
+                      <Text style={styles.tokenBalance} numberOfLines={1} ellipsizeMode="tail">
+                        {currentBalance !== null
+                          ? `Balance: ${currentBalance.toFixed(6)} ${inputToken.symbol}`
+                          : connected ? 'Loading...' : 'Connect wallet'}
+                      </Text>
+                    </View>
+                    <View style={styles.valueContainer}>
+                      <Text style={styles.valueLabel}>You Pay</Text>
+                      <Text style={styles.tokenValue} numberOfLines={1} ellipsizeMode="tail">
+                        {inputValue}
+                      </Text>
+                      <Text style={styles.fiatValue} numberOfLines={1} ellipsizeMode="tail">
+                        {calculateUsdValue(inputValue, currentTokenPrice)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Swap Button - Positioned to overlap both cards */}
+                <TouchableOpacity
+                  style={styles.swapButton}
+                  onPress={() => {
+                    // Swap tokens
+                    const temp = inputToken;
+                    setInputToken(outputToken);
+                    setOutputToken(temp);
+
+                    // Reset values
+                    setInputValue('0');
+                    setEstimatedOutputAmount('0');
+                    setOutputTokenUsdValue('$0.00');
+
+                    // Update balances and prices for new input token
+                    if (userPublicKey) {
+                      fetchBalance(outputToken);
+                      getTokenPrice(outputToken);
                     }
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.providerButtonText,
-                      activeProvider === provider && {
-                        color: provider === 'Raydium' ? COLORS.brandPrimary : COLORS.white
-                      }
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
+                  <Icons.SwapIcon width={36} height={36} />
+                </TouchableOpacity>
+
+                {/* Output Token (To) */}
+                <View>
+                  <TouchableOpacity
+                    style={styles.tokenRow}
+                    onPress={() => {
+                      setSelectingWhichSide('output');
+                      setShowSelectTokenModal(true);
+                    }}
                   >
-                    {provider}{!isProviderAvailable(provider) ? ' (soon)' : ''}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* PumpSwap Pool Address Input */}
-            {activeProvider === 'PumpSwap' && (
-              <View style={styles.poolAddressContainer}>
-                <Text style={styles.poolAddressLabel}>Pool Address</Text>
-                <TextInput
-                  style={styles.poolAddressInput}
-                  placeholder="Enter PumpSwap pool address"
-                  placeholderTextColor={COLORS.greyDark}
-                  value={poolAddress}
-                  onChangeText={setPoolAddress}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-            )}
-
-            {/* PumpSwap Slippage Selector */}
-            {activeProvider === 'PumpSwap' && (
-              <View style={styles.poolAddressContainer}>
-                <Text style={styles.poolAddressLabel}>Slippage Tolerance</Text>
-                <View style={styles.slippageButtonsContainer}>
-                  {[1, 3, 5, 10, 15,20, 25,30].map((value) => (
-                    <TouchableOpacity
-                      key={`slippage-${value}`}
-                      style={[
-                        styles.slippageButton,
-                        slippage === value && styles.slippageButtonActive
-                      ]}
-                      onPress={() => setSlippage(value)}
-                    >
-                      <Text
-                        style={[
-                          styles.slippageButtonText,
-                          slippage === value && styles.slippageButtonTextActive
-                        ]}
-                      >
-                        {value}%
+                    {outputToken.logoURI ? (
+                      <Image source={{ uri: outputToken.logoURI }} style={styles.tokenIcon} />
+                    ) : (
+                      <View style={[styles.tokenIcon, { backgroundColor: COLORS.lighterBackground, justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 10 }}>
+                          {outputToken.symbol?.charAt(0) || '?'}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.tokenInfo}>
+                      <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
+                        {outputToken.symbol}
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.pumpSwapWarningContainer}>
-                  <Text style={styles.pumpSwapWarningText}>
-                    ⚠️ Warning: This pool may have very high price impact. Trades are executed with extreme slippage tolerance for successful execution.
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Swap Container with Input and Output */}
-            <View style={styles.swapContainer}>
-              {/* Input Token (From) */}
-              <View>
-                <TouchableOpacity
-                  style={styles.tokenRow}
-                  onPress={() => {
-                    setSelectingWhichSide('input');
-                    setShowSelectTokenModal(true);
-                  }}
-                >
-                  {inputToken.logoURI ? (
-                    <Image source={{ uri: inputToken.logoURI }} style={styles.tokenIcon} />
-                  ) : (
-                    <View style={[styles.tokenIcon, { backgroundColor: COLORS.lighterBackground, justifyContent: 'center', alignItems: 'center' }]}>
-                      <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 10 }}>
-                        {inputToken.symbol?.charAt(0) || '?'}
+                      <Text style={styles.tokenBalance}></Text>
+                    </View>
+                    <View style={styles.valueContainer}>
+                      <Text style={styles.valueLabel}>You Receive</Text>
+                      <Text style={styles.receiveValue} numberOfLines={1} ellipsizeMode="tail">
+                        +{estimatedOutputAmount || '0'}
+                      </Text>
+                      <Text style={styles.fiatValue} numberOfLines={1} ellipsizeMode="tail">
+                        {outputTokenUsdValue}
                       </Text>
                     </View>
-                  )}
-                  <View style={styles.tokenInfo}>
-                    <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
-                      {inputToken.symbol}
-                    </Text>
-                    <Text style={styles.tokenBalance} numberOfLines={1} ellipsizeMode="tail">
-                      {currentBalance !== null
-                        ? `Balance: ${currentBalance.toFixed(6)} ${inputToken.symbol}`
-                        : connected ? 'Loading...' : 'Connect wallet'}
-                    </Text>
-                  </View>
-                  <View style={styles.valueContainer}>
-                    <Text style={styles.valueLabel}>You Pay</Text>
-                    <Text style={styles.tokenValue} numberOfLines={1} ellipsizeMode="tail">
-                      {inputValue}
-                    </Text>
-                    <Text style={styles.fiatValue} numberOfLines={1} ellipsizeMode="tail">
-                      {calculateUsdValue(inputValue, currentTokenPrice)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              {/* Swap Button - Positioned to overlap both cards */}
-              <TouchableOpacity
-                style={styles.swapButton}
-                onPress={() => {
-                  // Swap tokens
-                  const temp = inputToken;
-                  setInputToken(outputToken);
-                  setOutputToken(temp);
-
-                  // Reset values
-                  setInputValue('0');
-                  setEstimatedOutputAmount('0');
-                  setOutputTokenUsdValue('$0.00');
-
-                  // Update balances and prices for new input token
-                  if (userPublicKey) {
-                    fetchBalance(outputToken);
-                    getTokenPrice(outputToken);
-                  }
-                }}
-              >
-                <Icons.SwapIcon width={36} height={36} />
-              </TouchableOpacity>
-
-              {/* Output Token (To) */}
-              <View>
-                <TouchableOpacity
-                  style={styles.tokenRow}
-                  onPress={() => {
-                    setSelectingWhichSide('output');
-                    setShowSelectTokenModal(true);
-                  }}
-                >
-                  {outputToken.logoURI ? (
-                    <Image source={{ uri: outputToken.logoURI }} style={styles.tokenIcon} />
-                  ) : (
-                    <View style={[styles.tokenIcon, { backgroundColor: COLORS.lighterBackground, justifyContent: 'center', alignItems: 'center' }]}>
-                      <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 10 }}>
-                        {outputToken.symbol?.charAt(0) || '?'}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={styles.tokenInfo}>
-                    <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
-                      {outputToken.symbol}
-                    </Text>
-                    <Text style={styles.tokenBalance}></Text>
-                  </View>
-                  <View style={styles.valueContainer}>
-                    <Text style={styles.valueLabel}>You Receive</Text>
-                    <Text style={styles.receiveValue} numberOfLines={1} ellipsizeMode="tail">
-                      +{estimatedOutputAmount || '0'}
-                    </Text>
-                    <Text style={styles.fiatValue} numberOfLines={1} ellipsizeMode="tail">
-                      {outputTokenUsdValue}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              {/* Max Button */}
-              <TouchableOpacity
-                style={styles.maxButtonContainer}
-                onPress={handleMaxButtonClick}
-              >
-                <Text style={styles.maxButtonText}>MAX</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Status Messages */}
-            {loading && (
-              <View style={styles.statusContainer}>
-                <ActivityIndicator size="small" color={COLORS.brandPrimary} />
-                <Text style={styles.statusText} numberOfLines={2} ellipsizeMode="tail">
-                  {resultMsg || 'Processing...'}
-                </Text>
-              </View>
-            )}
-
-            {errorMsg ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText} numberOfLines={2} ellipsizeMode="tail">
-                  {errorMsg}
-                </Text>
-              </View>
-            ) : null}
-
-            {/* Additional Swap Info */}
-            <View style={styles.swapInfoContainer}>
-              <View style={styles.swapInfoRow}>
-                <Text style={styles.swapInfoLabel}>Rate</Text>
-                <Text style={styles.swapInfoValue} numberOfLines={1} ellipsizeMode="tail">
-                  {getConversionRate()}
-                </Text>
-              </View>
-              <View style={styles.swapInfoRow}>
-                <Text style={styles.swapInfoLabel}>Network Fee</Text>
-                <Text style={styles.swapInfoValue}>~0.00005 SOL</Text>
-              </View>
-              <View style={styles.swapInfoRow}>
-                <Text style={styles.swapInfoLabel}>Price Impact</Text>
-                <Text style={styles.swapInfoValue}>
-                  <Text style={{ color: COLORS.brandPrimary }}>~0.05%</Text>
-                </Text>
-              </View>
-              <View style={styles.swapInfoRow}>
-                <Text style={styles.swapInfoLabel}>Provider</Text>
-                <Text style={[styles.swapInfoValue, { color: COLORS.brandPrimary }]}>
-                  {activeProvider}
-                </Text>
-              </View>
-              {solscanTxSig && (
-                <View style={styles.swapInfoRow}>
-                  <Text style={styles.swapInfoLabel}>Transaction</Text>
-                  <TouchableOpacity onPress={() => {
-                    // Open transaction on Solscan
-                    const url = `https://solscan.io/tx/${solscanTxSig}`;
-                    Linking.openURL(url).catch(err => {
-                      console.error('[SwapScreen] Error opening Solscan URL:', err);
-                    });
-                  }}>
-                    <Text style={[styles.swapInfoValue, { color: COLORS.brandPrimary }]}>
-                      View on Solscan
-                    </Text>
                   </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          </ScrollView>
 
-          {/* Keypad */}
-          <View style={styles.keypadContainer}>
-            <View style={styles.keypadRow}>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('1')}>
-                <Text style={styles.keypadButtonText}>1</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('2')}>
-                <Text style={styles.keypadButtonText}>2</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('3')}>
-                <Text style={styles.keypadButtonText}>3</Text>
-              </TouchableOpacity>
+                {/* Max Button */}
+                <TouchableOpacity
+                  style={styles.maxButtonContainer}
+                  onPress={handleMaxButtonClick}
+                >
+                  <Text style={styles.maxButtonText}>MAX</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Status Messages */}
+              {loading && (
+                <View style={styles.statusContainer}>
+                  <ActivityIndicator size="small" color={COLORS.brandPrimary} />
+                  <Text style={styles.statusText} numberOfLines={2} ellipsizeMode="tail">
+                    {resultMsg || 'Processing...'}
+                  </Text>
+                </View>
+              )}
+
+              {errorMsg ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText} numberOfLines={2} ellipsizeMode="tail">
+                    {errorMsg}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Additional Swap Info */}
+              <View style={styles.swapInfoContainer}>
+                <View style={styles.swapInfoRow}>
+                  <Text style={styles.swapInfoLabel}>Rate</Text>
+                  <Text style={styles.swapInfoValue} numberOfLines={1} ellipsizeMode="tail">
+                    {getConversionRate()}
+                  </Text>
+                </View>
+                <View style={styles.swapInfoRow}>
+                  <Text style={styles.swapInfoLabel}>Network Fee</Text>
+                  <Text style={styles.swapInfoValue}>~0.00005 SOL</Text>
+                </View>
+                <View style={styles.swapInfoRow}>
+                  <Text style={styles.swapInfoLabel}>Price Impact</Text>
+                  <Text style={styles.swapInfoValue}>
+                    <Text style={{ color: COLORS.brandPrimary }}>~0.05%</Text>
+                  </Text>
+                </View>
+                <View style={styles.swapInfoRow}>
+                  <Text style={styles.swapInfoLabel}>Provider</Text>
+                  <Text style={[styles.swapInfoValue, { color: COLORS.brandPrimary }]}>
+                    {activeProvider}
+                  </Text>
+                </View>
+                {solscanTxSig && (
+                  <View style={styles.swapInfoRow}>
+                    <Text style={styles.swapInfoLabel}>Transaction</Text>
+                    <TouchableOpacity onPress={() => {
+                      // Open transaction on Solscan
+                      const url = `https://solscan.io/tx/${solscanTxSig}`;
+                      Linking.openURL(url).catch(err => {
+                        console.error('[SwapScreen] Error opening Solscan URL:', err);
+                      });
+                    }}>
+                      <Text style={[styles.swapInfoValue, { color: COLORS.brandPrimary }]}>
+                        View on Solscan
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </ScrollView>
+
+            {/* Keypad */}
+            <View style={styles.keypadContainer}>
+              <View style={styles.keypadRow}>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('1')}>
+                  <Text style={styles.keypadButtonText}>1</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('2')}>
+                  <Text style={styles.keypadButtonText}>2</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('3')}>
+                  <Text style={styles.keypadButtonText}>3</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.keypadRow}>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('4')}>
+                  <Text style={styles.keypadButtonText}>4</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('5')}>
+                  <Text style={styles.keypadButtonText}>5</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('6')}>
+                  <Text style={styles.keypadButtonText}>6</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.keypadRow}>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('7')}>
+                  <Text style={styles.keypadButtonText}>7</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('8')}>
+                  <Text style={styles.keypadButtonText}>8</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('9')}>
+                  <Text style={styles.keypadButtonText}>9</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.keypadRow}>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('.')}>
+                  <Text style={styles.keypadButtonText}>.</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('0')}>
+                  <Text style={styles.keypadButtonText}>0</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('delete')}>
+                  <Ionicons name="backspace-outline" size={22} color={COLORS.white} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.keypadRow}>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('4')}>
-                <Text style={styles.keypadButtonText}>4</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('5')}>
-                <Text style={styles.keypadButtonText}>5</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('6')}>
-                <Text style={styles.keypadButtonText}>6</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.keypadRow}>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('7')}>
-                <Text style={styles.keypadButtonText}>7</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('8')}>
-                <Text style={styles.keypadButtonText}>8</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('9')}>
-                <Text style={styles.keypadButtonText}>9</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.keypadRow}>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('.')}>
-                <Text style={styles.keypadButtonText}>.</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('0')}>
-                <Text style={styles.keypadButtonText}>0</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.keypadButton} onPress={() => handleKeyPress('delete')}>
-                <Ionicons name="backspace-outline" size={22} color={COLORS.white} />
-              </TouchableOpacity>
-            </View>
+
+            {/* Swap Button */}
+            <TouchableOpacity
+              style={[
+                styles.swapActionButton,
+                !isSwapButtonEnabled() && { opacity: 0.6 }
+              ]}
+              onPress={handleSwap}
+              disabled={!isSwapButtonEnabled()}
+            >
+              <Text style={styles.swapActionButtonText}>
+                {!connected ? 'Connect Wallet to Swap' :
+                  !isProviderAvailable(activeProvider) ? `${activeProvider} Coming Soon` :
+                    activeProvider === 'PumpSwap' && !poolAddress ? 'Enter Pool Address' :
+                      loading ? 'Swapping...' : `Swap via ${activeProvider}`}
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Swap Button */}
-          <TouchableOpacity
-            style={[
-              styles.swapActionButton,
-              !isSwapButtonEnabled() && { opacity: 0.6 }
-            ]}
-            onPress={handleSwap}
-            disabled={!isSwapButtonEnabled()}
-          >
-            <Text style={styles.swapActionButtonText}>
-              {!connected ? 'Connect Wallet to Swap' :
-                !isProviderAvailable(activeProvider) ? `${activeProvider} Coming Soon` :
-                  activeProvider === 'PumpSwap' && !poolAddress ? 'Enter Pool Address' :
-                    loading ? 'Swapping...' : `Swap via ${activeProvider}`}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Token Selection Modal */}
-        <SelectTokenModal
-          visible={showSelectTokenModal}
-          onClose={() => setShowSelectTokenModal(false)}
-          onTokenSelected={handleTokenSelected}
-        />
-      </SafeAreaView>
+          {/* Token Selection Modal */}
+          <SelectTokenModal
+            visible={showSelectTokenModal}
+            onClose={() => setShowSelectTokenModal(false)}
+            onTokenSelected={handleTokenSelected}
+          />
+        </SafeAreaView>
+      </>
     </KeyboardAvoidingView>
   );
 } 

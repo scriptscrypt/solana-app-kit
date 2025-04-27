@@ -4,8 +4,8 @@ import Icons from '../../../../assets/svgs';
 import { useAuth } from '../../hooks/useAuth';
 import styles from '../../../../screens/Common/LoginScreen/LoginScreen.styles';
 import { useCustomization } from '../../../../config/CustomizationProvider';
-import {useAppNavigation} from '../../../../shared/hooks/useAppNavigation';
-import {useAppDispatch} from '../../../../shared/hooks/useReduxHooks';
+import { useAppNavigation } from '../../../../shared/hooks/useAppNavigation';
+import { useAppDispatch } from '../../../../shared/hooks/useReduxHooks';
 import { loginSuccess } from '../../../../shared/state/auth/reducer';
 import COLORS from '../../../../assets/colors';
 
@@ -237,13 +237,15 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
         <ArrowIcon />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleAppleLogin}>
-        <View style={styles.buttonContent}>
-          <Icons.Apple width={24} height={24} fill={COLORS.white} />
-          <Text style={styles.buttonText}>Continue with Apple</Text>
-        </View>
-        <ArrowIcon />
-      </TouchableOpacity>
+      {Platform.OS === 'ios' && (
+        <TouchableOpacity style={styles.loginButton} onPress={handleAppleLogin}>
+          <View style={styles.buttonContent}>
+            <Icons.Apple width={24} height={24} fill={COLORS.white} />
+            <Text style={styles.buttonText}>Continue with Apple</Text>
+          </View>
+          <ArrowIcon />
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.loginButton} onPress={handleEmailLogin}>
         <View style={styles.buttonContent}>

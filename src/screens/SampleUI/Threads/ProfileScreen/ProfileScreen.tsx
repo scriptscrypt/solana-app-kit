@@ -98,7 +98,7 @@ export default function ProfileScreen() {
 
   return (
     <>
-      {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: '#fff' }} />}
+      {Platform.OS === 'android' && <View style={{ height: STATUSBAR_HEIGHT, backgroundColor: COLORS.background }} />}
       <SafeAreaView style={[styles.container, Platform.OS === 'android' && androidStyles.container]}>
         <Profile
           isOwnProfile={true}

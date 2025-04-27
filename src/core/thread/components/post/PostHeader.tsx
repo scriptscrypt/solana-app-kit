@@ -37,7 +37,7 @@ function getAvatarColor(username: string): string {
 }
 
 // The ProfileAvatarView component - simplified to rely on IPFSAwareImage but with a 403/429 fix
-function ProfileAvatarView({
+export function ProfileAvatarView({
   user,
   style,
   size = 40

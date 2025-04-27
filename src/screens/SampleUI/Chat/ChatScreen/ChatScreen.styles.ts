@@ -26,23 +26,31 @@ export const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     borderRadius: 20,
+    width: 40,
   },
   leftPlaceholder: {
-    width: 30,
+    width: 40,
   },
   titleContainer: {
     flex: 1,
-    alignItems: 'center' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: -1,
   },
   titleText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.lg,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    textAlign: 'center',
   },
   subtitleText: {
     color: COLORS.greyMid,
     fontSize: TYPOGRAPHY.size.xs,
     marginTop: 2,
+    textAlign: 'center',
   },
   iconsContainer: {
     flexDirection: 'row' as const,

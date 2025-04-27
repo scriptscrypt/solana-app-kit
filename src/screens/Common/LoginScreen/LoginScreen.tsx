@@ -3,11 +3,11 @@ import { View, Animated, Text, Dimensions, Alert } from 'react-native';
 import Icons from '@/assets/svgs/index';
 import styles from './LoginScreen.styles';
 import { useDispatch, useSelector } from 'react-redux';
-import {useAppNavigation} from '@/shared/hooks/useAppNavigation';
+import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 import EmbeddedWalletAuth from '@/modules/walletProviders/components/wallet/EmbeddedWallet';
 import TurnkeyWalletAuth from '@/modules/walletProviders/components/turnkey/TurnkeyWallet';
-import {loginSuccess} from '@/shared/state/auth/reducer';
-import {RootState} from '@/shared/state/store';
+import { loginSuccess } from '@/shared/state/auth/reducer';
+import { RootState } from '@/shared/state/store';
 import { useCustomization } from '@/config/CustomizationProvider';
 import axios from 'axios';
 import { SERVER_URL } from '@env';
@@ -19,68 +19,68 @@ const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
 // SVG animation configurations
 const SVG_CONFIG = {
   circle: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.51, left: SCREEN_WIDTH * 0.06},
-    size: {width: 80, height: 80},
-    animation: {type: 'rotate', duration: 10000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.51, left: SCREEN_WIDTH * 0.06 },
+    size: { width: 80, height: 80 },
+    animation: { type: 'rotate', duration: 10000 },
   },
   leftStar: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.42, left: 80},
-    size: {width: 24, height: 24},
-    animation: {type: 'fadeInOut', duration: 3000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.42, left: 80 },
+    size: { width: 24, height: 24 },
+    animation: { type: 'fadeInOut', duration: 3000 },
   },
   leftEllipse: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.23, left: -SCREEN_WIDTH * 0.55},
-    size: {width: 340, height: 340},
+    initialPosition: { top: SCREEN_HEIGHT * 0.23, left: -SCREEN_WIDTH * 0.55 },
+    size: { width: 340, height: 340 },
   },
   plus: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.3, left: SCREEN_WIDTH * 0.13},
-    size: {width: 80, height: 80},
-    animation: {type: 'jerkyRotate', duration: 3000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.3, left: SCREEN_WIDTH * 0.13 },
+    size: { width: 80, height: 80 },
+    animation: { type: 'jerkyRotate', duration: 3000 },
   },
   rect: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.34, left: SCREEN_WIDTH * 0.34},
-    size: {width: 58, height: 58},
-    animation: {type: 'rotate', duration: 6000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.34, left: SCREEN_WIDTH * 0.34 },
+    size: { width: 58, height: 58 },
+    animation: { type: 'rotate', duration: 6000 },
   },
   yellowBoomerang: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.43, left: SCREEN_WIDTH * 0.27},
-    size: {width: 80, height: 80},
-    animation: {type: 'fadeInOut', duration: 5000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.43, left: SCREEN_WIDTH * 0.27 },
+    size: { width: 80, height: 80 },
+    animation: { type: 'fadeInOut', duration: 5000 },
   },
   setting: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.36, left: -63},
-    size: {width: 130, height: 130},
-    animation: {type: 'varyingSpeedRotate', duration: 8000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.36, left: -63 },
+    size: { width: 130, height: 130 },
+    animation: { type: 'varyingSpeedRotate', duration: 8000 },
   },
   // Right SVG configurations
   rightRectangle: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.53, right: SCREEN_WIDTH * 0.27},
-    size: {width: 60, height: 60},
-    animation: {type: 'rotate', duration: 8000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.53, right: SCREEN_WIDTH * 0.27 },
+    size: { width: 60, height: 60 },
+    animation: { type: 'rotate', duration: 8000 },
   },
   rightSwap: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.5, right: SCREEN_WIDTH * 0.04},
-    size: {width: 100, height: 100},
-    animation: {type: 'jerkyRotate', duration: 4000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.5, right: SCREEN_WIDTH * 0.04 },
+    size: { width: 100, height: 100 },
+    animation: { type: 'jerkyRotate', duration: 4000 },
   },
   rightBoomerang: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.4, right: SCREEN_WIDTH * 0.2},
-    size: {width: 80, height: 80},
-    animation: {type: 'fadeInOut', duration: 4500},
+    initialPosition: { top: SCREEN_HEIGHT * 0.4, right: SCREEN_WIDTH * 0.2 },
+    size: { width: 80, height: 80 },
+    animation: { type: 'fadeInOut', duration: 4500 },
   },
   rightGrid: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.25, right: -SCREEN_WIDTH * 0.11},
-    size: {width: 100, height: 100},
-    animation: {type: 'pulseScale', duration: 3000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.25, right: -SCREEN_WIDTH * 0.11 },
+    size: { width: 100, height: 100 },
+    animation: { type: 'pulseScale', duration: 3000 },
   },
   rightZigzag: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.36, right: -SCREEN_WIDTH * 0.25},
-    size: {width: 160, height: 160},
-    animation: {type: 'fadeInOut', duration: 6000},
+    initialPosition: { top: SCREEN_HEIGHT * 0.36, right: -SCREEN_WIDTH * 0.25 },
+    size: { width: 160, height: 160 },
+    animation: { type: 'fadeInOut', duration: 6000 },
   },
   rightEllipse: {
-    initialPosition: {top: SCREEN_HEIGHT * 0.23, right: -SCREEN_WIDTH * 0.55},
-    size: {width: 340, height: 340},
+    initialPosition: { top: SCREEN_HEIGHT * 0.23, right: -SCREEN_WIDTH * 0.55 },
+    size: { width: 340, height: 340 },
   },
 };
 
@@ -89,30 +89,30 @@ export default function LoginScreen() {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const { auth: authConfig } = useCustomization();
-  
+
   // Animation values for SVG elements
   const circleAnim = useRef(new Animated.Value(0)).current;
   const leftStartAnim = useRef(new Animated.Value(0)).current;
   const plusAnim = useRef(new Animated.Value(0)).current;
   const rectAnim = useRef(new Animated.Value(0)).current;
   const yellowBoomerangAnim = useRef(new Animated.Value(1)).current;
-  
+
   // Animation values for right SVG elements
   const rightRectangleAnim = useRef(new Animated.Value(0)).current;
   const rightSwapAnim = useRef(new Animated.Value(0)).current;
   const rightBoomerangAnim = useRef(new Animated.Value(1)).current;
   const rightZigzagAnim = useRef(new Animated.Value(1)).current;
-  
+
   // New animation values for the updated animations
   const settingAnim = useRef(new Animated.Value(0)).current;
-  
+
   // Single animation value for grid scaling
   const gridScaleAnim = useRef(new Animated.Value(1)).current;
-  
+
   useEffect(() => {
     // Start animations
     startAnimations();
-    
+
     // If already logged in, navigate to MainTabs
     if (isLoggedIn) {
       navigation.navigate('MainTabs');
@@ -354,7 +354,7 @@ export default function LoginScreen() {
   };
 
   const renderAuthComponent = () => {
-    switch(authConfig.provider) {
+    switch (authConfig.provider) {
       case 'turnkey':
         return <TurnkeyWalletAuth onWalletConnected={handleWalletConnected} />;
       case 'privy':
@@ -668,12 +668,12 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       {renderBackgroundShapes()}
-      
+
       <View style={styles.headerContainer}>
         <Text style={styles.welcomeText}>Welcome back</Text>
         <Text style={styles.subtitleText}>Sign in to your account</Text>
       </View>
-      
+
       {renderAuthComponent()}
 
       <Text style={styles.agreementText}>
