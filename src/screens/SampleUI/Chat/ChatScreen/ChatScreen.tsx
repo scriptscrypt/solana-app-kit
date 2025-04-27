@@ -1512,37 +1512,41 @@ function ChatScreen(): React.ReactElement {
       );
     }
 
-    // For empty chat states
-    if (displayMessages.length === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No messages yet</Text>
-          <Text style={styles.emptySubtext}>Start the conversation!</Text>
-        </View>
-      );
-    }
-
-    // For regular chats with messages
+    // Render the main content area (list or empty state) and the composer separately
+    // This ensures the composer is always visible for non-AI/loading/error states.
     return (
       <>
-        <FlatList
-          ref={flatListRef}
-          data={displayMessages}
-          renderItem={renderMessage}
-          keyExtractor={item => item.id}
-          contentContainerStyle={[
-            styles.messagesContainer,
-            { paddingBottom: 10 }
-          ]}
-          scrollEnabled={true}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={true}
-          onLayout={() => {
-            // Scroll to end when layout is complete
-            flatListRef.current?.scrollToEnd({ animated: false });
-          }}
-        />
+        {/* Message Display Area */}
+        <View style={{ flex: 1 }}>
+          {displayMessages.length === 0 ? (
+            // Empty state
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No messages yet</Text>
+              <Text style={styles.emptySubtext}>Start the conversation!</Text>
+            </View>
+          ) : (
+            // Message List
+            <FlatList
+              ref={flatListRef}
+              data={displayMessages}
+              renderItem={renderMessage}
+              keyExtractor={item => item.id}
+              contentContainerStyle={[
+                styles.messagesContainer,
+                { paddingBottom: 10 }
+              ]}
+              scrollEnabled={true}
+              scrollEventThrottle={16}
+              showsVerticalScrollIndicator={true}
+              onLayout={() => {
+                // Scroll to end when layout is complete
+                flatListRef.current?.scrollToEnd({ animated: false });
+              }}
+            />
+          )}
+        </View>
 
+        {/* Offline Banner (shown below messages/empty state, above composer) */}
         {!socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id && socketError && (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineBannerText}>
@@ -1563,14 +1567,15 @@ function ChatScreen(): React.ReactElement {
           </View>
         )}
 
-        {/* Chat composer with bottom padding for tab bar - Only for non-AI chats */}
+        {/* Chat Composer */}
         <View style={styles.composerContainer}>
           <ChatComposer
             currentUser={currentUser}
             onMessageSent={handleMessageSent}
             chatContext={{ chatId: chatId }}
-            disabled={false}
+            disabled={false} // Ensure composer is not disabled by default
           />
+          {/* Spacer for Tab Bar when keyboard is hidden */}
           {!keyboardVisible && (
             <View style={[styles.tabBarSpacer, { height: 20 }]} />
           )}

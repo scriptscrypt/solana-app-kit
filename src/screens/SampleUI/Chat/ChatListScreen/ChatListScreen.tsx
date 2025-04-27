@@ -12,10 +12,11 @@ import {
   Platform,
   StatusBar as RNStatusBar,
   StyleSheet,
+  ImageSourcePropType,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,14 +87,32 @@ const ChatListScreen: React.FC = () => {
   const { usersForChat } = useAppSelector(state => state.chat);
 
   // Local loading state while fetching initial data
-  const [isLoading, setIsLoading] = useState(true);
+  // Let Redux loading state handle the initial load indication
+  // const [isLoading, setIsLoading] = useState(true);
 
   // State to track online users
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
-  // Initialize Socket connection
+  // --- Refetch Logic ---
+  // Refetch chats when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        console.log('[ChatListScreen] Screen focused, fetching user chats...');
+        dispatch(fetchUserChats(userId));
+        // Also fetch posts if needed for global chat context, though it's commented out
+        // dispatch(fetchAllPosts());
+      }
+    }, [dispatch, userId])
+  );
+  // --- End Refetch Logic ---
+
+  // Initialize Socket connection and listeners
   useEffect(() => {
     if (userId) {
+      let isMounted = true;
+      console.log('[ChatListScreen] Initializing socket and listeners...');
+
       // Initialize the socket connection
       socketService.initSocket(userId).catch(err => {
         console.error('Failed to initialize socket:', err);
@@ -105,38 +124,50 @@ const ChatListScreen: React.FC = () => {
       // Send online status when entering chat list
       sendOnlineStatus(true);
 
-      // Listen for user status changes
+      // --- Socket Event Listeners ---
       const handleUserStatusChange = (data: { userId: string, isOnline: boolean }) => {
-        console.log('User status change:', data);
+        if (!isMounted) return;
+        console.log('User status change received:', data);
         setOnlineUsers(prev => {
           if (data.isOnline) {
-            // Add user to online users if not already there
             return prev.includes(data.userId) ? prev : [...prev, data.userId];
           } else {
-            // Remove user from online users
             return prev.filter(id => id !== data.userId);
           }
         });
-
-        // Update user status in Redux for persistence
-        dispatch(updateUserOnlineStatus({
-          userId: data.userId,
-          isOnline: data.isOnline
-        }));
+        dispatch(updateUserOnlineStatus({ userId: data.userId, isOnline: data.isOnline }));
       };
 
-      // Subscribe to user status events
+      const handleNewMessage = (messageData: any) => {
+        if (!isMounted) return;
+        console.log('New message event received:', messageData);
+        // When a new message arrives (could be for a new or existing chat),
+        // refetch the chat list to update last message, timestamp, and order.
+        // Alternatively, could dispatch an `upsertChat` action if the payload is sufficient.
+        dispatch(fetchUserChats(userId));
+      };
+
+      // Subscribe to events
       socketService.subscribeToEvent('user_status_change', handleUserStatusChange);
+      socketService.subscribeToEvent('new_message', handleNewMessage); // Listen for new messages
+      // Add listener for new chat creation if the backend emits a specific event for it
+      // socketService.subscribeToEvent('new_chat_created', handleNewChatCreated);
+
+      // --- End Socket Event Listeners ---
 
       // Clean up on unmount
       return () => {
+        isMounted = false;
+        console.log('[ChatListScreen] Cleaning up listeners...');
         // Send offline status when leaving chat list
         sendOnlineStatus(false);
 
-        // Unsubscribe from status events
+        // Unsubscribe from events
         socketService.unsubscribeFromEvent('user_status_change', handleUserStatusChange);
+        socketService.unsubscribeFromEvent('new_message', handleNewMessage);
+        // socketService.unsubscribeFromEvent('new_chat_created', handleNewChatCreated);
 
-        console.log('Leaving ChatListScreen, but keeping socket connected');
+        console.log('Leaving ChatListScreen, but keeping socket connected due to persistent mode.');
       };
     }
   }, [userId, dispatch]);
@@ -149,50 +180,42 @@ const ChatListScreen: React.FC = () => {
         userId: userId,
         isOnline: isOnline
       });
-
       // Also update in Redux
-      dispatch(updateUserOnlineStatus({
-        userId: userId,
-        isOnline: isOnline
-      }));
+      dispatch(updateUserOnlineStatus({ userId: userId, isOnline: isOnline }));
     }
   };
 
-  // Fetch both posts (for global chat) and user's chats
+  // Initial data load (runs once on mount or when userId changes)
   useEffect(() => {
-    setIsLoading(true);
-
-    const loadData = async () => {
+    // No need for setIsLoading here, rely on loadingChats from Redux
+    const loadInitialData = async () => {
       try {
-        // Fetch all posts for global chat
-        await dispatch(fetchAllPosts()).unwrap();
+        // Fetch all posts for global chat (if needed)
+        // await dispatch(fetchAllPosts()).unwrap(); // Keep commented if global chat is not shown
 
         // Fetch user's chats if user is authenticated
         if (userId) {
+          console.log('[ChatListScreen] Fetching initial user chats...');
           const chatResponse = await dispatch(fetchUserChats(userId)).unwrap();
 
           // Join all chat rooms after fetching them
           if (chatResponse && Array.isArray(chatResponse)) {
-            // Extract chat IDs
             const chatIds = chatResponse.map(chat => chat.id).filter(Boolean);
-
-            // Join all chat rooms
             if (chatIds.length > 0) {
-              console.log('Joining all user chats:', chatIds);
+              console.log('Joining initial user chats:', chatIds);
               socketService.joinChats(chatIds);
             }
           }
         }
       } catch (error) {
-        console.error('Error loading chat data:', error);
-        Alert.alert('Error', 'Failed to load chats. Please try again.');
-      } finally {
-        setIsLoading(false);
+        console.error('Error loading initial chat data:', error);
+        // Error is handled by the error state in Redux
+        // Alert.alert('Error', 'Failed to load chats. Please try again.');
       }
     };
 
-    loadData();
-  }, [dispatch, userId]);
+    loadInitialData();
+  }, [dispatch, userId]); // Dependency array ensures this runs when userId is available
 
   // Format most recent post for Global chat preview
   const getGlobalChatLastMessage = useCallback(() => {
@@ -280,15 +303,13 @@ const ChatListScreen: React.FC = () => {
     const apiChats = chats.map(chat => {
       // Get other participant for direct chats (for name and avatar)
       let chatName = chat.name || '';
-      let avatar = DEFAULT_IMAGES.groupChat;
+      let avatar: ImageSourcePropType = DEFAULT_IMAGES.groupChat; // Explicitly type avatar
 
       if (chat.type === 'direct' && chat.participants) {
         const otherParticipant = chat.participants.find(p => p.id !== userId);
         if (otherParticipant) {
           chatName = otherParticipant.username;
-          avatar = otherParticipant.profile_picture_url
-            ? { uri: otherParticipant.profile_picture_url }
-            : DEFAULT_IMAGES.user;
+          avatar = getValidImageSource(otherParticipant.profile_picture_url || DEFAULT_IMAGES.user);
         }
       }
 
@@ -320,7 +341,15 @@ const ChatListScreen: React.FC = () => {
     });
 
     // Return AI Agent first, then other chats (global chat is commented out)
-    return [aiAgentChat, ...apiChats];
+    // Sort API chats by updated_at (most recent first)
+    const sortedApiChats = [...apiChats].sort((a, b) => {
+      const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+      const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    return [aiAgentChat, ...sortedApiChats];
+
   }, [chats, userId, allPosts.length, getGlobalChatLastMessage, getGlobalChatTime, getTotalUserCount]);
 
   // Filter chats based on search query
@@ -367,47 +396,39 @@ const ChatListScreen: React.FC = () => {
     if (isDirect && item.participants) {
       const otherParticipant = item.participants.find((p: any) => p.id !== userId);
       if (otherParticipant) {
+        // Combine Redux state and real-time socket state for online status
         isOnline = otherParticipant.is_active === true || onlineUsers.includes(otherParticipant.id);
-        // Construct a user object compatible with ProfileAvatarView
         participantUser = {
           id: otherParticipant.id,
           username: otherParticipant.username,
-          handle: otherParticipant.username, // Use username as handle if needed
-          avatar: otherParticipant.profile_picture_url // Pass the raw URL
-            ? getValidImageSource(otherParticipant.profile_picture_url)
-            : DEFAULT_IMAGES.user,
-          verified: false, // Assuming not verified for now
+          handle: otherParticipant.username,
+          avatar: getValidImageSource(otherParticipant.profile_picture_url || DEFAULT_IMAGES.user),
+          verified: false,
         };
       }
     }
 
-    // Always show AI as online
     if (isAI) {
       isOnline = true;
-      // Construct user object for AI
       participantUser = {
         id: AI_AGENT.id,
         username: AI_AGENT.name,
         handle: 'ai-assistant',
-        avatar: getValidImageSource(AI_AGENT.avatar), // Use AI avatar
-        verified: true, // Maybe mark AI as verified?
+        avatar: getValidImageSource(AI_AGENT.avatar),
+        verified: true,
       };
     }
 
-    // For group chats, we might need a generic group avatar representation
-    // or potentially show stacked avatars if design allows (complex)
-    // For now, create a dummy user for groups if participantUser is null
     if (!participantUser && !isDirect && !isAI) {
       participantUser = {
         id: item.id,
         username: item.name,
         handle: 'group-chat',
-        avatar: getValidImageSource(DEFAULT_IMAGES.groupChat), // Default group chat image
+        avatar: getValidImageSource(item.avatar || DEFAULT_IMAGES.groupChat), // Use item avatar if available
         verified: false,
       };
     }
 
-    // Fallback user if somehow participantUser is still null
     const displayUser = participantUser || {
       id: item.id,
       username: item.name,
@@ -422,13 +443,11 @@ const ChatListScreen: React.FC = () => {
         activeOpacity={0.7}
         onPress={() => handleChatPress(item)}
       >
-        {/* Avatar with online/group indicator */}
         <View style={styles.avatarContainer}>
-          {/* Use ProfileAvatarView */}
           <ProfileAvatarView
-            user={displayUser} // Pass the constructed user object
-            style={styles.avatar} // Apply existing avatar styles
-            size={styles.avatar.width} // Pass the size from styles
+            user={displayUser}
+            style={styles.avatar}
+            size={styles.avatar.width}
           />
           {!isDirect && !isAI ? (
             <View style={styles.groupIndicator}>
@@ -439,7 +458,6 @@ const ChatListScreen: React.FC = () => {
           ) : null}
         </View>
 
-        {/* Chat info */}
         <View style={styles.chatInfo}>
           <View style={styles.chatNameRow}>
             <View style={styles.nameContainer}>
@@ -540,7 +558,8 @@ const ChatListScreen: React.FC = () => {
           </View>
 
           {/* Chat list */}
-          {isLoading || loadingChats ? (
+          {/* Use loadingChats from Redux state for loading indicator */}
+          {loadingChats ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={COLORS.brandBlue} />
               <Text style={styles.loadingText}>Loading chats...</Text>
@@ -550,7 +569,7 @@ const ChatListScreen: React.FC = () => {
               <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={() => dispatch(fetchUserChats(userId))}
+                onPress={() => dispatch(fetchUserChats(userId))} // Allow retry on error
               >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
