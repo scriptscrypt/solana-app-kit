@@ -1644,7 +1644,7 @@ function ChatScreen(): React.ReactElement {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // Adjust offset
           style={styles.keyboardAvoidingContainer}>
 
-          <View style={styles.innerContainer}>
+          <View style={[styles.innerContainer, { justifyContent: undefined }]}>
             {/* Render appropriate chat content based on chat type */}
             {renderChatContent()}
           </View>
