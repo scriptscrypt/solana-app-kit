@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 import COLORS from '@/assets/colors';
 import Logo from '@/assets/svgs/logo.svg';
@@ -53,23 +55,29 @@ export default function IntroScreen() {
   }, [navigation, isLoggedIn]);
 
   return (
-    <View style={styles.container}>
-      <Logo width={250} height={120} />
-      {isCheckingAuth && (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={COLORS.brandPrimary} style={styles.loader} />
-        </View>
-      )}
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="light" backgroundColor="transparent" translucent={true} />
+      <View style={styles.container}>
+        <Logo width={250} height={120} />
+        {isCheckingAuth && (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color={COLORS.brandPrimary} style={styles.loader} />
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background, // Ensure background matches container
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
   },
   loaderContainer: {
     position: 'absolute',

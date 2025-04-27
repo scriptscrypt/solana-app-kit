@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, Text, Dimensions, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import Icons from '@/assets/svgs/index';
 import styles from './LoginScreen.styles';
 import { useDispatch, useSelector } from 'react-redux';
@@ -666,19 +668,22 @@ export default function LoginScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      {renderBackgroundShapes()}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="light" backgroundColor="transparent" translucent={true} />
+      <View style={styles.container}>
+        {renderBackgroundShapes()}
 
-      <View style={styles.headerContainer}>
-        <Text style={styles.welcomeText}>Welcome back</Text>
-        <Text style={styles.subtitleText}>Sign in to your account</Text>
+        <View style={styles.headerContainer}>
+          <Text style={styles.welcomeText}>Welcome back</Text>
+          <Text style={styles.subtitleText}>Sign in to your account</Text>
+        </View>
+
+        {renderAuthComponent()}
+
+        <Text style={styles.agreementText}>
+          By continuing you agree to our t&c and Privacy Policy
+        </Text>
       </View>
-
-      {renderAuthComponent()}
-
-      <Text style={styles.agreementText}>
-        By continuing you agree to our t&c and Privacy Policy
-      </Text>
-    </View>
+    </SafeAreaView>
   );
 }
