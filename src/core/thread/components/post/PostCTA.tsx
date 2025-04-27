@@ -16,14 +16,23 @@ import { RootState } from '@/shared/state/store';
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
 import { CLUSTER } from '@env';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import TradeModal from '../trade/ShareTradeModal';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { DEFAULT_IMAGES, ENDPOINTS } from '@/config/constants';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 // Import NFT services
 import { buyNft, buyCollectionFloor } from '@/modules/nft';
 import { createPostCTAStyles } from './PostCTA.styles';
+
+// Import the DEFAULT_SOL_TOKEN for trading
+import { DEFAULT_SOL_TOKEN, TokenInfo } from '@/modules/dataModule';
+
+// Import the RootStackParamList for type-safe navigation
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SwapScreen'>;
 
 /**
  * Determines the type of CTA to display based on the post's sections
@@ -117,8 +126,6 @@ export default function PostCTA({
   styleOverrides,
   userStyleSheet,
 }: PostCTAProps) {
-  const [showTradeModal, setShowTradeModal] = useState(false);
-  const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
   const [loadingFloor, setLoadingFloor] = useState(false);
   const userName = useAppSelector(state => state.auth.username);
 
@@ -140,6 +147,8 @@ export default function PostCTA({
   // Get the wallet address as a string
   const userPublicKey = address || null;
 
+  const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
+  
   const currentUser: ThreadUser = {
     id: userPublicKey || 'anonymous-user',
     username: userName || 'Anonymous',
@@ -178,6 +187,8 @@ export default function PostCTA({
   const tradeData = sectionType === 'trade' ? getTradeData(post) : null;
   const collectionData = sectionType === 'collection' ? getCollectionData(post) : null;
 
+  const navigation = useNavigation<NavigationProp>();
+
   /**
    * Opens the trade modal for copying a trade
    * @returns {void}
@@ -187,7 +198,39 @@ export default function PostCTA({
       Alert.alert('Error', 'No trade data available for this post.');
       return;
     }
-    setShowTradeModal(true);
+    
+    // Create a more complete TokenInfo object for the input token
+    const inputTokenInfo: TokenInfo = {
+      address: tradeData.inputMint,
+      symbol: tradeData.inputSymbol || 'SOL',
+      name: tradeData.inputSymbol || 'Solana', // Use symbol as name if not provided
+      decimals: 9, // Default to 9 decimals (SOL)
+      logoURI: '', // Leave empty, the SwapScreen will fetch this
+    };
+    
+    // Create a more complete output token object with image if available
+    const outputTokenInfo = {
+      address: tradeData.outputMint, // Pass the output token mint address
+      symbol: tradeData.outputSymbol || 'Unknown Token', // Pass the token symbol or default
+      // Include any additional details that might be available in the trade data
+      mint: tradeData.outputMint, // Add explicit mint address
+      logoURI: (tradeData as any).outputLogoURI || '', // Add logo URL if available using type assertion
+      name: tradeData.outputSymbol || 'Unknown Token', // Add name for display purposes
+    };
+    
+    console.log('[PostCTA] Copying trade with tokens:', {
+      input: inputTokenInfo.symbol,
+      output: outputTokenInfo.symbol,
+      amount: tradeData.inputQuantity
+    });
+    
+    // Navigate to the SwapScreen with the trade parameters instead of showing the modal
+    navigation.navigate('SwapScreen', {
+      inputToken: inputTokenInfo,
+      outputToken: outputTokenInfo,
+      inputAmount: tradeData.inputQuantity || '1', // Pass the original trade amount or default to 1
+      shouldInitialize: true // Flag to initialize the swap with our parameters
+    });
   };
 
   /**
@@ -326,19 +369,6 @@ export default function PostCTA({
           {ctaLabel}
         </Text>
       </TouchableOpacity>
-
-      {/* Trade Modal */} 
-      {tradeData && (
-        <TradeModal
-          visible={showTradeModal}
-          onClose={() => setShowTradeModal(false)}
-          currentUser={currentUser}
-          initialActiveTab="PAST_SWAPS"
-          initialInputToken={{ address: tradeData.inputMint }}
-          initialOutputToken={{ address: tradeData.outputMint }}
-          onShare={() => setShowTradeModal(false)}
-        />
-      )}
 
       {/* NFT Loading Modal */}
       <Modal
