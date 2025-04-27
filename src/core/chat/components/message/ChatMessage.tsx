@@ -158,18 +158,20 @@ function ChatMessage({
           <MessageBubble
             {...messageBubbleProps}
           />
-          
-          {/* Timestamp inside the message bubble */}
-          <Text style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 12,
-            fontSize: 10,
-            color: isCurrentUser ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.6)',
-            fontFamily: fontFamily,
-          }}>
-            {formatTime(timestamp)}
-          </Text>
+
+          {/* Timestamp inside the message bubble - Conditionally rendered */}
+          {isCurrentUser && (
+            <Text style={{
+              position: 'absolute',
+              bottom: 8,
+              right: 12,
+              fontSize: 10,
+              color: isCurrentUser ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.6)', // Color logic can be simplified now
+              fontFamily: fontFamily,
+            }}>
+              {formatTime(timestamp)}
+            </Text>
+          )}
         </View>
       </Pressable>
     </View>
