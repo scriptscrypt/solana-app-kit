@@ -21,21 +21,26 @@ export const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   leftPlaceholder: {
-    width: 35,
+    width: 50,
+    flexBasis : 50,
   },
   titleContainer: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   titleText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.lg,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     fontFamily: TYPOGRAPHY.fontFamily,
+    textAlign: 'center',
   },
   iconsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: 50,
+    justifyContent: 'flex-end',
   },
   iconButton: {
     marginLeft: 16,

@@ -18,8 +18,8 @@ import {
   GestureResponderEvent,
   Dimensions,
   StyleSheet,
+  StatusBar as RNStatusBar,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChatComposer, ChatMessage, AgenticChatContainer } from '@/core/chat/components';
 import { MessageNFT, MessageTradeCard } from '@/core/chat/components/message';
@@ -54,6 +54,8 @@ import { TradeData } from '@/core/sharedUI/TradeCard/TradeCard';
 import { useChat } from '@/modules/solanaAgentKit/hooks/useChat';
 import { generateUUID } from '@/modules/solanaAgentKit/lib/utils';
 import type { Message } from 'ai';
+import { StatusBar } from 'expo-status-bar';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 
 // Add these styles before the component
 // Create a complete styles object by extending the base styles
@@ -372,6 +374,17 @@ const messageActionStyles = StyleSheet.create({
   }
 });
 
+// Add androidStyles after the messageActionStyles StyleSheet
+const androidStyles = StyleSheet.create({
+  statusBarPlaceholder: {
+    height: RNStatusBar.currentHeight || 24,
+    backgroundColor: COLORS.background,
+  },
+  headerContainer: {
+    paddingTop: 8, // Additional padding for Android camera hole
+  }
+});
+
 type ChatScreenRouteProp = RouteProp<RootStackParamList, 'ChatScreen'>;
 type ChatScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ChatScreen'>;
 
@@ -530,7 +543,7 @@ function ChatScreen(): React.ReactElement {
     id: address || 'unknown-user',
     username: auth.username || 'Anonymous',
     handle: auth.username || 'anonymous',
-    avatar: auth.profilePicUrl ? { uri: auth.profilePicUrl } : DEFAULT_IMAGES.user as ImageSourcePropType,
+    avatar: getValidImageSource(auth.profilePicUrl || DEFAULT_IMAGES.user),
     verified: false,
   };
 
@@ -538,13 +551,13 @@ function ChatScreen(): React.ReactElement {
   const currentUserMemo = useMemo(() => ({
     id: address || '',
     username: auth.username || 'You',
-    avatar: auth.profilePicUrl ? { uri: auth.profilePicUrl } : DEFAULT_IMAGES.user
+    avatar: getValidImageSource(auth.profilePicUrl || DEFAULT_IMAGES.user)
   }), [address, auth.username, auth.profilePicUrl]);
 
   // Extract the avatar source for stable reference
-  const currentUserAvatar = useMemo(() => 
-    auth.profilePicUrl ? { uri: auth.profilePicUrl } : DEFAULT_IMAGES.user, 
-  [auth.profilePicUrl]);
+  const currentUserAvatar = useMemo(() =>
+    getValidImageSource(auth.profilePicUrl || DEFAULT_IMAGES.user),
+    [auth.profilePicUrl]);
 
   // Connect to WebSocket with retry logic
   const connectToSocket = useCallback(async () => {
@@ -1024,7 +1037,7 @@ function ChatScreen(): React.ReactElement {
         user: {
           id: msg.role === 'user' ? currentUserMemo.id : 'ai-agent',
           username: msg.role === 'user' ? currentUserMemo.username : 'AI Assistant',
-          avatar: msg.role === 'user' ? currentUserAvatar : AI_AGENT.avatar,
+          avatar: msg.role === 'user' ? currentUserAvatar : getValidImageSource(AI_AGENT.avatar || DEFAULT_IMAGES.user),
         },
         // Extract text content - handle potential non-string content if needed
         text: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
@@ -1047,9 +1060,7 @@ function ChatScreen(): React.ReactElement {
         user: {
           id: msg.sender_id,
           username: msg.sender?.username || 'User',
-          avatar: msg.sender?.profile_picture_url
-            ? { uri: msg.sender.profile_picture_url }
-            : DEFAULT_IMAGES.user,
+          avatar: getValidImageSource(msg.sender?.profile_picture_url || DEFAULT_IMAGES.user),
         },
         text: msg.content,
         image_url: msg.image_url,
@@ -1290,9 +1301,11 @@ function ChatScreen(): React.ReactElement {
               {showHeader && (
                 <View style={additionalStyles.messageHeader}>
                   <View style={additionalStyles.avatarContainer}>
-                    <Image
-                      source={item.user?.avatar || DEFAULT_IMAGES.user}
+                    <IPFSAwareImage
+                      source={getValidImageSource(item.user?.avatar || DEFAULT_IMAGES.user)}
                       style={additionalStyles.avatar}
+                      defaultSource={DEFAULT_IMAGES.user}
+                      key={`trade-avatar-${item.id}`}
                     />
                   </View>
                   <Text style={additionalStyles.username}>{item.user?.username || 'User'}</Text>
@@ -1337,9 +1350,11 @@ function ChatScreen(): React.ReactElement {
             {showHeader && (
               <View style={additionalStyles.messageHeader}>
                 <View style={additionalStyles.avatarContainer}>
-                  <Image
-                    source={item.user.avatar || DEFAULT_IMAGES.user}
+                  <IPFSAwareImage
+                    source={getValidImageSource(item.user.avatar || DEFAULT_IMAGES.user)}
                     style={additionalStyles.avatar}
+                    defaultSource={DEFAULT_IMAGES.user}
+                    key={`nft-avatar-${item.id}`}
                   />
                 </View>
                 <Text style={additionalStyles.username}>{item.user.username}</Text>
@@ -1527,7 +1542,7 @@ function ChatScreen(): React.ReactElement {
             flatListRef.current?.scrollToEnd({ animated: false });
           }}
         />
-        
+
         {!socketConnected && chatId !== 'global' && chatId !== AI_AGENT.id && socketError && (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineBannerText}>
@@ -1565,185 +1580,191 @@ function ChatScreen(): React.ReactElement {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+    <>
+      {Platform.OS === 'android' && <View style={androidStyles.statusBarPlaceholder} />}
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="light" />
 
-      {/* Decorative background elements */}
-      <View style={styles.decorCircle1} />
-      <View style={styles.decorCircle2} />
-      <LinearGradient
-        colors={['rgba(50, 212, 222, 0.05)', 'transparent']}
-        style={styles.glow1}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
-      {/* Header with Gradient Border - updated to include back button and chat name */}
-      <View style={styles.headerContainer}>
-        {/* Left: Back button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-        >
-          <Icons.ArrowLeft width={20} height={20} color={COLORS.white} />
-        </TouchableOpacity>
-
-        {/* Center: Chat Title */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>{chatName}</Text>
-          {isGroup && (
-            <Text style={styles.subtitleText}>{getMembersCount()}</Text>
-          )}
-        </View>
-
-        {/* Right: Icons and socket status */}
-        <View style={styles.iconsContainer}>
-          {/* {renderSocketStatus()} */}
-          <TouchableOpacity style={styles.iconButton}>
-            <Icons.copyIcon width={16} height={16} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Icons.walletIcon width={35} height={35} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom gradient border */}
+        {/* Decorative background elements */}
+        <View style={styles.decorCircle1} />
+        <View style={styles.decorCircle2} />
         <LinearGradient
-          colors={['transparent', COLORS.lightBackground]}
-          style={styles.headerBottomGradient}
+          colors={['rgba(50, 212, 222, 0.05)', 'transparent']}
+          style={styles.glow1}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         />
-      </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // Adjust offset
-        style={styles.keyboardAvoidingContainer}>
-
-        <View style={styles.innerContainer}>
-          {/* Render appropriate chat content based on chat type */}
-          {renderChatContent()}
-        </View>
-
-      </KeyboardAvoidingView>
-
-      {/* Message Actions Modal */}
-      {showMessageActions && (
-        <>
-          <TouchableWithoutFeedback onPress={() => setShowMessageActions(false)}>
-            <View style={messageActionStyles.overlay} />
-          </TouchableWithoutFeedback>
-
-          <View
-            style={[
-              messageActionStyles.popup,
-              {
-                top: messageContextPosition.y,
-                left: messageContextPosition.x,
-              }
-            ]}
+        {/* Header with Gradient Border - updated to include back button and chat name */}
+        <View style={[
+          styles.headerContainer,
+          Platform.OS === 'android' && androidStyles.headerContainer
+        ]}>
+          {/* Left: Back button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
           >
-            {/* Edit Action - No Icon */}
-            <TouchableOpacity
-              style={messageActionStyles.actionItem}
-              onPress={handleEditMessage}
-            >
-              <Text style={[messageActionStyles.actionText, { marginLeft: 0 }]}>Edit Message</Text>
-            </TouchableOpacity>
+            <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
+          </TouchableOpacity>
 
-            <View style={messageActionStyles.actionDivider} />
-
-            {/* Delete Action - No Icon */}
-            <TouchableOpacity
-              style={messageActionStyles.actionItem}
-              onPress={handleDeleteMessage}
-            >
-              <Text style={[messageActionStyles.actionTextDelete, { marginLeft: 0 }]}>Delete Message</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-
-      {/* Edit Message Drawer */}
-      {showEditDrawer && (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1100
-          }}
-        >
-          <View style={[styles.editDrawer, { paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.editDrawerHeader}>
-              <Text style={styles.editDrawerTitle}>Edit Message</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowEditDrawer(false)}
-              >
-                {/* Use simple 'X' text as close icon */}
-                <Text style={{ color: COLORS.greyMid, fontSize: 18, fontWeight: 'bold' }}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Only show edit controls if NOT AI Chat */}
-            {!isAIAgentChat && (
-              <>
-                <TextInput
-                  style={styles.editInput}
-                  value={editedContent}
-                  onChangeText={setEditedContent}
-                  multiline
-                  placeholder="Edit your message..."
-                  placeholderTextColor={COLORS.greyMid}
-                  autoFocus
-                  selectionColor={COLORS.brandBlue}
-                />
-
-                <View style={styles.editButtons}>
-                  <TouchableOpacity
-                    style={styles.editCancelButton}
-                    onPress={() => setShowEditDrawer(false)}
-                    disabled={isEditingMessage}
-                  >
-                    <Text style={[styles.buttonText, { color: COLORS.greyMid }]}>Cancel</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.editSaveButton,
-                      (!editedContent.trim() || isEditingMessage) && { opacity: 0.5 }
-                    ]}
-                    onPress={handleSaveEditedMessage}
-                    disabled={!editedContent.trim() || isEditingMessage}
-                  >
-                    <Text style={styles.buttonText}>
-                      {isEditingMessage ? 'Saving...' : 'Save Changes'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
+          {/* Center: Chat Title */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleText}>{chatName}</Text>
+            {isGroup && (
+              <Text style={styles.subtitleText}>{getMembersCount()}</Text>
             )}
           </View>
-        </KeyboardAvoidingView>
-      )}
 
-      {/* NFT Details Drawer */}
-      {selectedNft && (
-        <TokenDetailsDrawer
-          visible={showNftDetailsDrawer}
-          onClose={() => setShowNftDetailsDrawer(false)}
-          tokenMint={selectedNft.mint || ''}
-          initialData={{
-            ...selectedNft,
-            isCollection: selectedNft.nftData?.isCollection || false
-          }}
-          loading={drawerLoading}
-        />
-      )}
-    </SafeAreaView>
+          {/* Right: Icons and socket status */}
+          <View style={styles.iconsContainer}>
+            {/* {renderSocketStatus()} */}
+            <TouchableOpacity style={styles.iconButton}>
+              <Icons.copyIcon width={16} height={16} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton}>
+              <Icons.walletIcon width={35} height={35} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom gradient border */}
+          <LinearGradient
+            colors={['transparent', COLORS.lightBackground]}
+            style={styles.headerBottomGradient}
+          />
+        </View>
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // Adjust offset
+          style={styles.keyboardAvoidingContainer}>
+
+          <View style={styles.innerContainer}>
+            {/* Render appropriate chat content based on chat type */}
+            {renderChatContent()}
+          </View>
+
+        </KeyboardAvoidingView>
+
+        {/* Message Actions Modal */}
+        {showMessageActions && (
+          <>
+            <TouchableWithoutFeedback onPress={() => setShowMessageActions(false)}>
+              <View style={messageActionStyles.overlay} />
+            </TouchableWithoutFeedback>
+
+            <View
+              style={[
+                messageActionStyles.popup,
+                {
+                  top: messageContextPosition.y,
+                  left: messageContextPosition.x,
+                }
+              ]}
+            >
+              {/* Edit Action - No Icon */}
+              <TouchableOpacity
+                style={messageActionStyles.actionItem}
+                onPress={handleEditMessage}
+              >
+                <Text style={[messageActionStyles.actionText, { marginLeft: 0 }]}>Edit Message</Text>
+              </TouchableOpacity>
+
+              <View style={messageActionStyles.actionDivider} />
+
+              {/* Delete Action - No Icon */}
+              <TouchableOpacity
+                style={messageActionStyles.actionItem}
+                onPress={handleDeleteMessage}
+              >
+                <Text style={[messageActionStyles.actionTextDelete, { marginLeft: 0 }]}>Delete Message</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {/* Edit Message Drawer */}
+        {showEditDrawer && (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 1100
+            }}
+          >
+            <View style={[styles.editDrawer, { paddingBottom: insets.bottom + 16 }]}>
+              <View style={styles.editDrawerHeader}>
+                <Text style={styles.editDrawerTitle}>Edit Message</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowEditDrawer(false)}
+                >
+                  {/* Use simple 'X' text as close icon */}
+                  <Text style={{ color: COLORS.greyMid, fontSize: 18, fontWeight: 'bold' }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Only show edit controls if NOT AI Chat */}
+              {!isAIAgentChat && (
+                <>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editedContent}
+                    onChangeText={setEditedContent}
+                    multiline
+                    placeholder="Edit your message..."
+                    placeholderTextColor={COLORS.greyMid}
+                    autoFocus
+                    selectionColor={COLORS.brandBlue}
+                  />
+
+                  <View style={styles.editButtons}>
+                    <TouchableOpacity
+                      style={styles.editCancelButton}
+                      onPress={() => setShowEditDrawer(false)}
+                      disabled={isEditingMessage}
+                    >
+                      <Text style={[styles.buttonText, { color: COLORS.greyMid }]}>Cancel</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.editSaveButton,
+                        (!editedContent.trim() || isEditingMessage) && { opacity: 0.5 }
+                      ]}
+                      onPress={handleSaveEditedMessage}
+                      disabled={!editedContent.trim() || isEditingMessage}
+                    >
+                      <Text style={styles.buttonText}>
+                        {isEditingMessage ? 'Saving...' : 'Save Changes'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        )}
+
+        {/* NFT Details Drawer */}
+        {selectedNft && (
+          <TokenDetailsDrawer
+            visible={showNftDetailsDrawer}
+            onClose={() => setShowNftDetailsDrawer(false)}
+            tokenMint={selectedNft.mint || ''}
+            initialData={{
+              ...selectedNft,
+              isCollection: selectedNft.nftData?.isCollection || false
+            }}
+            loading={drawerLoading}
+          />
+        )}
+      </SafeAreaView>
+    </>
   );
 }
 
