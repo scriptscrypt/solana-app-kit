@@ -589,7 +589,8 @@ export default function SwapScreen() {
 
   // Execute swap
   const handleSwap = useCallback(async () => {
-    console.log('[SwapScreen] Swap button clicked, provider:', activeProvider);
+    console.log('[SwapScreen] ⚠️⚠️⚠️ SWAP BUTTON CLICKED ⚠️⚠️⚠️');
+    console.log(`[SwapScreen] Provider: ${activeProvider}, Amount: ${inputValue} ${inputToken.symbol}`);
 
     if (!connected || !userPublicKey) {
       console.log('[SwapScreen] Error: Wallet not connected');
@@ -658,13 +659,19 @@ export default function SwapScreen() {
         activeProvider === 'PumpSwap' ? { poolAddress, slippage } : undefined
       );
 
-      console.log('[SwapScreen] TradeService.executeSwap response:', response);
+      console.log('[SwapScreen] TradeService.executeSwap response:', JSON.stringify(response));
+      console.log('[SwapScreen] Output amount for fee calculation:', response.outputAmount);
 
       if (response.success && response.signature) {
         if (isMounted.current) {
           console.log('[SwapScreen] Swap successful! Signature:', response.signature);
           setResultMsg(`Swap successful!`);
           setSolscanTxSig(response.signature);
+
+          // Wait a moment for the fee collection alert to show
+          setTimeout(() => {
+            console.log('[SwapScreen] Checking if fee alert is visible...');
+          }, 500);
 
           Alert.alert(
             'Swap Successful',
