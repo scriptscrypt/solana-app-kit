@@ -1,10 +1,11 @@
-import { Connection, Transaction, VersionedTransaction, PublicKey } from '@solana/web3.js';
+import { Connection, Transaction, VersionedTransaction, PublicKey, SystemProgram } from '@solana/web3.js';
 import { TokenInfo } from '../types/tokenTypes';
 import { JupiterService, JupiterSwapResponse } from './jupiterService';
 import { RaydiumService } from '../../raydium/services/raydiumService';
 import { Direction } from '../../pumpFun/services/pumpSwapService';
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 import { SERVER_URL } from '@env';
+import { Alert } from 'react-native';
 
 const API_BASE_URL = SERVER_URL || 'http://localhost:8080';
 
@@ -23,6 +24,10 @@ export interface SwapCallback {
   isComponentMounted?: () => boolean;
 }
 
+// Fee configuration
+const FEE_PERCENTAGE = 0.5; // 0.5%
+const FEE_RECIPIENT = '4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty';
+
 /**
  * TradeService - Provider-agnostic service for executing token swaps
  * 
@@ -32,6 +37,134 @@ export interface SwapCallback {
  * - PumpSwap: PumpSwapService in pumpFun module
  */
 export class TradeService {
+  /**
+   * Calculate fee amount from an output amount
+   */
+  static calculateFeeAmount(outputAmount: number): number {
+    const feeAmount = Math.floor(outputAmount * (FEE_PERCENTAGE / 100));
+    console.log(`[TradeService] 🧮 Calculated fee: ${feeAmount} lamports (${FEE_PERCENTAGE}% of ${outputAmount})`);
+    return feeAmount;
+  }
+
+  /**
+   * Creates a fee transaction to collect fees on behalf of the project
+   */
+  static async collectFee(
+    outputAmount: number,
+    walletPublicKey: PublicKey,
+    sendTransaction: (
+      transaction: Transaction | VersionedTransaction,
+      connection: Connection, 
+      options?: { statusCallback?: (status: string) => void, confirmTransaction?: boolean }
+    ) => Promise<string>,
+    statusCallback?: (status: string) => void
+  ): Promise<string | null> {
+    console.log('[TradeService] 🔍 STARTING FEE COLLECTION');
+    console.log(`[TradeService] 🔍 Output amount: ${outputAmount}`);
+    console.log(`[TradeService] 🔍 Wallet: ${walletPublicKey.toString()}`);
+    
+    try {
+      // Calculate fee amount (0.5% of output)
+      const feeAmount = this.calculateFeeAmount(outputAmount);
+      
+      if (feeAmount <= 0) {
+        console.log('[TradeService] ⚠️ Fee amount too small, skipping fee collection');
+        return null;
+      }
+      
+      // Create direct RPC connection
+      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+      
+      // Get a fresh blockhash
+      console.log('[TradeService] 🔗 Getting latest blockhash');
+      const { blockhash } = await connection.getLatestBlockhash('finalized');
+      console.log(`[TradeService] 🔗 Blockhash received: ${blockhash}`);
+      
+      // Create fee transfer instruction
+      const feeRecipientPubkey = new PublicKey(FEE_RECIPIENT);
+      const transferInstruction = SystemProgram.transfer({
+        fromPubkey: walletPublicKey,
+        toPubkey: feeRecipientPubkey,
+        lamports: feeAmount
+      });
+      
+      // Create a new transaction for the fee
+      const feeTx = new Transaction();
+      feeTx.add(transferInstruction);
+      feeTx.recentBlockhash = blockhash;
+      feeTx.feePayer = walletPublicKey;
+      
+      // Prompt user to pay fee
+      Alert.alert(
+        'Pay Fee',
+        `A fee of ${FEE_PERCENTAGE}% (${feeAmount} lamports) will be sent to support the project. Please approve this transaction.`,
+        [
+          {
+            text: 'Approve',
+            onPress: async () => {
+              try {
+                // Send the fee transaction
+                if (statusCallback) {
+                  console.log('[TradeService] 📱 Calling status callback for fee approval prompt');
+                  statusCallback('Please approve the fee transaction...');
+                }
+                console.log('[TradeService] 📤 Sending fee transaction...');
+                
+                const signature = await sendTransaction(
+                  feeTx,
+                  connection,
+                  {
+                    statusCallback: (status) => {
+                      console.log(`[TradeService Fee] 📡 Status: ${status}`);
+                      if (statusCallback) {
+                        statusCallback(`Fee: ${status}`);
+                      }
+                    },
+                    confirmTransaction: true
+                  }
+                );
+                
+                console.log('[TradeService] ✅ Fee transaction successfully sent with signature:', signature);
+                
+                // Show notification for the fee transaction
+                console.log('[TradeService] 🔔 Showing success notification');
+                TransactionService.showSuccess(signature, 'transfer');
+                
+                return signature;
+              } catch (sendError) {
+                console.error('[TradeService] ❌ Error sending fee:', sendError);
+                if (sendError instanceof Error) {
+                  console.error('[TradeService] ❌ Error message:', sendError.message);
+                }
+                Alert.alert('Fee Error', 'There was an error sending the fee transaction. Your swap was still successful.');
+                return null;
+              }
+            }
+          },
+          {
+            text: 'Skip',
+            style: 'cancel',
+            onPress: () => {
+              console.log('[TradeService] ⏭️ User chose to skip fee payment');
+              return null;
+            }
+          }
+        ]
+      );
+      
+      // This will actually return before the user makes a choice,
+      // but that's OK because we've initiated the process with the Alert
+      return null;
+    } catch (error) {
+      console.error('[TradeService] ❌ Error collecting fee:', error);
+      if (error instanceof Error) {
+        console.error('[TradeService] ❌ Error message:', error.message);
+        console.error('[TradeService] ❌ Error stack:', error.stack);
+      }
+      return null;
+    }
+  }
+
   /**
    * Executes a token swap using the specified provider
    */
@@ -52,14 +185,18 @@ export class TradeService {
       slippage?: number;
     }
   ): Promise<TradeResponse> {
-    console.log(`[TradeService] executeSwap called with provider: ${provider}`);
+    console.log(`[TradeService] 🚀 executeSwap called with provider: ${provider}`);
     try {
+      // Create a connection object that might be reused for fee collection
+      const connection = new Connection('https://api.mainnet-beta.solana.com');
+      let swapResponse: TradeResponse;
+
       // Select provider implementation
       switch (provider) {
         case 'Jupiter':
-          console.log('[TradeService] Using JupiterService for swap');
+          console.log('[TradeService] 🪐 Using JupiterService for swap');
           // Use JupiterService for Jupiter swaps
-          return await JupiterService.executeSwap(
+          swapResponse = await JupiterService.executeSwap(
             inputToken,
             outputToken,
             inputAmount,
@@ -67,11 +204,13 @@ export class TradeService {
             sendTransaction,
             callbacks
           );
+          console.log('[TradeService] 🪐 Jupiter swap response:', JSON.stringify(swapResponse));
+          break;
           
         case 'Raydium':
-          console.log('[TradeService] Using RaydiumService for swap');
+          console.log('[TradeService] 🌊 Using RaydiumService for swap');
           // Use RaydiumService for Raydium swaps
-          return await RaydiumService.executeSwap(
+          swapResponse = await RaydiumService.executeSwap(
             inputToken,
             outputToken,
             inputAmount,
@@ -79,9 +218,11 @@ export class TradeService {
             sendTransaction,
             callbacks
           );
+          console.log('[TradeService] 🌊 Raydium swap response:', JSON.stringify(swapResponse));
+          break;
           
         case 'PumpSwap':
-          console.log('[TradeService] PumpSwap path selected');
+          console.log('[TradeService] 🔄 PumpSwap path selected');
           if (!options?.poolAddress) {
             throw new Error('Pool address is required for PumpSwap');
           }
@@ -145,9 +286,6 @@ export class TradeService {
             // Status update
             updateStatus('Transaction received, sending to wallet...');
             
-            // Create a connection
-            const connection = new Connection('https://api.mainnet-beta.solana.com');
-            
             // Create a Transaction object
             const txBuffer = Buffer.from(data.data.transaction, 'base64');
             const txData = new Uint8Array(txBuffer);
@@ -187,11 +325,11 @@ export class TradeService {
               console.log('[TradeService] Transaction sent with signature:', signature);
               updateStatus('Swap completed successfully!');
               
-              return {
+              swapResponse = {
                 success: true,
                 signature,
                 inputAmount: numericAmount,
-                outputAmount: 0
+                outputAmount: 0 // Not known for PumpSwap
               };
             } catch (txError: any) {
               // Check if error is due to confirmation timeout but transaction might have succeeded
@@ -243,13 +381,55 @@ export class TradeService {
               outputAmount: 0
             };
           }
+          break;
           
         default:
           console.error('[TradeService] Unsupported swap provider:', provider);
           throw new Error(`Unsupported swap provider: ${provider}`);
       }
+
+      // If the swap was successful, collect the fee
+      if (swapResponse.success) {
+        console.log('[TradeService] 🎉 Swap successful, preparing to collect fee');
+        console.log(`[TradeService] 📊 Swap output amount: ${swapResponse.outputAmount}`);
+        
+        if (swapResponse.outputAmount > 0) {
+          try {
+            console.log('[TradeService] 💸 Proceeding with fee collection');
+            
+            // Get status update function
+            const statusCallback = callbacks?.statusCallback || (() => {});
+            
+            // Collect fee - will create and send a separate transaction
+            // This doesn't affect the success of the main swap
+            this.collectFee(
+              swapResponse.outputAmount,
+              walletPublicKey,
+              sendTransaction,
+              statusCallback
+            );
+            
+            // Note: We don't await this since it shows an Alert and waits for user input
+          } catch (feeError) {
+            console.error('[TradeService] ❌ Error collecting fee, but swap was successful:', feeError);
+            if (feeError instanceof Error) {
+              console.error('[TradeService] ❌ Fee error message:', feeError.message);
+              console.error('[TradeService] ❌ Fee error stack:', feeError.stack);
+            }
+          }
+        } else {
+          console.log('[TradeService] ⚠️ Output amount is zero or invalid, cannot collect fee');
+          console.log('[TradeService] ℹ️ outputAmount value:', swapResponse.outputAmount);
+          console.log('[TradeService] ℹ️ outputAmount type:', typeof swapResponse.outputAmount);
+        }
+      } else {
+        console.log('[TradeService] ❌ Swap was not successful, skipping fee collection');
+        console.log('[TradeService] ℹ️ Swap error:', swapResponse.error);
+      }
+      
+      return swapResponse;
     } catch (err: any) {
-      console.error(`[TradeService] Trade error with provider ${provider}:`, err);
+      console.error(`[TradeService] ❌ Trade error with provider ${provider}:`, err);
       
       // Special handling for PumpSwap-specific errors
       if (provider === 'PumpSwap' && err.message) {
