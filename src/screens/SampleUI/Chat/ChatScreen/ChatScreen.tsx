@@ -56,6 +56,7 @@ import { generateUUID } from '@/modules/solanaAgentKit/lib/utils';
 import type { Message } from 'ai';
 import { StatusBar } from 'expo-status-bar';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { AppHeader } from '@/core/sharedUI';
 
 // Add these styles before the component
 // Create a complete styles object by extending the base styles
@@ -1575,10 +1576,7 @@ function ChatScreen(): React.ReactElement {
             chatContext={{ chatId: chatId }}
             disabled={false} // Ensure composer is not disabled by default
           />
-          {/* Spacer for Tab Bar when keyboard is hidden */}
-          {!keyboardVisible && (
-            <View style={[styles.tabBarSpacer, { height: 20 }]} />
-          )}
+          {/* Removed spacer completely to eliminate gap */}
         </View>
       </>
     );
@@ -1600,48 +1598,27 @@ function ChatScreen(): React.ReactElement {
           end={{ x: 1, y: 1 }}
         />
 
-        {/* Header with Gradient Border - updated to include back button and chat name */}
-        <View style={[
-          styles.headerContainer,
-          Platform.OS === 'android' && androidStyles.headerContainer
-        ]}>
-          {/* Left: Back button */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-          >
-            <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-          </TouchableOpacity>
-
-          {/* Center: Chat Title */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>{chatName}</Text>
-            {isGroup && (
-              <Text style={styles.subtitleText}>{getMembersCount()}</Text>
-            )}
-          </View>
-
-          {/* Right: Icons and socket status */}
-          <View style={styles.iconsContainer}>
-            {/* {renderSocketStatus()} */}
-            <TouchableOpacity style={styles.iconButton}>
-              <Icons.copyIcon width={16} height={16} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Icons.walletIcon width={35} height={35} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Bottom gradient border */}
-          <LinearGradient
-            colors={['transparent', COLORS.lightBackground]}
-            style={styles.headerBottomGradient}
-          />
-        </View>
+        {/* Replace custom header with AppHeader component */}
+        <AppHeader 
+          title={chatName}
+          onBackPress={handleBack}
+          showBottomGradient={false}
+          style={{
+            backgroundColor: 'transparent',
+            borderBottomWidth: 0,
+          }}
+          rightComponent={
+            isGroup ? (
+              <View style={styles.titleContainer}>
+                <Text style={styles.subtitleText}>{getMembersCount()}</Text>
+              </View>
+            ) : undefined
+          }
+        />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // Adjust offset
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0} // Significantly reduced offset to decrease gap
           style={styles.keyboardAvoidingContainer}>
 
           <View style={[styles.innerContainer, { justifyContent: undefined }]}>

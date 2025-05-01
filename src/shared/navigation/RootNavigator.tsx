@@ -19,6 +19,8 @@ import IntroScreen from '@/screens/Common/IntroScreen/IntroScreen';
 import LoginScreen from '@/screens/Common/LoginScreen/LoginScreen';
 import { MercuroScreen } from '@/modules/mercuro';
 import SwapScreen from '@/screens/SampleUI/Swap/SwapScreen';
+import { WalletScreen } from '@/screens/Common';
+import OnrampScreen from '@/screens/Common/OnrampScreen';
 import socketService from '@/services/socketService';
 import { fetchUserChats } from '@/shared/state/chat/slice';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
@@ -48,6 +50,11 @@ export type RootStackParamList = {
   PostThread: { postId: string };
   FollowersFollowingList: undefined;
   ProfileScreen: undefined;
+  WalletScreen: {
+    walletAddress?: string;
+    walletBalance?: string;
+  };
+  OnrampScreen: undefined;
   SwapScreen: {
     inputToken?: Partial<TokenInfo>;
     outputToken?: {
@@ -154,6 +161,8 @@ export default function RootNavigator() {
             options={{ title: '' }} // or "Followers / Following"
           />
           <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+          <Stack.Screen name="WalletScreen" component={WalletScreen} />
+          <Stack.Screen name="OnrampScreen" component={OnrampScreen} />
           <Stack.Screen name="SwapScreen" component={SwapScreen} />
         </>
       ) : (

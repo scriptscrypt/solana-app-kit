@@ -11,11 +11,8 @@ import TYPOGRAPHY from '@/assets/typography';
 
 import AnimatedTabIcon from './AnimatedTabIcon';
 import FeedScreen from '@/screens/SampleUI/Threads/FeedScreen/FeedScreen';
-import ChatScreen from '@/screens/SampleUI/Chat/ChatScreen/ChatScreen';
 import SwapScreen from '@/screens/SampleUI/Swap';
-import SearchScreen from '@/screens/SampleUI/Threads/SearchScreen';
-import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
-import ModuleScreen from '@/screens/Common/ModulesScreen/Modules';
+import ModuleScreen from '@/screens/Common/LaunhcModulesScreen/LaunchModules';
 import { ChatListScreen } from '@/screens/SampleUI/Chat';
 
 // Platform icons matching PlatformSelectionScreen

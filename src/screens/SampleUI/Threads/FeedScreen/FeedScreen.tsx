@@ -17,6 +17,10 @@ import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import HomeEnvErrorBanner from '@/core/sharedUI/EnvErrors/HomeEnvErrorBanner';
 
+/**
+ * FeedScreen component that displays user's social feed
+ * Includes wallet navigation functionality
+ */
 export default function FeedScreen() {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();

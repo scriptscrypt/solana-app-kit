@@ -1,0 +1,233 @@
+import { StyleSheet } from 'react-native';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
+
+// Styles for the wallet screen
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  balanceContainer: {
+    marginBottom: 24,
+    backgroundColor: COLORS.lightBackground,
+    borderRadius: 12,
+    padding: 16,
+  },
+  balanceLabel: {
+    color: COLORS.greyDark,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  balanceValue: {
+    color: COLORS.white,
+    fontSize: 32,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  addressContainer: {
+    marginBottom: 24,
+  },
+  addressLabel: {
+    color: COLORS.greyDark,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  addressCard: {
+    backgroundColor: COLORS.lightBackground,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  addressValue: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  copyIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.lighterBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmarkContainer: {
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmarkText: {
+    color: COLORS.brandGreen,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  actionsContainer: {
+    marginBottom: 24,
+  },
+  actionsLabel: {
+    color: COLORS.greyDark,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  actionButton: {
+    backgroundColor: COLORS.lightBackground,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  actionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionTextContainer: {
+    flex: 1,
+  },
+  actionText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  actionSubtext: {
+    color: COLORS.greyDark,
+    fontSize: 14,
+  },
+  
+  // Loading state styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  skeletonContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  loadingIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.lighterBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  skeletonCopyButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.lighterBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.6,
+  },
+  loadingTextContainer: {
+    marginTop: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: COLORS.greyDark,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  loadingDotsContainer: {
+    flexDirection: 'row',
+    marginTop: 12,
+    justifyContent: 'center',
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.brandBlue,
+  },
+  
+  // Error state styles
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.lighterBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  errorBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.errorRed,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.background,
+  },
+  errorBadgeText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  errorTitle: {
+    color: COLORS.white,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  errorText: {
+    color: COLORS.greyDark,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: COLORS.brandBlue,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+
+export default styles; 

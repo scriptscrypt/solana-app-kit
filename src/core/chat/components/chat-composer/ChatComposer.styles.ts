@@ -7,21 +7,22 @@ export function getChatComposerBaseStyles() {
   return StyleSheet.create({
     composerContainer: {
       flexDirection: 'row',
-      padding: 16,
+      padding: 8,
       paddingBottom: 0,
       backgroundColor: COLORS.background,
       borderTopColor: COLORS.borderDarkColor,
       borderTopWidth: 1,
       alignItems: 'center',
+      marginBottom: 0,
     },
     inputContainer: {
       flex: 1,
       flexDirection: 'row',
       backgroundColor: COLORS.darkerBackground,
       borderRadius: 24,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      minHeight: 48,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      minHeight: 40,
       alignItems: 'center',
     },
     composerInput: {
@@ -33,6 +34,7 @@ export function getChatComposerBaseStyles() {
       margin: 0,
       textAlignVertical: 'center',
       fontFamily: TYPOGRAPHY.fontFamily,
+      maxHeight: 100,
     },
     iconsContainer: {
       flexDirection: 'row',
@@ -188,7 +190,7 @@ export function getChatComposerBaseStyles() {
     },
     attachmentPreviewsContainer: {
       width: '100%',
-      marginBottom: 4,
+      marginBottom: 2,
     },
   });
 } 

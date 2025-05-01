@@ -62,6 +62,11 @@ export const Thread: React.FC<ThreadProps> = ({
   const handleProfilePress = () => {
     navigation.navigate('ProfileScreen' as never);
   };
+  
+  // Handler for wallet icon press
+  const handleWalletPress = () => {
+    navigation.navigate('WalletScreen' as never);
+  };
 
   const renderItem = ({ item }: { item: any }) => (
     <ThreadItem
@@ -104,8 +109,12 @@ export const Thread: React.FC<ThreadProps> = ({
               <TouchableOpacity style={headerStyles.iconButton}>
                 <Icons.copyIcon width={16} height={16} />
               </TouchableOpacity>
-              <TouchableOpacity style={headerStyles.iconButton}>
-                <Icons.walletIcon width={35} height={35} />
+              <TouchableOpacity 
+                style={headerStyles.iconButton}
+                onPress={handleWalletPress}
+                activeOpacity={0.7}
+              >
+                <Icons.walletIcon width={35} height={35} color={COLORS.white} />
               </TouchableOpacity>
             </View>
 
