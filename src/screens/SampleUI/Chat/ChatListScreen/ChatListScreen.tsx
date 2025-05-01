@@ -30,6 +30,7 @@ import { fetchAllPosts } from '@/shared/state/thread/reducer';
 import { fetchUserChats, ChatRoom, updateUserOnlineStatus } from '@/shared/state/chat/slice';
 import socketService from '@/services/socketService';
 import { ProfileAvatarView } from '@/core/thread/components/post/PostHeader';
+import { AppHeader } from '@/core/sharedUI';
 
 type ChatListNavigationProp = StackNavigationProp<RootStackParamList, 'ChatListScreen'>;
 
@@ -505,35 +506,11 @@ const ChatListScreen: React.FC = () => {
         ]}>
           <StatusBar style="light" />
 
-          {/* Header with Gradient Border */}
-          <View style={[
-            styles.headerContainer,
-            Platform.OS === 'android' && androidStyles.headerContainer
-          ]}>
-            {/* Left: Placeholder (empty) */}
-            <View style={styles.leftPlaceholder} />
-
-            {/* Center: Title */}
-            <View style={styles.titleContainer}>
-              <Text style={styles.titleText}>Messages</Text>
-            </View>
-
-            {/* Right: Icons */}
-            <View style={styles.iconsContainer}>
-              <TouchableOpacity style={styles.iconButton}>
-                <Icons.copyIcon width={16} height={16} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Icons.walletIcon width={35} height={35} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Bottom gradient border */}
-            <LinearGradient
-              colors={['transparent', COLORS.lightBackground]}
-              style={styles.headerBottomGradient}
-            />
-          </View>
+          {/* Replace custom header with AppHeader component */}
+          <AppHeader 
+            title="Messages" 
+            showBackButton={false}
+          />
 
           {/* Search bar */}
           <View style={styles.searchContainer}>

@@ -41,6 +41,7 @@ import { TransactionService } from '@/modules/walletProviders/services/transacti
 import Icons from '@/assets/svgs';
 import TYPOGRAPHY from '@/assets/typography';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+import { AppHeader } from '@/core/sharedUI';
 
 // Android-specific styles
 const androidStyles = StyleSheet.create({
@@ -793,44 +794,13 @@ export default function SwapScreen() {
         <SafeAreaView style={styles.container}>
           <StatusBar barStyle="light-content" />
 
-          {/* Header with Gradient Border */}
-          <View style={[
-            styles.headerContainer,
-            Platform.OS === 'android' && androidStyles.headerContainer
-          ]}>
-            {/* Left: Back Button or Placeholder */}
-            {navigation.canGoBack() ? (
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={handleBack}
-              >
-                <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.leftPlaceholder} />
-            )}
-
-            {/* Center: "Swap Via" text */}
-            <View style={styles.titleContainer}>
-              <Text style={styles.titleText}>Swap Via</Text>
-            </View>
-
-            {/* Right: Copy and Wallet Icons */}
-            <View style={styles.iconsContainer}>
-              <TouchableOpacity style={styles.iconButton}>
-                <Icons.copyIcon width={16} height={16} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Icons.walletIcon width={35} height={35} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Bottom gradient border */}
-            <LinearGradient
-              colors={['transparent', COLORS.lightBackground]}
-              style={styles.headerBottomGradient}
-            />
-          </View>
+          {/* Replace custom header with AppHeader */}
+          <AppHeader
+            title="Swap Via"
+            showBackButton={navigation.canGoBack()}
+            onBackPress={handleBack}
+            style={Platform.OS === 'android' ? androidStyles.headerContainer : undefined}
+          />
 
           <View style={styles.contentContainer}>
             <ScrollView

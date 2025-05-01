@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icons from '../../../assets/svgs';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
+import { AppHeader } from '@/core/sharedUI';
 
 // Commented sections to be re-enabled later if needed
 const modules = [
@@ -166,46 +167,6 @@ const styles = StyleSheet.create({
   }
 });
 
-// Header specific styles
-const headerStyles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderDarkColor,
-    backgroundColor: COLORS.background,
-  },
-  leftButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: -1,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  rightContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    marginLeft: 16,
-  }
-});
-
 // Android specific styles
 const androidStyles = StyleSheet.create({
   safeArea: {
@@ -328,28 +289,12 @@ export default function ModuleScreen() {
       ]}>
       {renderLoggingOutOverlay()}
 
-      {/* Header - similar to Thread.tsx */}
-      <View style={headerStyles.container}>
-        {/* Left: Back button */}
-        <TouchableOpacity onPress={handleBack} style={headerStyles.leftButton}>
-          <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-        </TouchableOpacity>
-
-        {/* Center: Title */}
-        <View style={headerStyles.titleContainer}>
-          <Text style={headerStyles.title}>Launchpads</Text>
-        </View>
-
-        {/* Right: Utility icons */}
-        <View style={headerStyles.rightContainer}>
-          <TouchableOpacity style={headerStyles.iconButton}>
-            <Icons.copyIcon width={16} height={16} color={COLORS.white} />
-          </TouchableOpacity>
-          <TouchableOpacity style={headerStyles.iconButton}>
-            <Icons.walletIcon width={35} height={35} color={COLORS.white} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Replace custom header with reusable AppHeader */}
+      <AppHeader 
+        title="Launchpads"
+        showBackButton={true}
+        onBackPress={handleBack}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>Launch via</Text>

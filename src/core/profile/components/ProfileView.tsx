@@ -6,9 +6,7 @@ import ProfileTabs from './ProfileTabs/ProfileTabs';
 
 import { styles as profileStyles } from './profile.style';
 import COLORS from '../../../assets/colors';
-import { UserProfileData, ProfileViewProps, ExtendedProfileViewProps, WalletAction } from '../types/index';
-import { ThreadPost } from '@/core/thread/types';
-import { PortfolioData, AssetItem } from '@/modules/dataModule';
+import { ExtendedProfileViewProps, WalletAction } from '../types/index';
 
 // Pure component that only renders when props actually change
 const ProfileInfoMemo = memo(UserProfileInfo);
