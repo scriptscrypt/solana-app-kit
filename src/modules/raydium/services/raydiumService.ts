@@ -6,7 +6,7 @@ import { TokenInfo } from '../../dataModule/types/tokenTypes';
 import { Buffer } from 'buffer';
 
 // Constants
-const DEFAULT_SLIPPAGE_BPS = 200; // 2% default slippage for Raydium
+const DEFAULT_SLIPPAGE_BPS = 300; // 2% default slippage for Raydium
 
 // Types
 export interface RaydiumSwapResponse {

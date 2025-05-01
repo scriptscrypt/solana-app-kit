@@ -100,67 +100,47 @@ export class TradeService {
       feeTx.recentBlockhash = blockhash;
       feeTx.feePayer = walletPublicKey;
       
-      // Prompt user to pay fee
-      Alert.alert(
-        'Pay Fee',
-        `A fee of ${feePercentage}% (${feeAmount} lamports) will be sent to support the project. Please approve this transaction.`,
-        [
-          {
-            text: 'Approve',
-            onPress: async () => {
-              try {
-                // Send the fee transaction
-                if (statusCallback) {
-                  console.log('[TradeService] 📱 Calling status callback for fee approval prompt');
-                  statusCallback('Please approve the fee transaction...');
-                }
-                console.log('[TradeService] 📤 Sending fee transaction...');
-                
-                const signature = await sendTransaction(
-                  feeTx,
-                  connection,
-                  {
-                    statusCallback: (status) => {
-                      console.log(`[TradeService Fee] 📡 Status: ${status}`);
-                      if (statusCallback) {
-                        statusCallback(`Fee: ${status}`);
-                      }
-                    },
-                    confirmTransaction: true
-                  }
-                );
-                
-                console.log('[TradeService] ✅ Fee transaction successfully sent with signature:', signature);
-                
-                // Show notification for the fee transaction
-                console.log('[TradeService] 🔔 Showing success notification');
-                TransactionService.showSuccess(signature, 'transfer');
-                
-                return signature;
-              } catch (sendError) {
-                console.error('[TradeService] ❌ Error sending fee:', sendError);
-                if (sendError instanceof Error) {
-                  console.error('[TradeService] ❌ Error message:', sendError.message);
-                }
-                Alert.alert('Fee Error', 'There was an error sending the fee transaction. Your swap was still successful.');
-                return null;
-              }
-            }
-          },
-          {
-            text: 'Skip',
-            style: 'cancel',
-            onPress: () => {
-              console.log('[TradeService] ⏭️ User chose to skip fee payment');
-              return null;
-            }
-          }
-        ]
-      );
+      // Automatically send the fee transaction without user confirmation
+      console.log(`[TradeService] 💰 Automatically collecting ${feePercentage}% fee (${feeAmount} lamports)`);
       
-      // This will actually return before the user makes a choice,
-      // but that's OK because we've initiated the process with the Alert
-      return null;
+      if (statusCallback) {
+        console.log('[TradeService] 📱 Calling status callback for fee transaction');
+        statusCallback(`Collecting ${feePercentage}% fee...`);
+      }
+      
+      console.log('[TradeService] 📤 Sending fee transaction...');
+      
+      try {
+        const signature = await sendTransaction(
+          feeTx,
+          connection,
+          {
+            statusCallback: (status) => {
+              console.log(`[TradeService Fee] 📡 Status: ${status}`);
+              if (statusCallback) {
+                statusCallback(`Fee: ${status}`);
+              }
+            },
+            confirmTransaction: true
+          }
+        );
+        
+        console.log('[TradeService] ✅ Fee transaction successfully sent with signature:', signature);
+        
+        // Show notification for the fee transaction
+        console.log('[TradeService] 🔔 Showing success notification');
+        TransactionService.showSuccess(signature, 'transfer');
+        
+        return signature;
+      } catch (sendError) {
+        console.error('[TradeService] ❌ Error sending fee:', sendError);
+        if (sendError instanceof Error) {
+          console.error('[TradeService] ❌ Error message:', sendError.message);
+        }
+        // Log the error but don't show alert to user
+        console.log('[TradeService] Fee transaction failed but swap was successful');
+        return null;
+      }
     } catch (error) {
       console.error('[TradeService] ❌ Error collecting fee:', error);
       if (error instanceof Error) {
@@ -408,7 +388,7 @@ export class TradeService {
             
             // Collect fee - will create and send a separate transaction
             // This doesn't affect the success of the main swap
-            this.collectFee(
+            const feeSignature = await this.collectFee(
               swapResponse.outputAmount,
               walletPublicKey,
               sendTransaction,
@@ -416,18 +396,37 @@ export class TradeService {
               provider
             );
             
-            // Note: We don't await this since it shows an Alert and waits for user input
+            if (feeSignature) {
+              console.log('[TradeService] ✅ Fee collection successful with signature:', feeSignature);
+            } else {
+              console.log('[TradeService] ℹ️ Fee collection completed without signature');
+            }
+            
+            // Send a final status update to signal the entire process is complete
+            if (statusCallback) {
+              statusCallback('Transaction complete! ✓');
+            }
           } catch (feeError) {
             console.error('[TradeService] ❌ Error collecting fee, but swap was successful:', feeError);
             if (feeError instanceof Error) {
               console.error('[TradeService] ❌ Fee error message:', feeError.message);
               console.error('[TradeService] ❌ Fee error stack:', feeError.stack);
             }
+            
+            // Even if fee collection failed, the swap was successful, so mark as complete
+            if (callbacks?.statusCallback) {
+              callbacks.statusCallback('Swap completed successfully!');
+            }
           }
         } else {
           console.log('[TradeService] ⚠️ Output amount is zero or invalid, cannot collect fee');
           console.log('[TradeService] ℹ️ outputAmount value:', swapResponse.outputAmount);
           console.log('[TradeService] ℹ️ outputAmount type:', typeof swapResponse.outputAmount);
+          
+          // Mark as complete even if we couldn't collect a fee
+          if (callbacks?.statusCallback) {
+            callbacks.statusCallback('Swap completed successfully!');
+          }
         }
       } else {
         console.log('[TradeService] ❌ Swap was not successful, skipping fee collection');
