@@ -218,7 +218,7 @@ export class RaydiumService {
       }
       
       // Extract output amount for response
-      const outputAmount = Number(quoteResponse.data?.amountOut || 0);
+      const outputAmount = Number(quoteResponse.data?.outputAmount || 0);
       console.log(`[RaydiumService] Quote received. Output amount: ${outputAmount}`);
       
       // If output amount is 0, something is wrong
