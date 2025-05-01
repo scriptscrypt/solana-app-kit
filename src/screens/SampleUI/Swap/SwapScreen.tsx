@@ -650,6 +650,14 @@ export default function SwapScreen() {
             console.log('[SwapScreen] Status update:', status);
             if (isMounted.current) {
               setResultMsg(status);
+
+              // Check if the status message indicates completion
+              if (status.toLowerCase().includes('complete') ||
+                status.toLowerCase().includes('successful') ||
+                status === 'Transaction complete! ✓') {
+                console.log('[SwapScreen] Completion status received, resetting loading state');
+                setLoading(false);
+              }
             }
           },
           isComponentMounted: () => isMounted.current
