@@ -5,6 +5,9 @@ import { TransactionService } from '../../walletProviders/services/transaction/t
 import { TokenInfo } from '../../dataModule/types/tokenTypes';
 import { Buffer } from 'buffer';
 
+// Constants
+const DEFAULT_SLIPPAGE_BPS = 200; // 2% default slippage for Raydium
+
 // Types
 export interface RaydiumSwapResponse {
   success: boolean;
@@ -68,6 +71,7 @@ export class RaydiumService {
           outputMint: outputToken.address,
           amount: inputLamports,
           userPublicKey: walletPublicKey.toString(),
+          slippageBps: DEFAULT_SLIPPAGE_BPS, // Use a higher default slippage to mitigate failures
         }),
       });
       

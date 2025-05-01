@@ -25,7 +25,8 @@ export interface SwapCallback {
 }
 
 // Fee configuration
-const FEE_PERCENTAGE = 0.5; // 0.5%
+const FEE_PERCENTAGE = 0.5; // 0.5% default fee
+const RAYDIUM_FEE_PERCENTAGE = 0.5; // 0.5% fee for Raydium
 const FEE_RECIPIENT = '4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty';
 
 /**
@@ -40,9 +41,12 @@ export class TradeService {
   /**
    * Calculate fee amount from an output amount
    */
-  static calculateFeeAmount(outputAmount: number): number {
-    const feeAmount = Math.floor(outputAmount * (FEE_PERCENTAGE / 100));
-    console.log(`[TradeService] 🧮 Calculated fee: ${feeAmount} lamports (${FEE_PERCENTAGE}% of ${outputAmount})`);
+  static calculateFeeAmount(outputAmount: number, provider: SwapProvider = 'Jupiter'): number {
+    // Different fee percentage based on provider
+    const feePercentage = provider === 'Raydium' ? RAYDIUM_FEE_PERCENTAGE : FEE_PERCENTAGE;
+    
+    const feeAmount = Math.floor(outputAmount * (feePercentage / 100));
+    console.log(`[TradeService] 🧮 Calculated ${provider} fee: ${feeAmount} lamports (${feePercentage}% of ${outputAmount})`);
     return feeAmount;
   }
 
@@ -57,15 +61,17 @@ export class TradeService {
       connection: Connection, 
       options?: { statusCallback?: (status: string) => void, confirmTransaction?: boolean }
     ) => Promise<string>,
-    statusCallback?: (status: string) => void
+    statusCallback?: (status: string) => void,
+    provider: SwapProvider = 'Jupiter'
   ): Promise<string | null> {
-    console.log('[TradeService] 🔍 STARTING FEE COLLECTION');
+    console.log(`[TradeService] 🔍 STARTING FEE COLLECTION FOR ${provider}`);
     console.log(`[TradeService] 🔍 Output amount: ${outputAmount}`);
     console.log(`[TradeService] 🔍 Wallet: ${walletPublicKey.toString()}`);
     
     try {
-      // Calculate fee amount (0.5% of output)
-      const feeAmount = this.calculateFeeAmount(outputAmount);
+      // Calculate fee amount based on provider
+      const feeAmount = this.calculateFeeAmount(outputAmount, provider);
+      const feePercentage = provider === 'Raydium' ? RAYDIUM_FEE_PERCENTAGE : FEE_PERCENTAGE;
       
       if (feeAmount <= 0) {
         console.log('[TradeService] ⚠️ Fee amount too small, skipping fee collection');
@@ -97,7 +103,7 @@ export class TradeService {
       // Prompt user to pay fee
       Alert.alert(
         'Pay Fee',
-        `A fee of ${FEE_PERCENTAGE}% (${feeAmount} lamports) will be sent to support the project. Please approve this transaction.`,
+        `A fee of ${feePercentage}% (${feeAmount} lamports) will be sent to support the project. Please approve this transaction.`,
         [
           {
             text: 'Approve',
@@ -406,7 +412,8 @@ export class TradeService {
               swapResponse.outputAmount,
               walletPublicKey,
               sendTransaction,
-              statusCallback
+              statusCallback,
+              provider
             );
             
             // Note: We don't await this since it shows an Alert and waits for user input
@@ -447,6 +454,25 @@ export class TradeService {
         // If the error is specifically about slippage or price impact
         if (err.message.includes('ExceededSlippage') || err.message.includes('0x1774')) {
           err.message = 'Transaction failed due to extreme price impact in this pool. Please try a smaller amount or contact the pool creator.';
+        }
+      }
+      
+      // Special handling for Raydium-specific errors
+      if (provider === 'Raydium' && err.message) {
+        console.log('[TradeService] Raydium error details:', err.message);
+        
+        // Enhance the error object with swap details
+        err.swapDetails = {
+          provider: 'Raydium',
+          inputToken: inputToken.symbol,
+          outputToken: outputToken.symbol,
+          amount: inputAmount
+        };
+        
+        // Handle specific Raydium error codes
+        if (err.message.includes('custom program error: 0x26') || 
+            err.message.includes('exceeds desired slippage limit')) {
+          err.message = 'Swap failed due to price movement. Try increasing the slippage tolerance or using a smaller amount.';
         }
       }
       
