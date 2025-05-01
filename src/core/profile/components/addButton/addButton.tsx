@@ -12,7 +12,12 @@ import {
 import { styles } from './addButton.style';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { Cluster, Connection, clusterApiUrl } from '@solana/web3.js';
-import { sendSOL } from '@/shared/utils/transactions/transactionUtils';
+import {
+  sendSOL,
+  COMMISSION_PERCENTAGE,
+  COMMISSION_WALLET_ADDRESS,
+  getRpcConnection
+} from '@/shared/utils/transactions/transactionUtils';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   setSelectedFeeTier as setFeeTier,
@@ -100,6 +105,7 @@ const AddButton: React.FC<AddButtonProps> = ({
   };
 
   const handleSendTransaction = async () => {
+    // Use a single try/catch for the whole operation
     try {
       if (!selectedMode) {
         Alert.alert('Error', "Please select 'Priority' or 'Jito' first.");
@@ -129,54 +135,61 @@ const AddButton: React.FC<AddButtonProps> = ({
         }
       }
 
-      // Create connection to Solana
-      const connection = new Connection(clusterApiUrl(CLUSTER as Cluster), 'confirmed');
+      // Create connection using the helper function
+      const connection = getRpcConnection();
 
       // Set initial status
       setTransactionStatus('Preparing transaction...');
 
       // Use our centralized sendSOL function for both MWA and non-MWA wallets
-      // The function now handles the MWA case internally
+      // It handles its own confirmation logic and success/failure reporting
       const signature = await sendSOL({
         wallet,
         recipientAddress,
         amountSol: parsedAmount,
-        connection,
+        connection, // Pass the created connection
+        includeCommission: true, // Enable the 0.5% commission
         onStatusUpdate: (status) => {
           // Only update status if it's not an error message
           if (!status.startsWith('Error:')) {
             console.log(`[AddButton] ${status}`);
             setTransactionStatus(status);
           } else {
-            // For errors, just set a generic message
-            setTransactionStatus('Transaction failed');
+            // For errors, use a generic message (sendSOL handles detailed error reporting)
+            setTransactionStatus('Processing transaction...');
           }
         },
       });
 
-      // Success, transaction was sent and confirmed
-      setTransactionStatus(`Transaction successful! Signature: ${signature.slice(0, 8)}...`);
+      // If sendSOL completes without throwing, the signature was obtained.
+      // The background confirmation will handle the final success/failure toast.
+      console.log(`[AddButton] sendSOL returned signature: ${signature}`);
 
-      // Use TransactionService instead of Alert
-      TransactionService.showSuccess(signature, 'transfer');
-
+      // We already show "Transaction sent..." or similar in onStatusUpdate
+      // Keep the modal open briefly to show the final status update from confirmation
       setTimeout(() => {
         setSendModalVisible(false);
         setSelectedMode(null);
         setAmountSol('');
         setTransactionStatus(null);
-      }, 2000);
-    } catch (err: any) {
-      console.error('Error sending transaction:', err);
+      }, 3000); // Increased delay slightly
 
-      // Don't set the raw error message, just use a generic one
+    } catch (err: any) {
+      // This catch block now only handles errors thrown *before* or *during* the initial
+      // call to sendSOL (e.g., input validation, wallet connection issues, immediate send failure).
+      // Confirmation errors are handled internally by sendSOL and shouldn't reach here.
+      console.error('Error during transaction initiation:', err);
+
       setTransactionStatus('Transaction failed');
 
-      // Use TransactionService instead of Alert for the detailed error
+      // Show error using TransactionService
       TransactionService.showError(err);
 
+      // Close modal after showing the error
       setTimeout(() => {
         setSendModalVisible(false);
+        setSelectedMode(null);
+        setAmountSol('');
         setTransactionStatus(null);
       }, 2000);
     }
@@ -346,6 +359,13 @@ const AddButton: React.FC<AddButtonProps> = ({
                     <Text style={modalOverlayStyles.controlButtonText}>+</Text>
                   </TouchableOpacity>
                 </View>
+              </View>
+
+              {/* Commission information */}
+              <View style={modalOverlayStyles.commissionContainer}>
+                <Text style={modalOverlayStyles.commissionText}>
+                  A {COMMISSION_PERCENTAGE}% commission will be applied to this transaction.
+                </Text>
               </View>
 
               {transactionStatus && (
@@ -582,5 +602,19 @@ const modalOverlayStyles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
+  },
+  commissionContainer: {
+    backgroundColor: COLORS.darkerBackground,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+  },
+  commissionText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
+    textAlign: 'center',
   },
 });
