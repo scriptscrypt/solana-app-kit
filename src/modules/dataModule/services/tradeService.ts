@@ -311,11 +311,17 @@ export class TradeService {
               console.log('[TradeService] Transaction sent with signature:', signature);
               updateStatus('Swap completed successfully!');
               
+              // Estimate the output amount for PumpSwap based on input amount
+              // Since we don't have the exact output amount from PumpSwap, estimate it
+              // This is used for fee calculation - using 98% of input value (assuming 2% slippage)
+              const estimatedOutputAmount = numericAmount * 0.98;
+              console.log('[TradeService] PumpSwap - Estimated output amount for fee:', estimatedOutputAmount);
+              
               swapResponse = {
                 success: true,
                 signature,
                 inputAmount: numericAmount,
-                outputAmount: 0 // Not known for PumpSwap
+                outputAmount: estimatedOutputAmount // Use estimated value for fee calculation
               };
             } catch (txError: any) {
               // Check if error is due to confirmation timeout but transaction might have succeeded
@@ -338,11 +344,16 @@ export class TradeService {
                     if (status.value && !status.value.err) {
                       // Transaction is confirmed or likely to be confirmed
                       updateStatus('Transaction verified successful!');
+                      
+                      // Estimate output amount the same way as successful case
+                      const estimatedOutputAmount = numericAmount * 0.98;
+                      console.log('[TradeService] PumpSwap - Estimated output amount after delayed verification:', estimatedOutputAmount);
+                      
                       return {
                         success: true,
                         signature: txError.signature,
                         inputAmount: numericAmount,
-                        outputAmount: 0
+                        outputAmount: estimatedOutputAmount
                       };
                     }
                   } catch (verifyError) {
