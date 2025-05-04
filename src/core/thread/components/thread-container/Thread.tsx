@@ -106,9 +106,6 @@ export const Thread: React.FC<ThreadProps> = ({
 
             {/* Right: Copy and Wallet Icons */}
             <View style={headerStyles.iconsContainer}>
-              <TouchableOpacity style={headerStyles.iconButton}>
-                <Icons.copyIcon width={16} height={16} />
-              </TouchableOpacity>
               <TouchableOpacity 
                 style={headerStyles.iconButton}
                 onPress={handleWalletPress}

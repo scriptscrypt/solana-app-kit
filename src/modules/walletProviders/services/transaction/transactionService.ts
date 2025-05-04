@@ -12,7 +12,7 @@ import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { Platform } from 'react-native';
 import { CLUSTER } from '@env';
 import { store } from '@/shared/state/store';
-import { parseTransactionError, getSuccessMessage } from '@/shared/utils/transactions/errorParser';
+import { parseTransactionError, getSuccessMessage } from '@/shared/services/transactions';
 import { showSuccessNotification, showErrorNotification } from '@/shared/state/notification/reducer';
 import {
   StandardWallet,

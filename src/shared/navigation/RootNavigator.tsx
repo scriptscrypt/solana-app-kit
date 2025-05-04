@@ -21,7 +21,7 @@ import { MercuroScreen } from '@/modules/mercuro';
 import SwapScreen from '@/screens/SampleUI/Swap/SwapScreen';
 import { WalletScreen } from '@/screens/Common';
 import OnrampScreen from '@/screens/Common/OnrampScreen';
-import socketService from '@/services/socketService';
+import socketService from '@/shared/services/socketService';
 import { fetchUserChats } from '@/shared/state/chat/slice';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { TokenInfo } from '@/modules/dataModule';

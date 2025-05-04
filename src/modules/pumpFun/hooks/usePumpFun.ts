@@ -11,7 +11,7 @@ import {
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 import { PumpfunBuyParams, PumpfunSellParams, PumpfunLaunchParams } from '../types';
 import { useAuth } from '../../walletProviders/hooks/useAuth';
-import { verifyToken, VerifyTokenParams } from '../../../services/rugCheckService';
+import { verifyToken, VerifyTokenParams } from '../../../shared/services/rugCheckService';
 
 /**
  * Hook for interacting with Pump.fun platform
