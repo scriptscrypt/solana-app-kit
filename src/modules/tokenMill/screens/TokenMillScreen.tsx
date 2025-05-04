@@ -29,6 +29,7 @@ import COLORS from '@/assets/colors';
 import { createMarket } from '../services/tokenMillService';
 import ExistingAddressesCard from '../components/ExistingAddressCard';
 import BondingCurveCard from '../components/BondingCurveCard';
+import { AppHeader } from '@/core/sharedUI';
 
 const TokenMillScreen = () => {
   // Auth & connection setup
@@ -91,22 +92,12 @@ const TokenMillScreen = () => {
   if (!wallet && !solanaWallet?.wallets?.length && !myWallet) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Token Mill</Text>
-          </View>
-          <View style={styles.rightButtons}>
-            <TouchableOpacity style={styles.headerButton}>
-              <Icons.copyIcon width={16} height={16} color={COLORS.white} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton}>
-              <Icons.walletIcon width={35} height={35} color={COLORS.white} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <AppHeader
+          title="Token Mill"
+          showBackButton={true}
+          onBackPress={handleBack}
+          showDefaultRightIcons={true}
+        />
         <Text style={styles.errorText}>Wallet not connected</Text>
       </SafeAreaView>
     );
@@ -117,22 +108,12 @@ const TokenMillScreen = () => {
   if (!publicKey) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Token Mill</Text>
-          </View>
-          <View style={styles.rightButtons}>
-            <TouchableOpacity style={styles.headerButton}>
-              <Icons.copyIcon width={16} height={16} color={COLORS.white} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton}>
-              <Icons.walletIcon width={35} height={35} color={COLORS.white} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <AppHeader
+          title="Token Mill"
+          showBackButton={true}
+          onBackPress={handleBack}
+          showDefaultRightIcons={true}
+        />
         <Text style={styles.errorText}>No valid wallet public key found</Text>
       </SafeAreaView>
     );
@@ -248,10 +229,11 @@ const TokenMillScreen = () => {
   const getScreenTitle = () => {
     switch (selectedOption) {
       case 'create':
+        return 'Create New Token';
       case 'existing':
-        return 'Token Mill';
+        return 'Use Existing Market';
       case 'bondingCurve':
-        return 'Bonding Curve Config';
+        return 'Configure Bonding Curve';
       default:
         return 'Token Mill';
     }
@@ -259,23 +241,13 @@ const TokenMillScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>{getScreenTitle()}</Text>
-        </View>
-        <View style={styles.rightButtons}>
-          <TouchableOpacity style={styles.headerButton}>
-            <Icons.copyIcon width={16} height={16} color={COLORS.white} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
-            <Icons.walletIcon width={35} height={35} color={COLORS.white} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Replace header with AppHeader */}
+      <AppHeader
+        title="Token Mill"
+        showBackButton={true}
+        onBackPress={handleBack}
+        showDefaultRightIcons={true}
+      />
 
       <View style={styles.container}>
         <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
@@ -503,41 +475,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderDarkColor,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: -1,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  rightButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    marginLeft: 15,
   },
   container: {
     flex: 1,

@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { findMentioned } from '@/shared/utils/common/findMentioned';
-import AddButton from '../addButton/addButton';
+import TransferBalanceButton from '../transferBalanceButton/transferBalanceButton';
 import BuyCard from '../buyCard/buyCard';
 import ProfileIcons from '../../../../assets/svgs/index';
 import { styles } from './UserProfileInfo.style';
@@ -145,7 +145,7 @@ const StatsSection = memo(({
 /**
  * Edit Profile Button with memoized content
  */
-const EditButton = memo(({ onPress, onSharePress, onLogout }: { onPress?: () => void; onSharePress?: () => void; onLogout?: () => void }) => (
+const EditButton = memo(({ onPress, onTransferBalance, onLogout }: { onPress?: () => void; onTransferBalance?: () => void; onLogout?: () => void }) => (
   <View style={{ marginTop: 8, width: '100%', flexDirection: 'column', gap: 12 }}>
     <View style={{ flexDirection: 'row', gap: 12 }}>
       <TouchableOpacity
@@ -155,8 +155,8 @@ const EditButton = memo(({ onPress, onSharePress, onLogout }: { onPress?: () => 
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.editProfileBtn, { flex: 1 }]}
-        onPress={onSharePress}>
-        <Text style={styles.editProfileBtnText}>Share Profile</Text>
+        onPress={onTransferBalance}>
+        <Text style={styles.editProfileBtnText}>Transfer Balance</Text>
       </TouchableOpacity>
     </View>
     
@@ -223,7 +223,7 @@ const FollowButton = memo(({
   recipientAddress: string;
 }) => (
   <View style={{ marginTop: 12 }}>
-    <AddButton
+    <TransferBalanceButton
       amIFollowing={!!amIFollowing}
       areTheyFollowingMe={!!areTheyFollowingMe}
       onPressFollow={onPressFollow || (() => { })}
@@ -322,6 +322,9 @@ function UserProfileInfo({
   const [localProfilePic, setLocalProfilePic] = useState(profilePicUrl);
   const [localUsername, setLocalUsername] = useState(username);
   const [localBioText, setLocalBioText] = useState(bioText);
+  
+  // Transfer balance state
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   // Update local state when props change
   useEffect(() => {
@@ -542,6 +545,13 @@ function UserProfileInfo({
     );
   }, [logout]);
 
+  /**
+   * Handle transfer balance button click
+   */
+  const handleTransferBalance = useCallback(() => {
+    setShowTransferModal(true);
+  }, []);
+
   return (
     <View style={styles.profileInfo}>
       {/* Profile Header with Avatar and Name */}
@@ -579,12 +589,24 @@ function UserProfileInfo({
       {/* Edit profile button (for own profile) */}
       {isOwnProfile && <EditButton 
         onPress={handleEditProfilePress} 
-        onSharePress={onShareProfile}
+        onTransferBalance={handleTransferBalance}
         onLogout={handleLogout}
       />}
 
-      {/* BuyCard for token (own profile or if token is attached) */}
-
+      {/* Transfer Balance Button */}
+      {isOwnProfile && (
+        <View style={{ height: 0, overflow: 'hidden' }}>
+          <TransferBalanceButton
+            showOnlyTransferButton
+            showCustomWalletInput
+            buttonLabel="Transfer Balance"
+            recipientAddress=""
+            onSendToWallet={() => {}}
+            externalModalVisible={showTransferModal}
+            externalSetModalVisible={setShowTransferModal}
+          />
+        </View>
+      )}
 
       {/* Follow/unfollow button (for other profiles) */}
       {canShowAddButton && (

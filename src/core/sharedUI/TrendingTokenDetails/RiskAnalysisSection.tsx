@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevelColor, RiskLevel } from '../../../services/rugCheckService';
+import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevelColor, RiskLevel } from '../../../shared/services/rugCheckService';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
