@@ -8,15 +8,19 @@ interface BondingCurveVisualizerProps {
     initialMarketCap: number;
     migrationMarketCap: number;
     tokenSupply: number;
+    baseFeeBps?: number;
 }
 
 export default function BondingCurveVisualizer({
     initialMarketCap,
     migrationMarketCap,
     tokenSupply,
+    baseFeeBps = 100, // Default to 1% fee
 }: BondingCurveVisualizerProps) {
-    const [points, setPoints] = useState<Array<{ x: number; y: number }>>([]);
+    const [points, setPoints] = useState<Array<{ x: number; y: number; supply: number; price: number }>>([]);
     const [maxY, setMaxY] = useState(0);
+    const [initialPoint, setInitialPoint] = useState<{ x: number; y: number; price: number } | null>(null);
+    const [migrationPoint, setMigrationPoint] = useState<{ x: number; y: number; price: number } | null>(null);
 
     const WIDTH = Dimensions.get('window').width - 64;
     const HEIGHT = 200;
@@ -32,41 +36,74 @@ export default function BondingCurveVisualizer({
             const migrationCap = Math.max(initialCap * 1.1, migrationMarketCap);
             const supply = Math.max(1, tokenSupply);
 
-            // Calculate the price at various points along the curve
-            const newPoints = [];
-            const numPoints = 50;
-
-            // Dynamic bonding curve approximation
+            // Calculate the initial and final prices
             const initialPrice = initialCap / supply;
             const finalPrice = migrationCap / supply;
+
+            // Create points for the curve
+            const newPoints = [];
+            const numPoints = 100; // More points for smoother curve
             let highestY = 0;
+            let initialPointIndex = 0;
+            let migrationPointIndex = numPoints;
+
+            // Define curve shape based on the ratio between initial and migration caps
+            const ratio = migrationCap / initialCap;
+            // Higher exponent = steeper curve at the end
+            const exponent = ratio > 10 ? 2.5 : (ratio > 5 ? 2.0 : 1.8);
 
             for (let i = 0; i <= numPoints; i++) {
-                // Using a quadratic curve to show accelerating price growth
-                const percentSupply = i / numPoints;
-                const supplyAtPoint = percentSupply * supply;
+                // Progress along the curve (0 to 1)
+                const t = i / numPoints;
+                const supplyAtPoint = t * supply;
 
-                // Quadratic price curve: p = a*x² + b*x + c
-                // Where x is the percentage of supply sold
-                const price = initialPrice + (finalPrice - initialPrice) * Math.pow(percentSupply, 2);
+                // Use a power curve formula: price = initialPrice + (finalPrice - initialPrice) * t^exponent
+                // This creates a curve that starts slower and accelerates
+                const price = initialPrice + (finalPrice - initialPrice) * Math.pow(t, exponent);
 
-                // Map supply (x) to horizontal position
-                const x = (percentSupply * (WIDTH - 2 * PADDING)) + PADDING;
-
-                // Map price (y) to vertical position (inverted, as SVG y-axis goes down)
+                // Map to screen coordinates
+                const x = (t * (WIDTH - 2 * PADDING)) + PADDING;
                 const y = HEIGHT - PADDING - (price / finalPrice) * (HEIGHT - 2 * PADDING);
 
                 if (price > highestY) highestY = price;
 
-                newPoints.push({ x, y });
+                newPoints.push({
+                    x,
+                    y,
+                    supply: supplyAtPoint,
+                    price
+                });
+
+                // Find the point closest to migration supply (100%)
+                if (t === 1.0) {
+                    migrationPointIndex = i;
+                }
+
+                // Find the point closest to initial supply (0%)
+                if (t === 0.0) {
+                    initialPointIndex = i;
+                }
             }
+
+            // Set the migration and initial points
+            setInitialPoint({
+                x: newPoints[initialPointIndex].x,
+                y: newPoints[initialPointIndex].y,
+                price: initialPrice
+            });
+
+            setMigrationPoint({
+                x: newPoints[migrationPointIndex].x,
+                y: newPoints[migrationPointIndex].y,
+                price: finalPrice
+            });
 
             setMaxY(highestY);
             setPoints(newPoints);
         } catch (error) {
             console.error('Error calculating curve points:', error);
         }
-    }, [initialMarketCap, migrationMarketCap, tokenSupply]);
+    }, [initialMarketCap, migrationMarketCap, tokenSupply, baseFeeBps]);
 
     // Format numbers with k/m suffix
     const formatNumber = (num: number): string => {
@@ -118,6 +155,33 @@ export default function BondingCurveVisualizer({
                     stroke={COLORS.greyMid}
                     strokeWidth={1}
                 />
+
+                {/* Background grid */}
+                {[0.25, 0.5, 0.75].map((pos) => (
+                    <Line
+                        key={`grid-x-${pos}`}
+                        x1={PADDING + (WIDTH - 2 * PADDING) * pos}
+                        y1={PADDING}
+                        x2={PADDING + (WIDTH - 2 * PADDING) * pos}
+                        y2={HEIGHT - PADDING}
+                        stroke={COLORS.greyMid}
+                        strokeWidth={0.5}
+                        strokeDasharray="3,3"
+                    />
+                ))}
+
+                {[0.25, 0.5, 0.75].map((pos) => (
+                    <Line
+                        key={`grid-y-${pos}`}
+                        x1={PADDING}
+                        y1={PADDING + (HEIGHT - 2 * PADDING) * pos}
+                        x2={WIDTH - PADDING}
+                        y2={PADDING + (HEIGHT - 2 * PADDING) * pos}
+                        stroke={COLORS.greyMid}
+                        strokeWidth={0.5}
+                        strokeDasharray="3,3"
+                    />
+                ))}
 
                 {/* Curve */}
                 <Path
@@ -185,19 +249,36 @@ export default function BondingCurveVisualizer({
                     {formatNumber(maxY)}
                 </SvgText>
 
-                {/* Key Points */}
-                <Circle
-                    cx={PADDING}
-                    cy={points[0]?.y || HEIGHT - PADDING}
-                    r={5}
-                    fill={COLORS.brandPrimary}
-                />
-                <Circle
-                    cx={WIDTH - PADDING}
-                    cy={points[points.length - 1]?.y || PADDING}
-                    r={5}
-                    fill={COLORS.brandPrimary}
-                />
+                {/* Key Points with annotations */}
+                {initialPoint && (
+                    <>
+                        <Circle cx={initialPoint.x} cy={initialPoint.y} r={5} fill={COLORS.brandPrimary} />
+                        <SvgText
+                            x={initialPoint.x + 10}
+                            y={initialPoint.y - 10}
+                            fontSize={9}
+                            fill={COLORS.brandPrimary}
+                            textAnchor="start"
+                        >
+                            {formatNumber(initialPoint.price)} SOL
+                        </SvgText>
+                    </>
+                )}
+
+                {migrationPoint && (
+                    <>
+                        <Circle cx={migrationPoint.x} cy={migrationPoint.y} r={5} fill={COLORS.brandPrimary} />
+                        <SvgText
+                            x={migrationPoint.x - 10}
+                            y={migrationPoint.y - 10}
+                            fontSize={9}
+                            fill={COLORS.brandPrimary}
+                            textAnchor="end"
+                        >
+                            {formatNumber(migrationPoint.price)} SOL
+                        </SvgText>
+                    </>
+                )}
             </Svg>
 
             <View style={styles.labelContainer}>
@@ -220,9 +301,21 @@ export default function BondingCurveVisualizer({
                     </Text>
                 </View>
                 <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Price Increase:</Text>
+                    <Text style={styles.infoLabel}>Price Growth:</Text>
                     <Text style={styles.infoValue}>
-                        {formatNumber((migrationMarketCap / initialMarketCap) * 100)}%
+                        {formatNumber((migrationMarketCap / initialMarketCap - 1) * 100)}%
+                    </Text>
+                </View>
+                <View style={styles.infoItem}>
+                    <Text style={styles.infoLabel}>Initial Market Cap:</Text>
+                    <Text style={styles.infoValue}>
+                        {formatNumber(initialMarketCap)} SOL
+                    </Text>
+                </View>
+                <View style={styles.infoItem}>
+                    <Text style={styles.infoLabel}>Final Market Cap:</Text>
+                    <Text style={styles.infoValue}>
+                        {formatNumber(migrationMarketCap)} SOL
                     </Text>
                 </View>
             </View>
@@ -248,79 +341,71 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     svgContainer: {
-        marginTop: 8,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        borderRadius: 8,
+        marginVertical: 10,
     },
     title: {
         fontSize: TYPOGRAPHY.size.md,
         fontWeight: TYPOGRAPHY.weights.semiBold,
         color: COLORS.white,
         marginBottom: 16,
-        textAlign: 'center',
-    },
-    placeholderContainer: {
-        height: 200,
-        backgroundColor: COLORS.darkerBackground,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 16,
-        padding: 16,
-        marginVertical: 24,
-        borderWidth: 1,
-        borderColor: COLORS.borderDarkColor,
-    },
-    placeholderText: {
-        color: COLORS.greyMid,
-        fontSize: TYPOGRAPHY.size.sm,
-        textAlign: 'center',
     },
     labelContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 12,
+        marginTop: 8,
     },
     xAxisLabel: {
+        fontSize: TYPOGRAPHY.size.sm,
         color: COLORS.greyMid,
-        fontSize: TYPOGRAPHY.size.xs,
         textAlign: 'center',
-        flex: 1,
     },
     yAxisLabel: {
+        fontSize: TYPOGRAPHY.size.sm,
         color: COLORS.greyMid,
-        fontSize: TYPOGRAPHY.size.xs,
-        width: 80,
-        textAlign: 'right',
+        textAlign: 'center',
     },
     infoContainer: {
-        marginTop: 20,
-        padding: 16,
-        backgroundColor: COLORS.lighterBackground,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: COLORS.borderDarkColor,
+        marginTop: 24,
+        padding: 12,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        borderRadius: 8,
     },
     infoTitle: {
         fontSize: TYPOGRAPHY.size.md,
         fontWeight: TYPOGRAPHY.weights.semiBold,
         color: COLORS.white,
-        marginBottom: 12,
-        textAlign: 'center',
+        marginBottom: 8,
     },
     infoItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10,
-        paddingVertical: 6,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.borderDarkColor,
+        marginVertical: 4,
     },
     infoLabel: {
-        color: COLORS.greyMid,
         fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.greyMid,
     },
     infoValue: {
-        color: COLORS.white,
         fontSize: TYPOGRAPHY.size.sm,
         fontWeight: TYPOGRAPHY.weights.semiBold,
+        color: COLORS.white,
+    },
+    placeholderContainer: {
+        height: 200,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: COLORS.darkerBackground,
+        padding: 16,
+        borderRadius: 16,
+        marginVertical: 24,
+        borderWidth: 1,
+        borderColor: COLORS.borderDarkColor,
+    },
+    placeholderText: {
+        fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.greyMid,
+        textAlign: 'center',
     },
 }); 

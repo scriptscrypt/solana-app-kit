@@ -240,7 +240,7 @@ export default function TokenCreationForm({
                     name: tokenName,
                     symbol: tokenSymbol,
                     uri: '', // Would normally be a URL to token metadata
-                },
+                } as any, // Cast as any to bypass the type check for baseMint
                 connection,
                 wallet,
                 setStatusMessage
@@ -319,7 +319,7 @@ export default function TokenCreationForm({
                     />
                 </View>
 
-                <View style={styles.switchContainer}>
+                {/* <View style={styles.switchContainer}>
                     <Text style={styles.label}>Use Token-2022 Standard</Text>
                     <Switch
                         value={isToken2022}
@@ -327,7 +327,7 @@ export default function TokenCreationForm({
                         trackColor={{ false: COLORS.greyDark, true: COLORS.brandPrimary }}
                         thumbColor={isToken2022 ? COLORS.white : COLORS.greyLight}
                     />
-                </View>
+                </View> */}
 
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -381,6 +381,7 @@ export default function TokenCreationForm({
                     initialMarketCap={parsedInitialMarketCap}
                     migrationMarketCap={parsedMigrationMarketCap}
                     tokenSupply={parsedTokenSupply}
+                    baseFeeBps={Number(baseFeeBps)}
                 />
 
                 <TouchableOpacity
