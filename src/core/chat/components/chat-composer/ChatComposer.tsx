@@ -43,7 +43,7 @@ import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
 import { uploadChatImage } from '../../services/chatImageService';
 import { sendMessage } from '@/shared/state/chat/slice';
-import socketService from '@/services/socketService';
+import socketService from '@/shared/services/socketService';
 
 /**
  * Props for the ChatComposer component

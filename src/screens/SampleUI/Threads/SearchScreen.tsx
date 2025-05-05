@@ -21,7 +21,7 @@ import SearchIcon from '../../../assets/svg/SearchIcon';
 import CloseIcon from '../../../assets/svg/CloseIcon';
 import { SERVER_URL, BIRDEYE_API_KEY } from '@env';
 import TokenDetailsSheet from '../../../core/sharedUI/TrendingTokenDetails/TokenDetailsSheet';
-import { RiskLevel } from '../../../services/rugCheckService';
+import { RiskLevel } from '../../../shared/services/rugCheckService';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import COLORS from '../../../assets/colors';
 import TYPOGRAPHY from '../../../assets/typography';

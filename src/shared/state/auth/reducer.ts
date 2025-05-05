@@ -226,8 +226,16 @@ const authSlice = createSlice({
         state.profilePicUrl = action.payload.profilePicUrl || state.profilePicUrl;
       }
       
-      if (action.payload.username || !state.username) {
-        state.username = action.payload.username || state.username;
+      // For username: 
+      // 1. Use provided username if available
+      // 2. Keep existing username if we already have one
+      // 3. Otherwise use first 6 chars of wallet address
+      if (action.payload.username) {
+        state.username = action.payload.username;
+      } else if (!state.username && action.payload.address) {
+        // Default username is first 6 characters of wallet address
+        state.username = action.payload.address.substring(0, 6);
+        console.log('[AuthReducer] Setting default username from wallet address:', state.username);
       }
       
       if (action.payload.description || !state.description) {

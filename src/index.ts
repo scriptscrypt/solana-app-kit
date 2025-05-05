@@ -18,8 +18,8 @@ export * from './core/thread/components';
 export * from './core/sharedUI/TradeCard';
 
 // Export transaction utilities (if needed)
-export {sendPriorityTransaction} from './shared/utils/transactions/sendPriorityTx';
-export {sendJitoBundleTransaction} from './shared/utils/transactions/sendJitoBundleTx';
+export {sendPriorityTransaction} from './shared/services/transactions/sendPriorityTx';
+export {sendJitoBundleTransaction} from './shared/services/transactions/sendJitoBundleTx';
 
 // Export modules
 export * from './modules/tokenMill';

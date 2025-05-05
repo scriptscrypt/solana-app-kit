@@ -1,6 +1,4 @@
-/**
- * Utility for parsing transaction errors and extracting user-friendly messages
- */
+import { TransactionType } from './types';
 
 /**
  * Extract the most relevant part of a simulation error message
@@ -124,7 +122,7 @@ export function parseTransactionError(error: any): string {
  * @param type Optional transaction type for more specific messaging
  * @returns A user-friendly success message
  */
-export function getSuccessMessage(signature: string, type?: 'swap' | 'transfer' | 'stake' | 'nft' | 'token'): string {
+export function getSuccessMessage(signature: string, type?: TransactionType): string {
   const shortSignature = signature ? `${signature.slice(0, 8)}...${signature.slice(-8)}` : '';
   
   switch (type) {

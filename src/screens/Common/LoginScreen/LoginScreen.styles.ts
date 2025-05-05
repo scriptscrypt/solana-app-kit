@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.14,
+    top: SCREEN_HEIGHT * 0.05,
     alignItems: 'center',
   },
   welcomeText: {
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   },
   bottomButtonsContainer: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 30,
     width: '100%',
     alignItems: 'center',
   },
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     lineHeight: TYPOGRAPHY.lineHeight.sm,
     letterSpacing: TYPOGRAPHY.letterSpacing,
     position: 'absolute',
-    bottom: 70,
+    bottom: 0,
     textAlign: 'center',
     color: COLORS.greyDark,
   },

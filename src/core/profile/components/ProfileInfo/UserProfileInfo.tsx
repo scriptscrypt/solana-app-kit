@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { findMentioned } from '@/shared/utils/common/findMentioned';
-import AddButton from '../addButton/addButton';
+import TransferBalanceButton from '../transferBalanceButton/transferBalanceButton';
 import BuyCard from '../buyCard/buyCard';
 import ProfileIcons from '../../../../assets/svgs/index';
 import { styles } from './UserProfileInfo.style';
@@ -24,8 +24,57 @@ import COLORS from '../../../../assets/colors';
 import TYPOGRAPHY from '../../../../assets/typography';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { UserProfileInfoProps } from '../../types/index';
-import ProfileEditDrawer from '../ProfileEditDrawer';
+// Using require as a fallback strategy for component import issues
+const ProfileEditDrawerComponent = require('../ProfileEditDrawer/ProfileEditDrawer').default;
 import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
+
+/**
+ * Generate initials from the username
+ */
+function getInitials(username: string): string {
+  if (!username) return '?';
+  
+  // If username already appears to be wallet-derived (6 chars), use first 2 chars
+  if (username.length === 6 && /^[a-zA-Z0-9]+$/.test(username)) {
+    return username.substring(0, 2).toUpperCase();
+  }
+  
+  // Otherwise get initials from words
+  const words = username.split(' ');
+  if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+/**
+ * InitialsProfilePic - Component for displaying initials as a profile picture
+ */
+const InitialsProfilePic = memo(({ initials, size = 80 }: { initials: string, size?: number }) => {
+  return (
+    <View 
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: COLORS.brandBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Text 
+        style={{
+          color: COLORS.white, 
+          fontSize: size / 3,
+          fontWeight: 'bold',
+          textAlign: 'center',
+        }}
+      >
+        {initials}
+      </Text>
+    </View>
+  );
+});
 
 /**
  * TokenAttachModal - Component for the token attachment modal
@@ -145,7 +194,7 @@ const StatsSection = memo(({
 /**
  * Edit Profile Button with memoized content
  */
-const EditButton = memo(({ onPress, onSharePress, onLogout }: { onPress?: () => void; onSharePress?: () => void; onLogout?: () => void }) => (
+const EditButton = memo(({ onPress, onTransferBalance, onLogout }: { onPress?: () => void; onTransferBalance?: () => void; onLogout?: () => void }) => (
   <View style={{ marginTop: 8, width: '100%', flexDirection: 'column', gap: 12 }}>
     <View style={{ flexDirection: 'row', gap: 12 }}>
       <TouchableOpacity
@@ -155,8 +204,8 @@ const EditButton = memo(({ onPress, onSharePress, onLogout }: { onPress?: () => 
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.editProfileBtn, { flex: 1 }]}
-        onPress={onSharePress}>
-        <Text style={styles.editProfileBtnText}>Share Profile</Text>
+        onPress={onTransferBalance}>
+        <Text style={styles.editProfileBtnText}>Transfer Balance</Text>
       </TouchableOpacity>
     </View>
     
@@ -223,7 +272,7 @@ const FollowButton = memo(({
   recipientAddress: string;
 }) => (
   <View style={{ marginTop: 12 }}>
-    <AddButton
+    <TransferBalanceButton
       amIFollowing={!!amIFollowing}
       areTheyFollowingMe={!!areTheyFollowingMe}
       onPressFollow={onPressFollow || (() => { })}
@@ -251,18 +300,25 @@ const ProfileHeader = memo(({
   isOwnProfile: boolean;
   onAvatarPress?: () => void;
 }) => {
+  // Get initials for default profile pic
+  const initials = useMemo(() => getInitials(username), [username]);
+  
   return (
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
       <TouchableOpacity
         style={styles.profImgContainer}
         onPress={onAvatarPress}
         disabled={!isOwnProfile}>
-        <IPFSAwareImage
-          style={styles.profImg}
-          source={profilePicUrl ? getValidImageSource(profilePicUrl) : require('../../../../assets/images/User.png')}
-          defaultSource={require('../../../../assets/images/User.png')}
-          key={Platform.OS === 'android' ? `profile-${Date.now()}` : 'profile'}
-        />
+        {profilePicUrl ? (
+          <IPFSAwareImage
+            style={styles.profImg}
+            source={getValidImageSource(profilePicUrl)}
+            defaultSource={require('../../../../assets/images/User.png')}
+            key={Platform.OS === 'android' ? `profile-${Date.now()}` : 'profile'}
+          />
+        ) : (
+          <InitialsProfilePic initials={initials} />
+        )}
       </TouchableOpacity>
 
       <View>
@@ -322,6 +378,9 @@ function UserProfileInfo({
   const [localProfilePic, setLocalProfilePic] = useState(profilePicUrl);
   const [localUsername, setLocalUsername] = useState(username);
   const [localBioText, setLocalBioText] = useState(bioText);
+  
+  // Transfer balance state
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   // Update local state when props change
   useEffect(() => {
@@ -375,12 +434,22 @@ function UserProfileInfo({
 
   // Profile edit drawer state
   const [showEditProfileDrawer, setShowEditProfileDrawer] = useState(false);
+  
+  // Memoize profile data to prevent unnecessary re-renders of child components
+  const memoizedProfileData = useMemo(() => ({
+    userId: userWallet,
+    profilePicUrl: localProfilePic,
+    username: localUsername,
+    description: localBioText || sampleBio,
+  }), [userWallet, localProfilePic, localUsername, localBioText, sampleBio]);
 
   /**
    * Combined handler for avatar press and edit profile
    */
   const handleEditProfilePress = useCallback(() => {
+    console.log('[UserProfileInfo] handleEditProfilePress called, isOwnProfile:', isOwnProfile);
     if (!isOwnProfile) return;
+    console.log('[UserProfileInfo] Setting showEditProfileDrawer to true');
     setShowEditProfileDrawer(true);
   }, [isOwnProfile]);
 
@@ -388,10 +457,13 @@ function UserProfileInfo({
    * Handle profile updated event
    */
   const handleProfileUpdated = useCallback((field: 'image' | 'username' | 'description') => {
+    console.log('[UserProfileInfo] handleProfileUpdated called for field:', field);
     // Refresh the local state based on the field that was updated
     if (field === 'image' && onAvatarPress) {
+      console.log('[UserProfileInfo] Calling onAvatarPress callback');
       onAvatarPress();
     } else if ((field === 'username' || field === 'description') && onEditProfile) {
+      console.log('[UserProfileInfo] Calling onEditProfile callback');
       onEditProfile();
     }
   }, [onAvatarPress, onEditProfile]);
@@ -542,6 +614,21 @@ function UserProfileInfo({
     );
   }, [logout]);
 
+  /**
+   * Handle transfer balance button click
+   */
+  const handleTransferBalance = useCallback(() => {
+    setShowTransferModal(true);
+  }, []);
+
+  /**
+   * Handle ProfileEditDrawer close
+   */
+  const handleEditDrawerClose = useCallback(() => {
+    console.log('[UserProfileInfo] ProfileEditDrawer onClose called');
+    setShowEditProfileDrawer(false);
+  }, []);
+
   return (
     <View style={styles.profileInfo}>
       {/* Profile Header with Avatar and Name */}
@@ -579,12 +666,24 @@ function UserProfileInfo({
       {/* Edit profile button (for own profile) */}
       {isOwnProfile && <EditButton 
         onPress={handleEditProfilePress} 
-        onSharePress={onShareProfile}
+        onTransferBalance={handleTransferBalance}
         onLogout={handleLogout}
       />}
 
-      {/* BuyCard for token (own profile or if token is attached) */}
-
+      {/* Transfer Balance Button */}
+      {isOwnProfile && (
+        <View style={{ height: 0, overflow: 'hidden' }}>
+          <TransferBalanceButton
+            showOnlyTransferButton
+            showCustomWalletInput
+            buttonLabel="Transfer Balance"
+            recipientAddress=""
+            onSendToWallet={() => {}}
+            externalModalVisible={showTransferModal}
+            externalSetModalVisible={setShowTransferModal}
+          />
+        </View>
+      )}
 
       {/* Follow/unfollow button (for other profiles) */}
       {canShowAddButton && (
@@ -608,15 +707,10 @@ function UserProfileInfo({
 
       {/* Profile Edit Drawer - new unified profile editor */}
       {isOwnProfile && (
-        <ProfileEditDrawer
+        <ProfileEditDrawerComponent
           visible={showEditProfileDrawer}
-          onClose={() => setShowEditProfileDrawer(false)}
-          profileData={{
-            userId: userWallet,
-            profilePicUrl: localProfilePic,
-            username: localUsername,
-            description: localBioText || sampleBio,
-          }}
+          onClose={handleEditDrawerClose}
+          profileData={memoizedProfileData}
           onProfileUpdated={handleProfileUpdated}
         />
       )}

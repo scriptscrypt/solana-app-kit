@@ -28,7 +28,7 @@ import { styles } from './ChatListScreen.styles';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
 import { fetchUserChats, ChatRoom, updateUserOnlineStatus } from '@/shared/state/chat/slice';
-import socketService from '@/services/socketService';
+import socketService from '@/shared/services/socketService';
 import { ProfileAvatarView } from '@/core/thread/components/post/PostHeader';
 import { AppHeader } from '@/core/sharedUI';
 

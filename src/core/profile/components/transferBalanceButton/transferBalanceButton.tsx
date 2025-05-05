@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,42 +8,52 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
-import { styles } from './addButton.style';
+import { styles } from './transferBalanceButton.style';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
-import { Cluster, Connection, clusterApiUrl } from '@solana/web3.js';
+import { Cluster, Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import {
   sendSOL,
   COMMISSION_PERCENTAGE,
-  COMMISSION_WALLET_ADDRESS,
-  getRpcConnection
-} from '@/shared/utils/transactions/transactionUtils';
+} from '@/shared/services/transactions';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   setSelectedFeeTier as setFeeTier,
   setTransactionMode as setMode
 } from '@/shared/state/transaction/reducer';
-import { CLUSTER } from '@env';
+import { CLUSTER, HELIUS_STAKED_URL } from '@env';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
+import { ENDPOINTS } from '@/config/constants';
 
-export interface AddButtonProps {
-  amIFollowing: boolean;
-  areTheyFollowingMe: boolean;
-  onPressFollow: () => void;
-  onPressUnfollow: () => void;
+export interface TransferBalanceButtonProps {
+  amIFollowing?: boolean;
+  areTheyFollowingMe?: boolean;
+  onPressFollow?: () => void;
+  onPressUnfollow?: () => void;
   onSendToWallet?: () => void;
-  recipientAddress: string;
+  recipientAddress?: string;
+  showOnlyTransferButton?: boolean;
+  showCustomWalletInput?: boolean;
+  buttonLabel?: string;
+  externalModalVisible?: boolean;
+  externalSetModalVisible?: (visible: boolean) => void;
 }
 
-const AddButton: React.FC<AddButtonProps> = ({
-  amIFollowing,
-  areTheyFollowingMe,
-  onPressFollow,
-  onPressUnfollow,
+const TransferBalanceButton: React.FC<TransferBalanceButtonProps> = ({
+  amIFollowing = false,
+  areTheyFollowingMe = false,
+  onPressFollow = () => {},
+  onPressUnfollow = () => {},
   onSendToWallet,
-  recipientAddress,
+  recipientAddress = '',
+  showOnlyTransferButton = false,
+  showCustomWalletInput = false,
+  buttonLabel = 'Send to Wallet',
+  externalModalVisible,
+  externalSetModalVisible,
 }) => {
   const dispatch = useAppDispatch();
   const [sendModalVisible, setSendModalVisible] = useState(false);
@@ -54,7 +64,12 @@ const AddButton: React.FC<AddButtonProps> = ({
     'low' | 'medium' | 'high' | 'very-high'
   >('low');
   const [amountSol, setAmountSol] = useState('');
-  const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
+  const [transactionStatus, setTransactionStatus] = useState<string | null>(
+    null,
+  );
+  const [customWalletAddress, setCustomWalletAddress] = useState(recipientAddress);
+  const [walletAddressError, setWalletAddressError] = useState('');
+  const [fetchingBalance, setFetchingBalance] = useState(false);
 
   // Add a ref to modal components with initial null value
   const modalRef = useRef<View | null>(null);
@@ -64,7 +79,21 @@ const AddButton: React.FC<AddButtonProps> = ({
   const transactionState = useAppSelector(state => state.transaction);
 
   // Use the wallet from useWallet - now it will work correctly with MWA
-  const { wallet, address, isMWA } = useWallet();
+  const {wallet, address, isMWA} = useWallet();
+
+  // Watch for external modal visibility changes
+  useEffect(() => {
+    if (externalModalVisible !== undefined && externalModalVisible !== sendModalVisible) {
+      setSendModalVisible(externalModalVisible);
+    }
+  }, [externalModalVisible]);
+
+  // Notify parent when internal modal state changes
+  useEffect(() => {
+    if (externalSetModalVisible) {
+      externalSetModalVisible(sendModalVisible);
+    }
+  }, [sendModalVisible, externalSetModalVisible]);
 
   // Initialize modal state with Redux state when opened
   useEffect(() => {
@@ -72,8 +101,16 @@ const AddButton: React.FC<AddButtonProps> = ({
       setSelectedMode(transactionState.transactionMode);
       setSelectedFeeTier(transactionState.selectedFeeTier);
       setTransactionStatus(null);
+      setWalletAddressError('');
+      
+      // Reset custom wallet address when modal opens if not showing custom input
+      if (!showCustomWalletInput) {
+        setCustomWalletAddress(recipientAddress);
+      } else if (!customWalletAddress) {
+        setCustomWalletAddress('');
+      }
     }
-  }, [sendModalVisible, transactionState]);
+  }, [sendModalVisible, transactionState, recipientAddress, showCustomWalletInput]);
 
   let followLabel = 'Follow';
   if (amIFollowing) {
@@ -90,9 +127,21 @@ const AddButton: React.FC<AddButtonProps> = ({
     }
   };
 
+  const validateSolanaAddress = (address: string): boolean => {
+    try {
+      if (!address || address.trim() === '') return false;
+      
+      // Check if it's a valid Solana address
+      new PublicKey(address);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const handlePressSendToWallet = () => {
-    // Only show the modal if we have a valid recipient address
-    if (!recipientAddress) {
+    // Only validate the recipient address if we're not showing the custom input
+    if (!showCustomWalletInput && !recipientAddress) {
       Alert.alert('Error', 'No recipient address available');
       return;
     }
@@ -104,6 +153,11 @@ const AddButton: React.FC<AddButtonProps> = ({
     setSendModalVisible(true);
   };
 
+  const handleWalletAddressChange = (text: string) => {
+    setCustomWalletAddress(text);
+    setWalletAddressError('');
+  };
+
   const handleSendTransaction = async () => {
     // Use a single try/catch for the whole operation
     try {
@@ -111,10 +165,21 @@ const AddButton: React.FC<AddButtonProps> = ({
         Alert.alert('Error', "Please select 'Priority' or 'Jito' first.");
         return;
       }
-      if (!recipientAddress || !amountSol) {
+
+      // Get the correct recipient address based on whether we're using custom input
+      const finalRecipientAddress = showCustomWalletInput ? customWalletAddress : recipientAddress;
+      
+      // Validate wallet address
+      if (!validateSolanaAddress(finalRecipientAddress)) {
+        setWalletAddressError('Please enter a valid Solana wallet address');
+        return;
+      }
+
+      if (!finalRecipientAddress || !amountSol) {
         Alert.alert('Error', 'Please provide recipient address and amount.');
         return;
       }
+      
       const parsedAmount = parseFloat(amountSol);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         Alert.alert('Error', 'Invalid SOL amount.');
@@ -134,9 +199,12 @@ const AddButton: React.FC<AddButtonProps> = ({
           dispatch(setFeeTier(selectedFeeTier));
         }
       }
-
+      const rpcUrl =
+        HELIUS_STAKED_URL ||
+        ENDPOINTS.helius ||
+        clusterApiUrl(CLUSTER as Cluster);
       // Create connection using the helper function
-      const connection = getRpcConnection();
+      const connection = new Connection(rpcUrl, 'confirmed');
 
       // Set initial status
       setTransactionStatus('Preparing transaction...');
@@ -145,11 +213,10 @@ const AddButton: React.FC<AddButtonProps> = ({
       // It handles its own confirmation logic and success/failure reporting
       const signature = await sendSOL({
         wallet,
-        recipientAddress,
+        recipientAddress: finalRecipientAddress,
         amountSol: parsedAmount,
         connection, // Pass the created connection
-        includeCommission: true, // Enable the 0.5% commission
-        onStatusUpdate: (status) => {
+        onStatusUpdate: status => {
           // Only update status if it's not an error message
           if (!status.startsWith('Error:')) {
             console.log(`[AddButton] ${status}`);
@@ -172,8 +239,10 @@ const AddButton: React.FC<AddButtonProps> = ({
         setSelectedMode(null);
         setAmountSol('');
         setTransactionStatus(null);
+        if (showCustomWalletInput) {
+          setCustomWalletAddress('');
+        }
       }, 3000); // Increased delay slightly
-
     } catch (err: any) {
       // This catch block now only handles errors thrown *before* or *during* the initial
       // call to sendSOL (e.g., input validation, wallet connection issues, immediate send failure).
@@ -195,20 +264,71 @@ const AddButton: React.FC<AddButtonProps> = ({
     }
   };
 
+  // Fetch user's SOL balance
+  const fetchSolBalance = useCallback(async () => {
+    if (!wallet || !('publicKey' in wallet) || !wallet.publicKey) {
+      Alert.alert('Error', 'Wallet not connected');
+      return;
+    }
+
+    try {
+      setFetchingBalance(true);
+      
+      const rpcUrl =
+        HELIUS_STAKED_URL ||
+        ENDPOINTS.helius ||
+        clusterApiUrl(CLUSTER as Cluster);
+      
+      const connection = new Connection(rpcUrl, 'confirmed');
+      
+      // Convert string publicKey to PublicKey object if needed
+      const publicKey = typeof wallet.publicKey === 'string' 
+        ? new PublicKey(wallet.publicKey)
+        : wallet.publicKey;
+        
+      const balance = await connection.getBalance(publicKey);
+      
+      // Convert lamports to SOL and format - leave a small amount for transaction fee
+      const solBalance = (balance / LAMPORTS_PER_SOL) - 0.001;
+      
+      // Handle edge cases
+      if (solBalance <= 0) {
+        Alert.alert('Insufficient Balance', 'Your wallet does not have enough SOL to transfer.');
+        setFetchingBalance(false);
+        return;
+      }
+      
+      // Set the input amount to the max balance (with 9 decimal places max)
+      setAmountSol(solBalance.toFixed(Math.min(9, solBalance.toString().split('.')[1]?.length || 9)));
+      
+      setFetchingBalance(false);
+    } catch (error) {
+      console.error('Error fetching SOL balance:', error);
+      Alert.alert('Error', 'Failed to fetch your balance. Please try again.');
+      setFetchingBalance(false);
+    }
+  }, [wallet]);
+
   // Only render the send to wallet button if provider supports it
-  const showSendToWalletButton = currentProvider === 'privy' ||
+  const showSendToWalletButton =
+    (currentProvider === 'privy' ||
     currentProvider === 'dynamic' ||
-    currentProvider === 'mwa';
+    currentProvider === 'mwa') && !showOnlyTransferButton;
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.btn} onPress={handlePressFollowButton}>
-        <Text style={styles.text}>{followLabel}</Text>
-      </TouchableOpacity>
+      {!showOnlyTransferButton && (
+        <TouchableOpacity style={styles.btn} onPress={handlePressFollowButton}>
+          <Text style={styles.text}>{followLabel}</Text>
+        </TouchableOpacity>
+      )}
 
-      {showSendToWalletButton && (
-        <TouchableOpacity style={styles.btn} onPress={handlePressSendToWallet}>
-          <Text style={styles.text}>Send to Wallet</Text>
+      {(showSendToWalletButton || showOnlyTransferButton) && (
+        <TouchableOpacity 
+          style={[styles.btn, showOnlyTransferButton && styles.fullWidthBtn]} 
+          onPress={handlePressSendToWallet}
+        >
+          <Text style={styles.text}>{buttonLabel}</Text>
         </TouchableOpacity>
       )}
 
@@ -216,36 +336,48 @@ const AddButton: React.FC<AddButtonProps> = ({
         animationType="slide"
         transparent={true}
         visible={sendModalVisible}
-        onRequestClose={() => setSendModalVisible(false)}
-      >
-        <View
-          style={modalOverlayStyles.overlay}
-          ref={modalRef}
-        >
+        onRequestClose={() => setSendModalVisible(false)}>
+        <View style={modalOverlayStyles.overlay} ref={modalRef}>
           <View style={modalOverlayStyles.drawerContainer}>
             {/* Drag handle for bottom drawer */}
             <View style={modalOverlayStyles.dragHandle} />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={modalOverlayStyles.scrollContent}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={modalOverlayStyles.scrollContent}>
               <Text style={modalOverlayStyles.title}>Send SOL</Text>
 
+              {showCustomWalletInput && (
+                <View style={modalOverlayStyles.inputContainer}>
+                  <Text style={modalOverlayStyles.label}>Recipient Wallet Address</Text>
+                  <TextInput
+                    style={[modalOverlayStyles.input, walletAddressError ? modalOverlayStyles.inputError : null]}
+                    value={customWalletAddress}
+                    onChangeText={handleWalletAddressChange}
+                    placeholder="Enter Solana wallet address"
+                    placeholderTextColor={COLORS.textHint}
+                  />
+                  {walletAddressError ? (
+                    <Text style={modalOverlayStyles.errorText}>{walletAddressError}</Text>
+                  ) : null}
+                </View>
+              )}
+
               <View style={modalOverlayStyles.modeContainer}>
-                {/* <Text style={modalOverlayStyles.sectionTitle}>Select Mode:</Text> */}
                 <View style={modalOverlayStyles.buttonRow}>
                   <TouchableOpacity
                     style={[
                       modalOverlayStyles.modeButton,
-                      selectedMode === 'priority' && modalOverlayStyles.selectedBtn,
+                      selectedMode === 'priority' &&
+                        modalOverlayStyles.selectedBtn,
                     ]}
-                    onPress={() => setSelectedMode('priority')}
-                  >
+                    onPress={() => setSelectedMode('priority')}>
                     <Text
                       style={[
                         modalOverlayStyles.modeButtonText,
                         selectedMode === 'priority' &&
-                        modalOverlayStyles.selectedBtnText,
-                      ]}
-                    >
+                          modalOverlayStyles.selectedBtnText,
+                      ]}>
                       Priority
                     </Text>
                   </TouchableOpacity>
@@ -254,14 +386,13 @@ const AddButton: React.FC<AddButtonProps> = ({
                       modalOverlayStyles.modeButton,
                       selectedMode === 'jito' && modalOverlayStyles.selectedBtn,
                     ]}
-                    onPress={() => setSelectedMode('jito')}
-                  >
+                    onPress={() => setSelectedMode('jito')}>
                     <Text
                       style={[
                         modalOverlayStyles.modeButtonText,
-                        selectedMode === 'jito' && modalOverlayStyles.selectedBtnText,
-                      ]}
-                    >
+                        selectedMode === 'jito' &&
+                          modalOverlayStyles.selectedBtnText,
+                      ]}>
                       Jito
                     </Text>
                   </TouchableOpacity>
@@ -274,54 +405,71 @@ const AddButton: React.FC<AddButtonProps> = ({
                     Priority Fee Tier:
                   </Text>
                   <View style={modalOverlayStyles.tierButtonRow}>
-                    {(['low', 'medium', 'high', 'very-high'] as const).map(tier => (
-                      <TouchableOpacity
-                        key={tier}
-                        style={[
-                          modalOverlayStyles.tierButton,
-                          selectedFeeTier === tier && modalOverlayStyles.selectedBtn,
-                        ]}
-                        onPress={() => setSelectedFeeTier(tier)}
-                      >
-                        <Text
+                    {(['low', 'medium', 'high', 'very-high'] as const).map(
+                      tier => (
+                        <TouchableOpacity
+                          key={tier}
                           style={[
-                            modalOverlayStyles.tierButtonText,
+                            modalOverlayStyles.tierButton,
                             selectedFeeTier === tier &&
-                            modalOverlayStyles.selectedBtnText,
+                              modalOverlayStyles.selectedBtn,
                           ]}
-                        >
-                          {tier.charAt(0).toUpperCase() + tier.slice(1)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                          onPress={() => setSelectedFeeTier(tier)}>
+                          <Text
+                            style={[
+                              modalOverlayStyles.tierButtonText,
+                              selectedFeeTier === tier &&
+                                modalOverlayStyles.selectedBtnText,
+                            ]}>
+                            {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                          </Text>
+                        </TouchableOpacity>
+                      ),
+                    )}
                   </View>
                 </View>
               )}
 
               <View style={modalOverlayStyles.inputContainer}>
-                <Text style={modalOverlayStyles.label}>Amount (SOL)</Text>
+                <View style={modalOverlayStyles.amountLabelRow}>
+                  <Text style={modalOverlayStyles.label}>Amount (SOL)</Text>
+                  <TouchableOpacity 
+                    style={modalOverlayStyles.maxButton}
+                    onPress={fetchSolBalance}
+                    disabled={fetchingBalance}
+                  >
+                    {fetchingBalance ? (
+                      <ActivityIndicator size="small" color={COLORS.white} />
+                    ) : (
+                      <Text style={modalOverlayStyles.maxButtonText}>MAX</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
 
                 {/* Preset amount buttons */}
                 <View style={modalOverlayStyles.presetButtonsRow}>
                   <TouchableOpacity
                     style={modalOverlayStyles.presetButton}
-                    onPress={() => setAmountSol("1")}
-                  >
-                    <Text style={modalOverlayStyles.presetButtonText}>1 SOL</Text>
+                    onPress={() => setAmountSol('1')}>
+                    <Text style={modalOverlayStyles.presetButtonText}>
+                      1 SOL
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={modalOverlayStyles.presetButton}
-                    onPress={() => setAmountSol("5")}
-                  >
-                    <Text style={modalOverlayStyles.presetButtonText}>5 SOL</Text>
+                    onPress={() => setAmountSol('5')}>
+                    <Text style={modalOverlayStyles.presetButtonText}>
+                      5 SOL
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={modalOverlayStyles.presetButton}
-                    onPress={() => setAmountSol("10")}
-                  >
-                    <Text style={modalOverlayStyles.presetButtonText}>10 SOL</Text>
+                    onPress={() => setAmountSol('10')}>
+                    <Text style={modalOverlayStyles.presetButtonText}>
+                      10 SOL
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -334,8 +482,7 @@ const AddButton: React.FC<AddButtonProps> = ({
                       if (currentVal > 0) {
                         setAmountSol((currentVal - 1).toString());
                       }
-                    }}
-                  >
+                    }}>
                     <Text style={modalOverlayStyles.controlButtonText}>−</Text>
                   </TouchableOpacity>
 
@@ -354,43 +501,40 @@ const AddButton: React.FC<AddButtonProps> = ({
                     onPress={() => {
                       const currentVal = parseFloat(amountSol) || 0;
                       setAmountSol((currentVal + 1).toString());
-                    }}
-                  >
+                    }}>
                     <Text style={modalOverlayStyles.controlButtonText}>+</Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Commission information */}
-              <View style={modalOverlayStyles.commissionContainer}>
-                <Text style={modalOverlayStyles.commissionText}>
-                  A {COMMISSION_PERCENTAGE}% commission will be applied to this transaction.
-                </Text>
-              </View>
-
               {transactionStatus && (
                 <View style={modalOverlayStyles.statusContainer}>
-                  <Text style={modalOverlayStyles.statusText}>{transactionStatus}</Text>
+                  <Text style={modalOverlayStyles.statusText}>
+                    {transactionStatus}
+                  </Text>
                 </View>
               )}
 
               <View style={modalOverlayStyles.buttonRow}>
                 <TouchableOpacity
-                  style={[modalOverlayStyles.modalButton, { backgroundColor: COLORS.lightBackground }]}
+                  style={[
+                    modalOverlayStyles.modalButton,
+                    {backgroundColor: COLORS.lightBackground},
+                  ]}
                   onPress={() => setSendModalVisible(false)}
-                  disabled={!!transactionStatus && !transactionStatus.includes('Error')}
-                >
+                  disabled={
+                    !!transactionStatus && !transactionStatus.includes('Error')
+                  }>
                   <Text style={modalOverlayStyles.modalButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     modalOverlayStyles.modalButton,
-                    { backgroundColor: COLORS.brandBlue },
-                    !!transactionStatus && { opacity: 0.5 }
+                    {backgroundColor: COLORS.brandBlue},
+                    !!transactionStatus && {opacity: 0.5},
                   ]}
                   onPress={handleSendTransaction}
-                  disabled={!!transactionStatus}
-                >
+                  disabled={!!transactionStatus}>
                   <Text style={modalOverlayStyles.modalButtonText}>Send</Text>
                 </TouchableOpacity>
               </View>
@@ -402,7 +546,7 @@ const AddButton: React.FC<AddButtonProps> = ({
   );
 };
 
-export default AddButton;
+export default TransferBalanceButton;
 
 const modalOverlayStyles = StyleSheet.create({
   overlay: {
@@ -524,6 +668,14 @@ const modalOverlayStyles = StyleSheet.create({
     backgroundColor: COLORS.lighterBackground,
     color: COLORS.white,
   },
+  inputError: {
+    borderColor: COLORS.errorRed,
+  },
+  errorText: {
+    color: COLORS.errorRed,
+    fontSize: TYPOGRAPHY.size.xs,
+    marginTop: 4,
+  },
   modalButton: {
     flex: 1,
     paddingVertical: 12,
@@ -616,5 +768,25 @@ const modalOverlayStyles = StyleSheet.create({
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.xs,
     textAlign: 'center',
+  },
+  amountLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  maxButton: {
+    backgroundColor: COLORS.lightGrey,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 28,
+  },
+  maxButtonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
 });

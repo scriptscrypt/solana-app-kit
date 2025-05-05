@@ -8,34 +8,27 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between", // Changed from flex-start to space-between
     alignItems: "center",
     width: "100%", // Ensure container takes full width
-    gap: 8,
+    gap: 12,
   },
   btn: {
-    position: "relative",
+    position: "relative" as const,
     backgroundColor: COLORS.lighterBackground,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     flex: 1, // Make buttons grow equally to fill space
     borderWidth: 1,
     borderColor: COLORS.borderDarkColor,
+  },
+  fullWidthBtn: {
+    width: "100%",
   },
   text: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.xs,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     textAlign: "center", // Ensure text is centered
-  },
-  lastBtn: {
-    backgroundColor: COLORS.darkerBackground,
-    borderWidth: 1,
-    borderColor: COLORS.brandPrimary,
-  },
-  lastBtnText: {
-    color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
 });

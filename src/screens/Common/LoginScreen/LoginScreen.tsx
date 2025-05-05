@@ -111,13 +111,31 @@ export default function LoginScreen() {
   // Single animation value for grid scaling
   const gridScaleAnim = useRef(new Animated.Value(1)).current;
 
+  // Immediately check if we're already logged in before any animations
+  // or component mounting logic happens
+  if (isLoggedIn) {
+    console.log('[LoginScreen] User is already logged in, navigating to MainTabs immediately');
+    // Use setTimeout to ensure this happens after initial render
+    setTimeout(() => {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
+    }, 0);
+  }
+
   useEffect(() => {
     // Start animations
     startAnimations();
 
-    // If already logged in, navigate to MainTabs
+    // If already logged in, navigate to MainTabs immediately
     if (isLoggedIn) {
-      navigation.navigate('MainTabs');
+      console.log('[LoginScreen] User already logged in, navigating to MainTabs');
+      // Use navigation.reset to avoid having LoginScreen in the navigation stack
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
     }
   }, [isLoggedIn, navigation]);
 
@@ -335,7 +353,7 @@ export default function LoginScreen() {
       // First create the user entry in the database
       await axios.post(`${SERVER_BASE_URL}/api/profile/createUser`, {
         userId: info.address,
-        username: info.address, // Initially set to wallet address
+        username: info.address.slice(0, 6), // Initially set to wallet address
         handle: '@' + info.address.slice(0, 6),
       });
 
