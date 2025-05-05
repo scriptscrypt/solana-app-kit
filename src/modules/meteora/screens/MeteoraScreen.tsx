@@ -132,6 +132,7 @@ export default function MeteoraScreen() {
                     </Text>
                 </TouchableOpacity>
 
+                {/* Liquidity tab removed temporarily
                 <TouchableOpacity
                     style={[
                         styles.tabButton,
@@ -148,6 +149,7 @@ export default function MeteoraScreen() {
                         Liquidity
                     </Text>
                 </TouchableOpacity>
+                */}
             </View>
 
             {/* Main Content Area */}

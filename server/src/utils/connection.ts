@@ -26,7 +26,7 @@ export function getConnection(commitment: Commitment = 'confirmed'): Connection 
   
   if (!rpcUrl) {
     console.warn('RPC_URL environment variable not set, falling back to devnet');
-    globalConnection = new Connection('https://api.devnet.solana.com', commitment);
+    globalConnection = new Connection('https://api.mainnet.solana.com', commitment);
     return globalConnection;
   }
   

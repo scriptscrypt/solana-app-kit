@@ -26,6 +26,7 @@ import BondingCurveVisualizer from './BondingCurveVisualizer';
 import { Connection } from '@solana/web3.js';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import BN from 'bn.js';
+import { HELIUS_STAKED_URL } from '@env';
 
 interface TokenCreationFormProps {
     walletAddress: string;
@@ -72,7 +73,7 @@ export default function TokenCreationForm({
     // Get wallet and connection
     const wallet = useWallet();
     // Create a connection to the Solana network
-    const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+    const connection = new Connection(HELIUS_STAKED_URL, 'confirmed');
 
     // Add new state variables for parsed numeric values
     const [parsedInitialMarketCap, setParsedInitialMarketCap] = useState(100);
