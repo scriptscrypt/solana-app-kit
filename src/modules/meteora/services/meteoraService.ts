@@ -480,50 +480,91 @@ export const fetchUserLiquidityPositions = async (walletAddress: string): Promis
 };
 
 /**
+ * Fetch swap quote from server
+ */
+export const fetchSwapQuote = async (
+  inputToken: string,
+  outputToken: string,
+  amount: string,
+  slippage: number = 0.5,
+  poolAddress?: string
+): Promise<any> => {
+  try {
+    console.log(`Fetching swap quote for ${amount} ${inputToken} to ${outputToken}`);
+    
+    // Build URL with optional pool address
+    let url = `/meteora/quote?inputToken=${inputToken}&outputToken=${outputToken}&amount=${amount}&slippage=${slippage}`;
+    if (poolAddress) {
+      console.log(`Using specific pool: ${poolAddress}`);
+      url += `&poolAddress=${poolAddress}`;
+    }
+    
+    const result = await apiCall(url, 'GET');
+    
+    // Check if we got a response indicating no pool but suggesting a price-based fallback
+    if (!result.success && result.shouldFallbackToPriceEstimate) {
+      console.log('No pool available, client should fallback to price-based estimation');
+      return {
+        success: false,
+        error: result.error,
+        shouldFallbackToPriceEstimate: true,
+        inputToken: result.inputToken,
+        outputToken: result.outputToken,
+        amount: result.amount
+      };
+    }
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch quote');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error fetching swap quote:', error);
+    throw error;
+  }
+};
+
+/**
  * Execute a trade on Meteora
  */
 export const executeTrade = async (
   tradeParams: MeteoraTrade,
   poolAddress: string,
-  connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void
 ): Promise<{ txId: string }> => {
   try {
     onStatusUpdate?.('Preparing trade...');
     
-    // Check if we're in development mode or API is not available
-    if (API_BASE_URL.includes('localhost') || poolAddress.startsWith('pool')) {
-      // Simulate API delays for a more realistic experience
-      onStatusUpdate?.('Creating swap transaction...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onStatusUpdate?.('Signing transaction...');
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      onStatusUpdate?.('Processing swap...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      onStatusUpdate?.('Confirming swap...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onStatusUpdate?.('Trade executed successfully!');
-      
-      // Return a mock transaction ID
-      return {
-        txId: 'mock-swap-tx-' + Math.random().toString(36).substring(2, 15)
-      };
+    // Validation checks
+    if (!wallet) {
+      throw new Error('Wallet is required for swap');
     }
     
-    // If not in development mode, proceed with actual API call
-    const result = await apiCall('/meteora/swap', 'POST', {
-      owner: wallet?.publicKey?.toString(),
+    if (!wallet.publicKey) {
+      throw new Error('Wallet public key is required for swap');
+    }
+    
+    // Check if we need to get the pool first
+    if (!poolAddress || poolAddress === '') {
+      throw new Error('Pool address is required for swap');
+    }
+    
+    // Create the swap parameters
+    const swapParams = {
+      owner: wallet.publicKey.toString(),
       amountIn: tradeParams.amount,
-      minimumAmountOut: '0', // Calculate this based on slippage
+      minimumAmountOut: tradeParams.minimumAmountOut || '0', // Use provided min amount or 0
       swapBaseForQuote: tradeParams.inputToken !== 'So11111111111111111111111111111111111111112', // True if selling tokens, false if buying
       pool: poolAddress,
       referralTokenAccount: null
-    });
+    };
+    
+    onStatusUpdate?.('Creating swap transaction...');
+    
+    // Make the API call to create the swap transaction
+    const result = await apiCall('/meteora/swap', 'POST', swapParams);
     
     if (!result.success) {
       throw new Error(result.error || 'Failed to create swap transaction');
@@ -531,21 +572,63 @@ export const executeTrade = async (
 
     onStatusUpdate?.('Signing transaction...');
     
-    // Sign and send the transaction
-    const txSignature = await wallet.sendBase64Transaction(
-      result.transaction,
-      connection,
-      { confirmTransaction: true, statusCallback: onStatusUpdate }
-    );
+    // Get connection from RPC - we'll use the default connection 
+    // instead of trying to get it from wallet
+    // This assumes wallet.sendBase64Transaction doesn't need a separate connection parameter
+    // or will use its own connection if none is provided
+    
+    let txSignature;
+    
+    try {
+      // Try with built-in connection first
+      txSignature = await wallet.sendBase64Transaction(
+        result.transaction,
+        null, // Let the wallet use its own connection
+        { confirmTransaction: true, statusCallback: onStatusUpdate }
+      );
+    } catch (err) {
+      // Cast the unknown error to any type to safely check its string representation
+      const sendError = err as any;
+      
+      // If that fails and it looks like we need to provide a connection
+      if (sendError.toString().includes('connection') || sendError.toString().includes('undefined')) {
+        console.log('Attempting to create a fallback connection...');
+        
+        // Import Connection from already imported libraries
+        const { Connection } = require('@solana/web3.js');
+        
+        // Create a fallback connection to a public RPC endpoint
+        const fallbackConnection = new Connection(
+          'https://api.mainnet-beta.solana.com',
+          'confirmed'
+        );
+        
+        console.log('Using fallback connection for transaction');
+        txSignature = await wallet.sendBase64Transaction(
+          result.transaction,
+          fallbackConnection,
+          { confirmTransaction: true, statusCallback: onStatusUpdate }
+        );
+      } else {
+        // If it's some other error, rethrow it
+        throw sendError;
+      }
+    }
+    
+    if (!txSignature) {
+      throw new Error('Failed to send transaction');
+    }
     
     onStatusUpdate?.('Trade executed successfully!');
 
     return {
       txId: txSignature
     };
-  } catch (error) {
+  } catch (err) {
+    // Cast the unknown error to any type
+    const error = err as any;
     console.error('Error executing Meteora trade:', error);
-    onStatusUpdate?.('Trade failed');
+    onStatusUpdate?.('Trade failed: ' + (error.message || 'Unknown error'));
     throw error;
   }
 };

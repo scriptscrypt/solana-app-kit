@@ -3,6 +3,7 @@ export interface MeteoraTrade {
   outputToken: string;
   amount: string;
   slippage: number;
+  minimumAmountOut?: string; // Minimum amount out for slippage protection
 }
 
 export interface LiquidityPosition {

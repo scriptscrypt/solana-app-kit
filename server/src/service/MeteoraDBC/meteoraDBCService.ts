@@ -24,7 +24,30 @@ export class MeteoraDBCService {
    * Convert a string to BN
    */
   private toBN(value: string): BN {
-    return new BN(value);
+    try {
+      // Make sure we're working with a string
+      const valueStr = String(value);
+      
+      // Check if it contains a decimal point
+      if (valueStr.includes('.')) {
+        // Convert float to integer considering decimals
+        const floatVal = parseFloat(valueStr);
+        if (isNaN(floatVal)) {
+          throw new Error(`Invalid amount format: ${valueStr}`);
+        }
+        
+        // Default to 9 decimals (like for SOL)
+        const decimals = 9;
+        const intVal = Math.floor(floatVal * Math.pow(10, decimals));
+        return new BN(intVal.toString());
+      } else {
+        // If it's already an integer string with no decimal, just use it directly
+        return new BN(valueStr);
+      }
+    } catch (error) {
+      console.error('Error converting to BN:', error, 'Value:', value);
+      throw new Error(`Failed to convert value to BN: ${value}`);
+    }
   }
 
   /**
@@ -524,6 +547,14 @@ export class MeteoraDBCService {
    */
   async swap(swapParam: types.SwapParam): Promise<types.ApiResponse> {
     try {
+      console.log(`Swap requested with params: ${JSON.stringify({
+        owner: swapParam.owner,
+        amountIn: swapParam.amountIn,
+        minimumAmountOut: swapParam.minimumAmountOut,
+        swapBaseForQuote: swapParam.swapBaseForQuote,
+        pool: swapParam.pool
+      })}`);
+      
       // Create the parameters object and cast it to any
       const sdkParams = {
         owner: this.toPublicKey(swapParam.owner),
@@ -533,6 +564,8 @@ export class MeteoraDBCService {
         pool: this.toPublicKey(swapParam.pool),
         referralTokenAccount: swapParam.referralTokenAccount ? this.toPublicKey(swapParam.referralTokenAccount) : null,
       };
+
+      console.log(`Processed swap params: amountIn=${sdkParams.amountIn.toString()}, minimumAmountOut=${sdkParams.minimumAmountOut.toString()}`);
 
       // Cast the object to any to bypass TypeScript's type checking
       const transaction = await this.client.pool.swap(sdkParams as any);
@@ -946,6 +979,353 @@ export class MeteoraDBCService {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
+    }
+  }
+
+  /**
+   * Get pool for a token pair
+   */
+  async getPoolForTokenPair(
+    inputToken: string,
+    outputToken: string
+  ): Promise<Array<{address: string, liquidity: string, baseMint: string}>> {
+    try {
+      console.log(`Searching for pool with tokens: ${inputToken} and ${outputToken}`);
+      
+      // Normalize token addresses to lowercase for comparison
+      const normalizedInput = inputToken.toLowerCase();
+      const normalizedOutput = outputToken.toLowerCase();
+      
+      // Well-known token addresses
+      const SOL_ADDRESS = 'So11111111111111111111111111111111111111112'.toLowerCase();
+      const USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'.toLowerCase();
+      
+      // Get all pools 
+      const allPools = await this.client.state.getPools();
+      console.log(`Found ${allPools.length} total pools`);
+      // console.log(allPools);
+      
+      // Debug output for pool structure
+      if (allPools.length > 0) {
+        console.log('First pool structure sample:', JSON.stringify(allPools[0], null, 2).substring(0, 800));
+        console.log('Pool account properties:', Object.keys(allPools[0].account || {}).join(', '));
+      }
+      
+      // Find pools that match this token pair
+      const matchingPools = allPools.filter(pool => {
+        try {
+          // Access the account data
+          const poolData = pool.account as any;
+          
+          // Check if essential fields exist
+          if (!poolData || !poolData.baseMint) {
+            console.log('Skipping pool - missing baseMint');
+            return false;
+          }
+          
+          // Extract base mint address
+          let baseMintAddress = '';
+          if (typeof poolData.baseMint === 'object' && poolData.baseMint !== null) {
+            // Handle if it's a PublicKey object
+            if (poolData.baseMint.toString) {
+              baseMintAddress = poolData.baseMint.toString();
+            } 
+            // If it's a nested structure with PublicKey
+            else if (poolData.baseMint[0] && poolData.baseMint[0].toString) {
+              baseMintAddress = poolData.baseMint[0].toString();
+            }
+          }
+          
+          // Extract quoteVault address for debugging
+          let quoteVaultAddress = '';
+          if (poolData.quoteVault) {
+            if (typeof poolData.quoteVault === 'object' && poolData.quoteVault !== null) {
+              if (poolData.quoteVault.toString) {
+                quoteVaultAddress = poolData.quoteVault.toString();
+                console.log(`Found quoteVault: ${quoteVaultAddress}`);
+              } else if (poolData.quoteVault[0] && poolData.quoteVault[0].toString) {
+                quoteVaultAddress = poolData.quoteVault[0].toString();
+                console.log(`Found nested quoteVault: ${quoteVaultAddress}`);
+              }
+            }
+          }
+          
+          // If we couldn't extract the base mint address, skip this pool
+          if (!baseMintAddress) {
+            console.log(`Skipping pool - couldn't extract baseMint address`);
+            return false;
+          }
+          
+          // Convert to lowercase for comparison
+          baseMintAddress = baseMintAddress.toLowerCase();
+          
+          console.log(`Pool info - baseMint: ${baseMintAddress}, quoteVault: ${quoteVaultAddress}`);
+          
+          // Check if either the input or output token matches the base mint
+          const baseTokenMatches = 
+            baseMintAddress === normalizedInput || 
+            baseMintAddress === normalizedOutput;
+          
+          if (!baseTokenMatches) {
+            return false; // No match if base mint doesn't match either input token
+          }
+          
+          // Special case for SOL-USDC pair
+          const isSOLUSDCQuery = 
+            (normalizedInput === SOL_ADDRESS && normalizedOutput === USDC_ADDRESS) || 
+            (normalizedInput === USDC_ADDRESS && normalizedOutput === SOL_ADDRESS);
+          
+          if (isSOLUSDCQuery && 
+              (baseMintAddress === SOL_ADDRESS || baseMintAddress === USDC_ADDRESS)) {
+            console.log('FOUND MATCHING SOL-USDC POOL! 🎉');
+            return true;
+          }
+          
+          // For other pairs, if base mint matches one of our tokens, consider it a match
+          if (baseTokenMatches) {
+            console.log(`Matching pool found with baseMint=${baseMintAddress}`);
+            return true;
+          }
+          
+          return false;
+        } catch (err) {
+          console.warn('Error checking pool:', err);
+          return false;
+        }
+      });
+      
+      console.log(`Found ${matchingPools.length} matching pools`);
+      
+      // Format and return the results
+      return matchingPools.map(pool => {
+        const poolData = pool.account as any;
+        let baseMint = '';
+        
+        // Extract the baseMint address again for the response
+        if (poolData.baseMint) {
+          if (typeof poolData.baseMint === 'object' && poolData.baseMint !== null) {
+            if (poolData.baseMint.toString) {
+              baseMint = poolData.baseMint.toString();
+            } else if (poolData.baseMint[0] && poolData.baseMint[0].toString) {
+              baseMint = poolData.baseMint[0].toString();
+            }
+          }
+        }
+        
+        return {
+          address: pool.publicKey.toString(),
+          liquidity: poolData.virtualPoolReserves ? poolData.virtualPoolReserves.toString() : "0",
+          baseMint: baseMint
+        };
+      });
+    } catch (error) {
+      console.error('Error finding pool for token pair:', error);
+      throw new Error('Failed to find pool for token pair');
+    }
+  }
+
+  /**
+   * Get swap quote
+   */
+  async getSwapQuote(params: {
+    poolAddress: string,
+    inputAmount: string,
+    slippageBps: number,
+    swapBaseForQuote: boolean
+  }): Promise<{
+    estimatedOutput: string,
+    minimumAmountOut: string,
+    price: string,
+    priceImpact: string
+  }> {
+    try {
+      // Get the pool
+      const pool = await this.client.state.getPool(params.poolAddress);
+      if (!pool) {
+        throw new Error('Pool not found');
+      }
+      
+      // Get the pool config
+      const config = await this.client.state.getPoolConfig(pool.config.toString());
+      
+      // Get current slot or timestamp based on activation type
+      let currentPoint = new BN(0);
+      try {
+        if (config.activationType === 0) { // Slot
+          const slot = await this.client.connection.getSlot();
+          currentPoint = new BN(slot);
+        } else { // Timestamp
+          const blockTime = await this.client.connection.getBlockTime(
+            await this.client.connection.getSlot()
+          );
+          if (blockTime) {
+            currentPoint = new BN(blockTime);
+          }
+        }
+      } catch (error) {
+        console.warn('Error getting current point, using 0:', error);
+      }
+      
+      // Process and validate the input amount
+      let processedAmount: string;
+      try {
+        // Make sure we're working with a string
+        const amountStr = String(params.inputAmount);
+        console.log(`Original input amount: ${amountStr}`);
+        
+        // Check if it contains a decimal point
+        if (amountStr.includes('.')) {
+          // Convert float to integer considering decimals
+          // For Solana tokens, you typically need to convert to lamports (smallest unit)
+          // Assuming 9 decimals (like SOL), we'll multiply by 10^9
+          // For USDC with 6 decimals, you'd use 10^6
+          const floatVal = parseFloat(amountStr);
+          if (isNaN(floatVal)) {
+            throw new Error(`Invalid amount format: ${amountStr}`);
+          }
+          
+          // Default to 9 decimals (like for SOL) if we don't know the token's decimals
+          const decimals = 9;
+          const intVal = Math.floor(floatVal * Math.pow(10, decimals));
+          processedAmount = intVal.toString();
+        } else {
+          // If it's already an integer string with no decimal, just use it directly
+          // But verify it's actually a number
+          const intVal = parseInt(amountStr, 10);
+          if (isNaN(intVal)) {
+            throw new Error(`Invalid integer amount: ${amountStr}`);
+          }
+          processedAmount = amountStr;
+        }
+        
+        console.log(`Processed amount for BN: ${processedAmount}`);
+      } catch (error) {
+        console.error('Error processing input amount:', error);
+        throw new Error(`Failed to process amount: ${params.inputAmount}`);
+      }
+      
+      // Get the quote using the processed amount
+      const quote = await this.client.pool.swapQuote({
+        virtualPool: pool,
+        config: config,
+        swapBaseForQuote: params.swapBaseForQuote,
+        amountIn: new BN(processedAmount),
+        slippageBps: params.slippageBps, 
+        hasReferral: false,
+        currentPoint: currentPoint
+      });
+      
+      // Return quote information with safe property access
+      return {
+        estimatedOutput: quote.amountOut?.toString() || "0",
+        minimumAmountOut: quote.minimumAmountOut?.toString() || "0",
+        price: "0", // SDK may not provide this directly
+        priceImpact: "0" // SDK may not provide this directly
+      };
+    } catch (error) {
+      console.error('Error getting swap quote:', error);
+      throw new Error('Failed to get swap quote');
+    }
+  }
+
+  /**
+   * Get all pools for a specific token
+   */
+  async getAllPoolsForToken(
+    token: string
+  ): Promise<Array<{
+    address: string, 
+    baseMint: string, 
+    baseMintSymbol?: string,
+    quoteVault: string,
+    liquidity: string
+  }>> {
+    try {
+      console.log(`Finding all pools for token: ${token}`);
+      
+      // Normalize token address to lowercase for comparison
+      const normalizedToken = token.toLowerCase();
+      
+      // Get all pools 
+      const allPools = await this.client.state.getPools();
+      console.log(`Found ${allPools.length} total pools to check`);
+      // console.log(allPools);
+      
+      // Find pools that have this token as baseMint
+      const matchingPools = allPools.filter(pool => {
+        try {
+          // Access the account data
+          const poolData = pool.account as any;
+          
+          // Check if essential fields exist
+          if (!poolData || !poolData.baseMint) {
+            return false;
+          }
+          
+          // Extract base mint address
+          let baseMintAddress = '';
+          if (typeof poolData.baseMint === 'object' && poolData.baseMint !== null) {
+            // Handle if it's a PublicKey object
+            if (poolData.baseMint.toString) {
+              baseMintAddress = poolData.baseMint.toString();
+            } 
+            // If it's a nested structure with PublicKey
+            else if (poolData.baseMint[0] && poolData.baseMint[0].toString) {
+              baseMintAddress = poolData.baseMint[0].toString();
+            }
+          }
+          
+          // Convert to lowercase for comparison
+          baseMintAddress = baseMintAddress.toLowerCase();
+          
+          // Check if this token is the baseMint (exact match only to be safe)
+          return baseMintAddress === normalizedToken;
+        } catch (err) {
+          console.warn('Error checking pool:', err);
+          return false;
+        }
+      });
+      
+      console.log(`Found ${matchingPools.length} pools with baseMint=${token}`);
+      
+      // Format and return the results
+      return matchingPools.map(pool => {
+        const poolData = pool.account as any;
+        let baseMint = '';
+        let quoteVault = '';
+        
+        // Extract the baseMint
+        if (poolData.baseMint) {
+          if (typeof poolData.baseMint === 'object' && poolData.baseMint !== null) {
+            if (poolData.baseMint.toString) {
+              baseMint = poolData.baseMint.toString();
+            } else if (poolData.baseMint[0] && poolData.baseMint[0].toString) {
+              baseMint = poolData.baseMint[0].toString();
+            }
+          }
+        }
+        
+        // Extract the quoteVault
+        if (poolData.quoteVault) {
+          if (typeof poolData.quoteVault === 'object' && poolData.quoteVault !== null) {
+            if (poolData.quoteVault.toString) {
+              quoteVault = poolData.quoteVault.toString();
+            } else if (poolData.quoteVault[0] && poolData.quoteVault[0].toString) {
+              quoteVault = poolData.quoteVault[0].toString();
+            }
+          }
+        }
+        
+        return {
+          address: pool.publicKey.toString(),
+          baseMint: baseMint,
+          quoteVault: quoteVault,
+          liquidity: poolData.virtualPoolReserves ? poolData.virtualPoolReserves.toString() : "0"
+        };
+      });
+    } catch (error) {
+      console.error('Error finding pools for token:', error);
+      throw new Error('Failed to find pools for token');
     }
   }
 } 
