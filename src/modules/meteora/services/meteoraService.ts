@@ -152,7 +152,7 @@ export const buildCurveByMarketCap = async (
   try {
     onStatusUpdate?.('Building curve by market cap...');
     
-    const result = await apiCall('/build-curve-by-market-cap', 'POST', {
+    const result = await apiCall('/meteora/build-curve-by-market-cap', 'POST', {
       buildCurveByMarketCapParam: {
         totalTokenSupply: params.totalTokenSupply,
         initialMarketCap: params.initialMarketCap,
@@ -174,11 +174,10 @@ export const buildCurveByMarketCap = async (
         creatorLockedLpPercentage: params.creatorLockedLpPercentage,
         creatorTradingFeePercentage: params.creatorTradingFeePercentage,
       },
-      feeClaimer: wallet.publicKey,
-      leftoverReceiver: wallet.publicKey,
-      payer: wallet.publicKey,
+      feeClaimer: wallet.publicKey.toString(),
+      leftoverReceiver: wallet.publicKey.toString(),
+      payer: wallet.publicKey.toString(),
       quoteMint: 'So11111111111111111111111111111111111111112', // SOL by default
-      config: new PublicKey(wallet.publicKey).toBase58(), // Using wallet address as a seed for config
     });
     
     if (!result.success) {
@@ -187,14 +186,52 @@ export const buildCurveByMarketCap = async (
 
     onStatusUpdate?.('Signing transaction...');
     
-    // Sign and send the transaction
-    const txSignature = await wallet.sendBase64Transaction(
-      result.transaction,
-      connection,
-      { confirmTransaction: true, statusCallback: onStatusUpdate }
-    );
+    let txSignature;
+    try {
+      // Try to sign and send the transaction with confirmation
+      txSignature = await wallet.sendBase64Transaction(
+        result.transaction,
+        connection,
+        { 
+          confirmTransaction: true, 
+          statusCallback: onStatusUpdate,
+          maxRetries: 60, // Increase maximum retries
+          confirmationTimeout: 60000 // Increase timeout to 60 seconds
+        }
+      );
+    } catch (confirmError) {
+      console.warn('Error confirming transaction:', confirmError);
+      
+      // If confirmation fails, try to send without waiting for confirmation
+      onStatusUpdate?.('Confirmation timed out. Sending without confirmation...');
+      
+      txSignature = await wallet.sendBase64Transaction(
+        result.transaction,
+        connection,
+        { confirmTransaction: false, statusCallback: onStatusUpdate }
+      );
+      
+      // Wait a few seconds to allow transaction to propagate
+      onStatusUpdate?.('Transaction sent. Waiting for network propagation...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // Manually check if transaction succeeded
+      try {
+        const status = await connection.getSignatureStatus(txSignature);
+        console.log('Transaction status:', status);
+        
+        if (status && status.value && (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized')) {
+          onStatusUpdate?.('Transaction confirmed manually!');
+        } else {
+          onStatusUpdate?.('Transaction status unknown. Please check explorer.');
+        }
+      } catch (statusError) {
+        console.warn('Error checking transaction status:', statusError);
+        onStatusUpdate?.('Could not verify transaction status. Please check explorer.');
+      }
+    }
     
-    onStatusUpdate?.('Curve built successfully!');
+    onStatusUpdate?.('Curve building transaction sent! TX ID: ' + txSignature);
 
     return {
       txId: txSignature,
@@ -215,14 +252,13 @@ export const createPool = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void
-): Promise<{ txId: string, poolAddress: string }> => {
+): Promise<{ txId: string, poolAddress: string, baseMintAddress: string }> => {
   try {
     onStatusUpdate?.('Creating token pool...');
     
-    const result = await apiCall('/pool', 'POST', {
-      payer: wallet.publicKey,
-      poolCreator: wallet.publicKey,
-      baseMint: params.baseMint,
+    const result = await apiCall('/meteora/pool', 'POST', {
+      payer: wallet.publicKey.toString(),
+      poolCreator: wallet.publicKey.toString(),
       quoteMint: params.quoteMint,
       config: params.config,
       baseTokenType: params.baseTokenType,
@@ -238,18 +274,57 @@ export const createPool = async (
 
     onStatusUpdate?.('Signing transaction...');
     
-    // Sign and send the transaction
-    const txSignature = await wallet.sendBase64Transaction(
-      result.transaction,
-      connection,
-      { confirmTransaction: true, statusCallback: onStatusUpdate }
-    );
+    let txSignature;
+    try {
+      // Try to sign and send the transaction with confirmation
+      txSignature = await wallet.sendBase64Transaction(
+        result.transaction,
+        connection,
+        { 
+          confirmTransaction: true, 
+          statusCallback: onStatusUpdate,
+          maxRetries: 60, // Increase maximum retries
+          confirmationTimeout: 60000 // Increase timeout to 60 seconds
+        }
+      );
+    } catch (confirmError) {
+      console.warn('Error confirming pool creation transaction:', confirmError);
+      
+      // If confirmation fails, try to send without waiting for confirmation
+      onStatusUpdate?.('Confirmation timed out. Sending without confirmation...');
+      
+      txSignature = await wallet.sendBase64Transaction(
+        result.transaction,
+        connection,
+        { confirmTransaction: false, statusCallback: onStatusUpdate }
+      );
+      
+      // Wait a few seconds to allow transaction to propagate
+      onStatusUpdate?.('Transaction sent. Waiting for network propagation...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // Manually check if transaction succeeded
+      try {
+        const status = await connection.getSignatureStatus(txSignature);
+        console.log('Pool creation transaction status:', status);
+        
+        if (status && status.value && (status.value.confirmationStatus === 'confirmed' || status.value.confirmationStatus === 'finalized')) {
+          onStatusUpdate?.('Transaction confirmed manually!');
+        } else {
+          onStatusUpdate?.('Transaction status unknown. Please check explorer.');
+        }
+      } catch (statusError) {
+        console.warn('Error checking transaction status:', statusError);
+        onStatusUpdate?.('Could not verify transaction status. Please check explorer.');
+      }
+    }
     
-    onStatusUpdate?.('Pool created successfully!');
+    onStatusUpdate?.('Pool creation transaction sent! TX ID: ' + txSignature);
 
     return {
       txId: txSignature,
-      poolAddress: result.poolAddress || ''
+      poolAddress: result.poolAddress || '',
+      baseMintAddress: result.baseMintAddress || ''
     };
   } catch (error) {
     console.error('Error creating pool:', error);

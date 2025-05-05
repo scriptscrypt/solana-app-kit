@@ -1,5 +1,5 @@
-import { PublicKey, Connection, Transaction } from '@solana/web3.js';
-import { DynamicBondingCurveClient } from '@meteora-ag/dynamic-bonding-curve-sdk';
+import { PublicKey, Connection, Transaction, Keypair } from '@solana/web3.js';
+import { DynamicBondingCurveClient, deriveDbcPoolAddress } from '@meteora-ag/dynamic-bonding-curve-sdk';
 import BN from 'bn.js';
 import * as types from './types';
 import bs58 from 'bs58';
@@ -36,6 +36,74 @@ export class MeteoraDBCService {
       verifySignatures: false
     });
     return serializedTransaction.toString('base64');
+  }
+
+  /**
+   * Ensure transaction has a recent blockhash and serialize it to base64 string
+   */
+  private async prepareTransaction(transaction: Transaction): Promise<string> {
+    // Get a recent blockhash if not already set
+    if (!transaction.recentBlockhash) {
+      const { blockhash } = await this.client.connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+    }
+
+    // Ensure there's a fee payer set
+    if (!transaction.feePayer) {
+      // For the transaction to serialize, we need to set a temporary fee payer
+      // The actual fee payer will be set on the client side when the user signs
+      const instructions = transaction.instructions;
+      if (instructions.length > 0 && instructions[0].keys.length > 0) {
+        // Use the first signer from the first instruction as a temporary fee payer
+        const firstSigner = instructions[0].keys.find(key => key.isSigner);
+        if (firstSigner) {
+          transaction.feePayer = firstSigner.pubkey;
+        }
+      }
+    }
+
+    // Check if we have a fee payer set
+    if (!transaction.feePayer) {
+      throw new Error("Transaction fee payer required");
+    }
+
+    // Serialize the transaction
+    const serializedTransaction = transaction.serialize({
+      requireAllSignatures: false, 
+      verifySignatures: false
+    });
+    
+    return serializedTransaction.toString('base64');
+  }
+
+  /**
+   * Helper method to create and prepare a transaction
+   * This centralizes transaction creation logic with proper blockhash handling
+   */
+  private async createAndPrepareTransaction<T>(
+    createTransactionFn: () => Promise<Transaction>,
+    additionalData: T = {} as T
+  ): Promise<types.ApiResponse & T> {
+    try {
+      // Create the transaction
+      const transaction = await createTransactionFn();
+      
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+      
+      return {
+        success: true,
+        transaction: serializedTransaction,
+        ...additionalData
+      };
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        ...additionalData
+      };
+    }
   }
 
   /**
@@ -99,9 +167,12 @@ export class MeteoraDBCService {
         })),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in createConfig:', error);
@@ -157,9 +228,12 @@ export class MeteoraDBCService {
         config: this.toPublicKey(params.config),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in buildCurveAndCreateConfig:', error);
@@ -175,6 +249,12 @@ export class MeteoraDBCService {
    */
   async buildCurveAndCreateConfigByMarketCap(params: types.BuildCurveAndCreateConfigByMarketCapParam): Promise<types.ApiResponse> {
     try {
+      // Generate a new keypair for the config account
+      const configKeypair = Keypair.generate();
+      const configPubkey = configKeypair.publicKey;
+      
+      console.log('Building curve with params. Using new config keypair:', configPubkey.toString());
+      
       const transaction = await this.client.partner.buildCurveAndCreateConfigByMarketCap({
         buildCurveByMarketCapParam: {
           totalTokenSupply: params.buildCurveByMarketCapParam.totalTokenSupply,
@@ -212,12 +292,30 @@ export class MeteoraDBCService {
         leftoverReceiver: this.toPublicKey(params.leftoverReceiver),
         payer: this.toPublicKey(params.payer),
         quoteMint: this.toPublicKey(params.quoteMint),
-        config: this.toPublicKey(params.config),
+        config: configPubkey, // Use the new keypair's pubkey
       });
+
+      console.log('Config created successfully');
+      
+      // Set the fee payer explicitly
+      transaction.feePayer = this.toPublicKey(params.payer);
+      
+      // Get a recent blockhash before trying to sign
+      if (!transaction.recentBlockhash) {
+        const { blockhash } = await this.client.connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+      }
+      
+      // Partial sign the transaction with the config keypair
+      transaction.partialSign(configKeypair);
+
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
 
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
+        configAddress: configPubkey.toString()
       };
     } catch (error) {
       console.error('Error in buildCurveAndCreateConfigByMarketCap:', error);
@@ -241,9 +339,12 @@ export class MeteoraDBCService {
         payer: this.toPublicKey(params.payer),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in createPartnerMetadata:', error);
@@ -266,9 +367,12 @@ export class MeteoraDBCService {
         maxQuoteAmount: this.toBN(params.maxQuoteAmount),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in claimPartnerTradingFee:', error);
@@ -289,9 +393,12 @@ export class MeteoraDBCService {
         virtualPool: this.toPublicKey(params.virtualPool),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in partnerWithdrawSurplus:', error);
@@ -307,27 +414,58 @@ export class MeteoraDBCService {
    */
   async createPool(params: types.CreatePoolParam): Promise<types.ApiResponse> {
     try {
-      // Instead of passing our params directly, construct a plain object
-      // and let TypeScript infer the type when passed to the SDK
+      // Generate a new keypair for the baseMint
+      const baseMintKeypair = Keypair.generate();
+      const baseMintPubkey = baseMintKeypair.publicKey;
+      
+      console.log('Creating pool with base mint keypair:', baseMintPubkey.toString());
+      
+      // Cast the parameters to match the SDK's expected types
       const sdkParams = {
         payer: this.toPublicKey(params.payer),
         poolCreator: this.toPublicKey(params.poolCreator),
-        baseMint: this.toPublicKey(params.baseMint),
-        quoteMint: this.toPublicKey(params.quoteMint),
         config: this.toPublicKey(params.config),
+        baseMint: baseMintPubkey,
+        quoteMint: this.toPublicKey(params.quoteMint),
         baseTokenType: params.baseTokenType,
         quoteTokenType: params.quoteTokenType,
         name: params.name,
         symbol: params.symbol,
-        uri: params.uri
+        uri: params.uri,
       };
-
-      // Cast the object to any to bypass TypeScript's type checking
+      
+      // Use the pool.createPool method from the SDK
       const transaction = await this.client.pool.createPool(sdkParams as any);
+
+      console.log('Pool created successfully');
+      
+      // Set the fee payer explicitly
+      transaction.feePayer = this.toPublicKey(params.payer);
+      
+      // Get a recent blockhash before trying to sign
+      if (!transaction.recentBlockhash) {
+        const { blockhash } = await this.client.connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+      }
+      
+      // Partial sign the transaction with the baseMint keypair
+      transaction.partialSign(baseMintKeypair);
+
+      // Calculate the pool address using the SDK's helper
+      const poolAddress = deriveDbcPoolAddress(
+        sdkParams.quoteMint,
+        sdkParams.baseMint,
+        sdkParams.config
+      ).toString();
+
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
 
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
+        poolAddress: poolAddress,
+        baseMintAddress: baseMintPubkey.toString()
       };
     } catch (error) {
       console.error('Error in createPool:', error);
@@ -365,9 +503,12 @@ export class MeteoraDBCService {
       // Cast the object to any to bypass TypeScript's type checking
       const transaction = await this.client.pool.createPoolAndBuy(sdkParams as any);
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in createPoolAndBuy:', error);
@@ -396,9 +537,12 @@ export class MeteoraDBCService {
       // Cast the object to any to bypass TypeScript's type checking
       const transaction = await this.client.pool.swap(sdkParams as any);
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in swap:', error);
@@ -419,9 +563,12 @@ export class MeteoraDBCService {
         virtualPool: this.toPublicKey(params.virtualPool),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in createLocker:', error);
@@ -442,9 +589,12 @@ export class MeteoraDBCService {
         virtualPool: this.toPublicKey(params.virtualPool),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in withdrawLeftover:', error);
@@ -466,9 +616,12 @@ export class MeteoraDBCService {
         config: this.toPublicKey(params.config),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in createDammV1MigrationMetadata:', error);
@@ -490,9 +643,12 @@ export class MeteoraDBCService {
         dammConfig: this.toPublicKey(params.dammConfig),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in migrateToDammV1:', error);
@@ -515,9 +671,12 @@ export class MeteoraDBCService {
         isPartner: params.isPartner,
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in lockDammV1LpToken:', error);
@@ -540,9 +699,12 @@ export class MeteoraDBCService {
         isPartner: params.isPartner,
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in claimDammV1LpToken:', error);
@@ -564,9 +726,12 @@ export class MeteoraDBCService {
         config: this.toPublicKey(params.config),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in createDammV2MigrationMetadata:', error);
@@ -597,9 +762,12 @@ export class MeteoraDBCService {
         ? response.transaction 
         : response;
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in migrateToDammV2:', error);
@@ -624,9 +792,12 @@ export class MeteoraDBCService {
         payer: this.toPublicKey(params.payer),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in createPoolMetadata:', error);
@@ -649,9 +820,12 @@ export class MeteoraDBCService {
         maxQuoteAmount: this.toBN(params.maxQuoteAmount),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in claimCreatorTradingFee:', error);
@@ -672,9 +846,12 @@ export class MeteoraDBCService {
         virtualPool: this.toPublicKey(params.virtualPool),
       });
 
+      // Prepare the transaction with a blockhash and serialize it
+      const serializedTransaction = await this.prepareTransaction(transaction);
+
       return {
         success: true,
-        transaction: this.serializeTransaction(transaction),
+        transaction: serializedTransaction,
       };
     } catch (error) {
       console.error('Error in creatorWithdrawSurplus:', error);

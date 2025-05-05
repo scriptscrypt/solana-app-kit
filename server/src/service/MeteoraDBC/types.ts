@@ -292,10 +292,19 @@ export interface CreatorWithdrawSurplusParam {
   virtualPool: string;
 }
 
-// API response types
+/**
+ * API Response interface
+ */
 export interface ApiResponse {
   success: boolean;
-  transaction?: string;
   error?: string;
-  [key: string]: any;
+  transaction?: string;
+  baseMintAddress?: string;
+  poolAddress?: string;
+  configAddress?: string;
+  pool?: any;
+  config?: any;
+  progress?: number;
+  metrics?: any;
+  [key: string]: any; // Allow additional properties for backward compatibility
 } 

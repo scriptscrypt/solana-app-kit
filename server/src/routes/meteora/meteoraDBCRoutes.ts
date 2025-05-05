@@ -54,6 +54,8 @@ router.post('/build-curve', async (req: Request<{}, {}, types.BuildCurveAndCreat
  */
 router.post('/build-curve-by-market-cap', async (req: Request<{}, {}, types.BuildCurveAndCreateConfigByMarketCapParam>, res: Response) => {
   try {
+    // We don't need the config parameter as we're generating it on the server
+    // but keep all other parameters from the request
     const result = await meteoraDBCService.buildCurveAndCreateConfigByMarketCap(req.body);
     res.json(result);
   } catch (error) {

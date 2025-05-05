@@ -7,6 +7,9 @@ dotenv.config();
 // Meteora Dynamic Bonding Curve Program ID
 export const METEORA_DBC_PROGRAM_ID = new PublicKey('dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN');
 
+// Global connection instance
+let globalConnection: Connection | null = null;
+
 /**
  * Gets a Solana connection using the RPC_URL from environment variables
  * Falls back to Solana devnet if RPC_URL is not defined
@@ -15,15 +18,33 @@ export const METEORA_DBC_PROGRAM_ID = new PublicKey('dbcij3LWUppWqq96dh6gJWwBifm
  * @returns A Solana Connection
  */
 export function getConnection(commitment: Commitment = 'confirmed'): Connection {
+  if (globalConnection) {
+    return globalConnection;
+  }
+  
   const rpcUrl = process.env.RPC_URL;
   
   if (!rpcUrl) {
     console.warn('RPC_URL environment variable not set, falling back to devnet');
-    return new Connection('https://api.devnet.solana.com', commitment);
+    globalConnection = new Connection('https://api.devnet.solana.com', commitment);
+    return globalConnection;
   }
   
   console.log(`Using RPC URL: ${maskRpcUrl(rpcUrl)}`);
-  return new Connection(rpcUrl, commitment);
+  globalConnection = new Connection(rpcUrl, commitment);
+  return globalConnection;
+}
+
+/**
+ * Setup the connection when the server starts
+ * This ensures we only have one connection instance throughout the app
+ */
+export function setupConnection(): void {
+  if (!globalConnection) {
+    console.log('Setting up Solana connection...');
+    getConnection();
+    console.log('Solana connection established');
+  }
 }
 
 /**
