@@ -56,6 +56,14 @@ const modules = [
     iconComponent: Icons.TokenMillIcon,
     backgroundImage: require('@/assets/images/TokenMill_bg.png'),
   },
+  {
+    key: 'meteora',
+    title: 'Meteora',
+    subtitle: 'Powerful DEX with concentrated liquidity',
+    navigateTo: 'MeteoraScreen',
+    iconComponent: Icons.RadyuimIcom, // Reusing an existing icon temporarily
+    backgroundImage: require('@/assets/images/TokenMill_bg.png'), // Reusing an existing background temporarily
+  },
   // {
   //   key: 'nft',
   //   title: 'NFT Screen',
@@ -73,7 +81,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 80,
@@ -290,7 +297,7 @@ export default function ModuleScreen() {
       {renderLoggingOutOverlay()}
 
       {/* Replace custom header with reusable AppHeader */}
-      <AppHeader 
+      <AppHeader
         title="Launchpads"
         showBackButton={true}
         onBackPress={handleBack}
