@@ -64,40 +64,90 @@ export function useAuth() {
     const loginWithGoogle = useCallback(async () => {
       try {
         // Use direct OAuth login instead of handlePrivyLogin
-        await loginWithOAuth({ provider: 'google' });
+        const result = await loginWithOAuth({ provider: 'google' });
+        console.log('[useAuth] OAuth login result:', result);
+        
+        console.log('[useAuth] Starting Solana wallet monitoring after successful login');
+        
+        // First try creating the wallet explicitly
+        if (solanaWallet && typeof solanaWallet.create === 'function') {
+          try {
+            console.log('[useAuth] Attempting direct wallet creation first');
+            const createResult = await solanaWallet.create();
+            console.log('[useAuth] Direct wallet creation result:', createResult);
+          } catch (createError) {
+            console.log('[useAuth] Direct wallet creation failed (may already exist):', createError);
+          }
+        }
         
         // Continue monitoring the wallet after login
         await monitorSolanaWallet({
           selectedProvider: 'privy',
-          setStatusMessage: () => {},
+          setStatusMessage: (msg) => {
+            console.log('[useAuth] Wallet status:', msg);
+          },
           onWalletConnected: info => {
-            dispatch(loginSuccess({provider: 'privy', address: info.address}));
+            console.log('[useAuth] Wallet connected:', info);
+            // Set initial username from the wallet address when logging in
+            const initialUsername = info.address.substring(0, 6);
+            console.log('[useAuth] Setting initial username:', initialUsername);
+            
+            dispatch(loginSuccess({
+              provider: 'privy', 
+              address: info.address,
+              username: initialUsername
+            }));
             navigation.navigate('MainTabs');
           },
         });
       } catch (error) {
-        console.error('Google login error:', error);
+        console.error('[useAuth] Google login error:', error);
       }
-    }, [loginWithOAuth, monitorSolanaWallet, dispatch, navigation]);
+    }, [loginWithOAuth, monitorSolanaWallet, solanaWallet, dispatch, navigation]);
 
     const loginWithApple = useCallback(async () => {
       try {
         // Use direct OAuth login instead of handlePrivyLogin
-        await loginWithOAuth({ provider: 'apple' });
+        const result = await loginWithOAuth({ provider: 'apple' });
+        console.log('[useAuth] Apple OAuth login result:', result);
+        
+        console.log('[useAuth] Starting Solana wallet monitoring after successful login');
+        
+        // First try creating the wallet explicitly
+        if (solanaWallet && typeof solanaWallet.create === 'function') {
+          try {
+            console.log('[useAuth] Attempting direct wallet creation first');
+            const createResult = await solanaWallet.create();
+            console.log('[useAuth] Direct wallet creation result:', createResult);
+          } catch (createError) {
+            console.log('[useAuth] Direct wallet creation failed (may already exist):', createError);
+          }
+        }
         
         // Continue monitoring the wallet after login
         await monitorSolanaWallet({
           selectedProvider: 'privy',
-          setStatusMessage: () => {},
+          setStatusMessage: (msg) => {
+            console.log('[useAuth] Wallet status:', msg);
+          },
           onWalletConnected: info => {
-            dispatch(loginSuccess({provider: 'privy', address: info.address}));
+            console.log('[useAuth] Wallet connected:', info);
+            // Set initial username from the wallet address when logging in
+            const initialUsername = info.address.substring(0, 6);
+            console.log('[useAuth] Setting initial username:', initialUsername);
+            
+            dispatch(loginSuccess({
+              provider: 'privy', 
+              address: info.address,
+              username: initialUsername
+            }));
             navigation.navigate('MainTabs');
           },
         });
       } catch (error) {
-        console.error('Apple login error:', error);
+        console.error('[useAuth] Apple login error:', error);
       }
-    }, [loginWithOAuth, monitorSolanaWallet, dispatch, navigation]);
+    }, [loginWithOAuth, monitorSolanaWallet, solanaWallet, dispatch, navigation]);
 
     const loginWithEmail = useCallback(async () => {
       await handlePrivyLogin({
@@ -440,7 +490,15 @@ export function useAuth() {
     }
 
     const handleSuccessfulLogin = useCallback((info: {provider: 'dynamic', address: string}) => {
-      dispatch(loginSuccess({provider: 'dynamic', address: info.address}));
+      // Set initial username from the wallet address
+      const initialUsername = info.address.substring(0, 6);
+      console.log('[useAuth] Setting initial username for Dynamic login:', initialUsername);
+      
+      dispatch(loginSuccess({
+        provider: 'dynamic', 
+        address: info.address,
+        username: initialUsername
+      }));
       navigation.navigate('MainTabs');
     }, [dispatch, navigation]);
 
@@ -598,7 +656,15 @@ export function useAuth() {
           providerName: 'google',
           setStatusMessage: () => {},
           onWalletConnected: (info) => {
-            dispatch(loginSuccess({provider: 'turnkey', address: info.address}));
+            // Set initial username from the wallet address
+            const initialUsername = info.address.substring(0, 6);
+            console.log('[useAuth] Setting initial username for Turnkey login:', initialUsername);
+            
+            dispatch(loginSuccess({
+              provider: 'turnkey', 
+              address: info.address,
+              username: initialUsername
+            }));
             navigation.navigate('MainTabs');
             return { address: info.address };
           }
@@ -616,7 +682,15 @@ export function useAuth() {
           providerName: 'apple',
           setStatusMessage: () => {},
           onWalletConnected: (info) => {
-            dispatch(loginSuccess({provider: 'turnkey', address: info.address}));
+            // Set initial username from the wallet address
+            const initialUsername = info.address.substring(0, 6);
+            console.log('[useAuth] Setting initial username for Turnkey login:', initialUsername);
+            
+            dispatch(loginSuccess({
+              provider: 'turnkey', 
+              address: info.address,
+              username: initialUsername
+            }));
             navigation.navigate('MainTabs');
             return { address: info.address };
           }

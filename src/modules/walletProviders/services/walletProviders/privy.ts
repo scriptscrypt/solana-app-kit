@@ -61,44 +61,108 @@ export function usePrivyWalletLogic() {
       setStatusMessage?: (msg: string) => void;
       onWalletConnected?: (info: {provider: 'privy'; address: string}) => void;
     }) => {
-      if (selectedProvider !== 'privy' || !user || !isReady || !solanaWallet) {
+      if (selectedProvider !== 'privy') {
+        console.log('Not using Privy provider, skipping wallet monitoring');
         return;
       }
+
+      if (!user) {
+        console.log('No user logged in, cannot monitor wallet');
+        return;
+      }
+
+      if (!isReady) {
+        console.log('Privy SDK not ready, cannot monitor wallet');
+        return;
+      }
+
+      if (!solanaWallet) {
+        console.log('Solana wallet object not available');
+        return;
+      }
+
+      console.log('Monitoring Solana wallet, status:', solanaWallet.status);
+      console.log('Wallet object:', JSON.stringify(solanaWallet, null, 2));
 
       try {
-        if (solanaWallet.getProvider) {
-          const provider = await solanaWallet.getProvider().catch(() => null);
-          if (provider && solanaWallet.wallets) {
-            const connectedWallet = solanaWallet.wallets[0];
-            setStatusMessage?.(
-              `Connected to existing wallet: ${connectedWallet.publicKey}`,
-            );
-            onWalletConnected?.({
-              provider: 'privy',
-              address: connectedWallet.publicKey,
-            });
-            return;
-          }
-        } else {
-          console.warn('solanaWallet.getProvider is undefined');
+        // First check if the wallet already exists and is connected
+        if (solanaWallet.status === 'connected' && solanaWallet.wallets && solanaWallet.wallets.length > 0) {
+          const connectedWallet = solanaWallet.wallets[0];
+          setStatusMessage?.(
+            `Connected to existing wallet: ${connectedWallet.publicKey}`,
+          );
+          onWalletConnected?.({
+            provider: 'privy',
+            address: connectedWallet.publicKey,
+          });
+          return;
         }
-      } catch (error) {
-        console.warn('getProvider failed:', error);
-      }
 
-      if (needsRecovery(solanaWallet)) {
-        setStatusMessage?.('Wallet needs recovery');
-        return;
-      }
+        // Check if wallet needs recovery
+        if (needsRecovery(solanaWallet)) {
+          console.log('Wallet needs recovery, skipping auto-creation');
+          setStatusMessage?.('Wallet needs recovery');
+          return;
+        }
 
-      if (isNotCreated(solanaWallet)) {
-        await solanaWallet.create();
-        const newWallet = solanaWallet.wallets[0];
-        setStatusMessage?.(`Created wallet: ${newWallet.publicKey}`);
-        onWalletConnected?.({
-          provider: 'privy',
-          address: newWallet.publicKey,
-        });
+        // If wallet doesn't exist, create it
+        if (isNotCreated(solanaWallet)) {
+          console.log('Wallet not created, creating new wallet');
+          setStatusMessage?.('Creating new Solana wallet...');
+          
+          try {
+            // Using the create method directly from the Solana wallet
+            const result = await solanaWallet.create();
+            console.log('Wallet creation result:', result);
+            
+            // Verify wallet was created successfully
+            if (solanaWallet.wallets && solanaWallet.wallets.length > 0) {
+              const newWallet = solanaWallet.wallets[0];
+              console.log(`Created new wallet with address: ${newWallet.publicKey}`);
+              setStatusMessage?.(`Created wallet: ${newWallet.publicKey}`);
+              onWalletConnected?.({
+                provider: 'privy',
+                address: newWallet.publicKey,
+              });
+            } else {
+              console.error('Wallet creation completed but no wallet found in wallets array');
+              setStatusMessage?.('Wallet creation failed: No wallet detected after creation');
+            }
+          } catch (createError: any) {
+            console.error('Error creating Solana wallet:', createError);
+            setStatusMessage?.(`Wallet creation failed: ${createError.message}`);
+          }
+          return;
+        }
+
+        // For any other wallet status, try to use getProvider to connect
+        try {
+          console.log('Attempting to connect to wallet via getProvider');
+          if (solanaWallet.getProvider) {
+            const provider = await solanaWallet.getProvider();
+            if (provider && solanaWallet.wallets && solanaWallet.wallets.length > 0) {
+              const wallet = solanaWallet.wallets[0];
+              console.log(`Connected to wallet: ${wallet.publicKey}`);
+              setStatusMessage?.(`Connected to wallet: ${wallet.publicKey}`);
+              onWalletConnected?.({
+                provider: 'privy',
+                address: wallet.publicKey,
+              });
+            } else {
+              console.error('Provider available but no wallet found in wallets array');
+              setStatusMessage?.('Provider available but no wallet found');
+            }
+          } else {
+            console.warn('solanaWallet.getProvider is undefined, cannot connect');
+            setStatusMessage?.('Cannot connect to wallet: Provider method unavailable');
+          }
+        } catch (providerError) {
+          console.error('Error getting wallet provider:', providerError);
+          setStatusMessage?.('Failed to connect to wallet provider');
+        }
+      } catch (error: any) {
+        console.error('Error in monitorSolanaWallet:', error);
+        setStatusMessage?.(`Wallet monitoring error: ${error.message}`);
       }
     },
     [isReady, solanaWallet, user],

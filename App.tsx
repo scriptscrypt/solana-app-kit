@@ -64,10 +64,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/shared/navigation/RootNavigator';
 import { navigationRef } from './src/shared/hooks/useAppNavigation';
-import {store} from './src/shared/state/store';
+import {store, persistor} from './src/shared/state/store';
 import './src/shared/utils/polyfills';
 import COLORS from './src/assets/colors';
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
+import { PersistGate } from 'redux-persist/integration/react';
 
 import { PrivyProvider, PrivyElements } from '@privy-io/expo';
 import { TurnkeyProvider } from '@turnkey/sdk-react-native';
@@ -99,6 +100,13 @@ const DevModeComponents = () => {
     </>
   );
 };
+
+// Loading component for PersistGate
+const PersistLoading = () => (
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
+    <ActivityIndicator size="large" color={COLORS.brandPrimary} />
+  </View>
+);
 
 export default function App() {
   const config = DefaultCustomizationConfig;
@@ -150,51 +158,53 @@ export default function App() {
     <CustomizationProvider config={config}>
       <SafeAreaProvider>
         <ReduxProvider store={store}>
-          <DevModeProvider>
-            <EnvErrorProvider>
-              <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-                {config.auth.provider === 'privy' ? (
-                  <PrivyProvider
-                    appId={config.auth.privy.appId}
-                    clientId={config.auth.privy.clientId}
-                    config={{
-                      embedded: {
-                        solana: {
-                          createOnLogin: 'users-without-wallets',
+          <PersistGate loading={<PersistLoading />} persistor={persistor}>
+            <DevModeProvider>
+              <EnvErrorProvider>
+                <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+                  {config.auth.provider === 'privy' ? (
+                    <PrivyProvider
+                      appId={config.auth.privy.appId}
+                      clientId={config.auth.privy.clientId}
+                      config={{
+                        embedded: {
+                          solana: {
+                            createOnLogin: 'users-without-wallets',
+                          },
                         },
-                      },
-                    }}
-                  >
-                    <NavigationContainer ref={navigationRef}>
-                      <RootNavigator />
-                    </NavigationContainer>
-                    {getDynamicWebView()}
-                    <GlobalUIElements />
-                    <PrivyElements />
-                  </PrivyProvider>
-                ) : config.auth.provider === 'turnkey' ? (
-                  <TurnkeyProvider config={turnkeySessionConfig}>
-                    <NavigationContainer ref={navigationRef}>
-                      <RootNavigator />
-                    </NavigationContainer>
-                    {getDynamicWebView()}
-                    <GlobalUIElements />
-                  </TurnkeyProvider>
-                ) : (
-                  <>
-                    <NavigationContainer ref={navigationRef}>
-                      <RootNavigator />
-                    </NavigationContainer>
-                    {getDynamicWebView()}
-                    <GlobalUIElements />
-                  </>
-                )}
+                      }}
+                    >
+                      <NavigationContainer ref={navigationRef}>
+                        <RootNavigator />
+                      </NavigationContainer>
+                      {getDynamicWebView()}
+                      <GlobalUIElements />
+                      <PrivyElements />
+                    </PrivyProvider>
+                  ) : config.auth.provider === 'turnkey' ? (
+                    <TurnkeyProvider config={turnkeySessionConfig}>
+                      <NavigationContainer ref={navigationRef}>
+                        <RootNavigator />
+                      </NavigationContainer>
+                      {getDynamicWebView()}
+                      <GlobalUIElements />
+                    </TurnkeyProvider>
+                  ) : (
+                    <>
+                      <NavigationContainer ref={navigationRef}>
+                        <RootNavigator />
+                      </NavigationContainer>
+                      {getDynamicWebView()}
+                      <GlobalUIElements />
+                    </>
+                  )}
 
-                {/* DevMode components will only render in dev mode */}
-                <DevModeComponents />
-              </View>
-            </EnvErrorProvider>
-          </DevModeProvider>
+                  {/* DevMode components will only render in dev mode */}
+                  <DevModeComponents />
+                </View>
+              </EnvErrorProvider>
+            </DevModeProvider>
+          </PersistGate>
         </ReduxProvider>
       </SafeAreaProvider>
     </CustomizationProvider>
