@@ -14,6 +14,9 @@ importers:
       '@google-cloud/storage':
         specifier: ^7.15.2
         version: 7.16.0
+      '@meteora-ag/dynamic-bonding-curve-sdk':
+        specifier: ^1.1.2
+        version: 1.1.2(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@pump-fun/pump-swap-sdk':
         specifier: ^0.0.1-beta.22
         version: 0.0.1-beta.22(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -853,15 +856,29 @@ packages:
     resolution: {integrity: sha512-9Mkradf5yS5xiLWrl9WrpjqOrAV+/W2RQHDlbnAZBivoGpOs1ECjoDCkVk4aRG8ZdiFiB8zQEVlxf+8fKkmSfQ==}
     engines: {node: '>=10'}
 
+  '@coral-xyz/anchor-errors@0.31.1':
+    resolution: {integrity: sha512-NhNEku4F3zzUSBtrYz84FzYWm48+9OvmT1Hhnwr6GnPQry2dsEqH/ti/7ASjjpoFTWRnPXrjAIT1qM6Isop+LQ==}
+    engines: {node: '>=10'}
+
   '@coral-xyz/anchor@0.30.1':
     resolution: {integrity: sha512-gDXFoF5oHgpriXAaLpxyWBHdCs8Awgf/gLHIo6crv7Aqm937CNdY+x+6hoj7QR5vaJV7MxWSQ0NGFzL3kPbWEQ==}
     engines: {node: '>=11'}
+
+  '@coral-xyz/anchor@0.31.1':
+    resolution: {integrity: sha512-QUqpoEK+gi2S6nlYc2atgT2r41TT3caWr/cPUEL8n8Md9437trZ68STknq897b82p5mW0XrTBNOzRbmIRJtfsA==}
+    engines: {node: '>=17'}
 
   '@coral-xyz/borsh@0.30.1':
     resolution: {integrity: sha512-aaxswpPrCFKl8vZTbxLssA2RvwX2zmKLlRCIktJOwW+VpVwYtXRtlWiIP+c2pPRKneiTiWCN2GEMSH9j1zTlWQ==}
     engines: {node: '>=10'}
     peerDependencies:
       '@solana/web3.js': ^1.68.0
+
+  '@coral-xyz/borsh@0.31.1':
+    resolution: {integrity: sha512-9N8AU9F0ubriKfNE3g1WF0/4dtlGXoBN/hd1PvbNBamBNwRgHxH4P+o3Zt7rSEloW1HUs6LfZEchlx9fW7POYw==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      '@solana/web3.js': ^1.69.0
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1244,6 +1261,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@meteora-ag/dynamic-bonding-curve-sdk@1.1.2':
+    resolution: {integrity: sha512-w172VQFjBTfeIkDhcyQvHcNSty0VeIaO0oYyC01h7d/n76qHWuwAvXbZFemws5FPUcrH1QBMr/zUcdHc/yjKdA==}
+    peerDependencies:
+      typescript: ^5
 
   '@next/env@15.3.1':
     resolution: {integrity: sha512-cwK27QdzrMblHSn9DZRV+DQscHXRuJv6MydlJRpFSqJWZrTYMLzKDeyueJNN9MGd8NNiUKzDQADAf+dMLXX7YQ==}
@@ -2387,6 +2409,9 @@ packages:
 
   decimal.js-light@2.5.1:
     resolution: {integrity: sha512-qIMFpTMZmny+MMIitAB6D7iVPEorVw6YQRWkvarTkT4tBeSLLiHzcwj6q0MmYSFCiVpiqPJTJEYIrpcPzVEIvg==}
+
+  decimal.js@10.5.0:
+    resolution: {integrity: sha512-8vDa8Qxvr/+d94hSh5P3IJwI5t8/c0KsMp+g8bNw9cY2icONa5aPfvKeieW1WlG0WQYwwhJ7mjui2xtiePQSXw==}
 
   deep-extend@0.6.0:
     resolution: {integrity: sha512-LOHxIOaPYdHlJRtCQfDIVZtfw/ufM8+rVj649RIHzcm/vGwQRXFt6OPqIFWsm2XEMrNIEtWR64sY1LEKD2vAOA==}
@@ -4315,6 +4340,39 @@ packages:
     resolution: {integrity: sha512-oZ7iUCxph8WYRHHcjBEc9unw3adt5CmSNlppj/5Q4k2RIrhl8Z5yY2Xr4j9zj0+wzVZ0bxmYoGSzKJnRl6A4yg==}
     engines: {node: '>=10.2.0'}
 
+  solana-bankrun-darwin-arm64@0.4.0:
+    resolution: {integrity: sha512-6dz78Teoz7ez/3lpRLDjktYLJb79FcmJk2me4/YaB8WiO6W43OdExU4h+d2FyuAryO2DgBPXaBoBNY/8J1HJmw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  solana-bankrun-darwin-universal@0.4.0:
+    resolution: {integrity: sha512-zSSw/Jx3KNU42pPMmrEWABd0nOwGJfsj7nm9chVZ3ae7WQg3Uty0hHAkn5NSDCj3OOiN0py9Dr1l9vmRJpOOxg==}
+    engines: {node: '>= 10'}
+    os: [darwin]
+
+  solana-bankrun-darwin-x64@0.4.0:
+    resolution: {integrity: sha512-LWjs5fsgHFtyr7YdJR6r0Ho5zrtzI6CY4wvwPXr8H2m3b4pZe6RLIZjQtabCav4cguc14G0K8yQB2PTMuGub8w==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+
+  solana-bankrun-linux-x64-gnu@0.4.0:
+    resolution: {integrity: sha512-SrlVrb82UIxt21Zr/XZFHVV/h9zd2/nP25PMpLJVLD7Pgl2yhkhfi82xj3OjxoQqWe+zkBJ+uszA0EEKr67yNw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  solana-bankrun-linux-x64-musl@0.4.0:
+    resolution: {integrity: sha512-Nv328ZanmURdYfcLL+jwB1oMzX4ZzK57NwIcuJjGlf0XSNLq96EoaO5buEiUTo4Ls7MqqMyLbClHcrPE7/aKyA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  solana-bankrun@0.4.0:
+    resolution: {integrity: sha512-NMmXUipPBkt8NgnyNO3SCnPERP6xT/AMNMBooljGA3+rG6NN8lmXJsKeLqQTiFsDeWD74U++QM/DgcueSWvrIg==}
+    engines: {node: '>= 10'}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -5792,6 +5850,8 @@ snapshots:
 
   '@coral-xyz/anchor-errors@0.30.1': {}
 
+  '@coral-xyz/anchor-errors@0.31.1': {}
+
   '@coral-xyz/anchor@0.30.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
       '@coral-xyz/anchor-errors': 0.30.1
@@ -5814,7 +5874,33 @@ snapshots:
       - encoding
       - utf-8-validate
 
+  '@coral-xyz/anchor@0.31.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@coral-xyz/anchor-errors': 0.31.1
+      '@coral-xyz/borsh': 0.31.1(@solana/web3.js@1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@noble/hashes': 1.7.2
+      '@solana/web3.js': 1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      bn.js: 5.2.1
+      bs58: 4.0.1
+      buffer-layout: 1.2.2
+      camelcase: 6.3.0
+      cross-fetch: 3.2.0
+      eventemitter3: 4.0.7
+      pako: 2.1.0
+      superstruct: 0.15.5
+      toml: 3.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
+
   '@coral-xyz/borsh@0.30.1(@solana/web3.js@1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana/web3.js': 1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      bn.js: 5.2.1
+      buffer-layout: 1.2.2
+
+  '@coral-xyz/borsh@0.31.1(@solana/web3.js@1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@solana/web3.js': 1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       bn.js: 5.2.1
@@ -6393,6 +6479,21 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@meteora-ag/dynamic-bonding-curve-sdk@1.1.2(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@coral-xyz/anchor': 0.31.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      '@solana/spl-token': 0.4.13(@solana/web3.js@1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@solana/web3.js': 1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      bn.js: 5.2.1
+      decimal.js: 10.5.0
+      solana-bankrun: 0.4.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - fastestsmallesttextencoderdecoder
+      - utf-8-validate
 
   '@next/env@15.3.1': {}
 
@@ -7804,6 +7905,8 @@ snapshots:
       ms: 2.1.3
 
   decimal.js-light@2.5.1: {}
+
+  decimal.js@10.5.0: {}
 
   deep-extend@0.6.0: {}
 
@@ -10058,6 +10161,36 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - supports-color
+      - utf-8-validate
+
+  solana-bankrun-darwin-arm64@0.4.0:
+    optional: true
+
+  solana-bankrun-darwin-universal@0.4.0:
+    optional: true
+
+  solana-bankrun-darwin-x64@0.4.0:
+    optional: true
+
+  solana-bankrun-linux-x64-gnu@0.4.0:
+    optional: true
+
+  solana-bankrun-linux-x64-musl@0.4.0:
+    optional: true
+
+  solana-bankrun@0.4.0(bufferutil@4.0.9)(utf-8-validate@5.0.10):
+    dependencies:
+      '@solana/web3.js': 1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      bs58: 4.0.1
+    optionalDependencies:
+      solana-bankrun-darwin-arm64: 0.4.0
+      solana-bankrun-darwin-universal: 0.4.0
+      solana-bankrun-darwin-x64: 0.4.0
+      solana-bankrun-linux-x64-gnu: 0.4.0
+      solana-bankrun-linux-x64-musl: 0.4.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
       - utf-8-validate
 
   source-map-js@1.2.1: {}

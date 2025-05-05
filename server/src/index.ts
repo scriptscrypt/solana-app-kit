@@ -24,6 +24,7 @@ import { setupGlobalChat } from './controllers/chatController';
 import http from 'http';
 import { WebSocketService } from './services/websocketService';
 import cors from 'cors';
+import meteoraDBCRouter from './routes/meteora/meteoraDBCRoutes';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -173,6 +174,7 @@ app.use('/api', tokenMillRouter);
 app.use('/api/auth', turnkeyAuthRouter);
 app.use('/api/aura', auraRouter);
 app.use('/api/chat', chatRouter); // Add the chat routes
+app.use('/api/meteora', meteoraDBCRouter);
 
 // app.post('/api/build-compressed-nft-listing-tx', async (req: any, res: any) => {
 //   try {
