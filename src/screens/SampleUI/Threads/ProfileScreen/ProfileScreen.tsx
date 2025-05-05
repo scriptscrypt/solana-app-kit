@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, StyleSheet, StatusBar, Platform, SafeAreaView } from 'react-native';
 import Profile from '@/core/profile/components/profile';
 import { ThreadPost } from '@/core/thread/components/thread.types';
@@ -22,10 +22,17 @@ export default function ProfileScreen() {
 
   // Use the wallet hook to get the user's address
   const { address: userWallet } = useWallet();
+  
+  // Ensure we have the wallet address and log for debugging
+  useEffect(() => {
+    console.log('[ProfileScreen] User wallet address:', userWallet);
+    console.log('[ProfileScreen] Stored username:', storedUsername);
+  }, [userWallet, storedUsername]);
 
   // Add state for counts to force refresh
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get all posts from Redux
   const allPosts = useAppSelector(state => state.thread.allPosts);
@@ -60,37 +67,51 @@ export default function ProfileScreen() {
     error: fetchNftsError,
   } = useFetchNFTs(userWallet || undefined);
 
-  // Build the user object
-  const user = {
+  // Build the user object with safe fallbacks
+  const user = useMemo(() => ({
     address: userWallet || '',
     profilePicUrl: storedProfilePic || '',
-    username: storedUsername || 'Unknown User',
-    description: storedDescription || '',
+    username: storedUsername || (userWallet ? userWallet.substring(0, 6) : 'New User'),
+    description: storedDescription || 'Welcome to my profile!',
     attachmentData,
-  };
+    followersCount,
+    followingCount
+  }), [userWallet, storedProfilePic, storedUsername, storedDescription, attachmentData, followersCount, followingCount]);
 
   // Handle go back for the profile
-  const handleGoBack = () => {
+  const handleGoBack = useCallback(() => {
     navigation.goBack();
-  };
+  }, [navigation]);
 
   // Refresh follower/following counts when the profile screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      if (!userWallet) return;
+      if (!userWallet) {
+        console.log('[ProfileScreen] No wallet address available, skipping follower fetch');
+        setIsLoading(false);
+        return;
+      }
 
       console.log('[ProfileScreen] Screen focused, refreshing follower/following data');
+      setIsLoading(true);
 
       // Fetch followers count
       fetchFollowers(userWallet).then(list => {
         console.log('[ProfileScreen] Updated followers count:', list.length);
         setFollowersCount(list.length);
+      }).catch(err => {
+        console.error('[ProfileScreen] Error fetching followers:', err);
       });
 
       // Fetch following count
       fetchFollowing(userWallet).then(list => {
         console.log('[ProfileScreen] Updated following count:', list.length);
         setFollowingCount(list.length);
+      }).catch(err => {
+        console.error('[ProfileScreen] Error fetching following:', err);
+      }).finally(() => {
+        // Set loading to false after all fetches
+        setIsLoading(false);
       });
 
     }, [userWallet])
@@ -107,7 +128,6 @@ export default function ProfileScreen() {
           nfts={nfts}
           loadingNfts={loadingNfts}
           fetchNftsError={fetchNftsError}
-          key={`profile-${followersCount}-${followingCount}`} // Force refresh when counts change
           onGoBack={handleGoBack}
         />
       </SafeAreaView>

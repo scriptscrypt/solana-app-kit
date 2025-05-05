@@ -49,7 +49,7 @@ import {
   deleteMessage,
   setSelectedChat
 } from '@/shared/state/chat/slice';
-import socketService from '@/services/socketService';
+import socketService from '@/shared/services/socketService';
 import { TradeData } from '@/core/sharedUI/TradeCard/TradeCard';
 import { useChat } from '@/modules/solanaAgentKit/hooks/useChat';
 import { generateUUID } from '@/modules/solanaAgentKit/lib/utils';

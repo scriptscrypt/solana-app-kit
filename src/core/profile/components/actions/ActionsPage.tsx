@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -573,6 +573,18 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
   const dispatch = useAppDispatch();
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+
+  // Timeout for new wallets to prevent excessive retries
+  useEffect(() => {
+    if (loadingActions && !isRefreshing && !hasAttemptedLoad) {
+      // If we're loading, set a timeout to mark as attempted after 5 seconds
+      const timer = setTimeout(() => {
+        setHasAttemptedLoad(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [loadingActions, isRefreshing, hasAttemptedLoad]);
 
   const handleRefresh = useCallback(async () => {
     if (!walletAddress) return;
@@ -586,8 +598,54 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
       console.error('Error refreshing actions:', err);
     } finally {
       setIsRefreshing(false);
+      setHasAttemptedLoad(true);
     }
   }, [walletAddress, dispatch]);
+
+  // If still initial loading and not having attempted to load yet, show loading
+  if (loadingActions && !isRefreshing && !hasAttemptedLoad) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.brandBlue} />
+        <Text style={styles.emptyText}>Loading transactions...</Text>
+      </View>
+    );
+  }
+
+  if (fetchActionsError) {
+    return (
+      <View style={styles.centered}>
+        <FontAwesome5 name="exclamation-circle" size={32} color={COLORS.errorRed} />
+        <Text style={styles.errorText}>{fetchActionsError}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={handleRefresh}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!myActions || myActions.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <View style={styles.emptyStateIcon}>
+          <FontAwesome5 name="history" size={26} color={COLORS.white} />
+        </View>
+        <Text style={styles.emptyText}>No transactions yet</Text>
+        <Text style={[styles.emptyText, { fontSize: 14, marginTop: 8, opacity: 0.7, maxWidth: '80%', textAlign: 'center' }]}>
+          Make your first transaction on Solana to see it here
+        </Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+        >
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   // Group actions by date periods
   const groupedActions = useMemo(() => {
@@ -763,47 +821,6 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
 
     return sections;
   }, [myActions]);
-
-  if (loadingActions && !isRefreshing) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.brandBlue} />
-        <Text style={styles.emptyText}>Loading transactions...</Text>
-      </View>
-    );
-  }
-
-  if (fetchActionsError) {
-    return (
-      <View style={styles.centered}>
-        <FontAwesome5 name="exclamation-circle" size={32} color={COLORS.errorRed} />
-        <Text style={styles.errorText}>{fetchActionsError}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={handleRefresh}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (!myActions || myActions.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <View style={styles.emptyStateIcon}>
-          <FontAwesome5 name="history" size={26} color={COLORS.white} />
-        </View>
-        <Text style={styles.emptyText}>No transactions yet</Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={handleRefresh}
-        >
-          <Text style={styles.refreshButtonText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>

@@ -130,9 +130,14 @@ export default function Profile({
   );
 
   // Combined loading state to prevent flickering
+  const [loadStartTime] = useState(Date.now());
   const isLoading = useMemo(() => {
     // Don't show loading if initial data has been loaded
     if (initialDataLoaded) return false;
+
+    // Force loading to end after 3 seconds to prevent infinite loading
+    const hasTimePassed = Date.now() - loadStartTime > 3000;
+    if (hasTimePassed) return false;
 
     // Only show loading state for own profile
     if (!isOwnProfile) return false;
@@ -151,7 +156,8 @@ export default function Profile({
     isFollowersLoading,
     isFollowingLoading,
     loadingActions,
-    loadingPortfolio
+    loadingPortfolio,
+    loadStartTime
   ]);
 
   // Mark data as initially loaded once all critical data is fetched
@@ -174,13 +180,24 @@ export default function Profile({
       }, 100);
       return () => clearTimeout(timer);
     }
+    
+    // Ensure loading state eventually resolves even if some data isn't available
+    const maxLoadingTime = setTimeout(() => {
+      if (!initialDataLoaded) {
+        console.log('[Profile] Force ending loading state after timeout');
+        setInitialDataLoaded(true);
+      }
+    }, 5000); // 5 second maximum loading time
+    
+    return () => clearTimeout(maxLoadingTime);
   }, [
     isOwnProfile,
     isProfileLoading,
     isFollowersLoading,
     isFollowingLoading,
     isFollowStatusLoading,
-    loadingActions
+    loadingActions,
+    initialDataLoaded
   ]);
 
   // --- Fetch Actions ---
@@ -446,6 +463,7 @@ export default function Profile({
   // --- Avatar and Profile update handlers ---
   const handleProfileUpdated = useCallback((field: 'image' | 'username' | 'description') => {
     // Immediately refresh profile data after any update
+    console.log('[Profile] handleProfileUpdated called for field:', field);
     if (userWallet) {
       setIsProfileLoading(true);
       dispatch(fetchUserProfile(userWallet))
@@ -454,10 +472,10 @@ export default function Profile({
           if (value.profilePicUrl) setProfilePicUrl(value.profilePicUrl);
           if (value.username) setLocalUsername(value.username);
           if (value.description) setLocalDescription(value.description);
-          console.log(`Profile updated (${field}):`, value);
+          console.log(`[Profile] Profile updated (${field}):`, value);
         })
         .catch(err => {
-          console.error('Failed to refresh user profile after update:', err);
+          console.error('[Profile] Failed to refresh user profile after update:', err);
         })
         .finally(() => {
           setIsProfileLoading(false);
@@ -550,6 +568,11 @@ export default function Profile({
   useEffect(() => {
     setStatusBarStyle('dark');
   }, []);
+
+  // Add log effect
+  useEffect(() => {
+    console.log('[Profile] Profile component rendered, isOwnProfile:', isOwnProfile);
+  }, [isOwnProfile]);
 
   // Handle back navigation
   const handleGoBack = useCallback(() => {

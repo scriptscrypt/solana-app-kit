@@ -19,6 +19,7 @@ import TYPOGRAPHY from '@/assets/typography';
 import Icons from '@/assets/svgs';
 import LaunchlabsLaunchSection from '../components/LaunchlabsLaunchSection';
 import { AdvancedOptionsSection } from '../components/AdvancedOptionsSection';
+import { AppHeader } from '@/core/sharedUI';
 
 export default function LaunchlabsScreen() {
     const { solanaWallet } = useAuth();
@@ -45,22 +46,12 @@ export default function LaunchlabsScreen() {
     if (!userPublicKey) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                        <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-                    </TouchableOpacity>
-                    <View style={styles.titleContainer}>
-                        <Text style={styles.title}>LaunchLab</Text>
-                    </View>
-                    <View style={styles.rightButtons}>
-                        <TouchableOpacity style={styles.headerButton}>
-                            <Icons.copyIcon width={16} height={16} color={COLORS.white} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.headerButton}>
-                            <Icons.walletIcon width={35} height={35} color={COLORS.white} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                <AppHeader
+                    title="LaunchLab"
+                    showBackButton={true}
+                    onBackPress={handleBack}
+                    showDefaultRightIcons={true}
+                />
                 <View style={styles.centeredMessageContainer}>
                     <Text style={styles.warnText}>Please connect your wallet first!</Text>
                 </View>
@@ -70,22 +61,12 @@ export default function LaunchlabsScreen() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                    <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
-                </TouchableOpacity>
-                <View style={styles.titleContainer}>
-                    <Text style={styles.title}>LaunchLab</Text>
-                </View>
-                <View style={styles.rightButtons}>
-                    <TouchableOpacity style={styles.headerButton}>
-                        <Icons.copyIcon width={16} height={16} color={COLORS.white} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerButton}>
-                        <Icons.walletIcon width={35} height={35} color={COLORS.white} />
-                    </TouchableOpacity>
-                </View>
-            </View>
+            <AppHeader
+                title="LaunchLab"
+                showBackButton={true}
+                onBackPress={handleBack}
+                showDefaultRightIcons={true}
+            />
 
             <ScrollView
                 style={styles.scrollContainer}
@@ -117,42 +98,6 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: COLORS.background,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.borderDarkColor,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    titleContainer: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: -1,
-    },
-    title: {
-        fontSize: TYPOGRAPHY.size.xl,
-        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
-        color: COLORS.white,
-        fontFamily: TYPOGRAPHY.fontFamily,
-    },
-    rightButtons: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerButton: {
-        marginLeft: 15,
     },
     scrollContainer: {
         flex: 1,

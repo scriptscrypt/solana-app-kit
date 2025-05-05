@@ -7,16 +7,35 @@ import notificationReducer from './notification/reducer';
 import profileReducer from './profile/reducer';
 import chatReducer from './chat/slice';
 
+// Redux persist imports
+import { persistStore, persistReducer } from 'redux-persist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { combineReducers } from 'redux';
+
+// Configure Redux Persist for auth reducer
+const persistConfig = {
+  key: 'root',
+  storage: AsyncStorage,
+  // Only persist the auth state to keep login info
+  whitelist: ['auth'],
+};
+
+// Combine all reducers
+const rootReducer = combineReducers({
+  thread: threadReducer,
+  auth: authReducer,
+  transaction: transactionReducer,
+  users: usersReducer,
+  notification: notificationReducer,
+  profile: profileReducer,
+  chat: chatReducer,
+});
+
+// Create persisted reducer (only for auth)
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
 export const store = configureStore({
-  reducer: {
-    thread: threadReducer,
-    auth: authReducer,
-    transaction: transactionReducer,
-    users: usersReducer,
-    notification: notificationReducer,
-    profile: profileReducer,
-    chat: chatReducer,
-  },
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       // Increase tolerance thresholds to prevent warnings with large state
@@ -25,6 +44,8 @@ export const store = configureStore({
         warnAfter: 200,
         // Ignore specific Redux paths that might contain large data
         ignoredPaths: ['profile.actions.data'],
+        // Ignore Redux persist actions
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },
       // Increase immutability check threshold
       immutableCheck: {
@@ -33,5 +54,11 @@ export const store = configureStore({
     }),
 });
 
-export type RootState = ReturnType<typeof store.getState>;
+// Create persistor
+export const persistor = persistStore(store);
+
+// Define our root state type, including both regular state and _persist property
+export type RootState = ReturnType<typeof rootReducer> & {
+  _persist?: { version: number; rehydrated: boolean };
+};
 export type AppDispatch = typeof store.dispatch;

@@ -155,22 +155,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.white,
-  },
-  loggingOutContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    zIndex: 100,
-  },
-  loggingOutText: {
-    color: 'white',
-    marginTop: 10,
-    fontWeight: 'bold',
   }
 });
 
@@ -182,64 +166,18 @@ const androidStyles = StyleSheet.create({
 });
 
 export default function ModuleScreen() {
-  // State to track logout process
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  // Get the auth object and navigation
-  const auth = useAuth();
   const navigation = useNavigation();
 
-  // Safely extract logout function
-  const logout = auth?.logout || (() => Promise.resolve());
-
-  // Create a safe logout handler
-  const handleLogout = useCallback(async () => {
-    if (isLoggingOut) return; // Prevent multiple logout attempts
-
-    try {
-      setIsLoggingOut(true);
-      console.log('Logging out...');
-
-      // Use setTimeout to ensure state update is processed before logout
-      setTimeout(async () => {
-        try {
-          await logout();
-          console.log('Logout successful');
-        } catch (error) {
-          console.error('Error during logout:', error);
-          Alert.alert('Logout Error', 'There was a problem logging out. Please try again.');
-        } finally {
-          // Keep this state true - we don't need to reset it as the component
-          // will be unmounted during navigation changes
-        }
-      }, 100);
-    } catch (error) {
-      console.error('Error initiating logout:', error);
-      setIsLoggingOut(false);
-    }
-  }, [logout, isLoggingOut]);
-
   const handlePress = useCallback((module: any) => {
-    if (module.navigateTo && !isLoggingOut) {
+    if (module.navigateTo) {
       navigation.navigate(module.navigateTo as never);
     }
-  }, [navigation, isLoggingOut]);
+  }, [navigation]);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
 
-  // Render a loading overlay during logout
-  const renderLoggingOutOverlay = () => {
-    if (!isLoggingOut) return null;
-
-    return (
-      <View style={styles.loggingOutContainer}>
-        <ActivityIndicator size="large" color="#ffffff" />
-        <Text style={styles.loggingOutText}>Logging out...</Text>
-      </View>
-    );
-  };
 
   // Render a launch card
   const renderLaunchCard = (module: any) => {

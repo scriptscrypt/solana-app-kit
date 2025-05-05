@@ -1,5 +1,5 @@
 // File: src/components/Profile/ProfileView.tsx
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, memo, useEffect, useCallback } from 'react';
 import { View, StyleProp, ViewStyle, ActivityIndicator } from 'react-native';
 import UserProfileInfo from './ProfileInfo/UserProfileInfo';
 import ProfileTabs from './ProfileTabs/ProfileTabs';
@@ -48,6 +48,26 @@ function ProfileViewComponent({
   onEditPost,
   onLogout,
 }: ExtendedProfileViewProps) {
+  // Add logging for component rendering
+  useEffect(() => {
+    console.log('[ProfileView] Component rendered, isOwnProfile:', isOwnProfile);
+    return () => {
+      console.log('[ProfileView] Component unmounting');
+    };
+  }, [isOwnProfile]);
+
+  // Log avatar press interaction
+  const handleAvatarPress = useCallback(() => {
+    console.log('[ProfileView] Avatar press detected, forwarding to parent');
+    if (onAvatarPress) onAvatarPress();
+  }, [onAvatarPress]);
+
+  // Log edit profile interaction
+  const handleEditProfile = useCallback(() => {
+    console.log('[ProfileView] Edit profile detected, forwarding to parent');
+    if (onEditProfile) onEditProfile();
+  }, [onEditProfile]);
+
   // Ensure attachmentData is always defined
   const attachmentData = useMemo(() => user.attachmentData || {}, [user.attachmentData]);
 
@@ -58,8 +78,8 @@ function ProfileViewComponent({
     userWallet: user.address,
     bioText: user.description || undefined,
     isOwnProfile,
-    onAvatarPress,
-    onEditProfile,
+    onAvatarPress: handleAvatarPress,
+    onEditProfile: handleEditProfile,
     onShareProfile,
     onLogout,
     amIFollowing,
@@ -84,8 +104,8 @@ function ProfileViewComponent({
     followersCount,
     followingCount,
     // Callback dependencies
-    onAvatarPress,
-    onEditProfile,
+    handleAvatarPress,
+    handleEditProfile,
     onShareProfile,
     onLogout,
     onFollowPress,
@@ -144,11 +164,12 @@ function ProfileViewComponent({
     );
   }
 
+  // Instead of re-rendering everything, use a stable layout structure
   return (
     <View style={containerStyleMemo}>
       <ProfileInfoMemo {...profileInfoProps} />
       <View style={{ flex: 1 }}>
-        <ProfileTabsMemo {...profileTabsProps} />
+        {!isLoading && <ProfileTabsMemo {...profileTabsProps} />}
       </View>
     </View>
   );
