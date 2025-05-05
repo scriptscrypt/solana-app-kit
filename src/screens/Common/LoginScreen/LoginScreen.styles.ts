@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.14,
+    top: SCREEN_HEIGHT * 0.05,
     alignItems: 'center',
   },
   welcomeText: {

@@ -136,9 +136,10 @@ export default function RootNavigator() {
     };
   }, [isLoggedIn, userId, dispatch]);
 
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isLoggedIn ? (
+  // Determine which screens to show based on login state
+  const renderScreens = () => {
+    if (isLoggedIn) {
+      return (
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="CoinDetailPage" component={CoinDetailPage} />
@@ -151,27 +152,38 @@ export default function RootNavigator() {
           <Stack.Screen name="PumpSwap" component={PumpSwapScreen} />
           <Stack.Screen name="MercuroScreen" component={MercuroScreen} />
           <Stack.Screen name="LaunchlabsScreen" component={LaunchlabsScreen} />
-
-          {/* NEW SCREEN for viewing other user's profile */}
           <Stack.Screen name="OtherProfile" component={OtherProfileScreen} />
           <Stack.Screen name="PostThread" component={PostThreadScreen} />
           <Stack.Screen
             name="FollowersFollowingList"
             component={FollowersFollowingListScreen}
-            options={{ title: '' }} // or "Followers / Following"
+            options={{ title: '' }}
           />
           <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
           <Stack.Screen name="WalletScreen" component={WalletScreen} />
           <Stack.Screen name="OnrampScreen" component={OnrampScreen} />
           <Stack.Screen name="SwapScreen" component={SwapScreen} />
         </>
-      ) : (
+      );
+    } else {
+      return (
         <>
           <Stack.Screen name="IntroScreen" component={IntroScreen} />
           <Stack.Screen name="LoginOptions" component={LoginScreen} />
+          {/* Still include MainTabs for navigation from IntroScreen if user is found to be logged in */}
           <Stack.Screen name="MainTabs" component={MainTabs} />
         </>
-      )}
+      );
+    }
+  };
+
+  return (
+    <Stack.Navigator 
+      screenOptions={{ headerShown: false }}
+      // When logged in, start at MainTabs; otherwise start at IntroScreen
+      initialRouteName={isLoggedIn ? "MainTabs" : "IntroScreen"}
+    >
+      {renderScreens()}
     </Stack.Navigator>
   );
 }

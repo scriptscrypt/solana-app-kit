@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, memo, useMemo } from 'react';
 import {
     View,
     Text,
@@ -56,14 +56,24 @@ enum DrawerView {
 
 const LOG_TAG = "[ProfileEditDrawer]";
 
-export default function ProfileEditDrawer({
+const ProfileEditDrawer = ({
     visible,
     onClose,
     profileData,
     onProfileUpdated,
-}: ProfileEditDrawerProps) {
+}: ProfileEditDrawerProps) => {
     const dispatch = useAppDispatch();
     const isMounted = useRef(true);
+    const isInitialized = useRef(false);
+    const prevVisibleRef = useRef(visible);
+
+    // Log only on actual changes to visible prop
+    useEffect(() => {
+        if (prevVisibleRef.current !== visible) {
+            console.log('[ProfileEditDrawer] visible actually changed:', visible);
+            prevVisibleRef.current = visible;
+        }
+    }, [visible]);
 
     // --- State --- 
     const [tempUsername, setTempUsername] = useState(profileData.username);
@@ -82,21 +92,32 @@ export default function ProfileEditDrawer({
     const [showUploadProgress, setShowUploadProgress] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
+    // Memoize profileData to prevent unnecessary re-renders
+    const memoizedProfileData = useMemo(() => profileData, [
+        profileData.userId, 
+        profileData.username, 
+        profileData.description, 
+        profileData.profilePicUrl
+    ]);
+
     // --- Effects --- 
     useEffect(() => {
+        console.log('[ProfileEditDrawer] Component mounted');
         isMounted.current = true;
-        console.log(`${LOG_TAG} Mounted`);
         return () => {
+            console.log('[ProfileEditDrawer] Component unmounting');
             isMounted.current = false;
-            console.log(`${LOG_TAG} Unmounted`);
+            isInitialized.current = false;
         };
     }, []);
 
+    // Initialization effect - only runs once when drawer becomes visible
     useEffect(() => {
-        if (visible) {
-            console.log(`${LOG_TAG} Drawer became visible, resetting state.`);
-            setTempUsername(profileData.username);
-            setTempDescription(profileData.description);
+        if (visible && !isInitialized.current) {
+            console.log('[ProfileEditDrawer] Initializing component state with profileData:', memoizedProfileData);
+            // Initialize component state only once
+            setTempUsername(memoizedProfileData.username);
+            setTempDescription(memoizedProfileData.description);
             setLocalImageUri(null);
             setSelectedSource(null);
             setCachedNfts([]);
@@ -106,19 +127,22 @@ export default function ProfileEditDrawer({
             setSelectedNft(null);
             setIsProcessing(false);
             setCurrentView(DrawerView.PROFILE_EDIT);
-            setShowAvatarOptions(false);
-        } else {
-            console.log(`${LOG_TAG} Drawer became hidden.`);
+            
+            // Do not reset showAvatarOptions here - this is what's causing the menu to close
+            // if the user has clicked on avatar options
+            
+            isInitialized.current = true;
+        } else if (!visible) {
+            // Reset initialization flag when drawer is closed
+            isInitialized.current = false;
         }
-    }, [visible, profileData]);
+    }, [visible, memoizedProfileData]);
 
     // --- Callbacks --- 
 
     // Fetch NFTs directly
     const fetchNFTs = useCallback(async () => {
-        console.log(`${LOG_TAG} fetchNFTs started`);
         if (!isMounted.current) {
-            console.log(`${LOG_TAG} fetchNFTs aborted (unmounted)`);
             return [];
         }
         
@@ -127,7 +151,6 @@ export default function ProfileEditDrawer({
         
         try {
             const url = `${ENDPOINTS.tensorFlowBaseUrl}/api/v1/user/portfolio?wallet=${profileData.userId}&includeUnverified=true&includeCompressed=true&includeFavouriteCount=true`;
-            console.log(`${LOG_TAG} Fetching from URL: ${url}`);
             
             const resp = await fetchWithRetries(url, {
                 method: 'GET',
@@ -142,10 +165,8 @@ export default function ProfileEditDrawer({
             }
             
             const data = await resp.json();
-            console.log(`${LOG_TAG} NFT fetch response received (status ${resp.status})`);
             
             if (!isMounted.current) {
-                console.log(`${LOG_TAG} fetchNFTs aborted after fetch (unmounted)`);
                 return [];
             }
             
@@ -163,18 +184,14 @@ export default function ProfileEditDrawer({
                 })
                 .filter(Boolean) as NftItem[];
             
-            console.log(`${LOG_TAG} Parsed ${parsed.length} NFTs`);
             if (!isMounted.current) {
-                 console.log(`${LOG_TAG} fetchNFTs aborted after parse (unmounted)`);
                  return [];
             }
             
             setCachedNfts(parsed);
             setNftsError(null);
-            console.log(`${LOG_TAG} fetchNFTs success`);
             return parsed; 
         } catch (error: any) {
-            console.error(`${LOG_TAG} fetchNFTs failed:`, error);
             if (!isMounted.current) return [];
             setNftsError('Failed to load NFTs. Please try again.');
             setCachedNfts([]);
@@ -182,7 +199,6 @@ export default function ProfileEditDrawer({
         } finally {
             if (isMounted.current) {
                 setNftsLoading(false);
-                console.log(`${LOG_TAG} fetchNFTs finished (loading set to false)`);
             }
         }
     }, [profileData.userId]);
@@ -192,21 +208,17 @@ export default function ProfileEditDrawer({
         const useImageUri = imageUri || localImageUri;
         const useSource = source || selectedSource;
         
-        console.log(`${LOG_TAG} handleConfirmImageUpload triggered for ${useSource} image: ${useImageUri}`);
         if (isUploading || !useImageUri) {
-            console.warn(`${LOG_TAG} Cannot upload image: ${isUploading ? 'Already uploading' : 'No image URI'}`);
             setIsProcessing(false);
             return;
         }
 
         if (!profileData.userId) {
-            console.warn(`${LOG_TAG} Missing user ID for image upload`);
             Alert.alert('Missing Data', 'No valid user to upload to');
             setIsProcessing(false);
             return;
         }
 
-        console.log(`${LOG_TAG} Starting image upload...`);
         setIsUploading(true);
         setIsProcessing(true);
         
@@ -240,7 +252,6 @@ export default function ProfileEditDrawer({
             }
             
             if (!isMounted.current) {
-                console.log(`${LOG_TAG} Aborted after upload (unmounted)`);
                 return;
             }
             
@@ -258,14 +269,10 @@ export default function ProfileEditDrawer({
             setSelectedSource(null);
             setCurrentView(DrawerView.PROFILE_EDIT);
         } catch (err: any) {
-            console.error(`${LOG_TAG} Image upload failed:`, err);
-            if (isMounted.current) {
-                Alert.alert('Upload Error', err.message || 'Failed to upload image');
-                setCurrentView(DrawerView.PROFILE_EDIT);
-            }
+            Alert.alert('Upload Error', err.message || 'Failed to upload image');
+            setCurrentView(DrawerView.PROFILE_EDIT);
         } finally {
             if (isMounted.current) {
-                console.log(`${LOG_TAG} Finishing image upload process`);
                 setIsUploading(false);
                 setIsProcessing(false);
             }
@@ -274,19 +281,29 @@ export default function ProfileEditDrawer({
 
     // Toggle Avatar Options visibility
     const handleToggleAvatarOptions = useCallback(() => {
-        console.log(`${LOG_TAG} handleToggleAvatarOptions triggered`);
+        console.log('[ProfileEditDrawer] handleToggleAvatarOptions called');
+        console.log('[ProfileEditDrawer] isProcessing:', isProcessing, 'isUploading:', isUploading);
+        console.log('[ProfileEditDrawer] Current showAvatarOptions:', showAvatarOptions);
+        
         if (isProcessing || isUploading) {
-            console.log(`${LOG_TAG} Ignoring toggle avatar options while processing/uploading`);
+            console.log('[ProfileEditDrawer] Skipping toggle due to processing state');
             return;
         }
-        setShowAvatarOptions(prev => !prev);
+        
+        // Use a direct state update with a specific timeout to ensure we don't get caught in 
+        // any re-render loops or other state updates
+        setTimeout(() => {
+            if (isMounted.current) {
+                console.log('[ProfileEditDrawer] Forcibly showing avatar options menu');
+                // Force it to true instead of toggling to prevent any race conditions
+                setShowAvatarOptions(true);
+            }
+        }, 50);
     }, [isProcessing, isUploading]);
 
     // Select Image from Library
     const handleSelectImageFromLibrary = useCallback(async () => {
-        console.log(`${LOG_TAG} handleSelectImageFromLibrary triggered`);
         if (isProcessing || isUploading || isPreparingNfts) {
-            console.log(`${LOG_TAG} Ignoring image selection while processing`);
             return;
         }
         
@@ -302,35 +319,27 @@ export default function ProfileEditDrawer({
             });
 
             if (!isMounted.current) {
-                console.log(`${LOG_TAG} Aborted image selection (unmounted)`);
                 setIsProcessing(false);
                 return;
             }
             
             if (!result.canceled && result.assets && result.assets.length > 0) {
-                console.log(`${LOG_TAG} Image selected from library`, result.assets[0].uri);
                 setLocalImageUri(result.assets[0].uri);
                 setSelectedSource('library');
                 
                         handleConfirmImageUpload(result.assets[0].uri, 'library');
             } else {
-                console.log(`${LOG_TAG} Image selection cancelled or failed`);
                 setIsProcessing(false);
             }
         } catch (error: any) {
-            console.error(`${LOG_TAG} Error picking image:`, error);
-            if (isMounted.current) {
-                Alert.alert('Error picking image', error.message);
-                setIsProcessing(false);
-            }
+            Alert.alert('Error picking image', error.message);
+            setIsProcessing(false);
         }
     }, [isProcessing, isUploading, isPreparingNfts, handleConfirmImageUpload]);
 
     // Prepare NFT Selection
     const handlePrepareAndShowNfts = useCallback(async () => {
-        console.log(`${LOG_TAG} handlePrepareAndShowNfts triggered`);
         if (isProcessing || isPreparingNfts || isUploading) {
-            console.log(`${LOG_TAG} Ignoring NFT preparation while busy`);
             return; 
         }
         
@@ -338,18 +347,14 @@ export default function ProfileEditDrawer({
         setIsPreparingNfts(true);
         setShowAvatarOptions(false);
         
-        console.log(`${LOG_TAG} Starting NFT fetch...`);
         await fetchNFTs();
-        console.log(`${LOG_TAG} NFT fetch complete.`);
         
         if (!isMounted.current) {
-            console.log(`${LOG_TAG} handlePrepareAndShowNfts aborted after fetch (unmounted)`);
             setIsPreparingNfts(false);
             setIsProcessing(false);
             return;
         }
         
-        console.log(`${LOG_TAG} Setting view to NFT_LIST`);
         setCurrentView(DrawerView.NFT_LIST);
         setIsPreparingNfts(false);
         setIsProcessing(false);
@@ -357,14 +362,11 @@ export default function ProfileEditDrawer({
 
     // Handle NFT selection from list
     const handleSelectNft = useCallback((nft: NftItem) => {
-        console.log(`${LOG_TAG} handleSelectNft triggered for NFT: ${nft.mint}`);
         if (isProcessing || isUploading) {
-            console.log(`${LOG_TAG} Ignoring NFT selection while processing`);
             return;
         }
         
         if (!nft.image) {
-            console.warn(`${LOG_TAG} Selected NFT has no image: ${nft.mint}`);
             Alert.alert('Invalid NFT', 'This NFT does not have a valid image.');
             return;
         }
@@ -373,15 +375,12 @@ export default function ProfileEditDrawer({
         setLocalImageUri(nft.image);
         setSelectedSource('nft');
         
-        console.log(`${LOG_TAG} Switching view to NFT_CONFIRM`);
         setCurrentView(DrawerView.NFT_CONFIRM);
     }, [isProcessing, isUploading, setCurrentView]);
 
     // Cancel NFT selection (from confirm view back to list)
     const handleCancelNftSelection = useCallback(() => {
-        console.log(`${LOG_TAG} handleCancelNftSelection triggered (back to list)`);
         if (isProcessing || isUploading) {
-            console.log(`${LOG_TAG} Ignoring cancel while processing`);
             return;
         }
         
@@ -389,15 +388,12 @@ export default function ProfileEditDrawer({
         setLocalImageUri(null);
         setSelectedSource(null);
         
-        console.log(`${LOG_TAG} Switching view back to NFT_LIST`);
         setCurrentView(DrawerView.NFT_LIST);
     }, [isProcessing, isUploading, setCurrentView]);
 
     // Cancel NFT flow entirely (from list or confirm back to profile edit)
     const handleCancelNftFlow = useCallback(() => {
-        console.log(`${LOG_TAG} handleCancelNftFlow triggered (back to profile edit)`);
         if (isProcessing || isUploading) {
-            console.log(`${LOG_TAG} Ignoring cancel while processing`);
             return;
         }
         
@@ -408,15 +404,12 @@ export default function ProfileEditDrawer({
         setNftsError(null);
         setNftsLoading(false);
 
-        console.log(`${LOG_TAG} Switching view back to PROFILE_EDIT`);
         setCurrentView(DrawerView.PROFILE_EDIT);
     }, [isProcessing, isUploading, setCurrentView]);
 
     // Confirm the selected NFT (Calls handleConfirmImageUpload)
     const handleConfirmNft = useCallback(() => {
-        console.log(`${LOG_TAG} handleConfirmNft triggered`);
         if (isProcessing || isUploading || !selectedNft || !selectedNft.image) {
-            console.warn(`${LOG_TAG} Cannot confirm NFT: ${isProcessing ? 'Processing' : isUploading ? 'Uploading' : 'No valid NFT selected'}`);
             return;
         }
         handleConfirmImageUpload(selectedNft.image, 'nft');
@@ -424,9 +417,7 @@ export default function ProfileEditDrawer({
 
     // Retry loading NFTs
     const handleRetryNftLoad = useCallback(() => {
-        console.log(`${LOG_TAG} handleRetryNftLoad triggered`);
         if (nftsLoading || isProcessing || isUploading) {
-            console.log(`${LOG_TAG} Retry aborted (already busy)`);
             return;
         }
         fetchNFTs();
@@ -434,9 +425,7 @@ export default function ProfileEditDrawer({
 
     // Update profile (username, description)
     const handleUpdateProfileDetails = useCallback(async () => {
-        console.log(`${LOG_TAG} handleUpdateProfileDetails triggered (Username/Description)`);
         if (!profileData.userId || isProcessing || isUploading) {
-            console.warn(`${LOG_TAG} Update aborted (${!profileData.userId ? 'No user ID' : isProcessing ? 'Processing' : 'Uploading'})`);
             return;
         }
 
@@ -446,7 +435,6 @@ export default function ProfileEditDrawer({
         const descriptionChanged = newDescription !== profileData.description;
 
         if (!usernameChanged && !descriptionChanged) {
-            console.log(`${LOG_TAG} No changes detected for update`);
             Alert.alert('No Changes', 'No changes were made to your profile details.');
             onClose();
             return;
@@ -457,7 +445,6 @@ export default function ProfileEditDrawer({
         
         try {
             if (usernameChanged) {
-                console.log(`${LOG_TAG} Updating username to: ${newUsername}`);
                 await dispatch(
                     updateUsername({ userId: profileData.userId, newUsername })
                 ).unwrap();
@@ -466,7 +453,6 @@ export default function ProfileEditDrawer({
             }
 
             if (descriptionChanged) {
-                console.log(`${LOG_TAG} Updating description to: ${newDescription}`);
                 await dispatch(
                     updateDescription({ userId: profileData.userId, newDescription })
                 ).unwrap();
@@ -475,19 +461,14 @@ export default function ProfileEditDrawer({
             }
 
             if (changesMade) {
-                console.log(`${LOG_TAG} Profile update successful`);
                 Alert.alert('Profile Updated', 'Your profile has been updated successfully');
                 onClose(); 
             }
         } catch (err: any) {
-            console.error(`${LOG_TAG} Profile update failed:`, err);
-            if (isMounted.current) {
-                const message = err?.message || err?.toString() || 'An unknown error occurred during update.';
-                Alert.alert('Update Failed', message);
-            }
+            const message = err?.message || err?.toString() || 'An unknown error occurred during update.';
+            Alert.alert('Update Failed', message);
         } finally {
             if (isMounted.current) {
-                console.log(`${LOG_TAG} Finishing profile update process`);
                 setIsProcessing(false);
             }
         }
@@ -650,7 +631,6 @@ export default function ProfileEditDrawer({
                                         style={styles.nftConfirmImage}
                                         defaultSource={require('@/assets/images/User.png')}
                                         onError={() => {
-                                            console.error(`${LOG_TAG} NFT confirm: Failed to load image preview: ${selectedNft.image}`);
                                             Alert.alert('Image Load Error', 'Failed to load the selected NFT image');
                                         }}
                                     />
@@ -697,7 +677,12 @@ export default function ProfileEditDrawer({
                     <ScrollView style={styles.scrollContent} keyboardShouldPersistTaps="handled">
                     <View style={styles.imageSection}>
                         <TouchableOpacity
-                            onPress={handleToggleAvatarOptions}
+                            onPress={(event) => {
+                                console.log('[ProfileEditDrawer] Image container pressed');
+                                // Prevent event from reaching overlay
+                                event.stopPropagation?.();
+                                handleToggleAvatarOptions();
+                            }}
                             style={styles.imageContainer}
                             activeOpacity={0.8}
                             disabled={isProcessing || isUploading}>
@@ -721,7 +706,12 @@ export default function ProfileEditDrawer({
                         </TouchableOpacity>
                         
                         <TouchableOpacity
-                            onPress={handleToggleAvatarOptions}
+                            onPress={(event) => {
+                                console.log('[ProfileEditDrawer] Edit picture button pressed');
+                                // Prevent event from reaching overlay
+                                event.stopPropagation?.();
+                                handleToggleAvatarOptions();
+                            }}
                             activeOpacity={0.7}
                             disabled={isProcessing || isUploading}
                             style={styles.editPictureButton}>
@@ -729,27 +719,60 @@ export default function ProfileEditDrawer({
                         </TouchableOpacity>
 
                         {showAvatarOptions && (
-                            <View style={styles.avatarOptionsContainer}>
-                                <TouchableOpacity
-                                    style={[styles.avatarOptionButton, styles.avatarOptionButtonWithMargin]}
-                                    onPress={handleSelectImageFromLibrary}
-                                    disabled={isProcessing || isUploading || isPreparingNfts}
-                                    activeOpacity={0.7}>
-                                    <Text style={styles.avatarOptionButtonIcon}>🖼️</Text>
-                                    <Text style={styles.avatarOptionText}>Library</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.avatarOptionButton}
-                                    onPress={handlePrepareAndShowNfts}
-                                    disabled={isProcessing || isUploading || isPreparingNfts}
-                                    activeOpacity={0.7}>
-                                    {isPreparingNfts ? (
-                                        <ActivityIndicator size="small" color={COLORS.white} style={styles.activityIndicatorMargin}/>
-                                    ) : (
-                                        <Text style={styles.avatarOptionButtonIcon}>🎆</Text>
-                                    )}
-                                    <Text style={styles.avatarOptionText}>My NFTs</Text>
-                                </TouchableOpacity>
+                            <View 
+                                style={styles.avatarOptionsContainer}
+                                pointerEvents="box-none"
+                                onStartShouldSetResponder={(e) => {
+                                    console.log('[ProfileEditDrawer] Avatar options container capturing responder');
+                                    // Block all events from getting through
+                                    e.stopPropagation?.();
+                                    return true;
+                                }}
+                                onTouchEnd={(e) => {
+                                    console.log('[ProfileEditDrawer] Avatar options container touch end');
+                                    // Prevent touch events from propagating through
+                                    e.stopPropagation?.();
+                                    return true;
+                                }}
+                            >
+                                <View 
+                                    style={{
+                                        borderRadius: 8,
+                                        padding: 8,
+                                        flexDirection: 'row',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    <TouchableOpacity
+                                        style={[styles.avatarOptionButton, styles.avatarOptionButtonWithMargin]}
+                                        onPress={(e) => {
+                                            console.log('[ProfileEditDrawer] Library button pressed');
+                                            e.stopPropagation();
+                                            handleSelectImageFromLibrary();
+                                        }}
+                                        disabled={isProcessing || isUploading || isPreparingNfts}
+                                        activeOpacity={0.7}>
+                                        <Text style={styles.avatarOptionButtonIcon}>🖼️</Text>
+                                        <Text style={styles.avatarOptionText}>Library</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.avatarOptionButton}
+                                        onPress={(e) => {
+                                            console.log('[ProfileEditDrawer] NFT button pressed');
+                                            e.stopPropagation();
+                                            handlePrepareAndShowNfts();
+                                        }}
+                                        disabled={isProcessing || isUploading || isPreparingNfts}
+                                        activeOpacity={0.7}>
+                                        {isPreparingNfts ? (
+                                            <ActivityIndicator size="small" color={COLORS.white} style={styles.activityIndicatorMargin}/>
+                                        ) : (
+                                            <Text style={styles.avatarOptionButtonIcon}>🎆</Text>
+                                        )}
+                                        <Text style={styles.avatarOptionText}>My NFTs</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         )}
                     </View>
@@ -817,14 +840,12 @@ export default function ProfileEditDrawer({
     };
 
     // --- Main Render ---
-    console.log(`${LOG_TAG} Rendering Drawer (Visible: ${visible}, View: ${DrawerView[currentView]}, Processing: ${isProcessing}, Uploading: ${isUploading})`);
-
     return (
-            <Modal
+        <Modal
             visible={visible}
-                transparent
+            transparent
             animationType="slide"
-                onRequestClose={() => {
+            onRequestClose={() => {
                 if (isProcessing || isUploading) return;
                 if (currentView === DrawerView.NFT_LIST) {
                     handleCancelNftFlow();
@@ -833,10 +854,27 @@ export default function ProfileEditDrawer({
                 } else {
                     onClose();
                 }
-            }}>
-
-            <TouchableWithoutFeedback onPress={() => {
-                 if (isProcessing || isUploading) return;
+            }}
+        >
+            <TouchableWithoutFeedback onPress={(event) => {
+                 console.log('[ProfileEditDrawer] Overlay pressed');
+                 if (isProcessing || isUploading) {
+                     console.log('[ProfileEditDrawer] Ignoring overlay press due to processing state');
+                     return;
+                 }
+                 
+                 // Prevent event bubbling
+                 event.stopPropagation?.();
+                 console.log('[ProfileEditDrawer] After stopPropagation');
+                 
+                 // If avatar options are shown, just hide them instead of closing the drawer
+                 if (showAvatarOptions) {
+                     console.log('[ProfileEditDrawer] Hiding avatar options instead of closing drawer');
+                     setShowAvatarOptions(false);
+                     return;
+                 }
+                 
+                 console.log('[ProfileEditDrawer] Closing drawer');
                  onClose();
             }}>
                 <View style={styles.overlay} />
@@ -846,7 +884,10 @@ export default function ProfileEditDrawer({
                 {currentView === DrawerView.PROFILE_EDIT && (
                      <View style={styles.headerContainer}>
                         <TouchableOpacity
-                            onPress={onClose}
+                            onPress={(e) => {
+                                e.stopPropagation?.();
+                                onClose();
+                            }}
                             style={styles.backButton}
                             disabled={isProcessing || isUploading}>
                             <Text style={styles.backButtonText}>✕</Text>
@@ -895,4 +936,18 @@ export default function ProfileEditDrawer({
                 </View>
         </Modal>
     );
-} 
+};
+
+// Ensure the component is properly memoized with a custom comparison function
+const MemoizedProfileEditDrawer = memo(ProfileEditDrawer, (prevProps, nextProps) => {
+    // Only re-render if these props actually change
+    return (
+        prevProps.visible === nextProps.visible &&
+        prevProps.profileData.userId === nextProps.profileData.userId &&
+        prevProps.profileData.profilePicUrl === nextProps.profileData.profilePicUrl &&
+        prevProps.profileData.username === nextProps.profileData.username &&
+        prevProps.profileData.description === nextProps.profileData.description
+    );
+});
+
+export default MemoizedProfileEditDrawer; 
