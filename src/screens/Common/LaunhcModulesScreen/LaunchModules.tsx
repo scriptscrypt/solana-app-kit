@@ -232,7 +232,7 @@ export default function ModuleScreen() {
         styles.container,
         Platform.OS === 'android' && androidStyles.safeArea,
       ]}>
-      {renderLoggingOutOverlay()}
+      {/* {renderLoggingOutOverlay()} */}
 
       {/* Replace custom header with reusable AppHeader */}
       <AppHeader
