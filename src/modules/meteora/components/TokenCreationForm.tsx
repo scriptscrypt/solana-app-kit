@@ -230,14 +230,10 @@ export default function TokenCreationForm({
 
             setStatusMessage('Creating token and pool...');
 
-            // Generate token mint address (this would normally be done by the server)
-            const tokenMintAddress = 'token-' + Date.now(); // This is a placeholder - the actual address will come from the server
-
             // Now create the pool with the new token
             const createPoolResult = await createPool(
                 {
                     quoteMint: 'So11111111111111111111111111111111111111112', // SOL
-                    baseMint: tokenMintAddress, // The token address will be generated on the backend
                     config: configAddress,
                     baseTokenType: isToken2022 ? TokenType.Token2022 : TokenType.SPL,
                     quoteTokenType: TokenType.SPL,
@@ -251,9 +247,11 @@ export default function TokenCreationForm({
             );
 
             console.log('Pool created with txId:', createPoolResult.txId);
+            console.log('Token mint address:', createPoolResult.baseMintAddress);
+            console.log('Pool address:', createPoolResult.poolAddress);
 
-            // Get the actual token address from the create pool result
-            const tokenAddress = createPoolResult.poolAddress || tokenMintAddress;
+            // Use the baseMintAddress from the create pool result as the token address
+            const tokenAddress = createPoolResult.baseMintAddress;
 
             if (onTokenCreated) {
                 onTokenCreated(tokenAddress, createPoolResult.txId);

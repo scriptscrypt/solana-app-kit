@@ -25,6 +25,7 @@ import http from 'http';
 import { WebSocketService } from './services/websocketService';
 import cors from 'cors';
 import meteoraDBCRouter from './routes/meteora/meteoraDBCRoutes';
+import { setupConnection } from './utils/connection';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -186,11 +187,13 @@ app.use('/api/meteora', meteoraDBCRouter);
 //   }
 // });
 
+// Setup connection to Solana
+setupConnection();
+
 // Start the Express server.
 // Note: We now try connecting to the database and running migrations,
 // but if these fail we log the error and continue to start the server.
 const PORT = process.env.PORT || 8080;
-
 
 (async function startServer() {
   await testDbConnection();
