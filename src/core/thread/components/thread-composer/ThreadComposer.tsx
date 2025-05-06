@@ -137,7 +137,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
 
   // 1. Get base styles (no theme needed)
   const baseComponentStyles = getThreadComposerBaseStyles();
-  
+
   // 2. Merge styles using the utility function
   const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
@@ -261,9 +261,14 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
           listingData: {
             mint: selectedListingNft.mint,
             owner: currentUser.id, // wallet address
-            priceSol: undefined, // or logic if you have a price
+            priceSol: selectedListingNft.priceSol,
             name: selectedListingNft.name,
             image: selectedListingNft.image,
+            collectionName: selectedListingNft.collection,
+            // Add these critical fields for collection identification
+            collId: selectedListingNft.collId,
+            isCollection: selectedListingNft.isCollection,
+            collectionDescription: selectedListingNft.collectionDescription
           },
         });
       }
@@ -537,7 +542,11 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
             image: listingData.image || '',
             collection: listingData.collectionName,
             isCompressed: listingData.isCompressed,
-            priceSol: listingData.priceSol
+            priceSol: listingData.priceSol,
+            // Add these critical fields for collection identification
+            collId: listingData.collId,
+            isCollection: listingData.isCollection,
+            collectionDescription: listingData.collectionDescription
           };
           handleSelectListing(nftItem);
         }}
@@ -559,11 +568,11 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
             type: 'TEXT_TRADE',
             tradeData,
           };
-          
+
           // You can process the section here or add it to state
           // For now, simply close the modal
           setShowTradeModal(false);
-          
+
           // If needed, you can call onPostCreated here
           onPostCreated && onPostCreated();
         }}

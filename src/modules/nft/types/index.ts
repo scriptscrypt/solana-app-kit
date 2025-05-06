@@ -25,6 +25,12 @@ export interface NftItem {
   }>;
   /** Description of the NFT */
   description?: string;
+  /** Collection ID if this is a collection */
+  collId?: string;
+  /** If this is a collection listing rather than specific NFT */
+  isCollection?: boolean;
+  /** Collection description */
+  collectionDescription?: string;
 }
 
 /**
