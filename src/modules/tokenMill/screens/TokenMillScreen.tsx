@@ -50,8 +50,8 @@ const TokenMillScreen = () => {
   const [tokenSymbol, setTokenSymbol] = useState('');
   const [metadataUri, setMetadataUri] = useState('https://arweave.net/abc123');
   const [totalSupply, setTotalSupply] = useState('1000000');
-  const [creatorFee, setCreatorFee] = useState('3300');
-  const [stakingFee, setStakingFee] = useState('6200');
+  const [creatorFee, setCreatorFee] = useState('4000');  // 40% (out of the 80% available)
+  const [stakingFee, setStakingFee] = useState('4000');  // 40% (out of the 80% available)
 
   // Existing market fields
   const [marketAddress, setMarketAddress] = useState('');
@@ -279,7 +279,7 @@ const TokenMillScreen = () => {
               </View>
 
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Title</Text>
+                <Text style={styles.fieldLabel}>Metadata URI</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="https://arweave.net/abc123"
@@ -291,7 +291,7 @@ const TokenMillScreen = () => {
               </View>
 
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Title</Text>
+                <Text style={styles.fieldLabel}>Total Supply</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="1,000,000"
@@ -304,10 +304,10 @@ const TokenMillScreen = () => {
               </View>
 
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Title</Text>
+                <Text style={styles.fieldLabel}>Creator Fee</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="3300"
+                  placeholder="4000"
                   placeholderTextColor={COLORS.greyMid}
                   value={creatorFee}
                   onChangeText={setCreatorFee}
@@ -317,16 +317,52 @@ const TokenMillScreen = () => {
               </View>
 
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Title</Text>
+                <Text style={styles.fieldLabel}>Staking Fee</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="6200"
+                  placeholder="4000"
                   placeholderTextColor={COLORS.greyMid}
                   value={stakingFee}
                   onChangeText={setStakingFee}
                   keyboardType="numeric"
                   editable={!loading}
                 />
+              </View>
+
+              <View style={styles.infoBox}>
+                <View style={styles.infoHeader}>
+                  {/* <Icons.NFTIcon width={20} height={20} color={COLORS.brandBlue} /> */}
+                  <Text style={styles.infoHeaderText}>Fee Structure Guidelines</Text>
+                </View>
+                <View style={styles.infoDivider} />
+                <View style={styles.infoContent}>
+                  <View style={styles.infoRow}>
+                    <View style={[styles.feeIndicator, { backgroundColor: COLORS.brandPurple }]} />
+                    <Text style={styles.infoText}>
+                      <Text style={styles.infoTextBold}>Protocol Fee: </Text>
+                      20% (fixed, reserved for the system)
+                    </Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <View style={[styles.feeIndicator, { backgroundColor: COLORS.brandBlue }]} />
+                    <Text style={styles.infoText}>
+                      <Text style={styles.infoTextBold}>Creator Fee: </Text>
+                      Your share of transaction fees (currently {parseInt(creatorFee) / 100}%)
+                    </Text>
+                  </View>
+                  <View style={styles.infoRow}>
+                    <View style={[styles.feeIndicator, { backgroundColor: COLORS.brandPrimary }]} />
+                    <Text style={styles.infoText}>
+                      <Text style={styles.infoTextBold}>Staking Fee: </Text>
+                      Rewards for token stakers (currently {parseInt(stakingFee) / 100}%)
+                    </Text>
+                  </View>
+                  <View style={styles.ruleContainer}>
+                    <Text style={styles.ruleText}>
+                      Creator Fee + Staking Fee must equal exactly 80%
+                    </Text>
+                  </View>
+                </View>
               </View>
 
               {status && (
@@ -647,6 +683,59 @@ const styles = StyleSheet.create({
   emptyListText: {
     color: COLORS.greyMid,
     textAlign: 'center',
+  },
+  infoBox: {
+    backgroundColor: COLORS.lighterBackground,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  infoHeaderText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.white,
+    marginLeft: 10,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: COLORS.borderDarkColor,
+    flex: 1,
+  },
+  infoContent: {
+    marginTop: 10,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  feeIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  ruleContainer: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: COLORS.lighterBackground,
+    borderRadius: 8,
+  },
+  ruleText: {
+    color: COLORS.white,
+    fontSize: 14,
+  },
+  infoText: {
+    color: COLORS.white,
+    fontSize: 14,
+  },
+  infoTextBold: {
+    fontWeight: '700',
   },
 });
 
