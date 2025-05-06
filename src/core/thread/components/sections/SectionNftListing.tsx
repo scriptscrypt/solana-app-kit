@@ -36,14 +36,6 @@ export default function SectionNftListing({ listingData, compact = false }: Sect
           compact && styles.compactNftContainer
         ]}
       />
-      
-      {/* Price tag */}
-      {listingData.priceSol && (
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Price</Text>
-          <Text style={styles.priceValue}>{listingData.priceSol} SOL</Text>
-        </View>
-      )}
     </View>
   );
 }
