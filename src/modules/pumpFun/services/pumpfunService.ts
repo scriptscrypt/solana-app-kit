@@ -1,6 +1,7 @@
 import {PublicKey, Keypair, LAMPORTS_PER_SOL} from '@solana/web3.js';
 import {PumpFunSDK} from 'pumpdotfun-sdk';
 import {getAssociatedTokenAddress} from '@solana/spl-token';
+import {SystemProgram} from '@solana/web3.js';
 
 import {
   getProvider,
@@ -143,6 +144,29 @@ export async function createAndBuyTokenViaPumpfun({
       console.log('buyTx =>', buyTx);
       buyTx.instructions.forEach(ix => combinedTx.add(ix));
     }
+    
+    // Add 0.5% commission fee to the specified wallet
+    const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+    
+    // Calculate 0.5% of the solAmount as commission
+    const commissionPercentage = 0.005; // 0.5%
+    const commissionAmount = Math.floor(solAmount * LAMPORTS_PER_SOL * commissionPercentage);
+    
+    // Ensure minimum commission of 0.001 SOL and maximum of 0.1 SOL
+    const minCommission = 1_000_000; // 0.001 SOL in lamports
+    const maxCommission = 100_000_000; // 0.1 SOL in lamports
+    const finalCommissionAmount = Math.max(minCommission, Math.min(commissionAmount, maxCommission));
+    
+    console.log(`[createAndBuyTokenViaPumpfun] Adding ${commissionPercentage * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
+    
+    const transferIx = SystemProgram.transfer({
+      fromPubkey: creatorPubkey,
+      toPubkey: commissionWallet,
+      lamports: finalCommissionAmount,
+    });
+    
+    combinedTx.add(transferIx);
+    
     // Sign it with the mint keypair
     onStatusUpdate?.('Getting latest blockhash...');
     const blockhash = await provider.connection.getLatestBlockhash();

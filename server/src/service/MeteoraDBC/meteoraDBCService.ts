@@ -320,6 +320,29 @@ export class MeteoraDBCService {
 
       console.log('Config created successfully');
       
+      // Add 0.5% commission to specified wallet
+      const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+      
+      // Use a fixed commission amount of 0.005 SOL
+      const fixedCommissionAmount = 5_000_000; // 0.005 SOL in lamports
+      
+      // Ensure minimum commission of 0.001 SOL and maximum of 0.01 SOL
+      const minCommission = 1_000_000; // 0.001 SOL in lamports
+      const maxCommission = 10_000_000; // 0.01 SOL in lamports
+      const finalCommissionAmount = Math.max(minCommission, Math.min(fixedCommissionAmount, maxCommission));
+      
+      console.log(`[buildCurveAndCreateConfigByMarketCap] Adding commission of ${finalCommissionAmount / 1_000_000_000} SOL to:`, commissionWallet.toString());
+      
+      // Use SystemProgram.transfer helper instead of manually constructing the instruction
+      const { SystemProgram } = require('@solana/web3.js');
+      const transferIx = SystemProgram.transfer({
+        fromPubkey: this.toPublicKey(params.payer),
+        toPubkey: commissionWallet,
+        lamports: finalCommissionAmount,
+      });
+      
+      transaction.add(transferIx);
+      
       // Set the fee payer explicitly
       transaction.feePayer = this.toPublicKey(params.payer);
       
@@ -461,6 +484,29 @@ export class MeteoraDBCService {
       const transaction = await this.client.pool.createPool(sdkParams as any);
 
       console.log('Pool created successfully');
+      
+      // Add commission to specified wallet
+      const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+      
+      // Use a fixed commission amount of 0.005 SOL
+      const fixedCommissionAmount = 5_000_000; // 0.005 SOL in lamports
+      
+      // Ensure minimum commission of 0.001 SOL and maximum of 0.01 SOL
+      const minCommission = 1_000_000; // 0.001 SOL in lamports
+      const maxCommission = 10_000_000; // 0.01 SOL in lamports
+      const finalCommissionAmount = Math.max(minCommission, Math.min(fixedCommissionAmount, maxCommission));
+      
+      console.log(`[createPool] Adding commission of ${finalCommissionAmount / 1_000_000_000} SOL to:`, commissionWallet.toString());
+      
+      // Use SystemProgram.transfer helper instead of manually constructing the instruction
+      const { SystemProgram } = require('@solana/web3.js');
+      const transferIx = SystemProgram.transfer({
+        fromPubkey: this.toPublicKey(params.payer),
+        toPubkey: commissionWallet,
+        lamports: finalCommissionAmount,
+      });
+      
+      transaction.add(transferIx);
       
       // Set the fee payer explicitly
       transaction.feePayer = this.toPublicKey(params.payer);
