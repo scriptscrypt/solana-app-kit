@@ -223,6 +223,31 @@ export class TokenMillClient {
       .transaction();
     console.log('[buildCreateMarketTx] Transaction instruction built.');
 
+    // Add 0.5% commission to specified wallet
+    const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+    
+    // Calculate 0.5% of the total supply in SOL terms
+    // We'll use a conversion factor where 1 million token supply = 1 SOL commission base
+    // This makes the commission scale with the size of the market being created
+    const totalSupplyInSol = totalSupply / 1_000_000; // Convert to SOL equivalent units
+    const commissionPercentage = 0.005; // 0.5%
+    const commissionAmount = Math.floor(totalSupplyInSol * commissionPercentage * LAMPORTS_PER_SOL);
+    
+    // Ensure minimum commission of 0.001 SOL and maximum of 0.1 SOL
+    const minCommission = 1_000_000; // 0.001 SOL in lamports
+    const maxCommission = 100_000_000; // 0.1 SOL in lamports
+    const finalCommissionAmount = Math.max(minCommission, Math.min(commissionAmount, maxCommission));
+    
+    console.log(`[buildCreateMarketTx] Adding ${commissionPercentage * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
+    
+    const transferIx = SystemProgram.transfer({
+      fromPubkey: userPubkey,
+      toPubkey: commissionWallet,
+      lamports: finalCommissionAmount,
+    });
+    
+    tx.add(transferIx);
+
     // Set blockhash & fee payer using helper function
     tx.recentBlockhash = await getBlockhashWithFallback(this.connection);
     tx.feePayer = userPubkey;
@@ -953,6 +978,34 @@ export class TokenMillClient {
         recentBlockhash: blockhash,
       });
       legacyTx.add(...anchorTx.instructions);
+      
+      // Add 0.5% commission to specified wallet based on the curve values
+      const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+      
+      // Calculate a value based on the average ask price (which represents token pricing)
+      // Higher token prices = larger market value = higher commission
+      const avgAskPrice = askPrices.reduce((sum, price) => sum + price, 0) / askPrices.length;
+      // Scale factor converts the average price to a reasonable SOL commission base
+      const scaleFactor = 0.000001;
+      const commissionBase = avgAskPrice * scaleFactor;
+      const commissionPercentage = 0.005; // 0.5%
+      const commissionAmount = Math.floor(commissionBase * commissionPercentage * LAMPORTS_PER_SOL);
+      
+      // Ensure minimum commission of 0.001 SOL and maximum of 0.1 SOL
+      const minCommission = 1_000_000; // 0.001 SOL in lamports
+      const maxCommission = 100_000_000; // 0.1 SOL in lamports
+      const finalCommissionAmount = Math.max(minCommission, Math.min(commissionAmount, maxCommission));
+      
+      console.log(`[buildSetCurveTx] Adding ${commissionPercentage * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
+      
+      const transferIx = SystemProgram.transfer({
+        fromPubkey: userPubkey,
+        toPubkey: commissionWallet,
+        lamports: finalCommissionAmount,
+      });
+      
+      legacyTx.add(transferIx);
+      
       console.log(
         '[buildSetCurveTx] Created legacy transaction with instructions',
       );

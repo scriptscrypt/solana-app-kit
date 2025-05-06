@@ -78,7 +78,7 @@ export default function LiquidityPanel({
                             baseToken: 'BTC',
                             quoteToken: 'USDC'
                         }
-                    ];
+                    ] as any;
                 }
 
                 setPositions(positionsData);
