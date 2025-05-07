@@ -12,6 +12,7 @@ import {
 import { MarketCreationCardProps } from '../types';
 import { createMarket } from '../services/tokenMillService';
 import COLORS from '@/assets/colors';
+import Icons from '@/assets/svgs';
 
 export default function MarketCreationCard({
   connection,
@@ -24,8 +25,8 @@ export default function MarketCreationCard({
   const [tokenSymbol, setTokenSymbol] = useState('');
   const [metadataUri, setMetadataUri] = useState('https://arweave.net/abc123');
   const [totalSupply, setTotalSupply] = useState('1000000');
-  const [creatorFee, setCreatorFee] = useState('3300');
-  const [stakingFee, setStakingFee] = useState('6200');
+  const [creatorFee, setCreatorFee] = useState('4000');
+  const [stakingFee, setStakingFee] = useState('4000');
   const [status, setStatus] = useState<string | null>(null);
 
   const onPressCreateMarket = async () => {
@@ -141,13 +142,49 @@ export default function MarketCreationCard({
         <Text style={styles.fieldLabel}>Staking Fee</Text>
         <TextInput
           style={styles.input}
-          placeholder="6200"
+          placeholder="4000"
           placeholderTextColor={COLORS.greyMid}
           value={stakingFee}
           onChangeText={setStakingFee}
           keyboardType="numeric"
           editable={!status}
         />
+      </View>
+
+      <View style={styles.infoBox}>
+        <View style={styles.infoHeader}>
+          <Icons.NFTIcon width={20} height={20} color={COLORS.brandBlue} />
+          <Text style={styles.infoHeaderText}>Fee Structure Guidelines</Text>
+        </View>
+        <View style={styles.infoDivider} />
+        <View style={styles.infoContent}>
+          <View style={styles.infoRow}>
+            <View style={[styles.feeIndicator, { backgroundColor: COLORS.brandPurple }]} />
+            <Text style={styles.infoText}>
+              <Text style={styles.infoTextBold}>Protocol Fee: </Text>
+              20% (fixed, reserved for the system)
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <View style={[styles.feeIndicator, { backgroundColor: COLORS.brandBlue }]} />
+            <Text style={styles.infoText}>
+              <Text style={styles.infoTextBold}>Creator Fee: </Text>
+              Your share of transaction fees (currently {parseInt(creatorFee) / 100}%)
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <View style={[styles.feeIndicator, { backgroundColor: COLORS.brandPrimary }]} />
+            <Text style={styles.infoText}>
+              <Text style={styles.infoTextBold}>Staking Fee: </Text>
+              Rewards for token stakers (currently {parseInt(stakingFee) / 100}%)
+            </Text>
+          </View>
+          <View style={styles.ruleContainer}>
+            <Text style={styles.ruleText}>
+              Creator Fee + Staking Fee must equal exactly 80%
+            </Text>
+          </View>
+        </View>
       </View>
 
       {status && (
@@ -225,6 +262,58 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   statusText: {
+    color: COLORS.white,
+    fontSize: 14,
+  },
+  infoBox: {
+    backgroundColor: COLORS.lighterBackground,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoHeaderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: COLORS.borderDarkColor,
+    marginVertical: 8,
+  },
+  infoContent: {
+    // Add appropriate styles for the content container
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  feeIndicator: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  infoText: {
+    color: COLORS.white,
+    fontSize: 14,
+  },
+  infoTextBold: {
+    fontWeight: 'bold',
+  },
+  ruleContainer: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: COLORS.lighterBackground,
+    borderRadius: 8,
+  },
+  ruleText: {
     color: COLORS.white,
     fontSize: 14,
   },
