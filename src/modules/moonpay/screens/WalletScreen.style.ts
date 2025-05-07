@@ -119,6 +119,76 @@ export const styles = StyleSheet.create({
     color: COLORS.greyDark,
     fontSize: 14,
   },
+  // New styles for enhanced MoonPay integration
+  actionBadge: {
+    backgroundColor: 'rgba(50, 212, 222, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  actionBadgeText: {
+    color: COLORS.brandPrimary,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.weights.semiBold,
+  },
+  // Add Funds Icon styles
+  addFundsIconWrapper: {
+    position: 'relative',
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  plusIconContainer: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  plusIcon: {
+    color: COLORS.brandBlue,
+    fontSize: 12,
+    fontWeight: TYPOGRAPHY.weights.bold,
+    lineHeight: 14,
+    textAlign: 'center',
+  },
+  plusOverlayContainer: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    elevation: 2,
+    shadowColor: COLORS.background,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
+  transactionHistoryCard: {
+    backgroundColor: COLORS.lightBackground,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+  },
+  transactionHistoryTitle: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.weights.semiBold,
+    marginBottom: 12,
+  },
+  transactionHistoryContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  transactionHistoryEmpty: {
+    color: COLORS.greyMid,
+    fontSize: TYPOGRAPHY.size.sm,
+    textAlign: 'center',
+  },
   
   // Loading state styles
   loadingContainer: {
