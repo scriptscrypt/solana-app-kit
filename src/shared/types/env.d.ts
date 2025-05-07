@@ -23,4 +23,5 @@ declare module '@env' {
   export const HELIUS_STAKED_API_KEY: string;
   export const BIRDEYE_API_KEY: string;
   export const OPENAI_API_KEY: string;
+  export const MOONPAY_API_KEY: string;
 }

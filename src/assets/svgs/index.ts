@@ -71,6 +71,8 @@ import SwapNavIconSelected from './swap-nav-icon-selected.svg';
 import PumpFunIcon from './Pumpfun_logo.svg';
 import RadyuimIcom from './Rayduim_icon.svg'
 import TokenMillIcon from './Tokenmill_icon.svg'
+import AddFundsIcon from './add-funds-icon.svg';
+import PlusCircleIcon from './plus-circle-icon.svg';
 
 // Login elements right
 import RightRectangle from './login-elements-right/rectangle-right.svg';
@@ -154,6 +156,8 @@ export default {
   PumpFunIcon,
   RadyuimIcom,
   TokenMillIcon,
+  AddFundsIcon,
+  PlusCircleIcon,
   
   // Login elements right
   RightRectangle,
