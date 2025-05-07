@@ -2,6 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { View, Animated, Text, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import Constants from 'expo-constants';
+import * as Application from 'expo-application';
+import * as Linking from 'expo-linking';
 import Icons from '@/assets/svgs/index';
 import styles from './LoginScreen.styles';
 import { useDispatch, useSelector } from 'react-redux';
@@ -92,6 +95,18 @@ export default function LoginScreen() {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const { auth: authConfig } = useCustomization();
 
+  // Get app info using methods that work in all build types including TestFlight
+  const bundleId = 
+    Constants.expoConfig?.ios?.bundleIdentifier || 
+    Constants.expoConfig?.android?.package || 
+    Application.applicationId || 
+    'Unknown';
+    
+  const urlScheme = 
+    Constants.expoConfig?.scheme || 
+    Linking.createURL('').split('://')[0] || 
+    'Unknown';
+  
   // Animation values for SVG elements
   const circleAnim = useRef(new Animated.Value(0)).current;
   const leftStartAnim = useRef(new Animated.Value(0)).current;
@@ -687,7 +702,11 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="light" backgroundColor="transparent" translucent={true} />
+      <StatusBar
+        style="light"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <View style={styles.container}>
         {renderBackgroundShapes()}
 
@@ -697,7 +716,24 @@ export default function LoginScreen() {
         </View>
 
         {renderAuthComponent()}
-
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 300,
+            padding: 8,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            borderRadius: 5,
+            alignItems: 'center',
+          }}>
+          <Text
+            style={{color: '#ffffff', fontSize: 10, fontFamily: 'monospace'}}>
+            Bundle ID: {bundleId}
+          </Text>
+          <Text
+            style={{color: '#ffffff', fontSize: 10, fontFamily: 'monospace'}}>
+            URL Scheme: {urlScheme}
+          </Text>
+        </View>
         <Text style={styles.agreementText}>
           By continuing you agree to our t&c and Privacy Policy
         </Text>

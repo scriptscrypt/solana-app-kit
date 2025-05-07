@@ -88,11 +88,6 @@ interface WalletScreenProps {
   onOnrampPress?: () => void;
   
   /**
-   * Function to handle off-ramp (withdraw funds) action
-   */
-  onOfframpPress?: () => void;
-  
-  /**
    * Callback for refresh action
    */
   onRefresh?: () => void;
@@ -108,7 +103,6 @@ interface WalletScreenProps {
  */
 function WalletScreen({
   onOnrampPress,
-  onOfframpPress,
   onRefresh,
   refreshing,
 }: WalletScreenProps) {
@@ -200,18 +194,8 @@ function WalletScreen({
     if (onOnrampPress) {
       onOnrampPress();
     } else {
-      // Default navigation to OnrampScreen if no custom handler provided
-      navigation.navigate('OnrampScreen');
-    }
-  };
-  
-  // Handle offramp (withdraw) press
-  const handleOfframpPress = () => {
-    if (onOfframpPress) {
-      onOfframpPress();
-    } else {
-      // Could add default navigation to a withdraw screen here
-      console.log('Withdraw funds action');
+      // Navigate to OnrampScreen
+      navigation.navigate('OnrampScreen' as never);
     }
   };
   
@@ -319,79 +303,105 @@ function WalletScreen({
   // Show loading state while fetching data
   if (loading && !nativeBalance) {
     return (
-      <View style={[
-        styles.container, 
-        { paddingTop: insets.top }
-      ]}>
+      <View style={[styles.container, {paddingTop: insets.top}]}>
         <StatusBar
           barStyle="light-content"
           backgroundColor="transparent"
           translucent
         />
-        <AppHeader 
-          title="Wallet" 
-          showDefaultRightIcons={false}
-        />
-        
+        <AppHeader title="Wallet" showDefaultRightIcons={false} />
+
         <View style={styles.skeletonContainer}>
           {/* Wallet Balance Skeleton */}
           <View style={styles.balanceContainer}>
             <Text style={styles.balanceLabel}>Balance</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <SkeletonLine width={120} height={36} style={{ marginTop: 8 }} />
-              <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}>
+              <SkeletonLine width={120} height={36} style={{marginTop: 8}} />
+              <Animated.View style={{transform: [{rotate: spin}]}}>
                 <View style={styles.loadingIconContainer}>
-                  <Icons.walletIcon width={24} height={24} color={COLORS.brandBlue} />
+                  <Icons.walletIcon
+                    width={24}
+                    height={24}
+                    color={COLORS.brandBlue}
+                  />
                 </View>
               </Animated.View>
             </View>
           </View>
-          
+
           {/* Wallet Address Skeleton */}
-          <View style={[styles.addressContainer, { marginTop: 24 }]}>
+          <View style={[styles.addressContainer, {marginTop: 24}]}>
             <Text style={styles.addressLabel}>Wallet Address</Text>
-            <View style={[styles.addressCard, { justifyContent: 'space-between' }]}>
-              <View style={{ flex: 0.7 }}>
-                <SkeletonLine width={100} height={20} style={{ marginVertical: 8 }} />
+            <View
+              style={[styles.addressCard, {justifyContent: 'space-between'}]}>
+              <View style={{flex: 0.7}}>
+                <SkeletonLine
+                  width={100}
+                  height={20}
+                  style={{marginVertical: 8}}
+                />
               </View>
               <View style={styles.skeletonCopyButton}>
                 <Icons.copyIcon width={16} height={16} color={COLORS.white} />
               </View>
             </View>
           </View>
-          
+
           {/* Actions Skeleton */}
-          <View style={[styles.actionsContainer, { marginTop: 24 }]}>
+          <View style={[styles.actionsContainer, {marginTop: 24}]}>
             <Text style={styles.actionsLabel}>Actions</Text>
-            
+
             {/* Action Button Skeletons */}
-            <View style={[styles.actionButton, { marginTop: 12 }]}>
-              <View style={[styles.actionIconContainer, { backgroundColor: COLORS.brandGreen }]}>
-                <Icons.ArrowLeft width={18} height={18} color={COLORS.white} style={{ transform: [{ rotate: '180deg' }] }} />
+            <View style={[styles.actionButton, {marginTop: 12}]}>
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  {backgroundColor: COLORS.brandBlue},
+                ]}>
+                <Icons.AddFundsIcon
+                  width={24}
+                  height={24}
+                  color={COLORS.white}
+                />
+                <View style={styles.plusOverlayContainer}>
+                  <Icons.PlusCircleIcon
+                    width={16}
+                    height={16}
+                    color={COLORS.brandGreen}
+                  />
+                </View>
               </View>
               <View style={styles.actionTextContainer}>
-                <SkeletonLine width={80} height={18} style={{ marginBottom: 8 }} />
-                <SkeletonLine width={160} height={14} />
-              </View>
-            </View>
-            
-            <View style={[styles.actionButton, { marginTop: 16 }]}>
-              <View style={[styles.actionIconContainer, { backgroundColor: COLORS.brandBlue }]}>
-                <Icons.ArrowLeft width={18} height={18} color={COLORS.white} />
-              </View>
-              <View style={styles.actionTextContainer}>
-                <SkeletonLine width={80} height={18} style={{ marginBottom: 8 }} />
+                <SkeletonLine
+                  width={80}
+                  height={18}
+                  style={{marginBottom: 8}}
+                />
                 <SkeletonLine width={160} height={14} />
               </View>
             </View>
           </View>
-          
+
           <View style={styles.loadingTextContainer}>
             <Text style={styles.loadingText}>Loading wallet data</Text>
             <View style={styles.loadingDotsContainer}>
-              <Animated.View style={[styles.loadingDot, { opacity: spinValue }]} />
-              <Animated.View style={[styles.loadingDot, { opacity: spinValue, marginHorizontal: 4 }]} />
-              <Animated.View style={[styles.loadingDot, { opacity: spinValue }]} />
+              <Animated.View
+                style={[styles.loadingDot, {opacity: spinValue}]}
+              />
+              <Animated.View
+                style={[
+                  styles.loadingDot,
+                  {opacity: spinValue, marginHorizontal: 4},
+                ]}
+              />
+              <Animated.View
+                style={[styles.loadingDot, {opacity: spinValue}]}
+              />
             </View>
           </View>
         </View>
@@ -526,28 +536,32 @@ function WalletScreen({
             onPress={handleOnrampPress}
             activeOpacity={0.7}
           >
-            <View style={[styles.actionIconContainer, { backgroundColor: COLORS.brandGreen }]}>
-              <Icons.ArrowLeft width={18} height={18} color={COLORS.white} style={{ transform: [{ rotate: '180deg' }] }} />
+            <View style={[styles.actionIconContainer, { backgroundColor: COLORS.brandBlue }]}>
+              <Icons.AddFundsIcon width={24} height={24} color={COLORS.white} />
+              <View style={styles.plusOverlayContainer}>
+                <Icons.PlusCircleIcon width={16} height={16} color={COLORS.brandGreen} />
+              </View>
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionText}>Add Funds</Text>
               <Text style={styles.actionSubtext}>Deposit SOL to your wallet</Text>
             </View>
+            <View style={styles.actionBadge}>
+              <Text style={styles.actionBadgeText}>MoonPay</Text>
+            </View>
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={handleOfframpPress}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.actionIconContainer, { backgroundColor: COLORS.brandBlue }]}>
-              <Icons.ArrowLeft width={18} height={18} color={COLORS.white} />
+          {/* Add Transaction History Card */}
+          {nativeBalance !== null && nativeBalance > 0 && (
+            <View style={styles.transactionHistoryCard}>
+              <Text style={styles.transactionHistoryTitle}>Recent Activity</Text>
+              <View style={styles.transactionHistoryContent}>
+                <Text style={styles.transactionHistoryEmpty}>
+                  Your recent transactions will appear here
+                </Text>
+              </View>
             </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionText}>Withdraw</Text>
-              <Text style={styles.actionSubtext}>Transfer SOL to another wallet</Text>
-            </View>
-          </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </View>

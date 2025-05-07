@@ -8,7 +8,6 @@ global.process = process;
 
 // Add a global dev mode flag that can be used anywhere in the app
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
 
 // Declare global type for TypeScript
 declare global {
