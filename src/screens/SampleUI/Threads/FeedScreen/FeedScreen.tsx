@@ -1,6 +1,6 @@
 // File: src/screens/SampleUI/Threads/FeedScreen/FeedScreen.tsx
 import React, { useCallback, useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
+import { SafeAreaView, StyleSheet, Platform, View, FlatList } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 
 import { Thread } from '@/core/thread/components/thread-container/Thread';
@@ -16,6 +16,7 @@ import COLORS from '@/assets/colors';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import HomeEnvErrorBanner from '@/core/sharedUI/EnvErrors/HomeEnvErrorBanner';
+import FeedItemSkeleton from '@/core/feed/components/FeedSkeleton';
 
 /**
  * FeedScreen component that displays user's social feed
@@ -33,9 +34,9 @@ export default function FeedScreen() {
 
   const [feedPosts, setFeedPosts] = useState<ThreadPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  // Add loading state for user profile
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileStable, setProfileStable] = useState(false);
+  const [areInitialPostsLoading, setAreInitialPostsLoading] = useState(true);
 
   // Build current user object from Redux data
   const currentUser: ThreadUser = {
@@ -48,9 +49,18 @@ export default function FeedScreen() {
     avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
   };
 
-  // On mount, fetch all posts
+  // On mount, fetch all posts and set loading state for initial posts
   useEffect(() => {
-    dispatch(fetchAllPosts());
+    const initialFetchPosts = async () => {
+      try {
+        await dispatch(fetchAllPosts()).unwrap();
+      } catch (error) {
+        console.error("Failed to fetch initial posts:", error);
+      } finally {
+        setAreInitialPostsLoading(false);
+      }
+    };
+    initialFetchPosts();
   }, [dispatch]);
 
   // Once we have userWallet, fetch DB profile info (username, profile pic)
@@ -123,11 +133,16 @@ export default function FeedScreen() {
     },
   ];
 
-  // Show loading indicator until profile is stable
-  if (!profileStable) {
+  // Show skeleton until profile is stable AND initial posts are loaded
+  if (!profileStable || areInitialPostsLoading) {
     return (
-      <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={COLORS.greyMid} />
+      <SafeAreaView style={styles.container}>
+        <FlatList
+          data={[1, 2, 3]}
+          keyExtractor={(item) => item.toString()}
+          renderItem={() => <FeedItemSkeleton />}
+          showsVerticalScrollIndicator={false}
+        />
       </SafeAreaView>
     );
   }
