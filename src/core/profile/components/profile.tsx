@@ -56,6 +56,7 @@ export default function Profile({
   fetchNftsError,
   containerStyle,
   onGoBack,
+  isScreenLoading,
 }: ProfileProps) {
   const dispatch = useAppDispatch();
   const allReduxPosts = useAppSelector(state => state.thread.allPosts);
@@ -132,6 +133,12 @@ export default function Profile({
   // Combined loading state to prevent flickering
   const [loadStartTime] = useState(Date.now());
   const isLoading = useMemo(() => {
+    // If the parent screen (ProfileScreen) is NOT loading (skeleton is hidden),
+    // then this Profile component should not show its main loader.
+    if (isScreenLoading === false) {
+      return false;
+    }
+
     // Don't show loading if initial data has been loaded
     if (initialDataLoaded) return false;
 
@@ -139,8 +146,9 @@ export default function Profile({
     const hasTimePassed = Date.now() - loadStartTime > 3000;
     if (hasTimePassed) return false;
 
-    // Only show loading state for own profile
-    if (!isOwnProfile) return false;
+    // Original conditions for Profile's internal loading 
+    // (Only consider these if isScreenLoading is not false, or undefined)
+    if (!isOwnProfile && isScreenLoading !== false) return false; // If not own profile, usually no big loader unless screen forces it.
 
     return (
       isProfileLoading ||
@@ -150,6 +158,7 @@ export default function Profile({
       loadingPortfolio
     );
   }, [
+    isScreenLoading, // Add to dependency array
     initialDataLoaded,
     isOwnProfile,
     isProfileLoading,
@@ -168,7 +177,8 @@ export default function Profile({
         !isProfileLoading &&
         !isFollowersLoading &&
         !isFollowingLoading &&
-        !loadingActions
+        !loadingActions &&
+        !loadingPortfolio // Added loadingPortfolio here
       ) : (
         // For other profiles, don't wait as long
         !isProfileLoading
@@ -180,23 +190,23 @@ export default function Profile({
       }, 100);
       return () => clearTimeout(timer);
     }
-    
+
     // Ensure loading state eventually resolves even if some data isn't available
     const maxLoadingTime = setTimeout(() => {
       if (!initialDataLoaded) {
-        console.log('[Profile] Force ending loading state after timeout');
+        console.log('[Profile] Force ending loading state after timeout (initialDataLoaded)');
         setInitialDataLoaded(true);
       }
-    }, 5000); // 5 second maximum loading time
-    
+    }, 7000); // Increased timeout slightly
+
     return () => clearTimeout(maxLoadingTime);
   }, [
     isOwnProfile,
     isProfileLoading,
     isFollowersLoading,
     isFollowingLoading,
-    isFollowStatusLoading,
     loadingActions,
+    loadingPortfolio, // Added loadingPortfolio here
     initialDataLoaded
   ]);
 
