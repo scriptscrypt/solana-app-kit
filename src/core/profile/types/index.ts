@@ -53,6 +53,7 @@ export interface ProfileProps {
   fetchNftsError?: string | null;
   containerStyle?: object;
   onGoBack?: () => void;
+  isScreenLoading?: boolean;
 }
 
 // Profile view component props
