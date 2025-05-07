@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,17 @@ import {
   TouchableOpacity,
   Image,
   SafeAreaView,
-  ActivityIndicator,
   Alert,
   Platform,
   StatusBar as RNStatusBar,
   StyleSheet,
   ImageSourcePropType,
+  Animated,
+  Easing,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,6 +32,7 @@ import { fetchUserChats, ChatRoom, updateUserOnlineStatus } from '@/shared/state
 import socketService from '@/shared/services/socketService';
 import { ProfileAvatarView } from '@/core/thread/components/post/PostHeader';
 import { AppHeader } from '@/core/sharedUI';
+import ChatListItemSkeleton from '@/core/chat/components/ChatListItemSkeleton';
 
 type ChatListNavigationProp = StackNavigationProp<RootStackParamList, 'ChatListScreen'>;
 
@@ -87,26 +89,28 @@ const ChatListScreen: React.FC = () => {
   const { chats, loadingChats, error } = useAppSelector(state => state.chat);
   const { usersForChat } = useAppSelector(state => state.chat);
 
-  // Local loading state while fetching initial data
-  // Let Redux loading state handle the initial load indication
-  // const [isLoading, setIsLoading] = useState(true);
-
   // State to track online users
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
-  // --- Refetch Logic ---
-  // Refetch chats when the screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      if (userId) {
-        console.log('[ChatListScreen] Screen focused, fetching user chats...');
-        dispatch(fetchUserChats(userId));
-        // Also fetch posts if needed for global chat context, though it's commented out
-        // dispatch(fetchAllPosts());
-      }
-    }, [dispatch, userId])
-  );
-  // --- End Refetch Logic ---
+  // Animation for content fade-in
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!loadingChats && !error) {
+      setIsContentLoaded(true); // Content is ready, mount the Animated.View
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 350, // Fade-in duration
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Reset if loading starts again or error occurs
+      contentOpacity.setValue(0);
+      setIsContentLoaded(false);
+    }
+  }, [loadingChats, error, contentOpacity]);
 
   // Initialize Socket connection and listeners
   useEffect(() => {
@@ -507,8 +511,8 @@ const ChatListScreen: React.FC = () => {
           <StatusBar style="light" />
 
           {/* Replace custom header with AppHeader component */}
-          <AppHeader 
-            title="Messages" 
+          <AppHeader
+            title="Messages"
             showBackButton={false}
           />
 
@@ -535,43 +539,47 @@ const ChatListScreen: React.FC = () => {
           </View>
 
           {/* Chat list */}
-          {/* Use loadingChats from Redux state for loading indicator */}
           {loadingChats ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={COLORS.brandBlue} />
-              <Text style={styles.loadingText}>Loading chats...</Text>
-            </View>
+            <FlatList
+              data={[1, 2, 3, 4, 5, 6, 7, 8]} // User's current number of skeletons
+              keyExtractor={(item) => item.toString()}
+              renderItem={() => <ChatListItemSkeleton />}
+              contentContainerStyle={styles.chatListContainer}
+              showsVerticalScrollIndicator={false}
+            />
           ) : error ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={() => dispatch(fetchUserChats(userId))} // Allow retry on error
+                onPress={() => dispatch(fetchUserChats(userId))}
               >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            <FlatList
-              data={filteredChats}
-              renderItem={renderChatItem}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.chatListContainer}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>
-                    {searchQuery ? 'No chats found' : 'No conversations yet'}
-                  </Text>
-                  <Text style={styles.emptySubtext}>
-                    {searchQuery
-                      ? 'Try a different search term'
-                      : 'Start chatting with other users by tapping the button below'}
-                  </Text>
-                </View>
-              }
-            />
-          )}
+          ) : isContentLoaded ? (
+            <Animated.View style={{ flex: 1, opacity: contentOpacity }}>
+              <FlatList
+                data={filteredChats}
+                renderItem={renderChatItem}
+                keyExtractor={item => item.id}
+                contentContainerStyle={styles.chatListContainer}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      {searchQuery ? 'No chats found' : 'No conversations yet'}
+                    </Text>
+                    <Text style={styles.emptySubtext}>
+                      {searchQuery
+                        ? 'Try a different search term'
+                        : 'Start chatting with other users by tapping the button below'}
+                    </Text>
+                  </View>
+                }
+              />
+            </Animated.View>
+          ) : null}
 
           {/* Floating action button to start new chat - adjusted for bottom bar */}
           <TouchableOpacity
