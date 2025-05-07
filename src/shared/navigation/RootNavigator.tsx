@@ -18,10 +18,10 @@ import FollowersFollowingListScreen from '@/core/profile/components/FollowersFol
 import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScreen';
 import IntroScreen from '@/screens/Common/IntroScreen/IntroScreen';
 import LoginScreen from '@/screens/Common/LoginScreen/LoginScreen';
-import { MercuroScreen } from '@/modules/mercuro';
+import { MercuroScreen } from '@/modules/mercuryo';
 import SwapScreen from '@/screens/SampleUI/Swap/SwapScreen';
 import { WalletScreen } from '@/screens/Common';
-import OnrampScreen from '@/screens/Common/OnrampScreen';
+import OnrampScreen from '@/modules/moonpay/screens/OnrampScreen';
 import socketService from '@/shared/services/socketService';
 import { fetchUserChats } from '@/shared/state/chat/slice';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
