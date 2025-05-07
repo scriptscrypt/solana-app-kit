@@ -24,4 +24,5 @@ declare module '@env' {
   export const BIRDEYE_API_KEY: string;
   export const OPENAI_API_KEY: string;
   export const MOONPAY_API_KEY: string;
+  export const COMMISSION_WALLET: string;
 }

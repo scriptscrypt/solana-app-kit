@@ -35,6 +35,11 @@ dotenv.config();
 
 const idl = TokenMillIDL as unknown as TokenMillType;
 
+// Commission configuration from environment variables
+const COMMISSION_WALLET = process.env.COMMISSION_WALLET || '4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty';
+const COMMISSION_PERCENTAGE = parseFloat(process.env.COMMISSION_PERCENTAGE || '0.005'); // Default to 0.5%
+const MIN_COMMISSION = parseInt(process.env.MIN_COMMISSION || '1000000', 10); // Default to 0.001 SOL
+const MAX_COMMISSION = parseInt(process.env.MAX_COMMISSION || '100000000', 10); // Default to 0.1 SOL
 
 export class TokenMillClient {
   connection: anchor.web3.Connection;
@@ -223,22 +228,17 @@ export class TokenMillClient {
       .transaction();
     console.log('[buildCreateMarketTx] Transaction instruction built.');
 
-    // Add 0.5% commission to specified wallet
-    const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+    // Add commission to specified wallet from environment variables
+    const commissionWallet = new PublicKey(COMMISSION_WALLET);
     
-    // Calculate 0.5% of the total supply in SOL terms
-    // We'll use a conversion factor where 1 million token supply = 1 SOL commission base
-    // This makes the commission scale with the size of the market being created
+    // Calculate commission based on total supply and environment variables
     const totalSupplyInSol = totalSupply / 1_000_000; // Convert to SOL equivalent units
-    const commissionPercentage = 0.005; // 0.5%
-    const commissionAmount = Math.floor(totalSupplyInSol * commissionPercentage * LAMPORTS_PER_SOL);
+    const commissionAmount = Math.floor(totalSupplyInSol * COMMISSION_PERCENTAGE * LAMPORTS_PER_SOL);
     
-    // Ensure minimum commission of 0.001 SOL and maximum of 0.1 SOL
-    const minCommission = 1_000_000; // 0.001 SOL in lamports
-    const maxCommission = 100_000_000; // 0.1 SOL in lamports
-    const finalCommissionAmount = Math.max(minCommission, Math.min(commissionAmount, maxCommission));
+    // Ensure minimum and maximum commission from environment variables
+    const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(commissionAmount, MAX_COMMISSION));
     
-    console.log(`[buildCreateMarketTx] Adding ${commissionPercentage * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
+    console.log(`[buildCreateMarketTx] Adding ${COMMISSION_PERCENTAGE * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
     
     const transferIx = SystemProgram.transfer({
       fromPubkey: userPubkey,
@@ -979,24 +979,20 @@ export class TokenMillClient {
       });
       legacyTx.add(...anchorTx.instructions);
       
-      // Add 0.5% commission to specified wallet based on the curve values
-      const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+      // Add commission to specified wallet from environment variables
+      const commissionWallet = new PublicKey(COMMISSION_WALLET);
       
       // Calculate a value based on the average ask price (which represents token pricing)
-      // Higher token prices = larger market value = higher commission
       const avgAskPrice = askPrices.reduce((sum, price) => sum + price, 0) / askPrices.length;
       // Scale factor converts the average price to a reasonable SOL commission base
       const scaleFactor = 0.000001;
       const commissionBase = avgAskPrice * scaleFactor;
-      const commissionPercentage = 0.005; // 0.5%
-      const commissionAmount = Math.floor(commissionBase * commissionPercentage * LAMPORTS_PER_SOL);
+      const commissionAmount = Math.floor(commissionBase * COMMISSION_PERCENTAGE * LAMPORTS_PER_SOL);
       
-      // Ensure minimum commission of 0.001 SOL and maximum of 0.1 SOL
-      const minCommission = 1_000_000; // 0.001 SOL in lamports
-      const maxCommission = 100_000_000; // 0.1 SOL in lamports
-      const finalCommissionAmount = Math.max(minCommission, Math.min(commissionAmount, maxCommission));
+      // Ensure minimum and maximum commission from environment variables
+      const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(commissionAmount, MAX_COMMISSION));
       
-      console.log(`[buildSetCurveTx] Adding ${commissionPercentage * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
+      console.log(`[buildSetCurveTx] Adding ${COMMISSION_PERCENTAGE * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
       
       const transferIx = SystemProgram.transfer({
         fromPubkey: userPubkey,
