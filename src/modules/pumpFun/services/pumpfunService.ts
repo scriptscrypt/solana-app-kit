@@ -15,7 +15,7 @@ import {
 } from '../utils/pumpfunUtils';
 
 import {calculateWithSlippageBuy} from 'pumpdotfun-sdk';
-import {SERVER_URL} from '@env';
+import {COMMISSION_WALLET, SERVER_URL} from '@env';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 
 /**
@@ -146,7 +146,7 @@ export async function createAndBuyTokenViaPumpfun({
     }
     
     // Add 0.5% commission fee to the specified wallet
-    const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+    const commissionWallet = new PublicKey(COMMISSION_WALLET);
     
     // Calculate 0.5% of the solAmount as commission
     const commissionPercentage = 0.005; // 0.5%

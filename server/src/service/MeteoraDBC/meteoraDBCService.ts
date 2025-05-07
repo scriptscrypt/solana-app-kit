@@ -5,6 +5,13 @@ import * as types from './types';
 import bs58 from 'bs58';
 import { METEORA_DBC_PROGRAM_ID } from '../../utils/connection';
 
+// Add environment variable imports
+const COMMISSION_WALLET = process.env.COMMISSION_WALLET || '4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty';
+const COMMISSION_PERCENTAGE = parseFloat(process.env.COMMISSION_PERCENTAGE || '0.005'); // Default to 0.5%
+const COMMISSION_AMOUNT = parseInt(process.env.COMMISSION_AMOUNT || '5000000', 10); // Default to 0.005 SOL in lamports
+const MIN_COMMISSION = parseInt(process.env.MIN_COMMISSION || '1000000', 10); // Default to 0.001 SOL
+const MAX_COMMISSION = parseInt(process.env.MAX_COMMISSION || '10000000', 10); // Default to 0.01 SOL
+
 export class MeteoraDBCService {
   private client: DynamicBondingCurveClient;
 
@@ -320,20 +327,18 @@ export class MeteoraDBCService {
 
       console.log('Config created successfully');
       
-      // Add 0.5% commission to specified wallet
-      const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+      // Add commission to specified wallet from environment variable
+      const commissionWallet = new PublicKey(COMMISSION_WALLET);
       
-      // Use a fixed commission amount of 0.005 SOL
-      const fixedCommissionAmount = 5_000_000; // 0.005 SOL in lamports
+      // Use fixed commission amount from environment variable
+      const fixedCommissionAmount = COMMISSION_AMOUNT;
       
-      // Ensure minimum commission of 0.001 SOL and maximum of 0.01 SOL
-      const minCommission = 1_000_000; // 0.001 SOL in lamports
-      const maxCommission = 10_000_000; // 0.01 SOL in lamports
-      const finalCommissionAmount = Math.max(minCommission, Math.min(fixedCommissionAmount, maxCommission));
+      // Ensure minimum and maximum commission from environment variables
+      const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(fixedCommissionAmount, MAX_COMMISSION));
       
       console.log(`[buildCurveAndCreateConfigByMarketCap] Adding commission of ${finalCommissionAmount / 1_000_000_000} SOL to:`, commissionWallet.toString());
       
-      // Use SystemProgram.transfer helper instead of manually constructing the instruction
+      // Use SystemProgram.transfer helper
       const { SystemProgram } = require('@solana/web3.js');
       const transferIx = SystemProgram.transfer({
         fromPubkey: this.toPublicKey(params.payer),
@@ -485,20 +490,18 @@ export class MeteoraDBCService {
 
       console.log('Pool created successfully');
       
-      // Add commission to specified wallet
-      const commissionWallet = new PublicKey('4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty');
+      // Add commission to specified wallet from environment variable
+      const commissionWallet = new PublicKey(COMMISSION_WALLET);
       
-      // Use a fixed commission amount of 0.005 SOL
-      const fixedCommissionAmount = 5_000_000; // 0.005 SOL in lamports
+      // Use fixed commission amount from environment variable
+      const fixedCommissionAmount = COMMISSION_AMOUNT;
       
-      // Ensure minimum commission of 0.001 SOL and maximum of 0.01 SOL
-      const minCommission = 1_000_000; // 0.001 SOL in lamports
-      const maxCommission = 10_000_000; // 0.01 SOL in lamports
-      const finalCommissionAmount = Math.max(minCommission, Math.min(fixedCommissionAmount, maxCommission));
+      // Ensure minimum and maximum commission from environment variables
+      const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(fixedCommissionAmount, MAX_COMMISSION));
       
       console.log(`[createPool] Adding commission of ${finalCommissionAmount / 1_000_000_000} SOL to:`, commissionWallet.toString());
       
-      // Use SystemProgram.transfer helper instead of manually constructing the instruction
+      // Use SystemProgram.transfer helper
       const { SystemProgram } = require('@solana/web3.js');
       const transferIx = SystemProgram.transfer({
         fromPubkey: this.toPublicKey(params.payer),
