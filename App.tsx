@@ -3,9 +3,6 @@ import 'react-native-get-random-values';
 import { Buffer } from 'buffer';
 global.Buffer = Buffer;
 
-import process from 'process';
-global.process = process;
-
 // Add a global dev mode flag that can be used anywhere in the app
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
