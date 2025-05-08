@@ -22,10 +22,11 @@ import auraRouter from './routes/aura';
 import { chatRouter } from './routes/chat/chatRoutes';
 import { setupGlobalChat } from './controllers/chatController';
 import http from 'http';
-import { WebSocketService } from './services/websocketService';
+import { WebSocketService } from './service/websocketService';
 import cors from 'cors';
 import meteoraDBCRouter from './routes/meteora/meteoraDBCRoutes';
 import { setupConnection } from './utils/connection';
+import raydiumLaunchpadRoutes from './routes/raydium/launchpad.routes';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -167,7 +168,8 @@ app.get('/api/websocket-status', (req, res) => {
 app.use('/api/pumpfun', launchRouter);
 app.use('/api', threadRouter);
 app.use('/api/jupiter', jupiterSwapRouter);
-app.use('/api/raydium', raydiumSwapRouter);
+app.use('/api/raydium/swap', raydiumSwapRouter);
+app.use('/api/raydium/launchpad', raydiumLaunchpadRoutes);
 app.use('/api/profile', profileImageRouter);
 app.use('/api/thread/images', threadImageRouter);
 app.use('/api/pump-swap', pumpSwapRouter);

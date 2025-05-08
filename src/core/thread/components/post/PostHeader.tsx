@@ -17,7 +17,7 @@ import { createPostHeaderStyles } from './PostHeader.styles';
 import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
-import { IPFSAwareImage } from '@/shared/utils/IPFSImage';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import COLORS from '@/assets/colors';
 
 // Always available direct reference to an image in the bundle
@@ -36,7 +36,7 @@ function getAvatarColor(username: string): string {
   return `hsl(${hue}, 60%, 80%)`;
 }
 
-// The ProfileAvatarView component - simplified to rely on IPFSAwareImage but with a 403/429 fix
+// The ProfileAvatarView component - simplified to rely on our improved IPFSAwareImage
 export function ProfileAvatarView({
   user,
   style,
@@ -47,8 +47,6 @@ export function ProfileAvatarView({
   size?: number
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  // Track if we should use a fallback gateway after failing with the first one
-  const [useBackupGateway, setUseBackupGateway] = useState(false);
 
   // Get user initials for the placeholder
   const initials = user?.username
@@ -58,100 +56,13 @@ export function ProfileAvatarView({
   // Get consistent background color based on username
   const backgroundColor = getAvatarColor(user?.username || user?.handle || '?');
 
-  // Reset fallback gateway when user changes
-  useEffect(() => {
-    setUseBackupGateway(false);
-  }, [user?.id, user?.avatar]);
-
-  // *** DIRECT APPROACH FIX to use reliable IPFS gateways WITHOUT cache buster (ANDROID ONLY) ***
-  const source = (() => {
-    // Default if no avatar
-    if (!user?.avatar) return DEFAULT_AVATAR;
-
-    // On iOS, use the original avatar directly - no transformations needed 
-    if (Platform.OS === 'ios') {
-      // Simply return the original avatar as provided by the API
-      return user.avatar;
-    }
-
-    // ANDROID ONLY - Below code only runs on Android
-    let ipfsHash: string | null = null;
-    let originalUrl: string | null = null;
-
-    // Process string avatars
-    if (typeof user.avatar === 'string') {
-      originalUrl = String(user.avatar);
-      if (originalUrl.includes('ipfs.io/ipfs/')) {
-        const parts = originalUrl.split('/ipfs/');
-        if (parts.length > 1) ipfsHash = parts[1].split('?')[0]?.split('#')[0];
-      } else if (originalUrl.startsWith('ipfs://')) {
-        ipfsHash = originalUrl.slice(7).split('?')[0]?.split('#')[0];
-      }
-    }
-    // Process object avatars
-    else if (typeof user.avatar === 'object' && user.avatar && !Array.isArray(user.avatar) && 'uri' in user.avatar) {
-      originalUrl = user.avatar.uri as string;
-      if (originalUrl && originalUrl.includes('ipfs.io/ipfs/')) {
-        const parts = originalUrl.split('/ipfs/');
-        if (parts.length > 1) ipfsHash = parts[1].split('?')[0]?.split('#')[0];
-      }
-    }
-
-    // If we found an IPFS hash, construct the corrected source using a gateway that works on Android
-    if (ipfsHash) {
-      // Problematic hash that's hitting rate limits on Pinata - use additional gateways
-      const knownProblematicHashes = ['QmVcntn6HWYG9f13YKBoevhCdtVq7wi1URZuHzSb91CZgZ'];
-
-      let gatewayUri;
-
-      // If we've already had an error with the first gateway, or this is a known problematic hash
-      if (useBackupGateway || knownProblematicHashes.includes(ipfsHash)) {
-        // Use a different gateway to avoid rate limits
-        const fallbackGateways = [
-          `https://nftstorage.link/ipfs/${ipfsHash}`,
-          `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`,
-          `https://ipfs.io/ipfs/${ipfsHash}`  // Try original as last resort
-        ];
-
-        // Use one of the fallback gateways
-        gatewayUri = fallbackGateways[0];
-      } else {
-        // For all other hashes on first try, continue using Pinata as it works for them
-        gatewayUri = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
-      }
-
-      // Construct the source object, keeping original headers if present in an object avatar
-      const headers = (typeof user.avatar === 'object' && !Array.isArray(user.avatar) && user.avatar.headers) ? user.avatar.headers : { 'Accept': '*/*' };
-      return { uri: gatewayUri, headers };
-    }
-
-    // If it wasn't an IPFS URL needing transformation, return the original source
-    if (originalUrl) {
-      // If the original was an object, return it directly (handles headers etc.)
-      if (typeof user.avatar === 'object' && !Array.isArray(user.avatar)) return user.avatar;
-      // Otherwise, return a simple URI object from the string
-      return { uri: originalUrl };
-    }
-
-    // Fallback / Default (handles require() or array sources)
-    return user.avatar || DEFAULT_AVATAR;
-  })();
-
-  // Use a STABLE key based on user ID and the original avatar string/URI if possible
-  const originalAvatarString = typeof user?.avatar === 'string' ? user.avatar :
-    (typeof user?.avatar === 'object' && !Array.isArray(user?.avatar) && user?.avatar?.uri ? user.avatar.uri as string : null);
-
-  // Include the backup gateway state in the key to force a reload with the new gateway
-  const gatewayState = useBackupGateway ? '-backup' : '-primary';
-  const imageKey = `avatar-${user?.id || 'local'}-${originalAvatarString || 'no-avatar'}${gatewayState}`;
-
   return (
     <View style={[
       {
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: backgroundColor, // Always show background color initially
+        backgroundColor: backgroundColor, // Always show background color
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden', // Ensure image stays within bounds
@@ -170,36 +81,21 @@ export function ProfileAvatarView({
         </Text>
       )}
 
-      {/* Use IPFSAwareImage - it will handle its own errors/defaults */}
-      <IPFSAwareImage
-        source={source}
-        defaultSource={DEFAULT_AVATAR} // IPFSAwareImage handles showing this on error
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          position: 'absolute', // Overlay on top of the background/initials
-          top: 0,
-          left: 0,
-          opacity: imageLoaded ? 1 : 0, // Fade in when loaded
-        }}
-        key={imageKey} // Use the stable key that includes gateway state
-        onLoad={() => {
-          // console.log('[PostHeader] IPFSAwareImage onLoad triggered for source:', JSON.stringify(source));
-          setImageLoaded(true);
-        }} // Mark as loaded successfully
-        onError={(error: any) => {
-          console.error('[PostHeader] IPFSAwareImage onError triggered! Source:', JSON.stringify(source), 'Error:', error?.nativeEvent?.error || 'Unknown error');
-          setImageLoaded(false); // Ensure initials show on error
-
-          // If we're on Android and haven't tried the backup gateway yet, try it now
-          if (Platform.OS === 'android' && !useBackupGateway) {
-            console.log('[PostHeader] Trying fallback gateway for image...');
-            setUseBackupGateway(true);
-          }
-        }}
-        fadeDuration={Platform.OS === 'android' ? 0 : 150} // Optional fade-in
-      />
+      {/* Use our improved IPFSAwareImage */}
+      {user?.avatar && (
+        <IPFSAwareImage
+          source={getValidImageSource(user.avatar)}
+          defaultSource={DEFAULT_AVATAR}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            position: 'absolute', // Overlay on top of the background/initials
+          }}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(false)}
+        />
+      )}
     </View>
   );
 }

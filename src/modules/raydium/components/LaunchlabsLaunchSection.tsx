@@ -23,7 +23,19 @@ interface LaunchlabsLaunchSectionProps {
     inputStyle?: any;
     buttonStyle?: any;
     launchButtonLabel?: string;
-    onGoToLab?: () => void;
+    onGoToLab?: (tokenData: TokenData) => void;
+    onJustSendIt?: (tokenData: TokenData) => void;
+}
+
+// Define the token data interface
+export interface TokenData {
+    name: string;
+    symbol: string;
+    description: string;
+    imageUri?: string | null;
+    twitter?: string;
+    telegram?: string;
+    website?: string;
 }
 
 export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = ({
@@ -32,6 +44,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
     buttonStyle,
     launchButtonLabel = 'Launch Token',
     onGoToLab,
+    onJustSendIt,
 }) => {
     const [tokenName, setTokenName] = useState('');
     const [tokenSymbol, setTokenSymbol] = useState('');
@@ -60,42 +73,84 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
         setImageUri(null);
     };
 
-    const handleLaunch = async () => {
-        if (!tokenName || !tokenSymbol || !description || !imageUri) {
-            Alert.alert(
-                'Error',
-                'Please fill in name, symbol, description, and select an image.',
-            );
+    const validateForm = (): boolean => {
+        if (!tokenName) {
+            Alert.alert('Error', 'Please enter a token name');
+            return false;
+        }
+        
+        if (!tokenSymbol) {
+            Alert.alert('Error', 'Please enter a token symbol');
+            return false;
+        }
+        
+        if (!description) {
+            Alert.alert('Error', 'Please provide a token description');
+            return false;
+        }
+        
+        if (!imageUri) {
+            Alert.alert('Error', 'Please select an image for your token');
+            return false;
+        }
+        
+        return true;
+    };
+
+    // Handle the "justSendIt" mode - simple token creation with default settings
+    const handleJustSendIt = async () => {
+        if (!validateForm()) {
             return;
         }
 
         setLoading(true);
-        setStatus('Preparing token launch on Raydium...');
+        setStatus('Preparing JustSendIt token launch...');
 
         try {
-            // Simulating the launch process - in a real app, you would call your API here
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            setStatus('Token successfully created on Raydium!');
+            // Create token data with default parameters
+            const tokenData: TokenData = {
+                name: tokenName,
+                symbol: tokenSymbol,
+                description,
+                imageUri,
+                twitter: twitter || undefined,
+                telegram: telegram || undefined,
+                website: website || undefined
+            };
+            
+            // Use a preset configuration for JustSendIt mode (as per docs)
+            if (onJustSendIt) {
+                onJustSendIt(tokenData);
+            } else {
+                // Fallback if handler is not provided
+                Alert.alert('JustSendIt', 'Ready to launch token with standard settings');
+            }
         } catch (error: any) {
-            console.error('Launch error:', error);
-            setStatus('Transaction failed');
+            console.error('JustSendIt error:', error);
+            setStatus('Preparation failed');
+            Alert.alert('Error', error.message || 'Failed to prepare token data');
         } finally {
-            setTimeout(() => {
-                setLoading(false);
-                setStatus(null);
-            }, 2000);
+            setLoading(false);
+            setStatus(null);
         }
     };
 
-    // Create a function for the "go to lab" button
+    // Handle the "go to lab" mode - advanced configuration
     const handleGoToLab = () => {
-        if (onGoToLab) {
-            onGoToLab();
-        } else {
-            // Fallback behavior if no handler is provided
-            console.log('Go to lab clicked');
-            Alert.alert('Go to Lab', 'Would navigate to the lab in a real implementation');
+        if (validateForm() && onGoToLab) {
+            // Create token data to pass to the advanced options
+            const tokenData: TokenData = {
+                name: tokenName,
+                symbol: tokenSymbol,
+                description,
+                imageUri,
+                twitter: twitter || undefined,
+                telegram: telegram || undefined,
+                website: website || undefined
+            };
+            
+            // Pass the token data to the parent component for advanced configuration
+            onGoToLab(tokenData);
         }
     };
 
@@ -110,7 +165,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
                 <Text style={styles.fieldLabel}>Token Name</Text>
                 <TextInput
                     style={[styles.input, inputStyle]}
-                    placeholder="..."
+                    placeholder="Token Name"
                     placeholderTextColor={COLORS.greyMid}
                     value={tokenName}
                     onChangeText={setTokenName}
@@ -122,7 +177,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
                 <Text style={styles.fieldLabel}>Token Symbol</Text>
                 <TextInput
                     style={[styles.input, inputStyle]}
-                    placeholder="..."
+                    placeholder="Symbol (e.g. BTC)"
                     placeholderTextColor={COLORS.greyMid}
                     value={tokenSymbol}
                     onChangeText={setTokenSymbol}
@@ -134,7 +189,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
                 <Text style={styles.fieldLabel}>Description</Text>
                 <TextInput
                     style={[styles.input, inputStyle, { height: 80 }]}
-                    placeholder="..."
+                    placeholder="Describe your token's purpose"
                     placeholderTextColor={COLORS.greyMid}
                     multiline
                     value={description}
@@ -219,7 +274,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
                             <Text style={styles.fieldLabel}>Twitter (optional)</Text>
                             <TextInput
                                 style={[styles.input, inputStyle]}
-                                placeholder="..."
+                                placeholder="@username"
                                 placeholderTextColor={COLORS.greyMid}
                                 value={twitter}
                                 onChangeText={setTwitter}
@@ -231,7 +286,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
                             <Text style={styles.fieldLabel}>Telegram (optional)</Text>
                             <TextInput
                                 style={[styles.input, inputStyle]}
-                                placeholder="..."
+                                placeholder="t.me/community"
                                 placeholderTextColor={COLORS.greyMid}
                                 value={telegram}
                                 onChangeText={setTelegram}
@@ -243,7 +298,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
                             <Text style={styles.fieldLabel}>Website (optional)</Text>
                             <TextInput
                                 style={[styles.input, inputStyle]}
-                                placeholder="..."
+                                placeholder="https://yourwebsite.com"
                                 placeholderTextColor={COLORS.greyMid}
                                 value={website}
                                 onChangeText={setWebsite}
@@ -263,7 +318,7 @@ export const LaunchlabsLaunchSection: React.FC<LaunchlabsLaunchSectionProps> = (
 
             <View style={styles.buttonsContainer}>
                 <TouchableOpacity
-                    onPress={handleLaunch}
+                    onPress={handleJustSendIt}
                     style={[styles.button, styles.justSendItButton, buttonStyle, loading && styles.disabledButton]}
                     disabled={loading}>
                     <Text style={styles.buttonText}>
