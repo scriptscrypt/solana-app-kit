@@ -32,7 +32,7 @@ export default function SectionNftListing({ listingData, compact = false }: Sect
       <NftDetailsSection
         listingData={convertedListingData}
         containerStyle={[
-          styles.nftContainer, 
+          styles.nftContainer,
           compact && styles.compactNftContainer
         ]}
       />
