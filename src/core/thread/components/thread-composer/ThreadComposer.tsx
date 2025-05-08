@@ -36,8 +36,8 @@ import { uploadThreadImage } from '../../services/threadImageService';
 import {
   IPFSAwareImage,
   getValidImageSource,
-  fixIPFSUrl,
-} from '../../../../shared/utils/IPFSImage';
+  fixAllImageUrls,
+} from '@/shared/utils/IPFSImage';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
@@ -184,7 +184,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
             ? item.mint.onchainId
             : item.mint;
           const nftName = mintObj?.name || 'Unnamed NFT';
-          const nftImage = fixIPFSUrl(mintObj?.imageUri || '');
+          const nftImage = fixAllImageUrls(mintObj?.imageUri || '');
           const nftCollection = mintObj?.collName || '';
           const lamports = parseInt(item.grossAmount || '0', 10);
           const priceSol = lamports / SOL_TO_LAMPORTS;
@@ -407,7 +407,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
   return (
     <View>
       <View style={styles.composerContainer}>
-        <View style={styles.composerAvatarContainer}>
+        <View style={[styles.composerAvatarContainer, { backgroundColor: COLORS.background }]}>
           <IPFSAwareImage
             source={
               storedProfilePic
@@ -418,7 +418,6 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
             }
             style={styles.composerAvatar}
             defaultSource={DEFAULT_IMAGES.user}
-            key={Platform.OS === 'android' ? `profile-${Date.now()}` : 'profile'}
           />
         </View>
 
@@ -452,12 +451,11 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
 
           {/* NFT listing preview */}
           {selectedListingNft && (
-            <View style={styles.composerTradePreview}>
+            <View style={[styles.composerTradePreview, { backgroundColor: COLORS.lightBackground }]}>
               <IPFSAwareImage
                 source={getValidImageSource(selectedListingNft.image)}
                 style={styles.composerTradeImage}
                 defaultSource={DEFAULT_IMAGES.user}
-                key={Platform.OS === 'android' ? `nft-${Date.now()}` : 'nft'}
               />
               <View style={{ marginLeft: 8, flex: 1 }}>
                 <Text style={styles.composerTradeName} numberOfLines={1}>
@@ -466,7 +464,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
                 {/* If price is known, display it */}
               </View>
               <TouchableOpacity
-                style={styles.composerTradeRemove}
+                style={[styles.composerTradeRemove, { backgroundColor: COLORS.greyDark }]}
                 onPress={() => setSelectedListingNft(null)}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>X</Text>
               </TouchableOpacity>

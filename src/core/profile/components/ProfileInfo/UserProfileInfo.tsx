@@ -306,7 +306,7 @@ const ProfileHeader = memo(({
   return (
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
       <TouchableOpacity
-        style={styles.profImgContainer}
+        style={[styles.profImgContainer, { backgroundColor: COLORS.background }]}
         onPress={onAvatarPress}
         disabled={!isOwnProfile}>
         {profilePicUrl ? (
