@@ -20,7 +20,7 @@ import { verifyToken, VerifyTokenParams } from '../../../shared/services/rugChec
 export function usePumpFun() {
   const {wallet, solanaWallet} = useAuth();
   // Also use the new useWallet hook which provides standard transaction methods
-  const {publicKey, address, connected} = useWallet();
+  const {publicKey, address, connected, signMessage} = useWallet();
   
   console.log("[usePumpFun] Wallet:", {
     hasWallet: !!wallet,
@@ -162,9 +162,22 @@ export function usePumpFun() {
         }
         
         // We need a signature for verification
-        // In a production app, this would be handled properly with signing
-        // For this demo, we'll use a placeholder
-        const signature = 'PLACEHOLDER_SIGNATURE';
+        // Create a message that includes the token mint address to sign
+        const messageToSign = `Verify token ${tokenMint} on RugCheck`;
+        let signature;
+        
+        try {
+          onStatusUpdate?.('Requesting signature from wallet...');
+          // Use the signMessage function from useWallet hook which handles all wallet types
+          const signResult = await signMessage(new TextEncoder().encode(messageToSign));
+          signature = signResult.signature;
+          
+          console.log(`[usePumpfun.submitTokenForVerification] Signature obtained: ${signature}`);
+        } catch (signError) {
+          console.error('[usePumpfun.submitTokenForVerification] Signing error:', signError);
+          onStatusUpdate?.('Failed to obtain signature for verification');
+          throw new Error('Failed to sign verification message. Please try again.');
+        }
         
         const verifyParams: VerifyTokenParams = {
           mint: tokenMint,
@@ -195,7 +208,7 @@ export function usePumpFun() {
         return false;
       }
     },
-    [address, solanaWallet]
+    [address, solanaWallet, signMessage]
   );
 
   /**

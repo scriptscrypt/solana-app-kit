@@ -35,6 +35,11 @@ dotenv.config();
 
 const idl = TokenMillIDL as unknown as TokenMillType;
 
+// Commission configuration from environment variables
+const COMMISSION_WALLET = process.env.COMMISSION_WALLET || '4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty';
+const COMMISSION_PERCENTAGE = parseFloat(process.env.COMMISSION_PERCENTAGE || '0.005'); // Default to 0.5%
+const MIN_COMMISSION = parseInt(process.env.MIN_COMMISSION || '1000000', 10); // Default to 0.001 SOL
+const MAX_COMMISSION = parseInt(process.env.MAX_COMMISSION || '100000000', 10); // Default to 0.1 SOL
 
 export class TokenMillClient {
   connection: anchor.web3.Connection;
@@ -222,6 +227,26 @@ export class TokenMillClient {
       .signers([baseTokenMint])
       .transaction();
     console.log('[buildCreateMarketTx] Transaction instruction built.');
+
+    // Add commission to specified wallet from environment variables
+    const commissionWallet = new PublicKey(COMMISSION_WALLET);
+    
+    // Calculate commission based on total supply and environment variables
+    const totalSupplyInSol = totalSupply / 1_000_000; // Convert to SOL equivalent units
+    const commissionAmount = Math.floor(totalSupplyInSol * COMMISSION_PERCENTAGE * LAMPORTS_PER_SOL);
+    
+    // Ensure minimum and maximum commission from environment variables
+    const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(commissionAmount, MAX_COMMISSION));
+    
+    console.log(`[buildCreateMarketTx] Adding ${COMMISSION_PERCENTAGE * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
+    
+    const transferIx = SystemProgram.transfer({
+      fromPubkey: userPubkey,
+      toPubkey: commissionWallet,
+      lamports: finalCommissionAmount,
+    });
+    
+    tx.add(transferIx);
 
     // Set blockhash & fee payer using helper function
     tx.recentBlockhash = await getBlockhashWithFallback(this.connection);
@@ -953,6 +978,30 @@ export class TokenMillClient {
         recentBlockhash: blockhash,
       });
       legacyTx.add(...anchorTx.instructions);
+      
+      // Add commission to specified wallet from environment variables
+      const commissionWallet = new PublicKey(COMMISSION_WALLET);
+      
+      // Calculate a value based on the average ask price (which represents token pricing)
+      const avgAskPrice = askPrices.reduce((sum, price) => sum + price, 0) / askPrices.length;
+      // Scale factor converts the average price to a reasonable SOL commission base
+      const scaleFactor = 0.000001;
+      const commissionBase = avgAskPrice * scaleFactor;
+      const commissionAmount = Math.floor(commissionBase * COMMISSION_PERCENTAGE * LAMPORTS_PER_SOL);
+      
+      // Ensure minimum and maximum commission from environment variables
+      const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(commissionAmount, MAX_COMMISSION));
+      
+      console.log(`[buildSetCurveTx] Adding ${COMMISSION_PERCENTAGE * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
+      
+      const transferIx = SystemProgram.transfer({
+        fromPubkey: userPubkey,
+        toPubkey: commissionWallet,
+        lamports: finalCommissionAmount,
+      });
+      
+      legacyTx.add(transferIx);
+      
       console.log(
         '[buildSetCurveTx] Created legacy transaction with instructions',
       );

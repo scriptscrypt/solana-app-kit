@@ -4,7 +4,7 @@ import { JupiterService, JupiterSwapResponse } from './jupiterService';
 import { RaydiumService } from '../../raydium/services/raydiumService';
 import { Direction } from '../../pumpFun/services/pumpSwapService';
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
-import { SERVER_URL } from '@env';
+import { COMMISSION_WALLET, SERVER_URL } from '@env';
 import { Alert } from 'react-native';
 
 const API_BASE_URL = SERVER_URL || 'http://localhost:8080';
@@ -27,7 +27,7 @@ export interface SwapCallback {
 // Fee configuration
 const FEE_PERCENTAGE = 0.5; // 0.5% default fee
 const RAYDIUM_FEE_PERCENTAGE = 0.5; // 0.5% fee for Raydium
-const FEE_RECIPIENT = '4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty';
+const FEE_RECIPIENT = COMMISSION_WALLET;
 
 /**
  * TradeService - Provider-agnostic service for executing token swaps

@@ -87,3 +87,4 @@ yarn-error.log
 .cursor/rules/solana-app-kit-coding-rules.mdc
 app.json
 eas.json
+create-solana-app/

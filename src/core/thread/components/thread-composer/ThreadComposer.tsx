@@ -137,7 +137,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
 
   // 1. Get base styles (no theme needed)
   const baseComponentStyles = getThreadComposerBaseStyles();
-
+  
   // 2. Merge styles using the utility function
   const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
@@ -566,11 +566,11 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
             type: 'TEXT_TRADE',
             tradeData,
           };
-
+          
           // You can process the section here or add it to state
           // For now, simply close the modal
           setShowTradeModal(false);
-
+          
           // If needed, you can call onPostCreated here
           onPostCreated && onPostCreated();
         }}
