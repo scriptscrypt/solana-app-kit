@@ -1,3 +1,4 @@
+import { COMMISSION_WALLET } from '@env';
 import { FeeMapping } from './types';
 import { ENDPOINTS } from '@/config/constants';
 
@@ -14,7 +15,7 @@ export const DEFAULT_FEE_MAPPING: FeeMapping = {
 /**
  * Commission wallet to receive percentage of transaction amounts
  */
-export const COMMISSION_WALLET_ADDRESS = '4iFgpVYSqxjyFekFP2XydJkxgXsK7NABJcR7T6zNa1Ty';
+export const COMMISSION_WALLET_ADDRESS = COMMISSION_WALLET;
 
 /**
  * Commission percentage (0.5%)
