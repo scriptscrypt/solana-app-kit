@@ -11,14 +11,17 @@ import {
     ActivityIndicator,
     Dimensions,
     TextInput as RNTextInput,
-    Platform
+    Platform,
+    Switch
 } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import { Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { Alert } from 'react-native';
 
 import Svg, { Path, Line, Circle, Text, Defs, LinearGradient, Stop } from 'react-native-svg';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
+import { LaunchpadConfigData } from '../services/raydiumService';
 
 // Helper Functions
 function parseNumericString(value: string): number {
@@ -96,42 +99,78 @@ const SAMPLE_TOKENS: TokenInfo[] = [
 interface AdvancedOptionsSectionProps {
     containerStyle?: any;
     onBack?: () => void;
-    onCreateToken?: () => void;
+    onCreateToken?: (configData: LaunchpadConfigData) => void;
+    isLoading?: boolean;
+    tokenName?: string;
+    tokenSymbol?: string;
 }
 
 export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
     containerStyle,
     onBack,
     onCreateToken,
+    isLoading = false,
+    tokenName,
+    tokenSymbol,
 }) => {
     const [quoteToken, setQuoteToken] = useState<TokenInfo>(SAMPLE_TOKENS[0]);
     const [tokenSupply, setTokenSupply] = useState('1,000,000,000');
     const [solRaised, setSolRaised] = useState('85');
-    const [bondingCurve, setBondingCurve] = useState('85');
-    const [poolMigration, setPoolMigration] = useState('85');
-    const [vestingPercentage, setVestingPercentage] = useState('85');
+    const [bondingCurve, setBondingCurve] = useState('50'); // Default to 50% on bonding curve
+    const [poolMigration, setPoolMigration] = useState('30'); // Min limit is 30 SOL per docs
+    const [vestingPercentage, setVestingPercentage] = useState('0'); // Default to no vesting
     const [showTokenSupplyOptions, setShowTokenSupplyOptions] = useState(false);
+    const [enableFeeSharingPost, setEnableFeeSharingPost] = useState(false);
 
     // Token selection modal state
     const [showTokenModal, setShowTokenModal] = useState(false);
     const [searchInput, setSearchInput] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Vesting options
+    const [vestingEnabled, setVestingEnabled] = useState(false);
+    const [vestingDuration, setVestingDuration] = useState('6'); // In months
+    const [vestingCliff, setVestingCliff] = useState('1'); // In months
+
     // Input change handlers with formatting
     const handleSolRaisedChange = (value: string) => {
         // Allow only numbers and decimal point
         const filtered = value.replace(/[^0-9.]/g, '');
-        setSolRaised(filtered);
+        // Ensure it's at least 30 SOL per Raydium docs
+        const numVal = parseFloat(filtered || '0');
+        if (numVal < 30) {
+            setSolRaised('30');
+        } else {
+            setSolRaised(filtered);
+        }
     };
 
     const handleBondingCurveChange = (value: string) => {
+        // Allow only numbers, limit to 80%
+        const filtered = value.replace(/[^0-9]/g, '');
+        const number = parseInt(filtered, 10);
+        if (!isNaN(number)) {
+            // Per Raydium docs: min 20% and max 80%
+            if (number < 20) {
+                setBondingCurve('20');
+            } else if (number > 80) {
+                setBondingCurve('80');
+            } else {
+                setBondingCurve(filtered);
+            }
+        } else {
+            setBondingCurve('50');
+        }
+    };
+
+    const handleVestingPercentageChange = (value: string) => {
         // Allow only numbers, limit to 100
         const filtered = value.replace(/[^0-9]/g, '');
         const number = parseInt(filtered, 10);
         if (!isNaN(number)) {
-            setBondingCurve(number > 100 ? '100' : filtered);
+            setVestingPercentage(number > 100 ? '100' : filtered);
         } else {
-            setBondingCurve('');
+            setVestingPercentage('0');
         }
     };
 
@@ -263,7 +302,35 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
 
     const handleCreateToken = () => {
         if (onCreateToken) {
-            onCreateToken();
+            // Validate minimum SOL raised (30 SOL per Raydium docs)
+            const solRaisedNum = parseFloat(solRaised);
+            if (solRaisedNum < 30) {
+                Alert.alert('Error', 'Minimum SOL raised must be at least 30 SOL');
+                return;
+            }
+
+            // Validate bonding curve percentage (20-80% per Raydium docs)
+            const bondingCurveNum = parseInt(bondingCurve, 10);
+            if (bondingCurveNum < 20 || bondingCurveNum > 80) {
+                Alert.alert('Error', 'Bonding curve percentage must be between 20% and 80%');
+                return;
+            }
+
+            // Create the config data object from state
+            const configData: LaunchpadConfigData = {
+                quoteTokenMint: quoteToken.address,
+                tokenSupply: tokenSupply,
+                solRaised: solRaised,
+                bondingCurvePercentage: bondingCurve,
+                poolMigration: solRaised, // Use same value as solRaised by default
+                vestingPercentage: vestingEnabled ? vestingPercentage : '0',
+                vestingDuration: vestingEnabled ? vestingDuration : '0',
+                vestingCliff: vestingEnabled ? vestingCliff : '0',
+                enableFeeSharingPost: enableFeeSharingPost,
+                mode: 'launchLab' // Set mode to launchLab for advanced options
+            };
+            
+            onCreateToken(configData);
         } else {
             console.log('Create token clicked');
         }
@@ -295,10 +362,16 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
     return (
         <ScrollView style={[styles.container, containerStyle]}>
             <View style={styles.header}>
-                {/* <TouchableOpacity onPress={onBack} style={styles.backButton}>
-                    <Feather name="arrow-left" size={24} color={COLORS.white} />
-                </TouchableOpacity> */}
-                {/* <RNText style={styles.headerTitle}>Advanced Options</RNText> */}
+                {onBack && (
+                    <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                        <Feather name="arrow-left" size={24} color={COLORS.white} />
+                    </TouchableOpacity>
+                )}
+                <RNText style={styles.headerTitle}>
+                    {tokenName && tokenSymbol 
+                        ? `Configure ${tokenName} (${tokenSymbol})` 
+                        : 'Advanced Options'}
+                </RNText>
             </View>
 
             {/* Curve Preview */}
@@ -407,6 +480,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
                 <TouchableOpacity
                     style={styles.dropdownContainer}
                     onPress={() => setShowTokenModal(true)}
+                    disabled={isLoading}
                 >
                     <View style={styles.tokenSelectRow}>
                         {quoteToken.logoURI ? (
@@ -450,10 +524,12 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
                         onChangeText={handleTokenSupplyChange}
                         keyboardType="numeric"
                         placeholderTextColor={COLORS.greyMid}
+                        editable={!isLoading}
                     />
                     <TouchableOpacity
                         style={styles.dropdownButton}
-                        onPress={() => setShowTokenSupplyOptions(!showTokenSupplyOptions)}>
+                        onPress={() => setShowTokenSupplyOptions(!showTokenSupplyOptions)}
+                        disabled={isLoading}>
                         <Feather name="chevron-down" size={20} color={COLORS.white} />
                     </TouchableOpacity>
                 </View>
@@ -476,7 +552,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
             <View style={styles.twoColumnContainer}>
                 {/* SOL Raised */}
                 <View style={[styles.formField, styles.columnItem]}>
-                    <RNText style={styles.fieldLabel}>SOL Raised</RNText>
+                    <RNText style={styles.fieldLabel}>SOL Raised (min 30)</RNText>
                     <View style={styles.inputContainer}>
                         <View style={styles.tokenIconSmallContainer}>
                             {SAMPLE_TOKENS[0].logoURI ? (
@@ -495,13 +571,14 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
                             onChangeText={handleSolRaisedChange}
                             keyboardType="numeric"
                             placeholderTextColor={COLORS.greyMid}
+                            editable={!isLoading}
                         />
                     </View>
                 </View>
 
                 {/* Bonding Curve */}
                 <View style={[styles.formField, styles.columnItem]}>
-                    <RNText style={styles.fieldLabel}>Bonding Curve %</RNText>
+                    <RNText style={styles.fieldLabel}>Curve % (20-80%)</RNText>
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={styles.input}
@@ -509,46 +586,104 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
                             onChangeText={handleBondingCurveChange}
                             keyboardType="numeric"
                             placeholderTextColor={COLORS.greyMid}
+                            editable={!isLoading}
                         />
                         <RNText style={styles.percentSign}>%</RNText>
                     </View>
                 </View>
             </View>
 
-            <View style={styles.twoColumnContainer}>
-                {/* Pool Migration */}
-                <View style={[styles.formField, styles.columnItem]}>
-                    <RNText style={styles.fieldLabel}>Pool Migration</RNText>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            style={styles.input}
-                            value={poolMigration}
-                            onChangeText={setPoolMigration}
-                            keyboardType="numeric"
-                            placeholderTextColor={COLORS.greyMid}
-                        />
-                    </View>
+            {/* Vesting Options */}
+            <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                    <RNText style={styles.sectionTitle}>Vesting Options</RNText>
+                    <Switch
+                        value={vestingEnabled}
+                        onValueChange={setVestingEnabled}
+                        trackColor={{ false: COLORS.darkerBackground, true: COLORS.brandBlue }}
+                        thumbColor={COLORS.white}
+                        disabled={isLoading}
+                    />
                 </View>
-
-                {/* Vesting */}
-                <View style={[styles.formField, styles.columnItem]}>
-                    <RNText style={styles.fieldLabel}>Vesting %</RNText>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            style={styles.input}
-                            value={vestingPercentage}
-                            onChangeText={setVestingPercentage}
-                            keyboardType="numeric"
-                            placeholderTextColor={COLORS.greyMid}
-                        />
-                        <RNText style={styles.percentSign}>%</RNText>
+                
+                {vestingEnabled && (
+                    <View style={styles.vestingOptions}>
+                        <View style={styles.formField}>
+                            <RNText style={styles.fieldLabel}>Vesting Percentage</RNText>
+                            <View style={styles.inputContainer}>
+                                <TextInput
+                                    style={styles.input}
+                                    value={vestingPercentage}
+                                    onChangeText={handleVestingPercentageChange}
+                                    keyboardType="numeric"
+                                    placeholderTextColor={COLORS.greyMid}
+                                    editable={!isLoading}
+                                />
+                                <RNText style={styles.percentSign}>%</RNText>
+                            </View>
+                        </View>
+                        
+                        <View style={styles.twoColumnContainer}>
+                            <View style={[styles.formField, styles.columnItem]}>
+                                <RNText style={styles.fieldLabel}>Cliff (months)</RNText>
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={vestingCliff}
+                                        onChangeText={setVestingCliff}
+                                        keyboardType="numeric"
+                                        placeholderTextColor={COLORS.greyMid}
+                                        editable={!isLoading}
+                                    />
+                                </View>
+                            </View>
+                            
+                            <View style={[styles.formField, styles.columnItem]}>
+                                <RNText style={styles.fieldLabel}>Duration (months)</RNText>
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={vestingDuration}
+                                        onChangeText={setVestingDuration}
+                                        keyboardType="numeric"
+                                        placeholderTextColor={COLORS.greyMid}
+                                        editable={!isLoading}
+                                    />
+                                </View>
+                            </View>
+                        </View>
                     </View>
+                )}
+            </View>
+
+            {/* Post-migration Fee Share */}
+            <View style={styles.sectionContainer}>
+                <View style={styles.sectionHeader}>
+                    <View>
+                        <RNText style={styles.sectionTitle}>Post-migration Fee Share</RNText>
+                        <RNText style={styles.sectionDescription}>
+                            Claim 10% of LP trading fees after token graduates to AMM pool
+                        </RNText>
+                    </View>
+                    <Switch
+                        value={enableFeeSharingPost}
+                        onValueChange={setEnableFeeSharingPost}
+                        trackColor={{ false: COLORS.darkerBackground, true: COLORS.brandBlue }}
+                        thumbColor={COLORS.white}
+                        disabled={isLoading}
+                    />
                 </View>
             </View>
 
             {/* Create Token Button */}
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateToken}>
-                <RNText style={styles.createButtonText}>Create Token</RNText>
+            <TouchableOpacity 
+                style={[styles.createButton, isLoading && styles.disabledButton]} 
+                onPress={handleCreateToken}
+                disabled={isLoading}
+            >
+                <RNText style={styles.createButtonText}>
+                    {isLoading ? 'Creating Token...' : 'Create Token'}
+                </RNText>
             </TouchableOpacity>
 
             {/* Token Selection Modal */}
@@ -653,24 +788,51 @@ const styles = StyleSheet.create({
     },
     backButton: {
         padding: 8,
+        marginRight: 8,
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: '700',
+        fontSize: 18,
+        fontWeight: '600',
         color: COLORS.white,
-        marginLeft: 8,
+        fontFamily: TYPOGRAPHY.fontFamily,
     },
     sectionContainer: {
         marginBottom: 20,
+        backgroundColor: COLORS.background,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: COLORS.borderDarkColor,
     },
-    formField: {
-        marginBottom: 16,
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
     },
     sectionTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.white,
         marginBottom: 8,
+        fontFamily: TYPOGRAPHY.fontFamily,
+    },
+    sectionDescription: {
+        fontSize: 12,
+        color: COLORS.greyMid,
+        fontFamily: TYPOGRAPHY.fontFamily,
+    },
+    vestingOptions: {
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderDarkColor,
+    },
+    disabledButton: {
+        opacity: 0.6,
+    },
+    formField: {
+        marginBottom: 16,
     },
     fieldLabel: {
         fontSize: TYPOGRAPHY.size.sm,

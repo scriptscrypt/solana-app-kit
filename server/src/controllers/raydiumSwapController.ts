@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { RaydiumService } from '../services/raydiumService';
+import { RaydiumService } from '../service/raydium/raydiumService';
 
 /**
  * Single unified endpoint for Raydium swaps
