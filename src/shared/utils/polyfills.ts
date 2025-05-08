@@ -81,6 +81,28 @@ if (typeof global.Buffer === 'undefined') {
   console.log('Polyfilled Buffer');
 }
 
+// Add EventEmitter polyfill
+// Ensure global.process exists before attempting to attach EventEmitter
+if (typeof global.process === 'undefined') {
+  console.warn('[Polyfills] global.process is undefined, attempting to initialize.');
+  global.process = require('process'); // Ensure process is polyfilled
+  if (typeof global.process.env === 'undefined') {
+    global.process.env = { NODE_ENV: __DEV__ ? 'development' : 'production' } as any;
+  }
+   if (typeof global.process.nextTick === 'undefined') {
+    global.process.nextTick = setImmediate;
+  }
+}
+
+// Now, safely attach EventEmitter
+if (typeof global.process.EventEmitter === 'undefined') {
+  const EventEmitter = require('events');
+  global.process.EventEmitter = EventEmitter;
+  console.log('Polyfilled process.EventEmitter');
+} else {
+  console.log('process.EventEmitter already exists.');
+}
+
 // Mock fs module for React Native environment
 const mockFs = {
   readFileSync: () => {
