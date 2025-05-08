@@ -1,9 +1,27 @@
 import { DEFAULT_IMAGES } from '@/config/constants';
-import React, { useState, useEffect, useRef } from 'react';
-import { Image, Platform, ImageProps } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Image, Platform, ImageProps, View, Text } from 'react-native';
+import COLORS from '@/assets/colors';
+
+// Reliable IPFS gateways with load balancing
+const IPFS_GATEWAYS = {
+  primary: [
+    'https://gateway.pinata.cloud/ipfs/',
+    'https://cloudflare-ipfs.com/ipfs/',
+    'https://ipfs.io/ipfs/'
+  ],
+  backup: [
+    'https://nftstorage.link/ipfs/',
+    'https://gateway.ipfs.io/ipfs/',
+    'https://ipfs.fleek.co/ipfs/'
+  ]
+};
+
+// Track problematic IPFS hashes globally to avoid retrying failed URLs
+const problematicIpfsHashes = new Set<string>();
 
 /**
- * A React component that handles IPFS images with fallback gateways for Android
+ * A React component that handles IPFS images with advanced fallback gateways
  * 
  * @param props Standard Image props plus optional defaultSource
  * @returns An Image component with enhanced IPFS handling
@@ -12,101 +30,190 @@ export const IPFSAwareImage = ({
     source,
     style,
     defaultSource = DEFAULT_IMAGES.user,
+    onLoad,
+    onError,
     ...props
 }: ImageProps & { defaultSource?: any }) => {
     const [currentSource, setCurrentSource] = useState(source);
     const [loadError, setLoadError] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const attemptedRef = useRef(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [gatewayAttempt, setGatewayAttempt] = useState(0);
     const mountedRef = useRef(true);
+    const ipfsHashRef = useRef<string | null>(null);
+    const [showFallback, setShowFallback] = useState(false);
 
-    // Reset load error when source changes
+    // Extract IPFS hash when source changes
     useEffect(() => {
-        setCurrentSource(source);
+        const extractIpfsHash = (sourceUri: string): string | null => {
+            // Case 1: ipfs://Qm...
+            if (sourceUri.startsWith('ipfs://')) {
+                return sourceUri.replace('ipfs://', '');
+            }
+            // Case 2: https://ipfs.io/ipfs/Qm...
+            else if (sourceUri.includes('/ipfs/')) {
+                const parts = sourceUri.split('/ipfs/');
+                if (parts.length > 1) {
+                    return parts[1].split('?')[0]?.split('#')[0];
+                }
+            }
+            // Case 3: Direct Qm... hash
+            else if (sourceUri.startsWith('Qm') && sourceUri.length > 30) {
+                return sourceUri;
+            }
+            return null;
+        };
+
+        // Reset state for new source
         setLoadError(false);
-        attemptedRef.current = false;
+        setIsLoading(true);
+        setGatewayAttempt(0);
+        setShowFallback(false);
+
+        // Type checking for the source
+        let sourceUri = '';
+        if (typeof source === 'string') {
+            sourceUri = source;
+        } else if (source && typeof source === 'object' && 'uri' in source) {
+            sourceUri = source.uri as string;
+        }
+
+        if (sourceUri) {
+            // Extract IPFS hash if present
+            const hash = extractIpfsHash(sourceUri);
+            ipfsHashRef.current = hash;
+
+            // If this is a known problematic hash, go straight to fallback
+            if (hash && problematicIpfsHashes.has(hash)) {
+                setShowFallback(true);
+                setIsLoading(false);
+                return;
+            }
+
+            // For IPFS hash on Android, use our managed gateway selection
+            if (Platform.OS === 'android' && hash) {
+                const gateway = IPFS_GATEWAYS.primary[0];
+                setCurrentSource({ 
+                    uri: `${gateway}${hash}`,
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+            } else {
+                // For other URLs or iOS, use the original source
+                setCurrentSource(source);
+            }
+        } else {
+            // Not a valid image source
+            setShowFallback(true);
+            setIsLoading(false);
+        }
 
         return () => {
             mountedRef.current = false;
         };
     }, [source]);
 
-    // Extra safety check for source format
-    useEffect(() => {
-        // Handle case where source is directly a string instead of {uri: string}
-        if (typeof source === 'string') {
-            console.warn('IPFSAwareImage received string source instead of object, fixing');
-            setCurrentSource(getValidImageSource(source));
-        }
-    }, [source]);
+    // Try next gateway when current one fails
+    const tryNextGateway = useCallback(() => {
+        if (!mountedRef.current || !ipfsHashRef.current) return;
 
-    // On Android, try fallback gateways if the image fails to load
+        const hash = ipfsHashRef.current;
+        const gatewayList = [...IPFS_GATEWAYS.primary, ...IPFS_GATEWAYS.backup];
+        const nextAttempt = gatewayAttempt + 1;
+        
+        // If we've tried all gateways, show fallback
+        if (nextAttempt >= gatewayList.length) {
+            if (hash) {
+                // Remember this problematic hash for future reference
+                problematicIpfsHashes.add(hash);
+            }
+            setShowFallback(true);
+            setIsLoading(false);
+            return;
+        }
+
+        // Try next gateway
+        setGatewayAttempt(nextAttempt);
+        const nextGateway = gatewayList[nextAttempt];
+        
+        // Add a small delay to prevent rapid retries
+        setTimeout(() => {
+            if (mountedRef.current) {
+                setCurrentSource({ 
+                    uri: `${nextGateway}${hash}`,
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+            }
+        }, 50);
+    }, [gatewayAttempt]);
+
+    // Handle image load error
     const handleError = (e: any) => {
-        // Skip if component unmounted
         if (!mountedRef.current) return;
 
-        // Type checking for the currentSource
-        const isValidSource =
-            currentSource &&
-            typeof currentSource === 'object' &&
-            'uri' in currentSource &&
-            typeof currentSource.uri === 'string';
+        console.log(`Image load error: ${e?.nativeEvent?.error || 'Unknown error'}`);
+        
+        if (ipfsHashRef.current) {
+            // For IPFS images, try next gateway
+            tryNextGateway();
+        } else {
+            // For regular images, show fallback immediately
+            setShowFallback(true);
+            setIsLoading(false);
+        }
 
-        // Prevent multiple rapid retries that cause flickering
-        if (Platform.OS === 'android' &&
-            !loadError &&
-            !isLoading &&
-            !attemptedRef.current &&
-            isValidSource) {
-
-            // Type safety check for TypeScript
-            const sourceUri = (currentSource as { uri: string }).uri;
-
-            console.log('Image failed to load, using default image:', sourceUri);
-
-            // Mark that we've attempted to handle this error
-            attemptedRef.current = true;
-            setIsLoading(true);
-
-            // Use a slight delay to prevent flickering
-            setTimeout(() => {
-                if (!mountedRef.current) return;
-                setCurrentSource(defaultSource);
-                setLoadError(true);
-                setIsLoading(false);
-            }, 50);
-        } else if (props.onError) {
-            // Pass error to parent handler if provided
-            props.onError(e);
+        // Call original onError if provided
+        if (onError) {
+            onError(e);
         }
     };
 
-    const handleLoadStart = () => {
+    // Handle image load success
+    const handleLoad = (e: any) => {
         if (!mountedRef.current) return;
-        if (props.onLoadStart) {
-            props.onLoadStart();
-        }
-    };
-
-    const handleLoadEnd = () => {
-        if (!mountedRef.current) return;
-        if (props.onLoadEnd) {
-            props.onLoadEnd();
+        
+        setIsLoading(false);
+        
+        // Call original onLoad if provided
+        if (onLoad) {
+            onLoad(e);
         }
     };
 
     return (
-        <Image
-            source={currentSource}
-            style={style}
-            defaultSource={defaultSource}
-            onError={handleError}
-            onLoadStart={handleLoadStart}
-            onLoadEnd={handleLoadEnd}
-            // Add additional props to improve loading on Android
-            fadeDuration={Platform.OS === 'android' ? 0 : undefined}
-            {...props}
-        />
+        <View style={[
+            { overflow: 'hidden', backgroundColor: COLORS.background },
+            style
+        ]}>
+            {isLoading && !showFallback && (
+                <View style={[
+                    { 
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: COLORS.background 
+                    }
+                ]}>
+                    {/* Optional loading indicator or placeholder could go here */}
+                </View>
+            )}
+            
+            {showFallback ? (
+                <Image
+                    source={defaultSource}
+                    style={{ width: '100%', height: '100%' }}
+                    {...props}
+                />
+            ) : (
+                <Image
+                    source={currentSource}
+                    style={{ width: '100%', height: '100%' }}
+                    onError={handleError}
+                    onLoad={handleLoad}
+                    fadeDuration={Platform.OS === 'android' ? 0 : 150}
+                    {...props}
+                />
+            )}
+        </View>
     );
 };
 
@@ -124,49 +231,44 @@ export const getValidImageSource = (imageUrl: string | any) => {
         return imageUrl;
     }
 
-    // First, standardize the URL format with our comprehensive fixer
+    // First, standardize the URL format
     const fixedUrl = fixAllImageUrls(imageUrl);
 
-    // Specific handling for Android IPFS URLs 
-    if (Platform.OS === 'android') {
-        let ipfsHash = '';
-
-        // Check for IPFS patterns
-        // Case 1: ipfs://Qm...
-        if (fixedUrl.startsWith('ipfs://')) {
-            ipfsHash = fixedUrl.replace('ipfs://', '');
+    // Extract IPFS hash if present
+    let ipfsHash = '';
+    if (fixedUrl.startsWith('ipfs://')) {
+        ipfsHash = fixedUrl.replace('ipfs://', '');
+    } else if (fixedUrl.includes('/ipfs/')) {
+        const parts = fixedUrl.split('/ipfs/');
+        if (parts.length > 1) {
+            ipfsHash = parts[1];
         }
-        // Case 2: https://ipfs.io/ipfs/Qm...
-        else if (fixedUrl.includes('/ipfs/')) {
-            const parts = fixedUrl.split('/ipfs/');
-            if (parts.length > 1) {
-                ipfsHash = parts[1];
-            }
-        }
-        // Case 3: Direct Qm... hash
-        else if (fixedUrl.startsWith('Qm') && fixedUrl.length > 30) {
-            ipfsHash = fixedUrl;
-        }
-
-        // If we identified an IPFS hash, use Pinata gateway directly for Android
-        if (ipfsHash) {
-            // Go directly to Pinata instead of trying Cloudflare first
-            return {
-                uri: `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
-                headers: {
-                    'Cache-Control': 'max-age=31536000',
-                    'Pragma': 'no-cache'
-                }
-            };
-        }
+    } else if (fixedUrl.startsWith('Qm') && fixedUrl.length > 30) {
+        ipfsHash = fixedUrl;
     }
 
-    // Add caching and other platform-specific options for Android
+    // If we identified an IPFS hash, use our primary gateway
+    if (ipfsHash) {
+        // Use different gateways for different platforms
+        const gateway = Platform.OS === 'android' 
+            ? IPFS_GATEWAYS.primary[0]  
+            : 'https://ipfs.io/ipfs/';
+            
+        return {
+            uri: `${gateway}${ipfsHash}`,
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        };
+    }
+
+    // Add caching headers for Android
     if (Platform.OS === 'android') {
         return {
             uri: fixedUrl,
             headers: {
-                'Cache-Control': 'max-age=31536000'
+                'Cache-Control': 'no-cache'
             }
         };
     }
@@ -176,42 +278,7 @@ export const getValidImageSource = (imageUrl: string | any) => {
 };
 
 /**
- * Fix various IPFS URL formats to standard HTTPS URLs
- * 
- * @param url URL string to fix
- * @returns Properly formatted URL string
- */
-export const fixIPFSUrl = (url: string): string => {
-    if (!url) return '';
-
-    // Handle IPFS URLs
-    if (url.startsWith('ipfs://')) {
-        return Platform.OS === 'android'
-            ? url.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
-            : url.replace('ipfs://', 'https://ipfs.io/ipfs/');
-    }
-
-    // Handle Arweave URLs
-    if (url.startsWith('ar://')) {
-        return url.replace('ar://', 'https://arweave.net/');
-    }
-
-    // Handle relative Arweave paths
-    if (url.startsWith('/')) {
-        return `https://arweave.net${url}`;
-    }
-
-    // Add https:// prefix if needed
-    if (!url.startsWith('http') && !url.startsWith('data:')) {
-        return `https://${url}`;
-    }
-
-    return url;
-};
-
-/**
- * A more comprehensive image URL fixing function that combines all the different fixImageUrl 
- * implementations found across the app
+ * A more comprehensive image URL fixing function
  * 
  * @param url Any image URL to process
  * @returns A properly formatted URL string
@@ -224,19 +291,12 @@ export const fixAllImageUrls = (url: string | null | undefined): string => {
         url = url.slice(1, -1);
     }
 
-    // Handle IPFS URLs - Use Pinata directly for Android
+    // Handle IPFS URLs - Use the specific gateway for the platform
     if (url.startsWith('ipfs://')) {
+        const hash = url.replace('ipfs://', '');
         return Platform.OS === 'android'
-            ? url.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
-            : url.replace('ipfs://', 'https://ipfs.io/ipfs/');
-    }
-
-    // Convert ipfs.io URLs to Pinata on Android for consistency
-    if (Platform.OS === 'android' && url.includes('ipfs.io/ipfs/')) {
-        const ipfsHash = url.split('/ipfs/')[1];
-        if (ipfsHash) {
-            return `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
-        }
+            ? `${IPFS_GATEWAYS.primary[0]}${hash}`
+            : `https://ipfs.io/ipfs/${hash}`;
     }
 
     // Handle Arweave URLs
@@ -249,14 +309,12 @@ export const fixAllImageUrls = (url: string | null | undefined): string => {
         return `https://arweave.net${url}`;
     }
 
-    // Try to fix other common URL issues
-
     // Fix URLs without protocol
     if (!url.startsWith('http') && !url.startsWith('data:')) {
         return `https://${url}`;
     }
 
-    // Fix encoding issues with spaces, etc.
+    // Fix encoding issues with spaces
     if (url.includes(' ')) {
         return encodeURI(url);
     }
@@ -264,12 +322,11 @@ export const fixAllImageUrls = (url: string | null | undefined): string => {
     return url;
 };
 
+// For backward compatibility
+export const fixIPFSUrl = fixAllImageUrls;
+
 /**
- * Utility to generate a unique key for IPFS images, especially on Android
- * where we need to force refreshes more often due to caching issues.
- * 
- * @param baseKey Base key string (usually some identifier like user.id)
- * @returns A unique key that can be used in the key prop of an Image component
+ * Utility to generate a unique key for IPFS images
  */
 export const getImageKey = (baseKey: string): string => {
     return Platform.OS === 'android'

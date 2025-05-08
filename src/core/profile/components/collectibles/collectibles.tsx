@@ -20,6 +20,7 @@ import { NftItem } from '../../../../modules/nft/types';
 import TokenDetailsDrawer from '../../../sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
 import { AssetItem } from '@/modules/dataModule';
 import COLORS from '@/assets/colors';
+import { IPFSAwareImage, getValidImageSource, fixAllImageUrls } from '@/shared/utils/IPFSImage';
 
 export interface PortfolioSectionProps {
   sectionTitle: string;
@@ -91,7 +92,7 @@ const TokenListItem: React.FC<{
 
   return (
     <TouchableOpacity
-      style={portfolioStyles.tokenListItem}
+      style={[portfolioStyles.tokenListItem, { backgroundColor: COLORS.background }]}
       onPress={() => {
         if (onPress) {
           console.log("TokenListItem: Pressing item with mint:", item.mint, "id:", item.id);
@@ -101,15 +102,22 @@ const TokenListItem: React.FC<{
       activeOpacity={0.7}
     >
       {/* Token Logo */}
-      <View style={portfolioStyles.tokenLogoContainer}>
+      <View style={[portfolioStyles.tokenLogoContainer, { backgroundColor: COLORS.background }]}>
         {imageUrl ? (
-          <Image
-            source={{ uri: imageUrl }}
+          <IPFSAwareImage
+            source={getValidImageSource(imageUrl)}
             style={portfolioStyles.tokenLogo}
             resizeMode="cover"
+            defaultSource={
+              <View style={[portfolioStyles.tokenLogoPlaceholder, { backgroundColor: COLORS.greyDark }]}>
+                <Text style={portfolioStyles.tokenLogoPlaceholderText}>
+                  {item.symbol?.[0] || item.name?.[0] || '?'}
+                </Text>
+              </View>
+            }
           />
         ) : (
-          <View style={portfolioStyles.tokenLogoPlaceholder}>
+          <View style={[portfolioStyles.tokenLogoPlaceholder, { backgroundColor: COLORS.greyDark }]}>
             <Text style={portfolioStyles.tokenLogoPlaceholderText}>
               {item.symbol?.[0] || item.name?.[0] || '?'}
             </Text>
@@ -170,7 +178,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
     if (!imageUrl) {
       // If no image is available, display a placeholder with the token symbol/name
       return (
-        <View style={portfolioStyles.placeholderImage}>
+        <View style={[portfolioStyles.placeholderImage, { backgroundColor: COLORS.background }]}>
           <Text style={portfolioStyles.placeholderText}>
             {item.symbol || item.name?.charAt(0) || '?'}
           </Text>
@@ -179,16 +187,17 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({
     }
 
     return (
-      <View style={portfolioStyles.imageWrapper}>
+      <View style={[portfolioStyles.imageWrapper, { backgroundColor: COLORS.background }]}>
         <Image
           source={require('../../../../assets/images/SENDlogo.png')}
           style={portfolioStyles.fallbackImage}
           resizeMode="cover"
         />
-        <Image
-          source={{ uri: imageUrl }}
+        <IPFSAwareImage
+          source={getValidImageSource(imageUrl)}
           style={portfolioStyles.image}
           resizeMode="cover"
+          defaultSource={require('../../../../assets/images/SENDlogo.png')}
         />
       </View>
     );
