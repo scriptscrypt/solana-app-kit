@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Animated, Text, Dimensions, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Animated, Text, Dimensions, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
@@ -94,18 +94,67 @@ export default function LoginScreen() {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const { auth: authConfig } = useCustomization();
+  
+  // State for app info that needs to be loaded asynchronously
+  const [appInfo, setAppInfo] = useState({
+    bundleId: 'Loading...',
+    urlScheme: 'Loading...'
+  });
 
-  // Get app info using methods that work in all build types including TestFlight
-  const bundleId = 
-    Constants.expoConfig?.ios?.bundleIdentifier || 
-    Constants.expoConfig?.android?.package || 
-    Application.applicationId || 
-    'Unknown';
+  // Load app info on component mount
+  useEffect(() => {
+    const loadAppInfo = async () => {
+      try {
+        // Platform-specific bundle ID detection
+        let detectedBundleId = 'com.sendai.solanaappkit'; // Default fallback
+        
+        if (Platform.OS === 'ios') {
+          detectedBundleId = Application.applicationId || 
+                            Constants.expoConfig?.ios?.bundleIdentifier || 
+                            'com.sendai.solanaappkit';
+        } else {
+          detectedBundleId = Application.applicationId || 
+                            Constants.expoConfig?.android?.package || 
+                            'com.sendai.solanaappkit';
+        }
+        
+        // Detect URL scheme from native config
+        // This is initialized at app startup in App.tsx
+        // Just get a URL and extract the scheme part
+        let detectedScheme = 'solanaappkit'; // Default fallback
+        try {
+          const url = Linking.createURL('/');
+          const parts = url.split('://');
+          if (parts.length > 0 && parts[0] !== 'null' && parts[0] !== 'undefined') {
+            detectedScheme = parts[0];
+          }
+        } catch (error) {
+          console.warn('Error detecting URL scheme:', error);
+        }
+        
+        // Update state with detected values
+        setAppInfo({
+          bundleId: detectedBundleId,
+          urlScheme: detectedScheme
+        });
+        
+        console.log('App info loaded:', { 
+          bundleId: detectedBundleId, 
+          urlScheme: detectedScheme 
+        });
+        
+      } catch (error) {
+        console.error('Error loading app info:', error);
+        // Set defaults if detection fails
+        setAppInfo({
+          bundleId: 'com.sendai.solanaappkit',
+          urlScheme: 'solanaappkit'
+        });
+      }
+    };
     
-  const urlScheme = 
-    Constants.expoConfig?.scheme || 
-    Linking.createURL('').split('://')[0] || 
-    'Unknown';
+    loadAppInfo();
+  }, []);
   
   // Animation values for SVG elements
   const circleAnim = useRef(new Animated.Value(0)).current;
@@ -727,11 +776,11 @@ export default function LoginScreen() {
           }}>
           <Text
             style={{color: '#ffffff', fontSize: 10, fontFamily: 'monospace'}}>
-            Bundle ID: {bundleId}
+            Bundle ID: {appInfo.bundleId}
           </Text>
           <Text
             style={{color: '#ffffff', fontSize: 10, fontFamily: 'monospace'}}>
-            URL Scheme: {urlScheme}
+            URL Scheme: {appInfo.urlScheme}
           </Text>
         </View>
         <Text style={styles.agreementText}>
