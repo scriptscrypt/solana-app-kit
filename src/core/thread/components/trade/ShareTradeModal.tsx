@@ -27,7 +27,7 @@ import {
 } from '@/shared/state/thread/reducer';
 import styles from './ShareTradeModal.style';
 import PastSwapItem from './PastSwapItem';
-import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '@/modules/dataModule/services/swapTransactions';
+import { SwapTransaction, TokenMetadata } from '@/modules/dataModule/services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
 import { TokenInfo } from '@/modules/dataModule/types/tokenTypes';
@@ -39,6 +39,8 @@ import {
 } from '../../../../modules/dataModule';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import COLORS from '../../../../assets/colors';
+// Import Birdeye API key
+import { BIRDEYE_API_KEY } from '@env';
 
 // Get screen dimensions
 const { height } = Dimensions.get('window');
@@ -48,6 +50,46 @@ const { height } = Dimensions.get('window');
  * @type {'PAST_SWAPS'}
  */
 type TabOption = 'PAST_SWAPS';
+
+// Birdeye API response types
+interface BirdeyeSwapToken {
+  symbol: string;
+  address: string;
+  decimals: number;
+  price: number;
+  amount: string;
+  ui_amount: number;
+  ui_change_amount: number;
+  type_swap: 'from' | 'to';
+}
+
+interface BirdeyeSwapTransaction {
+  base: BirdeyeSwapToken;
+  quote: BirdeyeSwapToken;
+  tx_type: string;
+  tx_hash: string;
+  ins_index: number;
+  inner_ins_index: number;
+  block_unix_time: number;
+  block_number: number;
+  volume_usd: number;
+  volume: number;
+  pool_id: string;
+  owner: string;
+  source: string;
+  interacted_program_id: string;
+}
+
+interface BirdeyeSwapResponse {
+  data: {
+    items: BirdeyeSwapTransaction[];
+  };
+}
+
+// Extended SwapTransaction with Birdeye data
+interface ExtendedSwapTransaction extends SwapTransaction {
+  volumeUsd?: number;
+}
 
 interface UpdatedTradeModalProps {
   /** Whether the modal is visible */
@@ -263,25 +305,117 @@ export default function TradeModal({
   }, [onClose, initialActiveTab]);
 
   /**
+   * Convert a Birdeye swap transaction to our app's SwapTransaction format
+   */
+  const convertBirdeyeToSwapTransaction = useCallback((birdeyeSwap: BirdeyeSwapTransaction): ExtendedSwapTransaction => {
+    // Determine which token is input and which is output
+    const inputToken = birdeyeSwap.base.type_swap === 'from' ? birdeyeSwap.base : birdeyeSwap.quote;
+    const outputToken = birdeyeSwap.base.type_swap === 'to' ? birdeyeSwap.base : birdeyeSwap.quote;
+
+    // Create SwapTransaction in our app's format
+    return {
+      signature: birdeyeSwap.tx_hash,
+      timestamp: birdeyeSwap.block_unix_time,
+      inputToken: {
+        mint: inputToken.address,
+        symbol: inputToken.symbol,
+        name: inputToken.symbol, // Use symbol as name if not available
+        decimals: inputToken.decimals,
+        amount: parseInt(inputToken.amount, 10),
+      },
+      outputToken: {
+        mint: outputToken.address,
+        symbol: outputToken.symbol,
+        name: outputToken.symbol, // Use symbol as name if not available
+        decimals: outputToken.decimals,
+        amount: parseInt(outputToken.amount, 10),
+      },
+      success: true, // Birdeye only returns successful transactions
+      volumeUsd: birdeyeSwap.volume_usd,
+    };
+  }, []);
+
+  /**
+   * Fetch swap transactions using Birdeye API
+   */
+  const fetchSwapsWithBirdeye = useCallback(async (ownerAddress: string): Promise<ExtendedSwapTransaction[]> => {
+    if (!ownerAddress) {
+      throw new Error('Wallet address is required');
+    }
+
+    try {
+      // Calculate time range (last 30 days)
+      const now = Math.floor(Date.now() / 1000);
+      const thirtyDaysAgo = now - (30 * 24 * 60 * 60);
+
+      // Construct the Birdeye API URL
+      const url = `https://public-api.birdeye.so/defi/v3/txs?offset=0&limit=50&sort_by=block_unix_time&sort_type=desc&tx_type=swap&owner=${ownerAddress}&after_time=${thirtyDaysAgo}`;
+
+      // Make the API request
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'x-chain': 'solana',
+          'x-api-key': BIRDEYE_API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Birdeye API error: ${response.status} ${response.statusText}`);
+      }
+
+      const result: BirdeyeSwapResponse = await response.json();
+
+      if (!result.data || !result.data.items) {
+        console.log('[TradeModal] No swap data returned from Birdeye API');
+        return [];
+      }
+
+      // Convert Birdeye format to our app's format
+      const convertedSwaps = result.data.items.map(convertBirdeyeToSwapTransaction);
+
+      return convertedSwaps;
+    } catch (error) {
+      console.error('[TradeModal] Error fetching swaps from Birdeye:', error);
+      throw error;
+    }
+  }, [convertBirdeyeToSwapTransaction]);
+
+  /**
    * Create trade data object from a past swap transaction
    */
-  const createTradeDataFromSwap = useCallback(async (swap: SwapTransaction): Promise<TradeData> => {
+  const createTradeDataFromSwap = useCallback(async (swap: ExtendedSwapTransaction): Promise<TradeData> => {
     const inputQty = swap.inputToken.amount / Math.pow(10, swap.inputToken.decimals);
     const outputQty = swap.outputToken.amount / Math.pow(10, swap.outputToken.decimals);
     const timestampMs = swap.timestamp < 10000000000 ? swap.timestamp * 1000 : swap.timestamp;
 
-    const inputUsdValue = await estimateTokenUsdValue(
-      swap.inputToken.amount,
-      swap.inputToken.decimals,
-      swap.inputToken.mint,
-      swap.inputToken.symbol
-    );
-    const outputUsdValue = await estimateTokenUsdValue(
-      swap.outputToken.amount,
-      swap.outputToken.decimals,
-      swap.outputToken.mint,
-      swap.outputToken.symbol
-    );
+    // Use volume USD directly from Birdeye if available, otherwise estimate
+    let inputUsdValue: string;
+    let outputUsdValue: string;
+
+    // Check if volumeUsd exists and is a number
+    if ('volumeUsd' in swap &&
+      swap.volumeUsd !== undefined &&
+      typeof swap.volumeUsd === 'number') {
+      // If the swap has volumeUsd from Birdeye, use that to calculate token values
+      inputUsdValue = `$${swap.volumeUsd.toFixed(2)}`;
+      outputUsdValue = `$${swap.volumeUsd.toFixed(2)}`;
+    } else {
+      // Fall back to the old estimation if volumeUsd is not available
+      inputUsdValue = await estimateTokenUsdValue(
+        swap.inputToken.amount,
+        swap.inputToken.decimals,
+        swap.inputToken.mint,
+        swap.inputToken.symbol
+      );
+      outputUsdValue = await estimateTokenUsdValue(
+        swap.outputToken.amount,
+        swap.outputToken.decimals,
+        swap.outputToken.mint,
+        swap.outputToken.symbol
+      );
+    }
 
     return {
       inputMint: swap.inputToken.mint,
@@ -291,8 +425,8 @@ export default function TradeModal({
       inputQuantity: inputQty.toFixed(4),
       inputUsdValue,
       outputSymbol: swap.outputToken.symbol || 'Unknown',
-      inputAmountLamports: swap.inputToken.amount.toString(),
-      outputAmountLamports: swap.outputToken.amount.toString(),
+      inputAmountLamports: String(swap.inputToken.amount),
+      outputAmountLamports: String(swap.outputToken.amount),
       outputQuantity: outputQty.toFixed(4),
       outputUsdValue,
       executionTimestamp: timestampMs,
@@ -307,7 +441,7 @@ export default function TradeModal({
   }, []);
 
   /**
-   * Handle refresh for past swaps
+   * Handle refresh for past swaps using Birdeye API
    */
   const handleRefresh = useCallback(async () => {
     // Prevent concurrent refreshes
@@ -320,23 +454,15 @@ export default function TradeModal({
     }
 
     try {
-      // Fetch raw swap transactions
-      const rawSwaps = await fetchRecentSwaps(walletAddress);
-      if (rawSwaps.length === 0) {
-        if (isMounted.current) {
-          setSwaps([]);
-        }
-        return;
-      }
+      // Use the new Birdeye API function
+      const birdeyeSwaps = await fetchSwapsWithBirdeye(walletAddress);
 
-      // Enrich with token metadata
-      const enrichedSwaps = await enrichSwapTransactions(rawSwaps);
       if (isMounted.current) {
-        setSwaps(enrichedSwaps);
+        setSwaps(birdeyeSwaps);
 
         // If no swap is selected yet and we have swaps, select the first one
-        if (!selectedPastSwap && enrichedSwaps.length > 0) {
-          setSelectedPastSwap(enrichedSwaps[0]);
+        if (!selectedPastSwap && birdeyeSwaps.length > 0) {
+          setSelectedPastSwap(birdeyeSwaps[0]);
         }
       }
     } catch (err: any) {
@@ -349,7 +475,7 @@ export default function TradeModal({
       isRefreshingRef.current = false;
       hasLoadedInitialDataRef.current = true;
     }
-  }, [walletAddress, selectedPastSwap]);
+  }, [walletAddress, selectedPastSwap, fetchSwapsWithBirdeye]);
 
   /**
    * Handle refresh explicitly with a forced update
@@ -394,10 +520,55 @@ export default function TradeModal({
     }
 
     try {
-      // Create the trade data object from the selected swap
-      const tradeData = await createTradeDataFromSwap(selectedPastSwap);
+      // Create the trade data object manually to avoid type conflicts
+      const inputQty = selectedPastSwap.inputToken.amount / Math.pow(10, selectedPastSwap.inputToken.decimals);
+      const outputQty = selectedPastSwap.outputToken.amount / Math.pow(10, selectedPastSwap.outputToken.decimals);
+      const timestampMs = selectedPastSwap.timestamp < 10000000000 ? selectedPastSwap.timestamp * 1000 : selectedPastSwap.timestamp;
 
-      // Call the parent's onShare handler
+      // Use volume USD directly from Birdeye if available, otherwise estimate
+      let inputUsdValue: string;
+      let outputUsdValue: string;
+
+      // Check if volumeUsd exists and is a number
+      if ('volumeUsd' in selectedPastSwap &&
+        selectedPastSwap.volumeUsd !== undefined &&
+        typeof selectedPastSwap.volumeUsd === 'number') {
+        // If the swap has volumeUsd from Birdeye, use that to calculate token values
+        inputUsdValue = `$${selectedPastSwap.volumeUsd.toFixed(2)}`;
+        outputUsdValue = `$${selectedPastSwap.volumeUsd.toFixed(2)}`;
+      } else {
+        // Fall back to the old estimation if volumeUsd is not available
+        inputUsdValue = await estimateTokenUsdValue(
+          selectedPastSwap.inputToken.amount,
+          selectedPastSwap.inputToken.decimals,
+          selectedPastSwap.inputToken.mint,
+          selectedPastSwap.inputToken.symbol
+        );
+        outputUsdValue = await estimateTokenUsdValue(
+          selectedPastSwap.outputToken.amount,
+          selectedPastSwap.outputToken.decimals,
+          selectedPastSwap.outputToken.mint,
+          selectedPastSwap.outputToken.symbol
+        );
+      }
+
+      // Create a trade data object directly
+      const tradeData: TradeData = {
+        inputMint: selectedPastSwap.inputToken.mint,
+        outputMint: selectedPastSwap.outputToken.mint,
+        aggregator: 'Jupiter',
+        inputSymbol: selectedPastSwap.inputToken.symbol || 'Unknown',
+        inputQuantity: inputQty.toFixed(4),
+        inputUsdValue,
+        outputSymbol: selectedPastSwap.outputToken.symbol || 'Unknown',
+        inputAmountLamports: String(selectedPastSwap.inputToken.amount),
+        outputAmountLamports: String(selectedPastSwap.outputToken.amount),
+        outputQuantity: outputQty.toFixed(4),
+        outputUsdValue,
+        executionTimestamp: timestampMs,
+      };
+
+      // Call the parent's onShare handler with our manually created tradeData
       await onShare(tradeData);
 
       if (isMounted.current) {
@@ -418,7 +589,7 @@ export default function TradeModal({
         setLoading(false);
       }
     }
-  }, [selectedPastSwap, onShare, handleClose, createTradeDataFromSwap]);
+  }, [selectedPastSwap, onShare, handleClose, estimateTokenUsdValue]);
 
   return (
     <Modal
@@ -548,7 +719,7 @@ export default function TradeModal({
                                   </TouchableOpacity>
                                 );
                               }}
-                              keyExtractor={item => item.signature}
+                              keyExtractor={(item, index) => `${item.signature}-${index}`}
                               contentContainerStyle={styles.swapsList}
                               showsVerticalScrollIndicator={true}
                               initialNumToRender={5}
