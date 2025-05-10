@@ -10,6 +10,8 @@ import {
   TextInput,
   Animated,
   Easing,
+  KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 
@@ -118,6 +120,33 @@ export default function PostThreadScreen() {
       : DEFAULT_IMAGES.user,
     verified: true,
   };
+
+  // Add state to track keyboard status
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Add keyboard listeners
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
 
   // Function to focus the comment input and highlight it
   const focusCommentInput = () => {
@@ -416,86 +445,105 @@ export default function PostThreadScreen() {
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, Platform.OS === 'android' && { paddingTop: 30 }]}>
-      {/* Screen Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thread</Text>
-        <View style={styles.spacerView} />
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
+      <SafeAreaView
+        style={[styles.container, Platform.OS === 'android' && { paddingTop: 30 }]}>
+        {/* Screen Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Thread</Text>
+          <View style={styles.spacerView} />
+        </View>
 
-      <ScrollView
-        ref={scrollViewRef}
-        contentContainerStyle={styles.scrollContent}>
-        {currentPost ? (
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={[
+            styles.scrollContent,
+            // Add padding only on iOS since KeyboardAvoidingView works differently there
+            Platform.OS === 'ios' && keyboardVisible && { paddingBottom: keyboardHeight }
+          ]}
+          keyboardShouldPersistTaps="handled">
+          {currentPost ? (
+            <>
+              {ancestorChain.map(p => renderNonClickablePost(p))}
+              {directChildren.length > 0 && (
+                <>
+                  <Text style={styles.repliesLabel}>Replies</Text>
+                  {directChildren.map(child => (
+                    <View key={child.id} style={styles.childPostContainer}>
+                      {renderClickableChildPost(child)}
+                    </View>
+                  ))}
+                </>
+              )}
+            </>
+          ) : (
+            <View style={styles.notFoundContainer}>
+              <Text style={styles.notFoundText}>
+                Oops! Post not found.
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {currentPost && (
           <>
-            {ancestorChain.map(p => renderNonClickablePost(p))}
-            {directChildren.length > 0 && (
-              <>
-                <Text style={styles.repliesLabel}>Replies</Text>
-                {directChildren.map(child => (
-                  <View key={child.id} style={styles.childPostContainer}>
-                    {renderClickableChildPost(child)}
-                  </View>
-                ))}
-              </>
+            {/* Semi-transparent overlay for dimming effect */}
+            {isCommentHighlighted && (
+              <Animated.View
+                style={[
+                  styles.dimOverlay,
+                  { opacity: backgroundOpacity }
+                ]}
+              />
             )}
-          </>
-        ) : (
-          <View style={styles.notFoundContainer}>
-            <Text style={styles.notFoundText}>
-              Oops! Post not found.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
 
-      {currentPost && (
-        <>
-          {/* Semi-transparent overlay for dimming effect */}
-          {isCommentHighlighted && (
+            {/* On Android, manually position the composer over the keyboard */}
             <Animated.View
               style={[
-                styles.dimOverlay,
-                { opacity: backgroundOpacity }
-              ]}
-            />
-          )}
+                styles.composerContainer,
+                {
+                  transform: [{ translateY: composerTranslateY }],
+                  zIndex: 2,
+                },
+                isCommentHighlighted && styles.composerElevated,
+                // On Android, manually position the composer above the keyboard
+                Platform.OS === 'android' && keyboardVisible && {
+                  position: 'absolute',
+                  bottom: keyboardHeight,
+                  left: 0,
+                  right: 0
+                }
+              ]}>
+              <ThreadComposer
+                ref={commentInputRef}
+                currentUser={localUser}
+                parentId={currentPost.id}
+                onPostCreated={() => {
+                  console.log('Reply created successfully');
+                }}
+              />
+            </Animated.View>
+          </>
+        )}
 
-          <Animated.View
-            style={[
-              styles.composerContainer,
-              {
-                transform: [{ translateY: composerTranslateY }],
-                zIndex: 2,
-              },
-              isCommentHighlighted && styles.composerElevated
-            ]}>
-            <ThreadComposer
-              ref={commentInputRef}
-              currentUser={localUser}
-              parentId={currentPost.id}
-              onPostCreated={() => {
-                console.log('Reply created successfully');
-              }}
-            />
-          </Animated.View>
-        </>
-      )}
-
-      {postToEdit && (
-        <ThreadEditModal
-          post={postToEdit}
-          visible={editModalVisible}
-          onClose={() => setEditModalVisible(false)}
-          currentUser={localUser}
-        />
-      )}
-    </SafeAreaView>
+        {postToEdit && (
+          <ThreadEditModal
+            post={postToEdit}
+            visible={editModalVisible}
+            onClose={() => setEditModalVisible(false)}
+            currentUser={localUser}
+          />
+        )}
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
