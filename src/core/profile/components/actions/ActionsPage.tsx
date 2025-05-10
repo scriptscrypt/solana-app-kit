@@ -574,6 +574,7 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+  const [hasCompletedInitialLoad, setHasCompletedInitialLoad] = useState(false);
 
   // Timeout for new wallets to prevent excessive retries
   useEffect(() => {
@@ -585,6 +586,13 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
       return () => clearTimeout(timer);
     }
   }, [loadingActions, isRefreshing, hasAttemptedLoad]);
+
+  // Mark initial load as complete when actions are loaded
+  useEffect(() => {
+    if (!loadingActions && !isRefreshing && !hasCompletedInitialLoad) {
+      setHasCompletedInitialLoad(true);
+    }
+  }, [loadingActions, isRefreshing, hasCompletedInitialLoad]);
 
   const handleRefresh = useCallback(async () => {
     if (!walletAddress) return;
@@ -599,11 +607,12 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
     } finally {
       setIsRefreshing(false);
       setHasAttemptedLoad(true);
+      setHasCompletedInitialLoad(true);
     }
   }, [walletAddress, dispatch]);
 
   // If still initial loading and not having attempted to load yet, show loading
-  if (loadingActions && !isRefreshing && !hasAttemptedLoad) {
+  if (loadingActions && !isRefreshing && !hasAttemptedLoad && !hasCompletedInitialLoad) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={COLORS.brandBlue} />
