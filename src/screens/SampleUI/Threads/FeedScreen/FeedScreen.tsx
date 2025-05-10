@@ -1,7 +1,8 @@
 // File: src/screens/SampleUI/Threads/FeedScreen/FeedScreen.tsx
 import React, { useCallback, useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Platform, View, FlatList } from 'react-native';
+import { SafeAreaView, StyleSheet, Platform, View, FlatList, StatusBar } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Thread } from '@/core/thread/components/thread-container/Thread';
 import {
@@ -25,6 +26,7 @@ import FeedItemSkeleton from '@/core/feed/components/FeedSkeleton';
 export default function FeedScreen() {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
 
   const allPosts = useAppSelector(state => state.thread.allPosts);
   const userWallet = useAppSelector(state => state.auth.address);
@@ -137,12 +139,18 @@ export default function FeedScreen() {
   if (!profileStable || areInitialPostsLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <FlatList
-          data={[1, 2, 3]}
-          keyExtractor={(item) => item.toString()}
-          renderItem={() => <FeedItemSkeleton />}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={[
+          Platform.OS === 'android' && {
+            paddingTop: Math.max(insets.top, 30)
+          }
+        ]}>
+          <FlatList
+            data={[1, 2, 3]}
+            keyExtractor={(item) => item.toString()}
+            renderItem={() => <FeedItemSkeleton />}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
       </SafeAreaView>
     );
   }
@@ -160,7 +168,9 @@ export default function FeedScreen() {
     <SafeAreaView
       style={[
         styles.container,
-        Platform.OS === 'android' && styles.androidContainer,
+        Platform.OS === 'android' && {
+          paddingTop: Math.max(insets.top, 30)
+        }
       ]}>
       {renderCustomHeader()}
       <Thread
@@ -240,9 +250,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  androidContainer: {
-    paddingTop: 30,
   },
   centerContent: {
     justifyContent: 'center',
