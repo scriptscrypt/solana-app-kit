@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform, TouchableOpacity, View, StyleSheet, Animated, Dimensions, Image, Text, findNodeHandle, UIManager } from 'react-native';
+import { Platform, TouchableOpacity, View, StyleSheet, Animated, Dimensions, Image, Text } from 'react-native';
 import { useNavigation, ParamListBase } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
@@ -29,16 +29,6 @@ const { width } = Dimensions.get('window');
 const TAB_WIDTH = width / 4;
 const FEED_TAB_CENTER = TAB_WIDTH * 1.5; // Second tab center (0-based index)
 
-// Adjust tooltip position based on screen size for better accuracy
-let TOOLTIP_OFFSET = -75; // Default offset to center 150px tooltip
-if (width < 375) {
-  TOOLTIP_OFFSET = -70; // Smaller screens need less offset
-} else if (width > 428) {
-  TOOLTIP_OFFSET = -80; // Larger screens need more offset
-}
-
-const TOOLTIP_POSITION = FEED_TAB_CENTER + TOOLTIP_OFFSET;
-
 const iconStyle = {
   shadowColor: COLORS.black,
   shadowOffset: { width: 0, height: 10 },
@@ -51,47 +41,13 @@ export default function MainTabs() {
   const navigation = useNavigation<BottomTabNavigationProp<ParamListBase>>();
   const [expandedMenu, setExpandedMenu] = useState(false);
   const [currentPlatform, setCurrentPlatform] = useState<'threads' | 'insta' | 'chats'>('threads');
-  const [showTooltip, setShowTooltip] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0); // Add a refresh key to force re-render
   const menuAnimation = useRef(new Animated.Value(0)).current;
-  const tooltipAnimation = useRef(new Animated.Value(0)).current;
-
-  // Show tooltip on initial render and hide after a few seconds
-  useEffect(() => {
-    // Animate tooltip in
-    Animated.timing(tooltipAnimation, {
-      toValue: 1,
-      duration: 500,
-      delay: 1000, // Wait a second before showing
-      useNativeDriver: true,
-    }).start();
-
-    // Hide tooltip after 4 seconds
-    const timer = setTimeout(() => {
-      Animated.timing(tooltipAnimation, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start(() => setShowTooltip(false));
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Function to toggle platform selection menu
   const togglePlatformMenu = () => {
     // Only toggle menu visibility, don't touch anything related to rendering
     setExpandedMenu(!expandedMenu);
-
-    // Hide tooltip if it's still visible when user activates the menu
-    if (showTooltip) {
-      setShowTooltip(false);
-      Animated.timing(tooltipAnimation, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    }
 
     Animated.spring(menuAnimation, {
       toValue: expandedMenu ? 0 : 1,
@@ -222,29 +178,6 @@ export default function MainTabs() {
         </View>
       </Animated.View>
 
-      {/* Tooltip for Feed button */}
-      {showTooltip && (
-        <Animated.View
-          style={[
-            platformStyles.tooltip,
-            {
-              opacity: tooltipAnimation,
-              transform: [{
-                translateY: tooltipAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [10, 0],
-                })
-              }]
-            }
-          ]}
-        >
-          <View style={platformStyles.tooltipArrow} />
-          <Text style={platformStyles.tooltipText}>
-            Long press to change platform
-          </Text>
-        </Animated.View>
-      )}
-
       <Tab.Navigator
         initialRouteName="Feed"
         screenOptions={{
@@ -297,24 +230,6 @@ export default function MainTabs() {
         <Tab.Screen
           name="Feed"
           component={StableFeedComponent}
-          listeners={{
-            tabLongPress: () => {
-              togglePlatformMenu();
-              return true;
-            },
-            tabPress: (e) => {
-              if (expandedMenu) {
-                e.preventDefault();
-                setExpandedMenu(false);
-                Animated.spring(menuAnimation, {
-                  toValue: 0,
-                  friction: 8,
-                  tension: 40,
-                  useNativeDriver: true,
-                }).start();
-              }
-            }
-          }}
           options={{
             tabBarIcon: ({ focused, size }) => (
               <AnimatedTabIcon
@@ -453,41 +368,6 @@ const platformStyles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 3,
-  },
-  tooltip: {
-    position: 'absolute',
-    bottom: 75,
-    left: TOOLTIP_POSITION,
-    width: 150,
-    backgroundColor: 'rgba(20, 25, 38, 0.85)',
-    borderRadius: 8,
-    padding: 8,
-    zIndex: 1000,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
-  },
-  tooltipText: {
-    color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.xs,
-    textAlign: 'center',
-    letterSpacing: TYPOGRAPHY.letterSpacing,
-    fontWeight: String(TYPOGRAPHY.medium) as any,
-  },
-  tooltipArrow: {
-    position: 'absolute',
-    bottom: -8,
-    left: 75,
-    width: 0,
-    height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: 'rgba(20, 25, 38, 0.85)',
   },
   tabBarOverlay: {
     ...StyleSheet.absoluteFillObject,
