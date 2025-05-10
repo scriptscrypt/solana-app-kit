@@ -76,7 +76,7 @@ export default function MainTabs() {
     }).start();
   };
 
-  // Create a stable component that doesn't rerender on menu toggle
+  // Create a stable component that doesn't rerender on menu toggle         
   const StableFeedComponent = React.useMemo(() => {
     // This component is created once and captured in useMemo
     // It will only update when platformSwitchKey changes
