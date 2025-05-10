@@ -22,6 +22,8 @@ config.resolver = {
     stream: require.resolve('stream-browserify'),
     // Add web streams API polyfill
     'web-streams-polyfill': require.resolve('web-streams-polyfill'),
+    // Add events polyfill
+    'events': require.resolve('events'),
   },
 };
 

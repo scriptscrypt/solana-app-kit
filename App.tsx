@@ -1,13 +1,11 @@
 // App.tsx
 import 'react-native-get-random-values';
-import { Buffer } from 'buffer';
+import {Buffer} from 'buffer';
 global.Buffer = Buffer;
-
-import process from 'process';
-global.process = process;
 
 // Add a global dev mode flag that can be used anywhere in the app
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
 
 // Declare global type for TypeScript
 declare global {
@@ -17,6 +15,17 @@ declare global {
     }
   }
   var __DEV_MODE__: boolean;
+}
+
+// Force initialize deep linking with the scheme from app.json to prevent the error
+// "Cannot make a deep link into a standalone app with no custom scheme defined"
+try {
+  // Initialize scheme at app startup before any linking operations
+  const scheme = 'solanaappkit';
+  const prefix = Linking.createURL('/');
+  console.log('Initialized deep linking with scheme:', scheme, 'prefix:', prefix);
+} catch (error) {
+  console.warn('Failed to initialize deep linking:', error);
 }
 
 // Set a global __DEV_MODE__ flag during app initialization
@@ -40,7 +49,7 @@ const forceDevMode = async () => {
 
       console.log('[DEV MODE] Direct detection at startup:', {
         isInDevMode,
-        storedDevMode
+        storedDevMode,
       });
 
       if (isInDevMode) {
@@ -57,38 +66,41 @@ const forceDevMode = async () => {
 forceDevMode().catch(console.error);
 
 import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
-import { Provider as ReduxProvider } from 'react-redux';
-import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React, {useEffect, useState} from 'react';
+import {Provider as ReduxProvider} from 'react-redux';
+import {NavigationContainer} from '@react-navigation/native';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import RootNavigator from './src/shared/navigation/RootNavigator';
-import { navigationRef } from './src/shared/hooks/useAppNavigation';
+import {navigationRef} from './src/shared/hooks/useAppNavigation';
 import {store, persistor} from './src/shared/state/store';
 import './src/shared/utils/polyfills';
 import COLORS from './src/assets/colors';
-import { View, ActivityIndicator } from 'react-native';
-import { PersistGate } from 'redux-persist/integration/react';
+import {View, ActivityIndicator} from 'react-native';
+import {PersistGate} from 'redux-persist/integration/react';
 
-import { PrivyProvider, PrivyElements } from '@privy-io/expo';
-import { TurnkeyProvider } from '@turnkey/sdk-react-native';
+import {PrivyProvider, PrivyElements} from '@privy-io/expo';
+import {TurnkeyProvider} from '@turnkey/sdk-react-native';
 
 // Dynamic client initialization
-import { CustomizationProvider } from './src/config/CustomizationProvider';
-import { DefaultCustomizationConfig } from './src/config';
-import { getDynamicClient, initDynamicClient } from './src/modules/walletProviders/services/walletProviders/dynamic';
+import {CustomizationProvider} from './src/config/CustomizationProvider';
+import {DefaultCustomizationConfig} from './src/config';
+import {
+  getDynamicClient,
+  initDynamicClient,
+} from './src/modules/walletProviders/services/walletProviders/dynamic';
 import TransactionNotification from './src/core/sharedUI/TransactionNotification';
 
 // Import DevMode components
-import { DevModeProvider, useDevMode } from './src/context/DevModeContext';
+import {DevModeProvider, useDevMode} from './src/context/DevModeContext';
 import DevDrawer from './src/core/devMode/DevDrawer';
 
 // Import Environment Error provider and new components
-import { EnvErrorProvider } from './src/context/EnvErrorContext';
+import {EnvErrorProvider} from './src/context/EnvErrorContext';
 import DevModeStatusBar from './src/core/devMode/DevModeStatusBar';
 
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {
-  const { isDevMode } = useDevMode();
+  const {isDevMode} = useDevMode();
 
   if (!isDevMode) return null;
 
@@ -102,7 +114,13 @@ const DevModeComponents = () => {
 
 // Loading component for PersistGate
 const PersistLoading = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
+  <View
+    style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: COLORS.background,
+    }}>
     <ActivityIndicator size="large" color={COLORS.brandPrimary} />
   </View>
 );
@@ -117,11 +135,11 @@ export default function App() {
         initDynamicClient(
           config.auth.dynamic.environmentId,
           config.auth.dynamic.appName,
-          config.auth.dynamic.appLogoUrl
+          config.auth.dynamic.appLogoUrl,
         );
         setDynamicInitialized(true);
       } catch (error) {
-        console.error("Failed to initialize Dynamic client:", error);
+        console.error('Failed to initialize Dynamic client:', error);
       }
     }
   }, [config.auth.provider]);
@@ -132,9 +150,11 @@ export default function App() {
 
     try {
       const client = getDynamicClient();
-      return client?.reactNative?.WebView ? <client.reactNative.WebView /> : null;
+      return client?.reactNative?.WebView ? (
+        <client.reactNative.WebView />
+      ) : null;
     } catch (error) {
-      console.error("Error getting Dynamic WebView:", error);
+      console.error('Error getting Dynamic WebView:', error);
       return null;
     }
   };
@@ -160,7 +180,7 @@ export default function App() {
           <PersistGate loading={<PersistLoading />} persistor={persistor}>
             <DevModeProvider>
               <EnvErrorProvider>
-                <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+                <View style={{flex: 1, backgroundColor: COLORS.background}}>
                   {config.auth.provider === 'privy' ? (
                     <PrivyProvider
                       appId={config.auth.privy.appId}
@@ -171,8 +191,7 @@ export default function App() {
                             createOnLogin: 'users-without-wallets',
                           },
                         },
-                      }}
-                    >
+                      }}>
                       <NavigationContainer ref={navigationRef}>
                         <RootNavigator />
                       </NavigationContainer>
