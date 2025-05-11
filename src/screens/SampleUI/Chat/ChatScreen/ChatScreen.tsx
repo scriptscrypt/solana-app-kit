@@ -1599,7 +1599,7 @@ function ChatScreen(): React.ReactElement {
         />
 
         {/* Replace custom header with AppHeader component */}
-        <AppHeader 
+        <AppHeader
           title={chatName}
           onBackPress={handleBack}
           showBottomGradient={false}
