@@ -1,7 +1,7 @@
 // FILE: src/components/thread/post/PostBody.tsx
 import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { createPostBodyStyles } from './PostBody.styles';
 import { ThreadPost } from '../thread.types';
 import SectionTextOnly from '../sections/SectionTextOnly';
 import SectionTextImage from '../sections/SectionTextImage';
@@ -27,6 +27,8 @@ interface PostBodyProps {
    * if it's included in the post's sections.
    */
   externalRefreshTrigger?: number;
+  /** Indicates if this post is being displayed as a retweet */
+  isRetweet?: boolean;
 }
 
 /**
@@ -90,10 +92,12 @@ function PostBody({
   themeOverrides,
   styleOverrides,
   externalRefreshTrigger,
+  isRetweet,
 }: PostBodyProps) {
-  // Memoize theme and styles to prevent recalculation
-  const mergedTheme = useMemo(() => getMergedTheme(themeOverrides), [themeOverrides]);
-  const styles = useMemo(() => createThreadStyles(mergedTheme, styleOverrides), [mergedTheme, styleOverrides]);
+  // Memoize styles (no theme needed)
+  const styles = useMemo(() => createPostBodyStyles(styleOverrides), [
+    styleOverrides,
+  ]);
 
   const { user, createdAt, sections = [] } = post;
 
@@ -112,7 +116,7 @@ function PostBody({
     <View style={{
       marginTop: 0,
       padding: 0,
-      backgroundColor: COLORS.background
+      backgroundColor: isRetweet ? COLORS.lighterBackground : COLORS.background
     }}>
       {renderedSections}
     </View>
@@ -161,6 +165,7 @@ function arePropsEqual(prev: PostBodyProps, next: PostBodyProps): boolean {
   // Compare theme/style references
   if (prev.themeOverrides !== next.themeOverrides) return false;
   if (prev.styleOverrides !== next.styleOverrides) return false;
+  if (prev.isRetweet !== next.isRetweet) return false;
 
   // Compare externalRefreshTrigger
   if (prev.externalRefreshTrigger !== next.externalRefreshTrigger) return false;

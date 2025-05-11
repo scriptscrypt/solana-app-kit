@@ -1,10 +1,11 @@
-
 import { StyleSheet } from 'react-native';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 export default StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   centeredContainer: {
     flex: 1,
@@ -14,43 +15,44 @@ export default StyleSheet.create({
   modalContainer: {
     width: '85%',
     maxHeight: '70%',
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.lighterBackground,
     borderRadius: 10,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     marginBottom: 10,
     textAlign: 'center',
-    color: '#333',
+    color: COLORS.white,
   },
   textInput: {
-    borderColor: '#ccc',
+    borderColor: COLORS.borderDarkColor,
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
     textAlignVertical: 'top',
-    fontSize: 14,
-    color: '#333',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.white,
     minHeight: 80,
+    backgroundColor: COLORS.lightBackground,
   },
   retweetButton: {
     marginTop: 16,
-    backgroundColor: '#22C55E',
+    backgroundColor: COLORS.brandPrimary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
   retweetButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
 });

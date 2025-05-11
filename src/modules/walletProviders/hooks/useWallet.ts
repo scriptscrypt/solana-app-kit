@@ -280,6 +280,40 @@ export function useWallet() {
     return !!wallet || !!solanaWallet || !!authState.address;
   }, [wallet, solanaWallet, authState.address]);
 
+  // Signing functions from the connected wallet (required by SolanaAgentKit)
+  const signTransaction = async (transaction: Transaction | VersionedTransaction) => {
+    const availableWallet = getWallet();
+    if (!availableWallet) throw new Error('Wallet not connected');
+    // Check if the wallet has the signTransaction method before calling it
+    if ('signTransaction' in availableWallet && typeof availableWallet.signTransaction === 'function') {
+      return availableWallet.signTransaction(transaction);
+    } else {
+      throw new Error('Connected wallet does not support signTransaction');
+    }
+  };
+
+  const signAllTransactions = async (transactions: (Transaction | VersionedTransaction)[]) => {
+    const availableWallet = getWallet();
+    if (!availableWallet) throw new Error('Wallet not connected');
+    // Check if the wallet has the signAllTransactions method before calling it
+    if ('signAllTransactions' in availableWallet && typeof availableWallet.signAllTransactions === 'function') {
+      return availableWallet.signAllTransactions(transactions);
+    } else {
+      throw new Error('Connected wallet does not support signAllTransactions');
+    }
+  };
+
+  const signMessage = async (message: Uint8Array) => {
+    const availableWallet = getWallet();
+    if (!availableWallet) throw new Error('Wallet not connected');
+    // Check if the wallet has the signMessage method before calling it
+    if ('signMessage' in availableWallet && typeof availableWallet.signMessage === 'function') {
+      return availableWallet.signMessage(message);
+    } else {
+      throw new Error('Connected wallet does not support signMessage');
+    }
+  };
+
   return {
     wallet: currentWallet,    // The best available wallet (from any provider)
     solanaWallet,             // Legacy wallet (for backward compatibility)
@@ -290,6 +324,9 @@ export function useWallet() {
     sendInstructions,         // Send instructions with current wallet
     sendBase64Transaction,    // Send base64 transaction with current wallet
     provider: currentProvider || authState.provider,
+    signTransaction,          // Expose signTransaction
+    signAllTransactions,      // Expose signAllTransactions
+    signMessage,              // Expose signMessage
     isDynamic,                // Check if using Dynamic
     isPrivy,                  // Check if using Privy
     isMWA,                    // Check if using MWA

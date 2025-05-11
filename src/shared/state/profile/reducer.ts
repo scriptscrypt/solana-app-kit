@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store';
 import { HELIUS_API_KEY, HELIUS_STAKED_API_KEY } from '@env';
-import { Action, fetchWalletActionsAsync } from '@/core/profile/services/profileActions';
+import { fetchWalletActionsAsync } from '@/core/profile/services/profileActions';
+import { Action } from '@/core/profile/types/index';
 
 interface ProfileState {
   actions: {
@@ -10,6 +11,8 @@ interface ProfileState {
     error: Record<string, string | null>;
     // Track last fetch time to prevent unnecessary fetches
     lastFetched: Record<string, number>;
+    // Track if this wallet had zero actions (avoid repeated fetches for new wallets)
+    emptyWallets: Record<string, boolean>;
   };
 }
 
@@ -19,6 +22,7 @@ const initialState: ProfileState = {
     loading: {},
     error: {},
     lastFetched: {},
+    emptyWallets: {},
   },
 };
 
@@ -37,13 +41,22 @@ export const fetchWalletActionsWithCache = createAsyncThunk(
     const lastFetched = state.profile.actions.lastFetched[walletAddress] || 0;
     const currentTime = Date.now();
     
-    // Skip fetch if we have data and it's less than 1 minute old (unless forceRefresh is true)
-    const dataExists = !!state.profile.actions.data[walletAddress]?.length;
-    const isFresh = currentTime - lastFetched < 60000; // 1 minute cache
+    // Skip fetch if this wallet is known to be empty (no transactions) and it was checked recently
+    // Use a longer cache time (5 minutes) for empty wallets to reduce API load
+    const isEmptyWallet = state.profile.actions.emptyWallets[walletAddress];
+    const emptyWalletCacheTime = 5 * 60 * 1000; // 5 minutes for empty wallets
+    const standardCacheTime = 60 * 1000; // 1 minute for wallets with transactions
     
-    if (dataExists && isFresh && !forceRefresh) {
-      // Return existing data to avoid unnecessary fetch
-      return [...state.profile.actions.data[walletAddress]];
+    // Determine which cache time to use
+    const cacheTime = isEmptyWallet ? emptyWalletCacheTime : standardCacheTime;
+    
+    // Skip fetch if within cache time unless force refresh
+    const dataExists = !!state.profile.actions.data[walletAddress]?.length;
+    const isFresh = currentTime - lastFetched < cacheTime;
+    
+    if ((dataExists || isEmptyWallet) && isFresh && !forceRefresh) {
+      // Return existing data (or empty array for empty wallets) to avoid unnecessary fetch
+      return [...(state.profile.actions.data[walletAddress] || [])];
     }
     
     // Otherwise proceed with the fetch
@@ -87,8 +100,8 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
       
       if (hasTokenInputs && hasTokenOutputs) {
         // Extract token symbols if available
-        const inputToken = swap.tokenInputs[0];
-        const outputToken = swap.tokenOutputs[0];
+        const inputToken = swap.tokenInputs![0];
+        const outputToken = swap.tokenOutputs![0];
         
         const inputAmount = inputToken.rawTokenAmount?.tokenAmount 
           ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
@@ -109,7 +122,7 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
         };
       } else if (swap.nativeInput && hasTokenOutputs) {
         // SOL to token swap
-        const outputToken = swap.tokenOutputs[0];
+        const outputToken = swap.tokenOutputs![0];
         const outputAmount = outputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(outputToken.rawTokenAmount.tokenAmount) / Math.pow(10, outputToken.rawTokenAmount.decimals || 0)
           : 0;
@@ -118,13 +131,13 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
           swapType: 'SOL_TO_TOKEN',
           inputSymbol: 'SOL',
           outputSymbol: truncateAddress(outputToken.mint),
-          inputAmount: swap.nativeInput.amount / 1_000_000_000, // lamports to SOL
+          inputAmount: Number(swap.nativeInput.amount) / 1_000_000_000, // lamports to SOL
           outputAmount,
           direction: swap.nativeInput.account === walletAddress ? 'OUT' : 'IN'
         };
       } else if (hasTokenInputs && swap.nativeOutput) {
         // Token to SOL swap
-        const inputToken = swap.tokenInputs[0];
+        const inputToken = swap.tokenInputs![0];
         const inputAmount = inputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
           : 0;
@@ -134,7 +147,7 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
           inputSymbol: truncateAddress(inputToken.mint),
           outputSymbol: 'SOL',
           inputAmount,
-          outputAmount: swap.nativeOutput.amount / 1_000_000_000, // lamports to SOL
+          outputAmount: Number(swap.nativeOutput.amount) / 1_000_000_000, // lamports to SOL
           direction: inputToken.userAccount === walletAddress ? 'OUT' : 'IN'
         };
       }
@@ -167,8 +180,7 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
         direction: transfer.fromUserAccount === walletAddress ? 'OUT' : 'IN',
         counterparty: transfer.fromUserAccount === walletAddress 
           ? truncateAddress(transfer.toUserAccount)
-          : truncateAddress(transfer.fromUserAccount),
-        decimals: transfer.decimals || 0
+          : truncateAddress(transfer.fromUserAccount)
       };
     }
     
@@ -261,6 +273,9 @@ const profileSlice = createSlice({
       }
       state.actions.loading[walletAddress] = false;
       state.actions.lastFetched[walletAddress] = Date.now();
+      
+      // Mark this wallet as empty if it has no actions (for better caching)
+      state.actions.emptyWallets[walletAddress] = action.payload.length === 0;
     });
     
     builder.addCase(fetchWalletActionsWithCache.rejected, (state, action) => {

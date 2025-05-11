@@ -12,6 +12,8 @@ interface DevModeContextType {
     isDevMode: boolean;
     toggleDevDrawer: () => void;
     isDevDrawerOpen: boolean;
+    serverStatus: 'checking' | 'online' | 'offline';
+    setServerStatus: (status: 'checking' | 'online' | 'offline') => void;
     checkEnv: (key: string, value: string | undefined, featureName: string) => string | undefined;
 }
 
@@ -25,6 +27,7 @@ export function DevModeProvider({ children }: DevModeProviderProps) {
     // Start with the environment variable value
     const [isDevMode, setIsDevMode] = useState(process.env.EXPO_PUBLIC_DEV_MODE === 'true');
     const [isDevDrawerOpen, setIsDevDrawerOpen] = useState(false);
+    const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
     useEffect(() => {
         const checkDevMode = async () => {
@@ -81,6 +84,8 @@ export function DevModeProvider({ children }: DevModeProviderProps) {
                 isDevMode,
                 toggleDevDrawer,
                 isDevDrawerOpen,
+                serverStatus,
+                setServerStatus,
                 checkEnv,
             }}
         >

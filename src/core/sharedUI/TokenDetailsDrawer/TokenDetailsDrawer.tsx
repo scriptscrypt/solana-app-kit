@@ -18,8 +18,9 @@ import { styles } from './TokenDetailsDrawer.styles';
 import { fetchUserAssets } from '@/modules/dataModule/utils/fetch';
 import { Timeframe, useCoingecko } from '@/modules/dataModule/hooks/useCoingecko';
 import { fetchJupiterTokenData } from '@/modules/dataModule/utils/tokenUtils';
-import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevel, getRiskLevelColor, RiskLevel } from '@/services/rugCheckService';
+import { getTokenRiskReport, TokenRiskReport, getRiskScoreColor, getRiskLevel, getRiskLevelColor, RiskLevel } from '@/shared/services/rugCheckService';
 import LineGraph from '@/core/sharedUI/TradeCard/LineGraph';
+import COLORS from '@/assets/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -711,7 +712,7 @@ const TokenDetailsDrawer: React.FC<TokenDetailsDrawerProps> = ({
           {renderTimeframeSelector()}
           <View style={styles.chartContainer}>
             {loadingOHLC ? (
-              <ActivityIndicator size="large" color="#1d9bf0" />
+              <ActivityIndicator size="large" color={COLORS.brandPrimary} />
             ) : graphData.length > 0 ? (
               <LineGraph
                 data={graphData}

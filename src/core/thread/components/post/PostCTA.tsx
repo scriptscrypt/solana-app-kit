@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -11,19 +11,28 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type { ThreadPost, ThreadUser } from '../thread.types';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/shared/state/store';
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
 import { CLUSTER } from '@env';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import TradeModal from '../trade/TradeModal';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { DEFAULT_IMAGES, ENDPOINTS } from '@/config/constants';
 import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 // Import NFT services
 import { buyNft, buyCollectionFloor } from '@/modules/nft';
+import { createPostCTAStyles } from './PostCTA.styles';
+
+// Import the DEFAULT_SOL_TOKEN for trading
+import { DEFAULT_SOL_TOKEN, TokenInfo } from '@/modules/dataModule';
+
+// Import the RootStackParamList for type-safe navigation
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SwapScreen'>;
 
 /**
  * Determines the type of CTA to display based on the post's sections
@@ -117,8 +126,6 @@ export default function PostCTA({
   styleOverrides,
   userStyleSheet,
 }: PostCTAProps) {
-  const [showTradeModal, setShowTradeModal] = useState(false);
-  const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
   const [loadingFloor, setLoadingFloor] = useState(false);
   const userName = useAppSelector(state => state.auth.username);
 
@@ -140,6 +147,8 @@ export default function PostCTA({
   // Get the wallet address as a string
   const userPublicKey = address || null;
 
+  const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
+  
   const currentUser: ThreadUser = {
     id: userPublicKey || 'anonymous-user',
     username: userName || 'Anonymous',
@@ -150,12 +159,11 @@ export default function PostCTA({
     avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
   };
 
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(
-    mergedTheme,
+  // Memoize styles (no theme needed)
+  const styles = useMemo(() => createPostCTAStyles(
     styleOverrides as { [key: string]: object } | undefined,
     userStyleSheet as { [key: string]: object } | undefined,
-  );
+  ), [styleOverrides, userStyleSheet]);
 
   // Helper to get collection data from a post
   function getCollectionData(post: ThreadPost) {
@@ -174,12 +182,12 @@ export default function PostCTA({
     return null;
   }
 
-  // Determine which CTA to show based on the post content
+  // Determine section type and data
   const sectionType = getPostSectionType(post);
-  if (!sectionType) return null;
-
   const tradeData = sectionType === 'trade' ? getTradeData(post) : null;
   const collectionData = sectionType === 'collection' ? getCollectionData(post) : null;
+
+  const navigation = useNavigation<NavigationProp>();
 
   /**
    * Opens the trade modal for copying a trade
@@ -190,7 +198,39 @@ export default function PostCTA({
       Alert.alert('Error', 'No trade data available for this post.');
       return;
     }
-    setShowTradeModal(true);
+    
+    // Create a more complete TokenInfo object for the input token
+    const inputTokenInfo: TokenInfo = {
+      address: tradeData.inputMint,
+      symbol: tradeData.inputSymbol || 'SOL',
+      name: tradeData.inputSymbol || 'Solana', // Use symbol as name if not provided
+      decimals: 9, // Default to 9 decimals (SOL)
+      logoURI: '', // Leave empty, the SwapScreen will fetch this
+    };
+    
+    // Create a more complete output token object with image if available
+    const outputTokenInfo = {
+      address: tradeData.outputMint, // Pass the output token mint address
+      symbol: tradeData.outputSymbol || 'Unknown Token', // Pass the token symbol or default
+      // Include any additional details that might be available in the trade data
+      mint: tradeData.outputMint, // Add explicit mint address
+      logoURI: (tradeData as any).outputLogoURI || '', // Add logo URL if available using type assertion
+      name: tradeData.outputSymbol || 'Unknown Token', // Add name for display purposes
+    };
+    
+    console.log('[PostCTA] Copying trade with tokens:', {
+      input: inputTokenInfo.symbol,
+      output: outputTokenInfo.symbol,
+      amount: tradeData.inputQuantity
+    });
+    
+    // Navigate to the SwapScreen with the trade parameters instead of showing the modal
+    navigation.navigate('SwapScreen', {
+      inputToken: inputTokenInfo,
+      outputToken: outputTokenInfo,
+      inputAmount: tradeData.inputQuantity || '1', // Pass the original trade amount or default to 1
+      shouldInitialize: true // Flag to initialize the swap with our parameters
+    });
   };
 
   /**
@@ -287,83 +327,56 @@ export default function PostCTA({
     }
   };
 
-  // Set CTA label and onPress based on section type
-  let ctaLabel = 'Copy Trade';
-  let onCtaPress = handleOpenTradeModal;
+  // Logic to determine CTA label, action, and disabled state
+  let ctaLabel = 'Default CTA'; 
+  let onCtaPress = () => {}; 
+  let isDisabled = false; 
 
-  if (sectionType === 'nft') {
+  if (sectionType === 'trade') {
+    ctaLabel = 'Copy Trade';
+    onCtaPress = handleOpenTradeModal;
+    isDisabled = !tradeData; 
+  } else if (sectionType === 'nft') {
     ctaLabel = 'Buy NFT';
     onCtaPress = handleBuyListedNft;
+    isDisabled = nftLoading; 
   } else if (sectionType === 'collection') {
-    ctaLabel = 'Buy Collection Floor';
+    ctaLabel = loadingFloor ? 'Finding Floor...' : `Buy Floor @ ${collectionData?.name || 'Collection'}`;
     onCtaPress = handleBuyCollectionFloor;
+    isDisabled = loadingFloor || !collectionData; 
   }
 
+  if (!sectionType) return null; // Return null if no relevant section type
+
   return (
-    <View style={[styles.threadPostCTAContainer, styleOverrides?.container]}>
+    <View style={[styles.threadPostCTAContainer, styleOverrides?.container, userStyleSheet?.container]}>
       <TouchableOpacity
-        style={[styles.threadPostCTAButton, styleOverrides?.button]}
+        style={[
+          styles.threadPostCTAButton,
+          styleOverrides?.button,
+          userStyleSheet?.button,
+          isDisabled && { opacity: 0.5 } 
+        ]}
         onPress={onCtaPress}
+        disabled={isDisabled}
         activeOpacity={0.8}>
         <Text
           style={[
             styles.threadPostCTAButtonLabel,
             styleOverrides?.buttonLabel,
+            userStyleSheet?.buttonLabel,
           ]}>
           {ctaLabel}
         </Text>
       </TouchableOpacity>
 
-      {/* Render Trade Modal for Copy Trade */}
-      {showTradeModal && tradeData && (
-        <TradeModal
-          visible={showTradeModal}
-          onClose={() => setShowTradeModal(false)}
-          currentUser={currentUser}
-          disableTabs={true}
-          initialActiveTab="TRADE_AND_SHARE"
-          initialInputToken={{
-            address: tradeData.inputMint,
-            symbol: tradeData.inputSymbol,
-            name:
-              tradeData.inputSymbol === 'SOL'
-                ? 'Solana'
-                : tradeData.inputSymbol,
-            decimals: tradeData.inputSymbol === 'SOL' ? 9 : 6,
-            logoURI:
-              tradeData.inputSymbol === 'SOL'
-                ? 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png'
-                : tradeData.inputSymbol === 'USDC'
-                  ? 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png'
-                  : '', // Empty logoURI will trigger a fetch for complete metadata
-          }}
-          initialOutputToken={{
-            address: tradeData.outputMint,
-            symbol: tradeData.outputSymbol,
-            name:
-              tradeData.outputSymbol === 'USDC'
-                ? 'USD Coin'
-                : tradeData.outputSymbol === 'SOL'
-                  ? 'Solana'
-                  : tradeData.outputSymbol,
-            decimals: tradeData.outputSymbol === 'USDC' ? 6 : tradeData.outputSymbol === 'SOL' ? 9 : 6,
-            logoURI:
-              tradeData.outputSymbol === 'USDC'
-                ? 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png'
-                : tradeData.outputSymbol === 'SOL'
-                  ? 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png'
-                  : '', // Empty logoURI will trigger a fetch for complete metadata
-          }}
-        />
-      )}
-
-      {/* NFT Buying Progress Overlay */}
+      {/* NFT Loading Modal */}
       <Modal
         visible={nftLoading}
         transparent
         animationType="fade"
-        onRequestClose={() => { }}>
-        <View style={styles.progressOverlay}>
+        onRequestClose={() => { /* Prevent closing while loading */ }}>
+        <View style={styles.progressOverlay}> 
           <View style={styles.progressContainer}>
             <ActivityIndicator size="large" color="#1d9bf0" />
             {!!nftStatusMsg && (

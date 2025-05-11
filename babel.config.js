@@ -12,4 +12,10 @@ module.exports = {
       },
     ],
   ],
+  // Enable specific transformations for web compatibility
+  env: {
+    production: {
+      plugins: ['transform-remove-console'],
+    },
+  },
 };

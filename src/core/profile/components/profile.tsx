@@ -23,6 +23,7 @@ import { fetchAllPosts } from '@/shared/state/thread/reducer';
 import { useFetchNFTs } from '@/modules/nft';
 import { NftItem } from '@/modules/nft/types';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
 import {
   fetchFollowers,
   fetchFollowing,
@@ -44,6 +45,7 @@ import { ThreadPost } from '@/core/thread/types';
 import { useFetchPortfolio } from '@/modules/dataModule/hooks/useFetchTokens';
 import { AssetItem } from '@/modules/dataModule/types/assetTypes';
 import EditPostModal from '@/core/thread/components/EditPostModal';
+import Icons from '@/assets/svgs';
 
 export default function Profile({
   isOwnProfile = false,
@@ -53,11 +55,14 @@ export default function Profile({
   loadingNfts = false,
   fetchNftsError,
   containerStyle,
+  onGoBack,
+  isScreenLoading,
 }: ProfileProps) {
   const dispatch = useAppDispatch();
   const allReduxPosts = useAppSelector(state => state.thread.allPosts);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { address: currentWalletAddress } = useWallet();
+  const { logout } = useAuth();
   const myWallet = useAppSelector(state => state.auth.address);
 
   // Get profile actions from Redux state
@@ -126,12 +131,24 @@ export default function Profile({
   );
 
   // Combined loading state to prevent flickering
+  const [loadStartTime] = useState(Date.now());
   const isLoading = useMemo(() => {
+    // If the parent screen (ProfileScreen) is NOT loading (skeleton is hidden),
+    // then this Profile component should not show its main loader.
+    if (isScreenLoading === false) {
+      return false;
+    }
+
     // Don't show loading if initial data has been loaded
     if (initialDataLoaded) return false;
 
-    // Only show loading state for own profile
-    if (!isOwnProfile) return false;
+    // Force loading to end after 3 seconds to prevent infinite loading
+    const hasTimePassed = Date.now() - loadStartTime > 3000;
+    if (hasTimePassed) return false;
+
+    // Original conditions for Profile's internal loading 
+    // (Only consider these if isScreenLoading is not false, or undefined)
+    if (!isOwnProfile && isScreenLoading !== false) return false; // If not own profile, usually no big loader unless screen forces it.
 
     return (
       isProfileLoading ||
@@ -141,13 +158,15 @@ export default function Profile({
       loadingPortfolio
     );
   }, [
+    isScreenLoading, // Add to dependency array
     initialDataLoaded,
     isOwnProfile,
     isProfileLoading,
     isFollowersLoading,
     isFollowingLoading,
     loadingActions,
-    loadingPortfolio
+    loadingPortfolio,
+    loadStartTime
   ]);
 
   // Mark data as initially loaded once all critical data is fetched
@@ -158,7 +177,8 @@ export default function Profile({
         !isProfileLoading &&
         !isFollowersLoading &&
         !isFollowingLoading &&
-        !loadingActions
+        !loadingActions &&
+        !loadingPortfolio // Added loadingPortfolio here
       ) : (
         // For other profiles, don't wait as long
         !isProfileLoading
@@ -170,13 +190,24 @@ export default function Profile({
       }, 100);
       return () => clearTimeout(timer);
     }
+
+    // Ensure loading state eventually resolves even if some data isn't available
+    const maxLoadingTime = setTimeout(() => {
+      if (!initialDataLoaded) {
+        console.log('[Profile] Force ending loading state after timeout (initialDataLoaded)');
+        setInitialDataLoaded(true);
+      }
+    }, 7000); // Increased timeout slightly
+
+    return () => clearTimeout(maxLoadingTime);
   }, [
     isOwnProfile,
     isProfileLoading,
     isFollowersLoading,
     isFollowingLoading,
-    isFollowStatusLoading,
-    loadingActions
+    loadingActions,
+    loadingPortfolio, // Added loadingPortfolio here
+    initialDataLoaded
   ]);
 
   // --- Fetch Actions ---
@@ -442,6 +473,7 @@ export default function Profile({
   // --- Avatar and Profile update handlers ---
   const handleProfileUpdated = useCallback((field: 'image' | 'username' | 'description') => {
     // Immediately refresh profile data after any update
+    console.log('[Profile] handleProfileUpdated called for field:', field);
     if (userWallet) {
       setIsProfileLoading(true);
       dispatch(fetchUserProfile(userWallet))
@@ -450,10 +482,10 @@ export default function Profile({
           if (value.profilePicUrl) setProfilePicUrl(value.profilePicUrl);
           if (value.username) setLocalUsername(value.username);
           if (value.description) setLocalDescription(value.description);
-          console.log(`Profile updated (${field}):`, value);
+          console.log(`[Profile] Profile updated (${field}):`, value);
         })
         .catch(err => {
-          console.error('Failed to refresh user profile after update:', err);
+          console.error('[Profile] Failed to refresh user profile after update:', err);
         })
         .finally(() => {
           setIsProfileLoading(false);
@@ -547,6 +579,39 @@ export default function Profile({
     setStatusBarStyle('dark');
   }, []);
 
+  // Add log effect
+  useEffect(() => {
+    console.log('[Profile] Profile component rendered, isOwnProfile:', isOwnProfile);
+  }, [isOwnProfile]);
+
+  // Handle back navigation
+  const handleGoBack = useCallback(() => {
+    if (onGoBack) {
+      onGoBack();
+    } else {
+      navigation.goBack();
+    }
+  }, [onGoBack, navigation]);
+
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => logout(),
+        },
+      ],
+    );
+  }, [logout]);
+
   return (
     <SafeAreaView
       style={[
@@ -554,29 +619,53 @@ export default function Profile({
         containerStyle,
         Platform.OS === 'android' && androidStyles.safeArea,
       ]}>
-      {/* Main profile view */}
-      <ProfileView
-        isOwnProfile={isOwnProfile}
-        user={resolvedUser}
-        myPosts={myPosts}
-        myNFTs={resolvedNfts}
-        loadingNfts={resolvedLoadingNfts}
-        fetchNftsError={resolvedNftError}
-        onAvatarPress={() => handleProfileUpdated('image')}
-        onEditProfile={() => handleProfileUpdated('username')}
-        {...memoizedFollowProps}
-        onPressPost={handlePostPress}
-        containerStyle={containerStyle}
-        myActions={myActions}
-        loadingActions={loadingActions}
-        fetchActionsError={fetchActionsError}
-        portfolioData={portfolio}
-        onRefreshPortfolio={handleRefreshPortfolio}
-        refreshingPortfolio={refreshingPortfolio}
-        onAssetPress={handleAssetPress}
-        isLoading={isLoading}
-        onEditPost={handleEditPost}
-      />
+      {/* Back button header */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <Icons.ArrowLeft width={24} height={24} color={COLORS.white} />
+        </TouchableOpacity>
+
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerUsername} numberOfLines={1} ellipsizeMode="tail">
+            {localUsername}
+          </Text>
+          <Text style={styles.postCount}>{myPosts.length} posts</Text>
+        </View>
+
+        {isOwnProfile && (
+          <TouchableOpacity onPress={handleLogout} style={styles.headerLogoutButton}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.profileWrapper}>
+        {/* Main profile view */}
+        <ProfileView
+          isOwnProfile={isOwnProfile}
+          user={resolvedUser}
+          myPosts={myPosts}
+          myNFTs={resolvedNfts}
+          loadingNfts={resolvedLoadingNfts}
+          fetchNftsError={resolvedNftError}
+          onAvatarPress={() => handleProfileUpdated('image')}
+          onEditProfile={() => handleProfileUpdated('username')}
+          onShareProfile={() => { }}
+          onLogout={isOwnProfile ? handleLogout : undefined}
+          {...memoizedFollowProps}
+          onPressPost={handlePostPress}
+          containerStyle={containerStyle}
+          myActions={myActions}
+          loadingActions={loadingActions}
+          fetchActionsError={fetchActionsError}
+          portfolioData={portfolio}
+          onRefreshPortfolio={handleRefreshPortfolio}
+          refreshingPortfolio={refreshingPortfolio}
+          onAssetPress={handleAssetPress}
+          isLoading={isLoading}
+          onEditPost={handleEditPost}
+        />
+      </View>
 
       {/* Edit Post Modal */}
       <EditPostModal

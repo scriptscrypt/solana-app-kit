@@ -54,7 +54,7 @@ export const styles = StyleSheet.create({
   },
   statValueText: {
     fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
     color: COLORS.white,
     flexShrink: 1,
     flexWrap: 'nowrap',
@@ -87,7 +87,7 @@ export const styles = StyleSheet.create({
   },
   tokenName: {
     fontSize: TYPOGRAPHY.size.xl,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
     color: COLORS.white,
     marginBottom: 4,
   },
@@ -102,13 +102,13 @@ export const styles = StyleSheet.create({
   },
   tokenPrice: {
     fontSize: TYPOGRAPHY.size.xl,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
     color: COLORS.white,
     marginRight: 8,
   },
   priceChange: {
     fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: String(TYPOGRAPHY.medium),
+    fontWeight: TYPOGRAPHY.weights.medium,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -130,7 +130,7 @@ export const styles = StyleSheet.create({
   },
   activeTabText: {
     color: COLORS.brandBlue,
-    fontWeight: String(TYPOGRAPHY.medium),
+    fontWeight: TYPOGRAPHY.weights.medium,
   },
   tabContent: {
     // Removed flex: 1 here as contentContainerStyle handles the growth
@@ -148,7 +148,7 @@ export const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.size.xl,
-    fontWeight: String(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.weights.semiBold,
     marginBottom: 12,
     color: COLORS.white,
   },
@@ -161,20 +161,30 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 16,
+    backgroundColor: COLORS.darkerBackground,
+    borderRadius: 12,
+    padding: 4,
   },
   timeframeButton: {
-    padding: 8,
-    borderRadius: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
   activeTimeframeButton: {
-    backgroundColor: COLORS.darkerBackground,
+    backgroundColor: COLORS.lighterBackground,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   timeframeText: {
     fontSize: TYPOGRAPHY.size.sm,
-    color: COLORS.textLight,
+    color: COLORS.greyMid,
+    fontWeight: '600',
   },
   activeTimeframeText: {
-    color: COLORS.brandBlue,
+    color: COLORS.brandPrimary,
   },
   detailRow: {
     flexDirection: 'row',
@@ -190,7 +200,7 @@ export const styles = StyleSheet.create({
   detailValue: {
     fontSize: TYPOGRAPHY.size.sm,
     color: COLORS.white,
-    fontWeight: String(TYPOGRAPHY.medium),
+    fontWeight: TYPOGRAPHY.weights.medium,
     maxWidth: '60%',
     textAlign: 'right',
   },
@@ -213,7 +223,7 @@ export const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
     color: COLORS.white,
     flexShrink: 1,
     flexWrap: 'nowrap',
@@ -231,7 +241,7 @@ export const styles = StyleSheet.create({
   explorerButtonText: {
     color: COLORS.brandBlue,
     fontSize: TYPOGRAPHY.size.lg,
-    fontWeight: String(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.weights.semiBold,
     marginRight: 8,
   },
   tagsContainer: {
@@ -270,7 +280,7 @@ export const styles = StyleSheet.create({
   attributeValue: {
     fontSize: TYPOGRAPHY.size.sm,
     color: COLORS.white,
-    fontWeight: String(TYPOGRAPHY.medium),
+    fontWeight: TYPOGRAPHY.weights.medium,
   },
   linkText: {
     color: COLORS.brandBlue,
@@ -307,7 +317,7 @@ export const styles = StyleSheet.create({
   },
   marketMetricValue: {
     fontSize: TYPOGRAPHY.size.lg,
-    fontWeight: String(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.weights.semiBold,
     color: COLORS.white,
   },
   coingeckoButton: {
@@ -321,17 +331,25 @@ export const styles = StyleSheet.create({
   coingeckoButtonText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: String(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.weights.semiBold,
   },
   chartContainer: {
     height: 250,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    backgroundColor: COLORS.lightBackground,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   chartEmptyText: {
-    color: COLORS.greyDark,
-    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.greyMid,
+    fontSize: TYPOGRAPHY.size.md,
   },
   marketplacesContainer: {
     flexDirection: 'row',
@@ -349,7 +367,7 @@ export const styles = StyleSheet.create({
   },
   marketplaceButtonText: {
     fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: String(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.weights.semiBold,
     marginRight: 8,
   },
   loadingOverlay: {
@@ -364,7 +382,7 @@ export const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: TYPOGRAPHY.size.xl,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
     color: COLORS.white,
     marginTop: 20,
   },
@@ -384,7 +402,7 @@ export const styles = StyleSheet.create({
   },
   collectionStatValue: {
     fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
     color: COLORS.white,
   },
   statSubValue: {
@@ -436,7 +454,7 @@ export const styles = StyleSheet.create({
   riskScoreValue: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.lg,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
   },
   riskLabelContainer: {
     marginLeft: 12,
@@ -444,7 +462,7 @@ export const styles = StyleSheet.create({
   },
   riskLabel: {
     fontSize: TYPOGRAPHY.size.lg,
-    fontWeight: String(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.weights.semiBold,
   },
   ruggedDescription: {
     fontSize: TYPOGRAPHY.size.xs,
@@ -459,7 +477,7 @@ export const styles = StyleSheet.create({
   },
   riskFactorsTitle: {
     fontSize: TYPOGRAPHY.size.md,
-    fontWeight: String(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.weights.semiBold,
     color: COLORS.white,
     marginBottom: 12,
   },
@@ -477,7 +495,7 @@ export const styles = StyleSheet.create({
   },
   riskFactorName: {
     fontSize: TYPOGRAPHY.size.sm,
-    fontWeight: String(TYPOGRAPHY.medium),
+    fontWeight: TYPOGRAPHY.weights.medium,
     color: COLORS.white,
     flex: 1,
   },
@@ -489,11 +507,11 @@ export const styles = StyleSheet.create({
   riskLevelText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.xs,
-    fontWeight: String(TYPOGRAPHY.bold),
+    fontWeight: TYPOGRAPHY.weights.bold,
   },
   riskFactorDescription: {
     fontSize: TYPOGRAPHY.size.xs,
     color: COLORS.textLight,
     lineHeight: TYPOGRAPHY.lineHeight.xs,
   },
-}); 
+});

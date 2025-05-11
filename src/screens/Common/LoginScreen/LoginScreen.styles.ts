@@ -5,6 +5,10 @@ import TYPOGRAPHY from '../../../assets/typography';
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -14,7 +18,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     position: 'absolute',
-    top: SCREEN_HEIGHT * 0.14,
+    top: SCREEN_HEIGHT * 0.05,
     alignItems: 'center',
   },
   welcomeText: {
@@ -60,7 +64,7 @@ const styles = StyleSheet.create({
   },
   bottomButtonsContainer: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 30,
     width: '100%',
     alignItems: 'center',
   },
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
     lineHeight: TYPOGRAPHY.lineHeight.sm,
     letterSpacing: TYPOGRAPHY.letterSpacing,
     position: 'absolute',
-    bottom: 70,
+    bottom: 0,
     textAlign: 'center',
     color: COLORS.greyDark,
   },

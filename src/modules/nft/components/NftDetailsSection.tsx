@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ActivityIndicator, TouchableOpacity, Animated, Easing, Dimensions, StyleSheet } from 'react-native';
 import { DEFAULT_IMAGES } from '../../../config/constants';
 import TokenDetailsDrawer from '../../../core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
 
@@ -12,12 +12,108 @@ import { fetchCollectionData, fetchNftMetadata } from '../services/nftService';
 // Import utilities
 import { formatSolPrice, getNftImageSource } from '../utils/imageUtils';
 
+import COLORS from '@/assets/colors';
 // Create a cache for NFT and collection data to prevent redundant fetches
 const nftDataCache = new Map<string, any>();
 const collectionDataCache = new Map<string, any>();
 
 // Styles
 import styles from './NftDetailsSection.style';
+
+// For skeleton animation
+const { width } = Dimensions.get('window');
+
+// Skeleton element for shimmer effect
+const SkeletonElement = ({ style }: { style: any }) => {
+  const shimmerAnimatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const shimmerAnimation = Animated.loop(
+      Animated.timing(shimmerAnimatedValue, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+    );
+    shimmerAnimation.start();
+    return () => shimmerAnimation.stop();
+  }, [shimmerAnimatedValue]);
+
+  const translateX = shimmerAnimatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-width, width],
+  });
+
+  return (
+    <View style={[skeletonStyles.skeletonElement, style]}>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          skeletonStyles.shimmer,
+          { transform: [{ translateX }] },
+        ]}
+      />
+    </View>
+  );
+};
+
+// NFT Details Skeleton Component
+const NftDetailsSkeleton = () => {
+  return (
+    <View style={{ flexDirection: 'row', width: '100%' }}>
+      {/* Image placeholder */}
+      <SkeletonElement style={skeletonStyles.imageSkeleton} />
+
+      {/* Content skeleton */}
+      <View style={skeletonStyles.contentContainer}>
+        {/* Title skeleton */}
+        <SkeletonElement style={skeletonStyles.titleSkeleton} />
+
+        {/* Collection name skeleton */}
+        <SkeletonElement style={[skeletonStyles.textSkeleton, { width: '60%', marginTop: 6 }]} />
+
+        {/* Price skeleton */}
+        <SkeletonElement style={[skeletonStyles.textSkeleton, { width: '70%', marginTop: 6 }]} />
+
+        {/* Last sale skeleton */}
+        <SkeletonElement style={[skeletonStyles.textSkeleton, { width: '80%', marginTop: 6 }]} />
+      </View>
+    </View>
+  );
+};
+
+// Skeleton styles
+const skeletonStyles = {
+  skeletonElement: {
+    backgroundColor: COLORS.lighterBackground,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  shimmer: {
+    backgroundColor: COLORS.darkerBackground,
+    opacity: 0.6,
+  },
+  imageSkeleton: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'center' as const,
+  },
+  titleSkeleton: {
+    height: 18,
+    width: '80%',
+    borderRadius: 4,
+  },
+  textSkeleton: {
+    height: 14,
+    borderRadius: 4,
+  },
+};
 
 interface NftDetailsSectionProps {
   /** NFT or Collection data to display */
@@ -31,7 +127,7 @@ interface NftDetailsSectionProps {
 /**
  * Component for displaying NFT or collection details with caching and drawer functionality
  */
-export default function NftDetailsSection({ 
+export default function NftDetailsSection({
   listingData,
   containerStyle,
   onDetailsOpen
@@ -172,7 +268,7 @@ export default function NftDetailsSection({
     if (onDetailsOpen) {
       onDetailsOpen();
     }
-    
+
     // Show loading indicator briefly
     setDrawerLoading(true);
 
@@ -207,7 +303,7 @@ export default function NftDetailsSection({
   // Render based on whether it's a collection or specific NFT
   const renderContent = () => {
     if (loading) {
-      return <ActivityIndicator size="large" color="#1d9bf0" />;
+      return <NftDetailsSkeleton />;
     }
 
     if (listingData.isCollection) {

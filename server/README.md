@@ -1,119 +1,136 @@
-# Solana Social Starter - Backend Server
+# 🚀 Solana Social Starter - Backend Server
 
-A comprehensive backend server for the Solana App kit, providing token management, social features, and various API endpoints for interacting with the Solana blockchain.
+<div align="center">
 
-## Overview
+![Solana](https://img.shields.io/badge/Solana-black?style=for-the-badge&logo=solana)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 
-This backend server is built with Express.js and TypeScript, offering a robust API for:
+**A comprehensive backend server for the Solana App kit, providing token management, social features, and various API endpoints for interacting with the Solana blockchain.**
 
-- Token creation and management via TokenMill
-- Social features including threads and profiles
-- Image upload and management
-- Token swapping via Jupiter and PumpSwap
-- Staking and vesting functionality
-- IPFS integration via Pinata
-- Google Cloud Storage integration
-- Turnkey API integration for wallet management
+</div>
 
-## Prerequisites
+## 📋 Table of Contents
 
-- Node.js (v16 or higher)
-- Yarn package manager
-- A Solana wallet with some SOL for transactions
-- PostgreSQL database
-- Google Cloud Storage account (for image storage)
-- Pinata account (for IPFS storage)
-- Turnkey API access (for wallet management)
+- [Overview](#-overview)
+- [Features](#-features)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Environment Setup](#-environment-setup)
+- [Development](#-development)
+- [Deployment](#-deployment)
+- [Project Structure](#-project-structure)
+- [API Endpoints](#-api-endpoints)
+- [Core Services](#-core-services)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Support](#-support)
 
-## Installation
+## 🔍 Overview
 
-1. Clone the repository:
+This backend server is built with Express.js and TypeScript, offering a robust API for Solana blockchain interactions, social features, and token management.
+
+## ✨ Features
+
+| Category | Features |
+|----------|----------|
+| **Token Management** | • Token creation via TokenMill<br>• Market creation and management<br>• Setting bonding curves<br>• Token swapping<br>• Staking and vesting |
+| **Social Features** | • Thread creation and management<br>• User profiles<br>• Image management |
+| **Storage** | • IPFS integration via Pinata<br>• Google Cloud Storage integration |
+| **Wallet** | • Turnkey API integration<br>• Secure wallet management |
+| **Swapping** | • Jupiter DEX integration<br>• PumpSwap integration |
+
+## 📦 Prerequisites
+
+| Requirement | Version/Details |
+|-------------|-----------------|
+| Node.js | v16 or higher |
+| Yarn | Latest version |
+| Solana Wallet | With SOL for transactions |
+| PostgreSQL | Latest version |
+| Google Cloud Storage | Account with bucket setup |
+| Pinata | Account for IPFS storage |
+| Turnkey | API access for wallet management |
+
+## 🛠️ Installation
+
+1. **Clone the repository:**
 
 ```bash
 git clone https://github.com/your-username/solana-social-starter.git
 cd solana-social-starter/server
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 
 ```bash
 yarn install
 ```
 
-3. Set up your environment variables by copying the example file:
+## 🔐 Environment Setup
+
+1. **Create your environment file:**
 
 ```bash
 cp .env.example .env
 ```
 
-4. Edit the `.env` file with your own credentials:
+2. **Configure the following parameters in your `.env` file:**
 
-```env
-# General
-WALLET_PRIVATE_KEY="your-wallet-private-key"
-RPC_URL="your-solana-rpc-url"
-DATABASE_URL="postgresql://username:password@hostname:port/database_name"
+| Category | Variables |
+|----------|-----------|
+| **General** | `WALLET_PRIVATE_KEY`<br>`RPC_URL`<br>`DATABASE_URL` |
+| **Token Mill** | `TOKEN_MILL_PROGRAMID`<br>`TOKEN_MILL_CONFIG_PDA` |
+| **Swap** | `SWAP_AUTHORITY_KEY` |
+| **Pinata IPFS** | `PINATA_JWT`<br>`PINATA_GATEWAY`<br>`PINATA_SECRET`<br>`PINATA_API_KEY` |
+| **Google Cloud** | `GCS_BUCKET_NAME`<br>`SERVICE_ACCOUNT_EMAIL` |
+| **Turnkey API** | `TURNKEY_API_URL`<br>`TURNKEY_ORGANIZATION_ID`<br>`TURNKEY_API_PUBLIC_KEY`<br>`TURNKEY_API_PRIVATE_KEY` |
 
-# Token Mill
-TOKEN_MILL_PROGRAMID="JoeaRXgtME3jAoz5WuFXGEndfv4NPH9nBxsLq44hk9J"
-TOKEN_MILL_CONFIG_PDA="your-token-mill-config-pda"
+## 💻 Development
 
-# Swap Authority
-SWAP_AUTHORITY_KEY="your-swap-authority-key"
-
-# Pinata IPFS
-PINATA_JWT="your-pinata-jwt"
-PINATA_GATEWAY="your-pinata-gateway"
-PINATA_SECRET="your-pinata-secret"
-PINATA_API_KEY="your-pinata-api-key"
-
-# Storage
-GCS_BUCKET_NAME="your-gcs-bucket-name"
-SERVICE_ACCOUNT_EMAIL="your-service-account-email"
-
-# Turnkey API Configuration
-TURNKEY_API_URL="https://api.turnkey.com"
-TURNKEY_ORGANIZATION_ID="your-turnkey-organization-id"
-TURNKEY_API_PUBLIC_KEY="your-turnkey-api-public-key"
-TURNKEY_API_PRIVATE_KEY="your-turnkey-api-private-key"
-```
-
-## Development
-
-Start the development server with auto-reload:
+**Start development server with auto-reload:**
 
 ```bash
 yarn dev
 ```
 
-This will start the server on port 8080 (or the port specified in your environment variables).
+The server will start on port 8080 (or the port specified in your environment variables).
 
-## Production Build
-
-Build the production-ready code:
+**Build for production:**
 
 ```bash
 yarn build
 ```
 
-Start the production server:
+**Start production server:**
 
 ```bash
 yarn start
 ```
 
-## Deployment
+## 🚢 Deployment
 
-This project includes configuration for Google Cloud Platform deployment:
+### Google Cloud Platform Deployment
+
+1. **Configure deployment files:**
 
 ```bash
-# Deploy to Google Cloud App Engine
-gcloud app deploy
+cp cloudbuild.yaml.example cloudbuild.yaml
+cp deploy.sh.example deploy.sh
+chmod +x deploy.sh
 ```
 
-Make sure to set up the appropriate GCP credentials and project configuration before deploying.
+2. **Deployment options:**
 
-## Project Structure
+| Method | Command |
+|--------|---------|
+| Google Cloud Run | `gcloud app deploy` |
+| Deployment Script | `./deploy.sh` |
+
+> **Note**: Configuration files (`cloudbuild.yaml` and `deploy.sh`) are included in `.gitignore` to protect sensitive credentials.
+
+## 📁 Project Structure
 
 ```
 server/
@@ -130,112 +147,72 @@ server/
 │   └── program-init.ts    # Solana program initialization
 ├── dist/                  # Compiled JavaScript output
 ├── uploads/               # Temporary upload directory
-├── .env                   # Environment variables
-├── .env.example           # Example environment variables
-├── package.json           # Project dependencies
-├── tsconfig.json          # TypeScript configuration
-├── CONTRIBUTING.md        # Contribution guidelines
-└── README.md              # This file
+├── configuration files    # .env, cloudbuild.yaml, etc.
+└── documentation          # README.md, CONTRIBUTING.md, etc.
 ```
 
-## API Endpoints
+## 🔌 API Endpoints
 
 ### TokenMill Endpoints
 
-These endpoints interact with the TokenMill Solana program:
-
-| Endpoint                 | Method | Description                             |
-| ------------------------ | ------ | --------------------------------------- |
-| `/api/config`            | POST   | Create a new TokenMill configuration    |
-| `/api/quote-token-badge` | POST   | Get token badge quote                   |
-| `/api/markets`           | POST   | Create a new token market               |
-| `/api/free-market`       | POST   | Free a market from restrictions         |
-| `/api/tokens`            | POST   | Create a new token                      |
-| `/api/swap`              | POST   | Swap tokens between markets             |
-| `/api/stake`             | POST   | Create a new staking position           |
-| `/api/vesting`           | POST   | Create a new vesting schedule           |
-| `/api/vesting/release`   | POST   | Release vested tokens                   |
-| `/api/set-curve`         | POST   | Set market curve parameters             |
-| `/api/quote-swap`        | POST   | Get quote for a swap                    |
-| `/api/get-asset`         | POST   | Get asset metadata                      |
-| `/api/graduation`        | GET    | Get graduation information for a market |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/config` | POST | Create a new TokenMill configuration |
+| `/api/quote-token-badge` | POST | Get token badge quote |
+| `/api/markets` | POST | Create a new token market |
+| `/api/free-market` | POST | Free a market from restrictions |
+| `/api/tokens` | POST | Create a new token |
+| `/api/swap` | POST | Swap tokens between markets |
+| `/api/stake` | POST | Create a new staking position |
+| `/api/vesting` | POST | Create a new vesting schedule |
+| `/api/vesting/release` | POST | Release vested tokens |
+| `/api/set-curve` | POST | Set market curve parameters |
+| `/api/quote-swap` | POST | Get quote for a swap |
+| `/api/get-asset` | POST | Get asset metadata |
+| `/api/graduation` | GET | Get graduation information for a market |
 
 ### Social Features Endpoints
 
-| Endpoint             | Method  | Description                                |
-| -------------------- | ------- | ------------------------------------------ |
-| `/api/thread`        | Various | Thread creation, retrieval, and management |
-| `/api/profile`       | Various | User profile management                    |
-| `/api/thread/images` | Various | Thread image management                    |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/thread` | Various | Thread creation, retrieval, and management |
+| `/api/profile` | Various | User profile management |
+| `/api/thread/images` | Various | Thread image management |
 
 ### Swap Endpoints
 
-| Endpoint         | Method  | Description              |
-| ---------------- | ------- | ------------------------ |
-| `/api/jupiter`   | Various | Jupiter DEX integration  |
-| `/api/pump-swap` | Various | PumpSwap integration     |
-| `/api/pumpfun`   | Various | PumpFun launch endpoints |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/jupiter` | Various | Jupiter DEX integration |
+| `/api/pump-swap` | Various | PumpSwap integration |
+| `/api/pumpfun` | Various | PumpFun launch endpoints |
 
-## Core Services
+## 🧩 Core Services
 
-### TokenMill Service
+| Service | Functionality |
+|---------|---------------|
+| **TokenMill** | • Token creation and market management<br>• Setting bonding curves<br>• Token swapping<br>• Staking and vesting<br>• Market funding |
+| **Database** | • PostgreSQL with Knex.js<br>• User data storage<br>• Thread and profile information<br>• Migration management |
+| **Storage** | • Google Cloud Storage for images<br>• IPFS via Pinata for metadata |
+| **Wallet Management** | • Turnkey API integration<br>• Key management<br>• Transaction signing<br>• Wallet authentication |
 
-The TokenMill service (`src/service/TokenMill/`) provides functionality for:
+### Security Measures
 
-- Token creation and market management
-- Setting bonding curves for token pricing
-- Token swapping (buy/sell)
-- Staking tokens for rewards
-- Creating and releasing vesting plans
-- Fund markets with SOL
+| Area | Implementations |
+|------|-----------------|
+| **Transactions** | All transactions require signature with appropriate authority |
+| **Error Handling** | Sanitized error messages, transaction validation |
+| **Database** | Parameterized queries to prevent SQL injection |
+| **Credentials** | Environment variables for sensitive information |
 
-### Database Integration
-
-The server uses PostgreSQL with Knex.js for:
-
-- User data storage
-- Thread and profile information
-- Migration management
-
-### File Storage
-
-Two file storage options are integrated:
-
-1. **Google Cloud Storage** - For profile images and thread attachments
-2. **IPFS via Pinata** - For decentralized, permanent storage of metadata
-
-### Wallet Management
-
-Turnkey API integration provides secure wallet management capabilities for:
-- Key management
-- Transaction signing
-- Wallet authentication
-
-## Error Handling
-
-The server implements robust error handling with:
-
-- Proper error messages
-- Transaction validation
-- Response formatting with success/error flags
-- Logging for debugging
-
-## Security Considerations
-
-- All transactions require signature with appropriate authority
-- Error messages are sanitized before being sent to clients
-- Sensitive operation details are kept secure
-- Database uses parameterized queries to prevent SQL injection
-- Environment variables for sensitive credentials
-
-## Contributing
+## 👥 Contributing
 
 We welcome contributions to the Solana Social Starter backend server! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed information on how to contribute to this project.
 
-## License
+## 📄 License
 
 This project is licensed under the ISC License.
 
-## Support
+## 🆘 Support
 
 For support, please open an issue in the repository or contact the maintainers.

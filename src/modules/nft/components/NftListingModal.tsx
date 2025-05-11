@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -12,6 +12,7 @@ import {
     Dimensions,
     Alert,
     Pressable,
+    Animated,
 } from 'react-native';
 import Icons from '../../../assets/svgs';
 import { TENSOR_API_KEY } from '@env';
@@ -22,31 +23,44 @@ import { createRootPostAsync, addPostLocally } from '@/shared/state/thread/reduc
 import { ThreadSection, ThreadSectionType, ThreadUser } from '@/core/thread/components/thread.types';
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 // Import types from our module
-import { NftItem, NftListingModalProps, CollectionResult } from '../types';
+import { NftItem, NftListingModalProps, CollectionResult, NftListingData } from '../types';
 
 // Import services and utils
 import { searchCollections } from '../services/nftService';
 import { fixImageUrl } from '../utils/imageUtils';
 
 // Constants
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const ITEM_WIDTH = (width * 0.9 - 30) / 3; // Added more padding
 const SOL_TO_LAMPORTS = 1_000_000_000;
+const DRAWER_HEIGHT = height * 0.8; // Drawer takes up 80% of screen height
+
+// Update Props Interface
+interface UpdatedNftListingModalProps extends Omit<NftListingModalProps, 'onSelectListing'> {
+    // Rename onSelectListing to a more generic onShare callback
+    onShare: (data: NftListingData) => void;
+}
 
 /**
- * Modal for displaying NFT listings and allowing users to select NFTs
+ * Drawer for displaying NFT listings and allowing users to select NFTs
  */
 const NftListingModal = ({
     visible,
     onClose,
-    onSelectListing,
+    onShare, // Use the new onShare prop
     listingItems,
     loadingListings,
     fetchNftsError,
     styles,
-}: NftListingModalProps) => {
+}: UpdatedNftListingModalProps) => { // Use updated props type
+    // Animation for drawer slide up
+    const slideAnim = useRef(new Animated.Value(DRAWER_HEIGHT)).current;
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
     // Use the wallet hook instead of directly using useAuth
     const { wallet, address, publicKey, sendTransaction } = useWallet();
     const userPublicKey = address || null;
@@ -70,12 +84,55 @@ const NftListingModal = ({
     // Use provided styles or fallback to default styles
     const modalStyles = defaultStyles;
 
+    // Handle slide in animation when visible changes
+    useEffect(() => {
+        if (visible) {
+            // Slide up animation
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+
+            // Fade in animation for the overlay
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            // Reset the animation value when modal is hidden
+            slideAnim.setValue(DRAWER_HEIGHT);
+            fadeAnim.setValue(0);
+        }
+    }, [visible, slideAnim, fadeAnim]);
+
+    // Handle closing the drawer with animation
+    const handleClose = () => {
+        // Slide down animation
+        Animated.timing(slideAnim, {
+            toValue: DRAWER_HEIGHT,
+            duration: 250,
+            useNativeDriver: true,
+        }).start();
+
+        // Fade out animation for the overlay
+        Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+        }).start(() => {
+            // Call the onClose prop after animation completes
+            onClose();
+        });
+    };
+
     // Search collections functionality
     const handleSearchCollections = async () => {
         if (!collectionName.trim()) return;
         setLoadingSearch(true);
         setSearchResults([]);
-        
+
         try {
             const results = await searchCollections(collectionName.trim());
             setSearchResults(results);
@@ -149,78 +206,25 @@ const NftListingModal = ({
             return;
         }
 
-        try {
-            // Create the NFT listing section with collection data
-            const sections: ThreadSection[] = [
-                {
-                    id: 'section-' + Math.random().toString(36).substr(2, 9),
-                    type: 'NFT_LISTING' as ThreadSectionType,
-                    listingData: {
-                        collId: collection.collId,
-                        owner: userPublicKey,
-                        name: collection.name,
-                        image: fixImageUrl(collection.imageUri),
-                        isCollection: true,
-                        collectionName: collection.name,
-                        collectionImage: fixImageUrl(collection.imageUri),
-                        collectionDescription: collection.description
-                    },
-                }
-            ];
+        // Create the NFT listing data structure for a collection
+        const listingData: NftListingData = {
+            collId: collection.collId,
+            owner: userPublicKey,
+            name: collection.name,
+            image: fixImageUrl(collection.imageUri),
+            isCollection: true,
+            collectionName: collection.name,
+            collectionImage: fixImageUrl(collection.imageUri),
+            collectionDescription: collection.description,
+        };
 
-            // Add a text section about the collection
-            sections.push({
-                id: 'section-' + Math.random().toString(36).substr(2, 9),
-                type: 'TEXT_ONLY' as ThreadSectionType,
-                text: `Check out this awesome collection: ${collection.name}! 🔥`
-            });
+        // Call the generic onShare callback
+        onShare(listingData);
 
-            // Create a proper user object that satisfies ThreadUser
-            const user: ThreadUser = {
-                id: userPublicKey,
-                username: userName || 'Anonymous',
-                handle: userPublicKey
-                    ? '@' + userPublicKey.slice(0, 6) + '...' + userPublicKey.slice(-4)
-                    : '@anonymous',
-                verified: true,
-                avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
-            };
-
-            // Create a fallback post with proper typing
-            const fallbackPost = {
-                id: 'local-' + Math.random().toString(36).substr(2, 9),
-                userId: userPublicKey,
-                user,
-                sections,
-                createdAt: new Date().toISOString(),
-                replies: [],
-                reactionCount: 0,
-                retweetCount: 0,
-                quoteCount: 0,
-            };
-
-            try {
-                // Create a root post with the NFT listing
-                await dispatch(
-                    createRootPostAsync({
-                        userId: userPublicKey,
-                        sections,
-                    })
-                ).unwrap();
-
-                TransactionService.showSuccess('post_created', 'nft');
-            } catch (error: any) {
-                console.warn('Network request failed, adding post locally:', error.message);
-                dispatch(addPostLocally(fallbackPost));
-                Alert.alert('Limited Connectivity', 'Your post was saved locally.');
-            }
-        } catch (err: any) {
-            console.error('Error sharing collection:', err);
-            TransactionService.showError(err);
-        } finally {
-            setShowShareModal(false);
-            setSelectedCollection(null);
-        }
+        // Close modals
+        setShowShareModal(false);
+        setSelectedCollection(null);
+        handleClose(); // Close the main modal too
     };
 
     // Render a grid item (just the image)
@@ -229,10 +233,11 @@ const NftListingModal = ({
             <TouchableOpacity
                 style={modalStyles.gridItem}
                 onPress={() => {
-                    console.log('Collection selected:', item);
-                    setSelectedCollection(item);
-                    setShowShareModal(true);
-                }}>
+                    console.log('Collection selected for sharing:', item);
+                    // Call onShare directly for collections now
+                    shareNftCollection(item);
+                }}
+            >
                 <Image
                     source={{ uri: fixImageUrl(item.imageUri) }}
                     style={modalStyles.gridImage}
@@ -242,57 +247,25 @@ const NftListingModal = ({
         );
     };
 
-    // Share Modal UI
-    const renderShareModal = () => {
-        if (!selectedCollection) return null;
-        return (
-            <Modal
-                visible={showShareModal}
-                transparent
-                animationType="slide"
-                onRequestClose={() => {
-                    setShowShareModal(false);
-                    setSelectedCollection(null);
-                }}>
-                <Pressable
-                    style={modalStyles.shareModalOverlay}
-                    onPress={() => {
-                        setShowShareModal(false);
-                        setSelectedCollection(null);
-                    }}>
-                    <Pressable
-                        style={modalStyles.shareModalContent}
-                        onPress={e => e.stopPropagation()}>
-                        <Text style={modalStyles.shareModalTitle}>Share Collection</Text>
-                        <Text style={modalStyles.shareModalText}>
-                            Collection: {selectedCollection.name}
-                        </Text>
-                        <Image
-                            source={{ uri: fixImageUrl(selectedCollection.imageUri) }}
-                            style={modalStyles.shareModalImage}
-                            resizeMode="cover"
-                        />
-                        <Text style={modalStyles.shareModalDescription} numberOfLines={3}>
-                            {selectedCollection.description || "No description available"}
-                        </Text>
-                        <TouchableOpacity
-                            style={modalStyles.shareButton}
-                            onPress={() => {
-                                shareNftCollection(selectedCollection);
-                            }}>
-                            <Text style={modalStyles.shareButtonText}>Share to Feed</Text>
-                        </TouchableOpacity>
-                    </Pressable>
-                </Pressable>
-            </Modal>
-        );
-    };
-
     // Modified render for NFT listing items to include transaction option
     const renderNftItem = ({ item }: { item: NftItem }) => (
         <TouchableOpacity
             style={modalStyles.listingCard}
-            onPress={() => onSelectListing(item)}>
+            onPress={() => {
+                const listingData: NftListingData = {
+                    mint: item.mint,
+                    owner: address || '', // Current user is the one listing/sharing
+                    priceSol: item.priceSol, // Use price if available
+                    name: item.name,
+                    image: item.image,
+                    collectionName: item.collection,
+                    isCompressed: item.isCompressed,
+                    isCollection: false, // This is a single NFT, not a collection
+                };
+                onShare(listingData);
+                handleClose(); // Close modal after selection
+            }}
+        >
             {/* Add a container with relative positioning to hold the image and badge */}
             <View style={modalStyles.imageContainer}>
                 <Image
@@ -322,7 +295,7 @@ const NftListingModal = ({
                 onPress={() => handleNftTransaction(item)}
                 disabled={isSendingTransaction}>
                 {isSendingTransaction ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={COLORS.white} />
                 ) : (
                     <Text style={modalStyles.actionButtonText}>Transfer</Text>
                 )}
@@ -332,117 +305,136 @@ const NftListingModal = ({
 
     return (
         <Modal
-            animationType="slide"
+            animationType="none"
             transparent={true}
             visible={visible}
-            onRequestClose={onClose}>
-            <View style={modalStyles.modalOverlay}>
-                <View style={modalStyles.modalContainer}>
-                    {selectedOption === 2 ? (
-                        // Updated header for NFT Listing view with cross button
-                        <View style={modalStyles.listingHeader}>
-                            <Text style={modalStyles.modalTitle}>NFT Listing</Text>
-                            <TouchableOpacity
-                                onPress={onClose}
-                                style={modalStyles.listingCloseButton}>
-                                <Icons.cross width={24} height={24} />
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        // Complex header for tensor with cross, search bar, and arrow
-                        <View style={modalStyles.tensorHeader}>
-                            <TouchableOpacity onPress={onClose} style={modalStyles.headerButton}>
-                                <Icons.cross width={24} height={24} />
-                            </TouchableOpacity>
+            onRequestClose={handleClose}>
+            <View style={modalStyles.container}>
+                {/* Backdrop/overlay with fade animation */}
+                <Animated.View
+                    style={[
+                        modalStyles.backdrop,
+                        { opacity: fadeAnim }
+                    ]}
+                >
+                    <TouchableOpacity
+                        style={{ flex: 1 }}
+                        activeOpacity={1}
+                        onPress={handleClose}
+                    />
+                </Animated.View>
 
-                            <View style={modalStyles.searchContainer}>
-                                <TextInput
-                                    style={modalStyles.searchInput}
-                                    placeholder="Search collections..."
-                                    placeholderTextColor="#999"
-                                    value={collectionName}
-                                    onChangeText={setCollectionName}
-                                    onSubmitEditing={handleSearchCollections}
-                                />
+                {/* Drawer that slides up from bottom */}
+                <Animated.View
+                    style={[
+                        modalStyles.drawerContainer,
+                        { transform: [{ translateY: slideAnim }] }
+                    ]}>
+                    {/* Drawer handle at top */}
+                    <View style={modalStyles.handleContainer}>
+                        <View style={modalStyles.handle} />
+                    </View>
+
+                    {/* Content area */}
+                    <View style={modalStyles.contentContainer}>
+                        {selectedOption === 2 ? (
+                            // Updated header for NFT Listing view with cross button
+                            <View style={modalStyles.listingHeader}>
+                                <Text style={modalStyles.modalTitle}>NFT Listing</Text>
+                                <TouchableOpacity
+                                    onPress={handleClose}
+                                    style={modalStyles.listingCloseButton}>
+                                    <Icons.cross width={24} height={24} color={COLORS.white} />
+                                </TouchableOpacity>
                             </View>
+                        ) : (
+                            // Complex header for tensor with cross, search bar, and arrow
+                            <View style={modalStyles.tensorHeader}>
+                                <TouchableOpacity onPress={handleClose} style={modalStyles.headerButton}>
+                                    <Icons.cross width={24} height={24} color={COLORS.white} />
+                                </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={modalStyles.headerButton}
-                                onPress={handleSearchCollections}>
-                                <Icons.arrowRIght width={20} height={20} />
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {selectedOption === 2 ? (
-                        <>
-                            {loadingListings ? (
-                                <ActivityIndicator
-                                    size="large"
-                                    color="#1d9bf0"
-                                    style={{ marginTop: 20 }}
-                                />
-                            ) : fetchNftsError ? (
-                                <Text
-                                    style={{
-                                        marginTop: 16,
-                                        color: '#666',
-                                        textAlign: 'center',
-                                    }}>
-                                    {fetchNftsError}
-                                </Text>
-                            ) : listingItems.length === 0 ? (
-                                <Text
-                                    style={{
-                                        marginTop: 16,
-                                        color: '#666',
-                                        textAlign: 'center',
-                                    }}>
-                                    No NFTs found.
-                                </Text>
-                            ) : (
-                                <>
-                                    <FlatList
-                                        data={listingItems}
-                                        keyExtractor={item => item.mint}
-                                        renderItem={renderNftItem}
-                                        style={{ marginTop: 10, width: '100%' }}
+                                <View style={modalStyles.searchContainer}>
+                                    <TextInput
+                                        style={modalStyles.searchInput}
+                                        placeholder="Search collections..."
+                                        placeholderTextColor={COLORS.greyMid}
+                                        value={collectionName}
+                                        onChangeText={setCollectionName}
+                                        onSubmitEditing={handleSearchCollections}
                                     />
-                                    <Text style={modalStyles.disclaimerText}>
-                                        Note: Only NFTs with a valid mint ID are displayed.
-                                    </Text>
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        // Tensor Search Results - maintain fixed height with contentContainer
-                        <View style={modalStyles.tensorContent}>
-                            {loadingSearch ? (
-                                <View style={modalStyles.loaderContainer}>
-                                    <ActivityIndicator size="small" color="#1d9bf0" />
-                                    <Text style={modalStyles.loaderText}>Searching collections...</Text>
                                 </View>
-                            ) : searchResults.length > 0 ? (
-                                <FlatList
-                                    data={searchResults}
-                                    keyExtractor={item => item.collId}
-                                    renderItem={renderGridItem}
-                                    numColumns={3}
-                                    columnWrapperStyle={modalStyles.gridRow}
-                                />
+
+                                <TouchableOpacity
+                                    style={modalStyles.headerButton}
+                                    onPress={handleSearchCollections}>
+                                    <Icons.arrowRIght width={20} height={20} color={COLORS.white} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        <View style={modalStyles.scrollContentContainer}>
+                            {selectedOption === 2 ? (
+                                <>
+                                    {loadingListings ? (
+                                        <ActivityIndicator
+                                            size="large"
+                                            color={COLORS.brandBlue}
+                                            style={{ marginTop: 20 }}
+                                        />
+                                    ) : fetchNftsError ? (
+                                        <Text style={modalStyles.errorText}>
+                                            {fetchNftsError}
+                                        </Text>
+                                    ) : listingItems?.length === 0 ? (
+                                        <Text style={modalStyles.emptyText}>
+                                            No NFTs found.
+                                        </Text>
+                                    ) : (
+                                        <>
+                                            <FlatList
+                                                data={listingItems}
+                                                keyExtractor={item => item.mint}
+                                                renderItem={renderNftItem}
+                                                style={{ width: '100%' }}
+                                            />
+                                            <Text style={modalStyles.disclaimerText}>
+                                                Note: Only NFTs with a valid mint ID are displayed.
+                                            </Text>
+                                        </>
+                                    )}
+                                </>
                             ) : (
-                                <View style={modalStyles.emptyResultsContainer}>
-                                    <Text style={modalStyles.emptyText}>
-                                        {collectionName.trim()
-                                            ? 'No collections found. Try a different search.'
-                                            : 'Search for collections above to see results here.'}
-                                    </Text>
+                                // Tensor Search Results - maintain fixed height with contentContainer
+                                <View style={modalStyles.tensorContent}>
+                                    {loadingSearch ? (
+                                        <View style={modalStyles.loaderContainer}>
+                                            <ActivityIndicator size="small" color={COLORS.brandBlue} />
+                                            <Text style={modalStyles.loaderText}>Searching collections...</Text>
+                                        </View>
+                                    ) : searchResults.length > 0 ? (
+                                        <FlatList
+                                            data={searchResults}
+                                            keyExtractor={item => item.collId}
+                                            renderItem={renderGridItem}
+                                            numColumns={3}
+                                            columnWrapperStyle={modalStyles.gridRow}
+                                        />
+                                    ) : (
+                                        <View style={modalStyles.emptyResultsContainer}>
+                                            <Text style={modalStyles.emptyText}>
+                                                {collectionName.trim()
+                                                    ? 'No collections found. Try a different search.'
+                                                    : 'Search for collections above to see results here.'}
+                                            </Text>
+                                        </View>
+                                    )}
                                 </View>
                             )}
                         </View>
-                    )}
+                    </View>
 
-                    {/* Footer with two options */}
+                    {/* Fixed footer with two options */}
                     <View style={modalStyles.footer}>
                         <TouchableOpacity
                             style={[
@@ -450,7 +442,11 @@ const NftListingModal = ({
                                 selectedOption === 1 && modalStyles.selectedOption
                             ]}
                             onPress={() => setSelectedOption(1)}>
-                            <Icons.tensor width={26} height={26} />
+                            <Icons.tensor
+                                width={26}
+                                height={26}
+                                color={selectedOption === 1 ? COLORS.white : COLORS.greyMid}
+                            />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -459,37 +455,96 @@ const NftListingModal = ({
                                 selectedOption === 2 && modalStyles.selectedOption
                             ]}
                             onPress={() => setSelectedOption(2)}>
-                            <Icons.listedNft width={26} height={26} />
+                            <Icons.listedNft
+                                width={26}
+                                height={26}
+                                color={selectedOption === 2 ? COLORS.white : COLORS.greyMid}
+                            />
                         </TouchableOpacity>
                     </View>
-                </View>
+                </Animated.View>
             </View>
-
-            {/* Share confirmation modal */}
-            {renderShareModal()}
         </Modal>
     );
 };
 
 const defaultStyles = StyleSheet.create({
-    modalOverlay: {
+    container: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-end', // Align to bottom for drawer effect
     },
-    modalContainer: {
-        width: '90%',
-        maxHeight: '80%',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 4,
+    backdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    },
+    drawerContainer: {
+        backgroundColor: COLORS.background,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: DRAWER_HEIGHT,
+        width: '100%',
+        borderWidth: 1,
+        borderColor: COLORS.borderDarkColor,
+        borderBottomWidth: 0,
+        position: 'relative',
+    },
+    handleContainer: {
         alignItems: 'center',
+        paddingVertical: 10,
+    },
+    handle: {
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.greyMid,
+    },
+    contentContainer: {
+        flex: 1,
+        padding: 10,
+        paddingBottom: 70, // Add padding to accommodate the fixed footer
+    },
+    scrollContentContainer: {
+        flex: 1,
+        width: '100%',
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        width: '100%',
+        paddingVertical: 15,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderDarkColor,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: COLORS.background,
     },
     modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: TYPOGRAPHY.size.lg,
+        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+        color: COLORS.white,
         margin: 10,
+        fontFamily: TYPOGRAPHY.fontFamily,
+    },
+    // Error and empty state text
+    errorText: {
+        marginTop: 16,
+        color: COLORS.greyMid,
+        textAlign: 'center',
+        fontSize: TYPOGRAPHY.size.md,
+        fontFamily: TYPOGRAPHY.fontFamily,
+    },
+    emptyText: {
+        marginTop: 16,
+        color: COLORS.greyMid,
+        textAlign: 'center',
+        fontSize: TYPOGRAPHY.size.md,
+        fontFamily: TYPOGRAPHY.fontFamily,
     },
     // Added new styling for the NFT listing header with close button
     listingHeader: {
@@ -499,6 +554,8 @@ const defaultStyles = StyleSheet.create({
         width: '100%',
         paddingVertical: 10,
         paddingHorizontal: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderDarkColor,
     },
     listingCloseButton: {
         padding: 8,
@@ -509,8 +566,9 @@ const defaultStyles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: COLORS.borderDarkColor,
         width: '100%',
+        backgroundColor: COLORS.lightBackground,
     },
     listingImage: {
         width: 50,
@@ -518,13 +576,15 @@ const defaultStyles = StyleSheet.create({
         borderRadius: 5,
     },
     listingName: {
-        fontWeight: '600',
+        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+        color: COLORS.white,
+        fontSize: TYPOGRAPHY.size.md,
+        fontFamily: TYPOGRAPHY.fontFamily,
     },
     // Tensor content area with fixed height
     tensorContent: {
         width: '100%',
-        height: 300, // Fixed height to keep modal size consistent
-        marginBottom: 10,
+        flex: 1,
     },
     loaderContainer: {
         flex: 1,
@@ -533,17 +593,15 @@ const defaultStyles = StyleSheet.create({
     },
     loaderText: {
         marginTop: 10,
-        color: '#666',
+        color: COLORS.greyMid,
+        fontFamily: TYPOGRAPHY.fontFamily,
+        fontSize: TYPOGRAPHY.size.sm,
     },
     emptyResultsContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-    },
-    emptyText: {
-        color: '#666',
-        textAlign: 'center',
     },
     // Grid styles for search results
     gridRow: {
@@ -558,24 +616,26 @@ const defaultStyles = StyleSheet.create({
         position: 'absolute',
         top: 2,
         left: 2,
-        backgroundColor: '#FF4500',
+        backgroundColor: COLORS.brandPink,
         paddingHorizontal: 4,
         paddingVertical: 2,
         borderRadius: 4,
     },
     compressedBadgeText: {
-        color: 'white',
+        color: COLORS.white,
         fontSize: 8,
-        fontWeight: 'bold',
+        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+        fontFamily: TYPOGRAPHY.fontFamily,
     },
     disclaimerText: {
-        fontSize: 12,
-        color: '#888',
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
         textAlign: 'center',
         marginTop: 10,
         marginBottom: 5,
         paddingHorizontal: 15,
         fontStyle: 'italic',
+        fontFamily: TYPOGRAPHY.fontFamily,
     },
     gridItem: {
         width: ITEM_WIDTH,
@@ -583,18 +643,11 @@ const defaultStyles = StyleSheet.create({
         margin: 1,
         borderRadius: 4,
         overflow: 'hidden',
-        backgroundColor: '#f0f0f0', // Background color if image fails to load
+        backgroundColor: COLORS.lighterBackground,
     },
     gridImage: {
         width: '100%',
         height: '100%',
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'center', // Center the icons
-        width: '100%',
-        paddingVertical: 5,
-        // Removed the border between footer and listing
     },
     optionButton: {
         alignItems: 'center',
@@ -604,7 +657,7 @@ const defaultStyles = StyleSheet.create({
         marginHorizontal: 20, // Add horizontal margin between icons
     },
     selectedOption: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: COLORS.lighterBackground,
     },
     tensorHeader: {
         flexDirection: 'row',
@@ -613,6 +666,8 @@ const defaultStyles = StyleSheet.create({
         width: '100%',
         paddingVertical: 10,
         marginBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.borderDarkColor,
     },
     headerButton: {
         padding: 8,
@@ -622,64 +677,17 @@ const defaultStyles = StyleSheet.create({
         marginHorizontal: 10,
     },
     searchInput: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: COLORS.lighterBackground,
         borderRadius: 14,
         paddingHorizontal: 15,
         paddingVertical: 8,
-        fontSize: 14,
-    },
-    // Share modal styles
-    shareModalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    shareModalContent: {
-        width: '80%',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 20,
-        alignItems: 'center',
-    },
-    shareModalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-    },
-    shareModalText: {
-        fontSize: 16,
-        marginVertical: 5,
-        textAlign: 'center',
-    },
-    shareModalImage: {
-        width: 150,
-        height: 150,
-        borderRadius: 8,
-        marginVertical: 10,
-    },
-    shareModalDescription: {
-        fontSize: 14,
-        color: '#666',
-        textAlign: 'center',
-        marginVertical: 5,
-        paddingHorizontal: 10,
-    },
-    shareButton: {
-        marginTop: 20,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        backgroundColor: '#32D4DE',
-        borderRadius: 20,
-    },
-    shareButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: TYPOGRAPHY.size.sm,
+        fontFamily: TYPOGRAPHY.fontFamily,
+        color: COLORS.white,
     },
     // Add styles for the new action button
     actionButton: {
-        backgroundColor: '#32D4DE',
+        backgroundColor: COLORS.brandPrimary,
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 16,
@@ -688,9 +696,10 @@ const defaultStyles = StyleSheet.create({
         alignItems: 'center',
     },
     actionButtonText: {
-        color: 'white',
-        fontSize: 12,
-        fontWeight: '600',
+        color: COLORS.white,
+        fontSize: TYPOGRAPHY.size.xs,
+        fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+        fontFamily: TYPOGRAPHY.fontFamily,
     },
 });
 
