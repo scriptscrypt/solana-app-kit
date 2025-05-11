@@ -166,7 +166,7 @@ class SocketService {
         
         // Increment unread count if the message is not for the currently viewed chat
         if (selectedChatId !== message.chat_room_id) {
-          console.log('Incrementing unread count for chat:', message.chat_room_id);
+          console.log('[socketService] Incrementing unread count for chat:', message.chat_room_id);
           store.dispatch(incrementUnreadCount({
             chatId: message.chat_room_id,
             senderId: message.sender_id
@@ -196,7 +196,7 @@ class SocketService {
         
         // Increment unread count if the message is not for the currently viewed chat
         if (selectedChatId !== message.chat_room_id) {
-          console.log('Incrementing unread count for chat:', message.chat_room_id);
+          console.log('[socketService] Incrementing unread count for chat:', message.chat_room_id);
           store.dispatch(incrementUnreadCount({
             chatId: message.chat_room_id,
             senderId: message.sender_id || message.senderId

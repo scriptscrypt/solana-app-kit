@@ -72,16 +72,17 @@ export function getMessageBaseStyles() {
 
 export const messageBubbleStyles = StyleSheet.create({
   container: {
-    padding: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 18,
     marginVertical: 0,
     maxWidth: '100%',
-    minWidth: 100,
   },
   currentUser: {
     backgroundColor: COLORS.brandBlue,
     borderBottomRightRadius: 4,
     alignSelf: 'flex-end',
+    minWidth: 80,
   },
   otherUser: {
     backgroundColor: COLORS.lighterBackground,
@@ -93,6 +94,9 @@ export const messageBubbleStyles = StyleSheet.create({
     fontSize: TYPOGRAPHY.size.md,
     fontFamily: TYPOGRAPHY.fontFamily,
     lineHeight: 18,
+  },
+  currentUserText: {
+    textAlign: 'right',
   },
   otherUserText: {
     color: COLORS.white,

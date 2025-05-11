@@ -124,9 +124,10 @@ function ChatMessage({
     themeOverrides,
     styleOverrides: {
       ...styleOverrides,
-      // Add padding at the bottom to make room for timestamp
+
+      // Only add padding at the bottom for current user's messages
       container: {
-        paddingBottom: 22,
+        ...(isCurrentUser && { paddingBottom: 22 }),
         ...(styleOverrides?.container || {})
       }
     }
@@ -150,7 +151,8 @@ function ChatMessage({
         delayLongPress={500} // Consistent delay
         disabled={!onPressMessage && !onLongPress} // Disable if no handlers
         style={({ pressed }) => [{
-          maxWidth: contentType === 'text' || contentType === 'media' ? '80%' : '100%',
+          // Allow text messages to fit their content with small max width
+          maxWidth: contentType === 'text' ? '75%' : contentType === 'media' ? '80%' : '100%',
           opacity: pressed ? 0.7 : 1,
         }]}
       >
@@ -159,15 +161,17 @@ function ChatMessage({
             {...messageBubbleProps}
           />
 
-          {/* Timestamp inside the message bubble - Conditionally rendered */}
+          {/* Timestamp inside the message bubble - Only for current user */}
           {isCurrentUser && (
             <Text style={{
               position: 'absolute',
-              bottom: 8,
-              right: 12,
+              bottom: 6,
+              right: 10,
               fontSize: 10,
-              color: isCurrentUser ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.6)', // Color logic can be simplified now
+              color: 'rgba(255, 255, 255, 0.6)',
               fontFamily: fontFamily,
+              paddingTop: 2,
+              paddingRight: 2,
             }}>
               {formatTime(timestamp)}
             </Text>
