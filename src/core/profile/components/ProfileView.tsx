@@ -114,6 +114,8 @@ function ProfileViewComponent({
     onPressFollowing,
   ]);
 
+  // console.log('[ProfileView] profileInfoProps:', user.profilePicUrl);
+
   // Memoize props for ProfileTabs to prevent unnecessary re-renders
   const profileTabsProps = useMemo(() => ({
     myPosts,

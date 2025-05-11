@@ -302,6 +302,8 @@ const ProfileHeader = memo(({
 }) => {
   // Get initials for default profile pic
   const initials = useMemo(() => getInitials(username), [username]);
+
+  console.log('[ProfileHeader] profilePicUrl:', profilePicUrl);
   
   return (
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
