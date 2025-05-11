@@ -54,7 +54,7 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
   // Determine text style based on sender
   const textStyle = [
     styles.text,
-    !isCurrentUser && styles.otherUserText
+    isCurrentUser ? styles.currentUserText : styles.otherUserText
   ];
 
   // Update getContentType to check additional_data safely
@@ -340,6 +340,21 @@ function MessageBubble({ message, isCurrentUser, themeOverrides, styleOverrides 
     return (
       <View style={bubbleStyle}>
         {renderPostContent(postToDisplay)}
+      </View>
+    );
+  }
+
+  // Render when the content type is text
+  if (contentType === 'text') {
+    return (
+      <View style={bubbleStyle}>
+        {isRetweet && (
+          <View style={styles.retweetHeader}>
+            <RetweetIcon />
+            <Text style={styles.retweetText}>Retweet{isQuoteRetweet ? 'ed with comment' : ''}</Text>
+          </View>
+        )}
+        <Text style={textStyle}>{messageText || ''}</Text>
       </View>
     );
   }

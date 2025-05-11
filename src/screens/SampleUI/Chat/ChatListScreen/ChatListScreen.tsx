@@ -28,7 +28,7 @@ import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { styles } from './ChatListScreen.styles';
 import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
-import { fetchUserChats, ChatRoom, updateUserOnlineStatus } from '@/shared/state/chat/slice';
+import { fetchUserChats, ChatRoom, updateUserOnlineStatus, receiveMessage, incrementUnreadCount, setSelectedChat } from '@/shared/state/chat/slice';
 import socketService from '@/shared/services/socketService';
 import { ProfileAvatarView } from '@/core/thread/components/post/PostHeader';
 import { AppHeader } from '@/core/sharedUI';
@@ -92,6 +92,24 @@ const ChatListScreen: React.FC = () => {
   // State to track online users
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
+  // State to store sorted chats
+  const [sortedChats, setSortedChats] = useState<ChatRoom[]>([]);
+
+  // Update the sorted chats whenever the chats array changes
+  useEffect(() => {
+    if (chats.length > 0) {
+      // Create a sorted copy of the chats array - most recent updated_at first
+      const sorted = [...chats].sort((a, b) => {
+        const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return dateB - dateA;
+      });
+      setSortedChats(sorted);
+    } else {
+      setSortedChats([]);
+    }
+  }, [chats]);
+
   // Animation for content fade-in
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const [isContentLoaded, setIsContentLoaded] = useState(false);
@@ -145,11 +163,11 @@ const ChatListScreen: React.FC = () => {
 
       const handleNewMessage = (messageData: any) => {
         if (!isMounted) return;
-        console.log('New message event received:', messageData);
-        // When a new message arrives (could be for a new or existing chat),
-        // refetch the chat list to update last message, timestamp, and order.
-        // Alternatively, could dispatch an `upsertChat` action if the payload is sufficient.
-        dispatch(fetchUserChats(userId));
+        console.log('New message event received in ChatListScreen:', messageData);
+
+        // We don't need to do anything with new messages here since socketService 
+        // already dispatches the necessary actions to update the Redux store
+        // The UI will automatically update when the store changes
       };
 
       // Subscribe to events
@@ -305,7 +323,7 @@ const ChatListScreen: React.FC = () => {
     */
 
     // Filter and format API chats
-    const apiChats = chats.map(chat => {
+    const apiChats = sortedChats.map(chat => {
       // Get other participant for direct chats (for name and avatar)
       let chatName = chat.name || '';
       let avatar: ImageSourcePropType = DEFAULT_IMAGES.groupChat; // Explicitly type avatar
@@ -324,12 +342,29 @@ const ChatListScreen: React.FC = () => {
       // Format last message content
       let lastMessageContent = 'No messages yet';
       if (chat.lastMessage) {
-        const sender = chat.lastMessage.sender ? chat.lastMessage.sender.username + ': ' : '';
-        lastMessageContent = sender + chat.lastMessage.content;
+        // Remove sender name prefix - just show the message content
+        let coreMessageText = '';
 
-        // Truncate if too long
-        if (lastMessageContent.length > 30) {
-          lastMessageContent = lastMessageContent.substring(0, 30) + '...';
+        // Check for special message types first
+        if (chat.lastMessage.image_url) {
+          coreMessageText = 'Sent an image';
+        } else if (chat.lastMessage.additional_data?.nftData) {
+          coreMessageText = 'Shared an NFT';
+        } else if (chat.lastMessage.additional_data?.tradeData) {
+          coreMessageText = 'Shared a trade';
+        } else if (chat.lastMessage.content && chat.lastMessage.content.trim() !== '') {
+          // If no special type, use the text content
+          coreMessageText = chat.lastMessage.content.trim();
+        } else {
+          // Fallback if lastMessage object exists but has no specific content type or text
+          coreMessageText = 'Sent a message';
+        }
+
+        lastMessageContent = coreMessageText;
+
+        // Truncate the final display string if it's too long
+        if (lastMessageContent.length > 40) {
+          lastMessageContent = lastMessageContent.substring(0, 37) + '...';
         }
       }
 
@@ -345,17 +380,9 @@ const ChatListScreen: React.FC = () => {
       };
     });
 
-    // Return AI Agent first, then other chats (global chat is commented out)
-    // Sort API chats by updated_at (most recent first)
-    const sortedApiChats = [...apiChats].sort((a, b) => {
-      const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-      return dateB - dateA;
-    });
+    return [aiAgentChat, ...apiChats];
 
-    return [aiAgentChat, ...sortedApiChats];
-
-  }, [chats, userId, allPosts.length, getGlobalChatLastMessage, getGlobalChatTime, getTotalUserCount]);
+  }, [sortedChats, userId, getGlobalChatLastMessage, getGlobalChatTime, getTotalUserCount]);
 
   // Filter chats based on search query
   const filteredChats = searchQuery
@@ -371,12 +398,15 @@ const ChatListScreen: React.FC = () => {
       return;
     }
 
+    // Reset the unread counter when selecting a chat
+    dispatch(setSelectedChat(chat.id));
+
     navigation.navigate('ChatScreen', {
       chatId: chat.id,
       chatName: chat.name,
       isGroup: chat.type !== 'direct'
     });
-  }, [navigation, handleAIAgentChat]);
+  }, [navigation, handleAIAgentChat, dispatch]);
 
   // Handle new chat button press
   const handleNewChat = useCallback(() => {
@@ -562,7 +592,8 @@ const ChatListScreen: React.FC = () => {
               <FlatList
                 data={filteredChats}
                 renderItem={renderChatItem}
-                keyExtractor={item => item.id}
+                keyExtractor={item => `${item.id}-${item.unreadCount || 0}-${item.lastMessage?.created_at || 'none'}`}
+                extraData={onlineUsers} // Re-render when online status changes
                 contentContainerStyle={styles.chatListContainer}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
