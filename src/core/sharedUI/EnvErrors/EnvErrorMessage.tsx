@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useEnvCheck } from '../../hooks/useEnvCheck';
+import { useEnvCheck } from '@/shared/hooks/useEnvCheck';
 
 interface EnvErrorMessageProps {
     requiredVars: string[];

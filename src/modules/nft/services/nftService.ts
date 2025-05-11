@@ -1,15 +1,18 @@
 /**
  * Services for NFT operations
  */
-import { Connection, Cluster, clusterApiUrl, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
+import { Connection, Cluster, clusterApiUrl, PublicKey, Transaction, VersionedTransaction, SystemProgram } from '@solana/web3.js';
 import { Buffer } from 'buffer';
-import { TENSOR_API_KEY, CLUSTER } from '@env';
+import { TENSOR_API_KEY, CLUSTER, HELIUS_STAKED_URL, COMMISSION_WALLET } from '@env';
 import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 import { CollectionData, NftItem } from '../types';
 import { ENDPOINTS } from '../../../config/constants';
 
 // Constants
 const SOL_TO_LAMPORTS = 1_000_000_000;
+
+// Fee configuration
+const FEE_PERCENTAGE = 0.5; // 0.5% fee for NFT purchases
 
 /**
  * Fetches metadata for a specific NFT
@@ -342,7 +345,7 @@ export async function buyNft(
   try {
     if (onStatus) onStatus('Fetching blockhash...');
 
-    const rpcUrl = ENDPOINTS.helius || clusterApiUrl(CLUSTER as Cluster);
+    const rpcUrl = HELIUS_STAKED_URL || clusterApiUrl(CLUSTER as Cluster);
     const connection = new Connection(rpcUrl, 'confirmed');
     const { blockhash } = await connection.getRecentBlockhash();
     
@@ -378,7 +381,7 @@ export async function buyNft(
       let transaction: Transaction | VersionedTransaction;
 
       if (txObj.txV0) {
-        const txBuffer = Buffer.from(txObj.txV0.data, 'base64');
+        const txBuffer = new Uint8Array(Buffer.from(txObj.txV0.data, 'base64'));
         transaction = VersionedTransaction.deserialize(txBuffer);
       } else if (txObj.tx) {
         const txBuffer = Buffer.from(txObj.tx.data, 'base64');
@@ -448,7 +451,7 @@ export async function buyCollectionFloor(
     if (onStatus) onStatus(`Found floor NFT at ${floorDetails.maxPrice.toFixed(5)} SOL`);
     
     // Use the buyNft function to purchase the floor NFT
-    return await buyNft(
+    const nftSignature = await buyNft(
       publicKey,
       floorDetails.mint,
       floorDetails.maxPrice,
@@ -456,6 +459,98 @@ export async function buyCollectionFloor(
       sendTransaction,
       onStatus
     );
+    
+    // After successful NFT purchase, try to collect commission fee
+    // But only if the main purchase was successful
+    try {
+      // Wait a little to ensure balance has updated
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (onStatus) onStatus(`Preparing platform fee...`);
+      
+      // Calculate fee amount (0.5% of NFT price)
+      const feeAmount = Math.floor(floorDetails.maxPrice * SOL_TO_LAMPORTS * (FEE_PERCENTAGE / 100));
+      
+      if (feeAmount > 0) {
+        // Create connection for fee transaction
+        const rpcUrl = HELIUS_STAKED_URL || clusterApiUrl(CLUSTER as Cluster);
+        const connection = new Connection(rpcUrl, 'confirmed');
+        
+        // Check user balance before attempting fee transaction
+        const walletPubkey = new PublicKey(publicKey);
+        const balance = await connection.getBalance(walletPubkey);
+        
+        // Make sure user has enough balance for fee plus some buffer
+        // Ensure at least 0.002 SOL remaining after fee (for transaction costs)
+        const minimumBuffer = 0.002 * SOL_TO_LAMPORTS;
+        
+        if (balance < (feeAmount + minimumBuffer)) {
+          console.log(`[NFT] Insufficient balance for fee. Balance: ${balance}, Fee: ${feeAmount}`);
+          return nftSignature; // Return the NFT signature even if we can't collect the fee
+        }
+        
+        // Get fresh blockhash
+        const { blockhash } = await connection.getRecentBlockhash();
+        
+        // Create fee transaction
+        if (!COMMISSION_WALLET) {
+          console.log('[NFT] No commission wallet address configured');
+          return nftSignature;
+        }
+        
+        try {
+          const feeRecipientPubkey = new PublicKey(COMMISSION_WALLET);
+          
+          const feeTx = new Transaction();
+          feeTx.add(SystemProgram.transfer({
+            fromPubkey: walletPubkey,
+            toPubkey: feeRecipientPubkey,
+            lamports: feeAmount
+          }));
+          feeTx.recentBlockhash = blockhash;
+          feeTx.feePayer = walletPubkey;
+          
+          // Send fee transaction
+          if (onStatus) onStatus(`Collecting ${FEE_PERCENTAGE}% platform fee...`);
+          
+          try {
+            // First simulate the transaction to check for issues
+            const simulate = await connection.simulateTransaction(feeTx);
+            
+            if (simulate.value.err) {
+              console.error('[NFT] Fee transaction simulation failed:', simulate.value.err);
+              return nftSignature; // Return NFT signature if fee simulation fails
+            }
+            
+            const feeSignature = await sendTransaction(
+              feeTx,
+              connection,
+              {
+                statusCallback: (status: string) => {
+                  if (onStatus) onStatus(`Fee: ${status}`);
+                },
+                confirmTransaction: true
+              }
+            );
+            
+            console.log(`[NFT] Fee transaction sent with signature: ${feeSignature}`);
+            TransactionService.showSuccess(feeSignature, 'transfer');
+          } catch (feeError) {
+            console.error('[NFT] Error sending fee transaction:', feeError);
+            // We don't throw here since the NFT purchase was successful
+          }
+        } catch (walletError) {
+          console.error('[NFT] Error with wallet during fee transaction:', walletError);
+        }
+      } else {
+        console.log('[NFT] Fee amount too small, skipping fee collection');
+      }
+    } catch (feeError) {
+      console.error('[NFT] Error collecting fee, but NFT purchase was successful:', feeError);
+    }
+    
+    // Always return the NFT purchase signature even if fee collection failed
+    return nftSignature;
   } catch (err: any) {
     console.error('Error during collection floor purchase:', err);
     throw err;

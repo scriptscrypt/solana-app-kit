@@ -3,6 +3,11 @@ declare global {
   interface Window {
     fs: any;
   }
+  interface Global {
+    ReadableStream: any;
+    WritableStream: any;
+    TransformStream: any;
+  }
 }
 
 // Polyfill for structuredClone
@@ -10,6 +15,92 @@ if (typeof global.structuredClone !== 'function') {
   global.structuredClone = function structuredClone(obj: any) {
     return JSON.parse(JSON.stringify(obj));
   };
+}
+
+// Polyfill ReadableStream and WritableStream for AI SDK
+if (typeof global.ReadableStream === 'undefined') {
+  // Simple stub implementations that will allow the code to run
+  class MockReadableStream {
+    constructor(source?: any) {
+      // Minimal implementation
+    }
+    
+    getReader() {
+      return {
+        read: async () => ({ done: true, value: undefined }),
+        releaseLock: () => {},
+        cancel: async () => {},
+      };
+    }
+  }
+  
+  class MockWritableStream {
+    constructor(sink?: any) {
+      // Minimal implementation
+    }
+    
+    getWriter() {
+      return {
+        write: async () => {},
+        close: async () => {},
+        abort: async () => {},
+        releaseLock: () => {},
+      };
+    }
+  }
+  
+  class MockTransformStream {
+    constructor(transformer?: any) {
+      this.readable = new MockReadableStream();
+      this.writable = new MockWritableStream();
+    }
+    
+    readable: typeof MockReadableStream.prototype;
+    writable: typeof MockWritableStream.prototype;
+  }
+  
+  // Assign to global
+  (global as any).ReadableStream = MockReadableStream;
+  (global as any).WritableStream = MockWritableStream;
+  (global as any).TransformStream = MockTransformStream;
+  
+  console.log('Polyfilled ReadableStream and WritableStream for AI SDK compatibility');
+}
+
+// Ensure TextEncoder and TextDecoder are available
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('text-encoding');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+  console.log('Polyfilled TextEncoder and TextDecoder');
+}
+
+// Ensure Buffer is available globally (if not already)
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = require('buffer').Buffer;
+  console.log('Polyfilled Buffer');
+}
+
+// Add EventEmitter polyfill
+// Ensure global.process exists before attempting to attach EventEmitter
+if (typeof global.process === 'undefined') {
+  console.warn('[Polyfills] global.process is undefined, attempting to initialize.');
+  global.process = require('process'); // Ensure process is polyfilled
+  if (typeof global.process.env === 'undefined') {
+    global.process.env = { NODE_ENV: __DEV__ ? 'development' : 'production' } as any;
+  }
+   if (typeof global.process.nextTick === 'undefined') {
+    global.process.nextTick = setImmediate;
+  }
+}
+
+// Now, safely attach EventEmitter
+if (typeof global.process.EventEmitter === 'undefined') {
+  const EventEmitter = require('events');
+  global.process.EventEmitter = EventEmitter;
+  console.log('Polyfilled process.EventEmitter');
+} else {
+  console.log('process.EventEmitter already exists.');
 }
 
 // Mock fs module for React Native environment
@@ -32,5 +123,11 @@ const mockFs = {
 
 // Assign to global
 (global as any).fs = mockFs;
+
+// Export the polyfill functions for explicit importing where needed
+export function ensureBuffer() {
+  // This is now handled by the global Buffer check above
+  return global.Buffer !== undefined;
+}
 
 export {};

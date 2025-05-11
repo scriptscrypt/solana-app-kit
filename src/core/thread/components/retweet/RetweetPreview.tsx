@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { ThreadPost } from '../thread.types';
 import PostBody from '../post/PostBody';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { createThreadStyles } from '../thread.styles';
 import Icons from '../../../../assets/svgs';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 interface RetweetPreviewProps {
   retweetOf: ThreadPost;
@@ -32,9 +34,8 @@ export default function RetweetPreview({
     ? retweetOf.sections.find(s => s.text)?.text
     : '';
 
-  // Merge your theme if needed
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(mergedTheme, styleOverrides);
+  // Use default theme with styleOverrides
+  const styles = createThreadStyles(styleOverrides);
 
   // If the retweeted user's avatar is a string, we treat it as a URI
   const avatarSource =
@@ -62,7 +63,7 @@ export default function RetweetPreview({
     <View style={localStyles.container}>
       {/* Retweet indicator */}
       <View style={localStyles.retweetIndicator}>
-        <Icons.RetweetIdle width={12} height={12} color="#657786" />
+        <Icons.RetweetIdle width={12} height={12} color={COLORS.greyMid} />
         <Text style={localStyles.retweetText}>Retweet</Text>
       </View>
 
@@ -90,6 +91,7 @@ export default function RetweetPreview({
             post={retweetOf}
             themeOverrides={themeOverrides}
             styleOverrides={styleOverrides as any}
+            isRetweet={true}
           />
         ) : (
           // Collapsed: wrap PostBody in a container with limited height
@@ -102,6 +104,7 @@ export default function RetweetPreview({
               post={retweetOf}
               themeOverrides={themeOverrides}
               styleOverrides={styleOverrides as any}
+              isRetweet={true}
             />
           </View>
         )}
@@ -140,9 +143,9 @@ const localStyles = StyleSheet.create({
     marginVertical: 8,
     padding: 12,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E1E8ED',
-    backgroundColor: '#F5F8FA',
+    // borderWidth: 1,
+    // borderColor: COLORS.background,
+    backgroundColor: COLORS.lighterBackground,
   },
   retweetIndicator: {
     flexDirection: 'row',
@@ -150,10 +153,10 @@ const localStyles = StyleSheet.create({
     marginBottom: 6,
   },
   retweetText: {
-    fontSize: 12,
-    color: '#657786',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyMid,
     marginLeft: 4,
-    fontWeight: '500',
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   headerRow: {
     flexDirection: 'row',
@@ -164,7 +167,7 @@ const localStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#DDD', // Placeholder color
+    backgroundColor: COLORS.greyLight,
   },
   userInfo: {
     flex: 1,
@@ -172,13 +175,13 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   username: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#14171A',
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    color: COLORS.white,
   },
   handle: {
-    fontSize: 12,
-    color: '#657786',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyMid,
     marginTop: 1,
   },
   bodyContainer: {
@@ -195,26 +198,26 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E1E8ED',
+    borderTopColor: COLORS.borderDarkColor,
     paddingTop: 8,
   },
   actionButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#EFF3F7',
+    backgroundColor: COLORS.lighterBackground,
     marginRight: 8,
   },
   actionButtonText: {
-    fontSize: 12,
-    color: '#1DA1F2',
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.brandPrimary,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
   quoteContainer: {
     marginBottom: 8,
   },
   quoteText: {
-    fontSize: 12,
-    color: '#657786',
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.white,
   },
 });

@@ -62,6 +62,26 @@ import NFTIcon from './NFT.svg'
 import ImageIcon from './Image_Upload.svg'
 import TradeShare from './Share_Trade.svg'
 import searchIcon from './Search_Icon.svg'
+import ChatIcon from './chat-icon.svg';
+import ChatIconSelected from './chat-icon-selected.svg';
+import RocketIcon from './rocket.svg';
+import RocketIconSelected from './rocket-selected.svg';
+import SwapNavIcon from './swap-nav-icon.svg';
+import SwapNavIconSelected from './swap-nav-icon-selected.svg';
+import PumpFunIcon from './Pumpfun_logo.svg';
+import RadyuimIcom from './Rayduim_icon.svg'
+import TokenMillIcon from './Tokenmill_icon.svg'
+import AddFundsIcon from './add-funds-icon.svg';
+import PlusCircleIcon from './plus-circle-icon.svg';
+
+// Login elements right
+import RightRectangle from './login-elements-right/rectangle-right.svg';
+import RightSwap from './login-elements-right/swap-right.svg';
+import RightBoomerang from './login-elements-right/boomerang-right.svg';
+import RightGrid from './login-elements-right/grid-right.svg';
+import RightZigzag from './login-elements-right/zigzag-right.svg';
+import RightEllipse from './login-elements-right/ellipse-right.svg';
+
 export default {
   SolanaDot,
   SplashText,
@@ -126,5 +146,24 @@ export default {
   NFTIcon,
   ImageIcon,
   TradeShare,
-  searchIcon
+  searchIcon,
+  ChatIcon,
+  ChatIconSelected,
+  RocketIcon,
+  RocketIconSelected,
+  SwapNavIcon,
+  SwapNavIconSelected,
+  PumpFunIcon,
+  RadyuimIcom,
+  TokenMillIcon,
+  AddFundsIcon,
+  PlusCircleIcon,
+  
+  // Login elements right
+  RightRectangle,
+  RightSwap,
+  RightBoomerang,
+  RightGrid,
+  RightZigzag,
+  RightEllipse
 };

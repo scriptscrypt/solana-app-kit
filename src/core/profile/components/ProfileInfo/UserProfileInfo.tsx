@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { findMentioned } from '@/shared/utils/common/findMentioned';
-import AddButton from '../addButton/addButton';
+import TransferBalanceButton from '../transferBalanceButton/transferBalanceButton';
 import BuyCard from '../buyCard/buyCard';
 import ProfileIcons from '../../../../assets/svgs/index';
 import { styles } from './UserProfileInfo.style';
@@ -24,7 +24,57 @@ import COLORS from '../../../../assets/colors';
 import TYPOGRAPHY from '../../../../assets/typography';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { UserProfileInfoProps } from '../../types/index';
-import ProfileEditDrawer from '../ProfileEditDrawer';
+// Using require as a fallback strategy for component import issues
+const ProfileEditDrawerComponent = require('../ProfileEditDrawer/ProfileEditDrawer').default;
+import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
+
+/**
+ * Generate initials from the username
+ */
+function getInitials(username: string): string {
+  if (!username) return '?';
+  
+  // If username already appears to be wallet-derived (6 chars), use first 2 chars
+  if (username.length === 6 && /^[a-zA-Z0-9]+$/.test(username)) {
+    return username.substring(0, 2).toUpperCase();
+  }
+  
+  // Otherwise get initials from words
+  const words = username.split(' ');
+  if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+/**
+ * InitialsProfilePic - Component for displaying initials as a profile picture
+ */
+const InitialsProfilePic = memo(({ initials, size = 80 }: { initials: string, size?: number }) => {
+  return (
+    <View 
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: COLORS.brandBlue,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Text 
+        style={{
+          color: COLORS.white, 
+          fontSize: size / 3,
+          fontWeight: 'bold',
+          textAlign: 'center',
+        }}
+      >
+        {initials}
+      </Text>
+    </View>
+  );
+});
 
 /**
  * TokenAttachModal - Component for the token attachment modal
@@ -62,45 +112,29 @@ const TokenAttachModal = memo(({
           </View>
 
           <View style={{ marginVertical: 8 }}>
-            <Text style={{ 
-              fontSize: TYPOGRAPHY.size.sm, 
-              fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
-              color: COLORS.textDark
-            }}>
+            <Text style={tokenModalStyles.descriptionLabel}>
               Description:
             </Text>
             <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: COLORS.greyBorder,
-                borderRadius: 8,
-                padding: 8,
-                marginTop: 4,
-                color: COLORS.textDark
-              }}
+              style={tokenModalStyles.descriptionInput}
               placeholder="Write a short token description"
+              placeholderTextColor={COLORS.greyMid}
               value={tokenDescription}
               onChangeText={onChangeDescription}
               multiline
             />
           </View>
 
-          <View style={{ flexDirection: 'row', marginTop: 16 }}>
+          <View style={tokenModalStyles.actionButtonContainer}>
             <TouchableOpacity
-              style={[
-                tokenModalStyles.closeButton,
-                { backgroundColor: COLORS.greyMid, marginRight: 8 },
-              ]}
+              style={[tokenModalStyles.actionButton, tokenModalStyles.cancelButton]}
               onPress={onClose}>
-              <Text style={tokenModalStyles.closeButtonText}>Cancel</Text>
+              <Text style={tokenModalStyles.actionButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                tokenModalStyles.closeButton,
-                { backgroundColor: COLORS.brandPrimary },
-              ]}
+              style={[tokenModalStyles.actionButton, tokenModalStyles.saveButton]}
               onPress={onConfirm}>
-              <Text style={tokenModalStyles.closeButtonText}>Save</Text>
+              <Text style={tokenModalStyles.actionButtonText}>Save</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -160,19 +194,28 @@ const StatsSection = memo(({
 /**
  * Edit Profile Button with memoized content
  */
-const EditButton = memo(({ onPress, onSharePress }: { onPress?: () => void; onSharePress?: () => void }) => (
-  <View style={{ marginTop: 8, width: '100%', flexDirection: 'row', gap: 12 }}>
-    <TouchableOpacity
-      style={[styles.editProfileBtn, { flex: 1 }]}
-      onPress={onPress}>
-      <Text style={styles.editProfileBtnText}>Edit Profile</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={[styles.editProfileBtn, { flex: 1 }]}
-      onPress={onSharePress}>
-      <Text style={styles.editProfileBtnText}>Share Profile</Text>
-    </TouchableOpacity>
-
+const EditButton = memo(({ onPress, onTransferBalance, onLogout }: { onPress?: () => void; onTransferBalance?: () => void; onLogout?: () => void }) => (
+  <View style={{ marginTop: 8, width: '100%', flexDirection: 'column', gap: 12 }}>
+    <View style={{ flexDirection: 'row', gap: 12 }}>
+      <TouchableOpacity
+        style={[styles.editProfileBtn, { flex: 1 }]}
+        onPress={onPress}>
+        <Text style={styles.editProfileBtnText}>Edit Profile</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.editProfileBtn, { flex: 1 }]}
+        onPress={onTransferBalance}>
+        <Text style={styles.editProfileBtnText}>Transfer Balance</Text>
+      </TouchableOpacity>
+    </View>
+    
+    {/* {onLogout && (
+      <TouchableOpacity
+        style={[styles.editProfileBtn, { backgroundColor: COLORS.errorRed }]}
+        onPress={onLogout}>
+        <Text style={[styles.editProfileBtnText, { color: COLORS.white }]}>Logout</Text>
+      </TouchableOpacity>
+    )} */}
   </View>
 ));
 
@@ -229,7 +272,7 @@ const FollowButton = memo(({
   recipientAddress: string;
 }) => (
   <View style={{ marginTop: 12 }}>
-    <AddButton
+    <TransferBalanceButton
       amIFollowing={!!amIFollowing}
       areTheyFollowingMe={!!areTheyFollowingMe}
       onPressFollow={onPressFollow || (() => { })}
@@ -257,18 +300,27 @@ const ProfileHeader = memo(({
   isOwnProfile: boolean;
   onAvatarPress?: () => void;
 }) => {
+  // Get initials for default profile pic
+  const initials = useMemo(() => getInitials(username), [username]);
+
+  console.log('[ProfileHeader] profilePicUrl:', profilePicUrl);
+  
   return (
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
       <TouchableOpacity
-        style={styles.profImgContainer}
+        style={[styles.profImgContainer, { backgroundColor: COLORS.background }]}
         onPress={onAvatarPress}
         disabled={!isOwnProfile}>
-        <IPFSAwareImage
-          style={styles.profImg}
-          source={profilePicUrl ? getValidImageSource(profilePicUrl) : require('../../../../assets/images/User.png')}
-          defaultSource={require('../../../../assets/images/User.png')}
-          key={Platform.OS === 'android' ? `profile-${Date.now()}` : 'profile'}
-        />
+        {profilePicUrl ? (
+          <IPFSAwareImage
+            style={styles.profImg}
+            source={getValidImageSource(profilePicUrl)}
+            defaultSource={require('../../../../assets/images/User.png')}
+            key={Platform.OS === 'android' ? `profile-${Date.now()}` : 'profile'}
+          />
+        ) : (
+          <InitialsProfilePic initials={initials} />
+        )}
       </TouchableOpacity>
 
       <View>
@@ -322,11 +374,15 @@ function UserProfileInfo({
   attachmentData = {},
 }: UserProfileInfoProps) {
   const dispatch = useAppDispatch();
+  const { logout } = useAuth();
 
   // Local state to handle updates
   const [localProfilePic, setLocalProfilePic] = useState(profilePicUrl);
   const [localUsername, setLocalUsername] = useState(username);
   const [localBioText, setLocalBioText] = useState(bioText);
+  
+  // Transfer balance state
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   // Update local state when props change
   useEffect(() => {
@@ -374,16 +430,28 @@ function UserProfileInfo({
     name?: string;
     imageUrl?: string;
     symbol?: string;
+    description?: string;
+    assetType?: 'token' | 'nft' | 'cnft' | 'collection';
   } | null>(null);
 
   // Profile edit drawer state
   const [showEditProfileDrawer, setShowEditProfileDrawer] = useState(false);
+  
+  // Memoize profile data to prevent unnecessary re-renders of child components
+  const memoizedProfileData = useMemo(() => ({
+    userId: userWallet,
+    profilePicUrl: localProfilePic,
+    username: localUsername,
+    description: localBioText || sampleBio,
+  }), [userWallet, localProfilePic, localUsername, localBioText, sampleBio]);
 
   /**
    * Combined handler for avatar press and edit profile
    */
   const handleEditProfilePress = useCallback(() => {
+    console.log('[UserProfileInfo] handleEditProfilePress called, isOwnProfile:', isOwnProfile);
     if (!isOwnProfile) return;
+    console.log('[UserProfileInfo] Setting showEditProfileDrawer to true');
     setShowEditProfileDrawer(true);
   }, [isOwnProfile]);
 
@@ -391,10 +459,13 @@ function UserProfileInfo({
    * Handle profile updated event
    */
   const handleProfileUpdated = useCallback((field: 'image' | 'username' | 'description') => {
+    console.log('[UserProfileInfo] handleProfileUpdated called for field:', field);
     // Refresh the local state based on the field that was updated
     if (field === 'image' && onAvatarPress) {
+      console.log('[UserProfileInfo] Calling onAvatarPress callback');
       onAvatarPress();
     } else if ((field === 'username' || field === 'description') && onEditProfile) {
+      console.log('[UserProfileInfo] Calling onEditProfile callback');
       onEditProfile();
     }
   }, [onAvatarPress, onEditProfile]);
@@ -408,27 +479,58 @@ function UserProfileInfo({
       name: token.name || 'Unknown',
       imageUrl: token.image || '',
       symbol: token.symbol || token.token_info?.symbol,
+      description: token.assetType === 'collection' ? token.metadata?.description : '',
+      assetType: token.assetType,
     });
-    setTokenDescription('');
-    setShowAttachDetailsModal(true);
+    setTokenDescription(token.assetType === 'collection' ? (token.metadata?.description || '') : '');
+    console.log('LOG Setting selected token data:', token);
   }, []); // No external dependencies needed
 
   /**
-   * Confirm token attachment and dispatch to Redux
+   * Use effect to show the modal *after* the selectedToken state is updated
+   * and the previous modal (portfolio modal) has presumably closed.
    */
-  const handleAttachCoinConfirm = useCallback(async () => {
+  useEffect(() => {
+    if (selectedToken && !showAttachDetailsModal) {
+      // Check if assetType is token or collection (attach modal is relevant for these)
+      if (selectedToken.assetType === 'token' || selectedToken.assetType === 'collection') {
+        console.log('Selected token updated, scheduling attach details modal.');
+        // Add a small delay to allow the previous modal to fully dismiss
+        const timer = setTimeout(() => {
+          setShowAttachDetailsModal(true);
+        }, 100); // 100ms delay
+        return () => clearTimeout(timer); // Clear timeout if component unmounts or effect re-runs
+      } else {
+        // If it's an individual NFT, we might not need the description modal.
+        // For now, just attach it directly without asking for description.
+        console.log('Individual NFT selected, attempting direct attach.');
+        handleAttachCoinConfirm(true); // Pass a flag to indicate direct attach
+      }
+    }
+  }, [selectedToken, showAttachDetailsModal]); // Re-run when selectedToken changes
+
+  /**
+   * Confirm token attachment and dispatch to Redux
+   * Added skipModal parameter for direct NFT attachment
+   */
+  const handleAttachCoinConfirm = useCallback(async (skipModal = false) => {
     if (!selectedToken || !isOwnProfile) {
-      setShowAttachDetailsModal(false);
+      if (!skipModal) setShowAttachDetailsModal(false);
+      setSelectedToken(null); // Reset selected token if confirmation fails or is skipped
       return;
     }
-    const { mintPubkey, name, imageUrl, symbol } = selectedToken;
+    const { mintPubkey, name, imageUrl, symbol, assetType } = selectedToken;
+
+    // Use the state description if the modal was shown, otherwise use the one from selectedToken (for collections)
+    const finalDescription = skipModal ? (selectedToken.description || '') : tokenDescription.trim();
 
     const coinData = {
       mint: mintPubkey,
-      symbol: symbol || name || 'MyToken',
-      name: name || 'MyToken',
+      symbol: symbol || name || 'Unknown Asset',
+      name: name || 'Unknown Asset',
       image: imageUrl || '',
-      description: tokenDescription.trim(),
+      description: finalDescription,
+      assetType: assetType || 'token', // Default to token if not set
     };
 
     try {
@@ -440,14 +542,16 @@ function UserProfileInfo({
       ).unwrap();
       Alert.alert(
         'Success',
-        'Token attached/updated with fetched image + your description!',
+        `${assetType === 'collection' ? 'Collection' : assetType === 'nft' ? 'NFT' : 'Token'} attached successfully!`,
       );
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to attach coin');
+      Alert.alert('Error', err.message || `Failed to attach ${assetType}`);
     } finally {
-      setShowAttachDetailsModal(false);
+      if (!skipModal) setShowAttachDetailsModal(false);
+      setSelectedToken(null); // Reset selected token after attempt
+      setTokenDescription(''); // Reset description field
     }
-  }, [selectedToken, isOwnProfile, tokenDescription, userWallet]); // dispatch is stable
+  }, [selectedToken, isOwnProfile, tokenDescription, userWallet, dispatch]); // dispatch is stable
 
   /**
    * Handle removing an attached coin
@@ -484,8 +588,48 @@ function UserProfileInfo({
   }, [isOwnProfile, userWallet]); // dispatch is stable
 
   // Modal handlers with no dependencies
-  const handleCloseModal = useCallback(() => setShowAttachDetailsModal(false), []);
+  const handleCloseModal = useCallback(() => {
+    setShowAttachDetailsModal(false);
+    setSelectedToken(null); // Reset selected token when modal is closed
+    setTokenDescription(''); // Reset description field
+  }, []);
   const handleDescriptionChange = useCallback((text: string) => setTokenDescription(text), []);
+
+  /**
+   * Handle logout
+   */
+  const handleLogout = useCallback(() => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => logout(),
+        },
+      ],
+    );
+  }, [logout]);
+
+  /**
+   * Handle transfer balance button click
+   */
+  const handleTransferBalance = useCallback(() => {
+    setShowTransferModal(true);
+  }, []);
+
+  /**
+   * Handle ProfileEditDrawer close
+   */
+  const handleEditDrawerClose = useCallback(() => {
+    console.log('[UserProfileInfo] ProfileEditDrawer onClose called');
+    setShowEditProfileDrawer(false);
+  }, []);
 
   return (
     <View style={styles.profileInfo}>
@@ -522,10 +666,26 @@ function UserProfileInfo({
       )}
 
       {/* Edit profile button (for own profile) */}
-      {isOwnProfile && <EditButton onPress={handleEditProfilePress} onSharePress={onShareProfile} />}
+      {isOwnProfile && <EditButton 
+        onPress={handleEditProfilePress} 
+        onTransferBalance={handleTransferBalance}
+        onLogout={handleLogout}
+      />}
 
-      {/* BuyCard for token (own profile or if token is attached) */}
-
+      {/* Transfer Balance Button */}
+      {isOwnProfile && (
+        <View style={{ height: 0, overflow: 'hidden' }}>
+          <TransferBalanceButton
+            showOnlyTransferButton
+            showCustomWalletInput
+            buttonLabel="Transfer Balance"
+            recipientAddress=""
+            onSendToWallet={() => {}}
+            externalModalVisible={showTransferModal}
+            externalSetModalVisible={setShowTransferModal}
+          />
+        </View>
+      )}
 
       {/* Follow/unfollow button (for other profiles) */}
       {canShowAddButton && (
@@ -542,22 +702,17 @@ function UserProfileInfo({
       <TokenAttachModal
         visible={showAttachDetailsModal}
         onClose={handleCloseModal}
-        onConfirm={handleAttachCoinConfirm}
+        onConfirm={() => handleAttachCoinConfirm(false)}
         tokenDescription={tokenDescription}
         onChangeDescription={handleDescriptionChange}
       />
 
       {/* Profile Edit Drawer - new unified profile editor */}
       {isOwnProfile && (
-        <ProfileEditDrawer
+        <ProfileEditDrawerComponent
           visible={showEditProfileDrawer}
-          onClose={() => setShowEditProfileDrawer(false)}
-          profileData={{
-            userId: userWallet,
-            profilePicUrl: localProfilePic,
-            username: localUsername,
-            description: localBioText || sampleBio,
-          }}
+          onClose={handleEditDrawerClose}
+          profileData={memoizedProfileData}
           onProfileUpdated={handleProfileUpdated}
         />
       )}

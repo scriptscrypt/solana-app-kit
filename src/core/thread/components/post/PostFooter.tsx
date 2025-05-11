@@ -1,6 +1,6 @@
 // FILE: src/components/thread/post/PostFooter.tsx
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Icons from '../../../../assets/svgs';
-import { createThreadStyles, getMergedTheme } from '../thread.styles';
+import { createPostFooterStyles } from './PostFooter.styles';
 import { ThreadPost, ThreadUser, ThreadSection } from '../thread.types';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import {
@@ -286,12 +286,22 @@ export default function PostFooter({
   themeOverrides,
   styleOverrides,
 }: PostFooterProps) {
-  // Local states for bookmark, reactions, and retweet modal.
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  // Use state for managing the counts locally for optimistic updates
+  const currentUser = useAppSelector(state => state.auth);
+  const [localReactionCount, setLocalReactionCount] = useState(post.reactionCount);
+  const [localRetweetCount, setLocalRetweetCount] = useState(post.retweetCount);
+  const [localQuoteCount, setLocalQuoteCount] = useState(post.quoteCount);
   const [showReactions, setShowReactions] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [showRetweetDrawer, setShowRetweetDrawer] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
   const [commentPressed, setCommentPressed] = useState(false);
+
+  // Memoize styles (no theme needed)
+  const styles = useMemo(() => createPostFooterStyles(styleOverrides), [
+    styleOverrides,
+  ]);
 
   // Grab user info from Redux
   const address = useAppSelector(state => state.auth.address);
@@ -348,9 +358,6 @@ export default function PostFooter({
     useAppSelector(state =>
       state.thread.allPosts.find(p => p.id === post.id),
     ) || post;
-
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const styles = createThreadStyles(mergedTheme, styleOverrides);
 
   const closeReactionBubble = () => {
     Animated.timing(scaleAnim, {
@@ -414,14 +421,14 @@ export default function PostFooter({
     }
     return (
       <View style={reactionStyles.existingReactionsContainer}>
-        {Object.entries(updatedPost.reactions).map(([emoji, count], index) => (
+        {Object.entries(updatedPost.reactions || {}).map(([emoji, count], index) => (
           <View key={emoji} style={reactionStyles.reactionPill}>
             <View style={reactionStyles.emojiCircle}>
               <Text style={reactionStyles.reactionEmoji}>{emoji}</Text>
             </View>
-            {index === Object.entries(updatedPost.reactions).length - 1 && (
+            {index === Object.entries(updatedPost.reactions || {}).length - 1 && (
               <Text style={reactionStyles.totalCount}>
-                {Object.values(updatedPost.reactions).reduce((a: number, b) => a + (typeof b === 'number' ? b : 0), 0)}
+                {Object.values(updatedPost.reactions || {}).reduce((a: number, b) => a + (typeof b === 'number' ? b : 0), 0)}
               </Text>
             )}
           </View>
@@ -535,7 +542,7 @@ export default function PostFooter({
             style={[
               styles.itemLeftIcons,
               commentPressed && {
-                backgroundColor: '#E8F5FE',
+                backgroundColor: COLORS.brandPurpleBg,
                 borderRadius: 16,
                 padding: 4,
                 transform: [{ scale: 1.1 }]
@@ -545,11 +552,11 @@ export default function PostFooter({
             <Icons.CommentIdle
               width={20}
               height={20}
-              color={commentPressed ? '#1d9bf0' : undefined}
+              color={commentPressed ? COLORS.brandBlue : undefined}
             />
             <Text style={[
               styles.iconText,
-              commentPressed && { color: '#1d9bf0', fontWeight: 'bold' }
+              commentPressed && { color: COLORS.brandBlue, fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold) }
             ]}>
               {updatedPost.quoteCount || 0}
             </Text>
@@ -563,12 +570,12 @@ export default function PostFooter({
               <Icons.RetweetIdle
                 width={20}
                 height={20}
-                color={hasRetweeted ? '#17BF63' : undefined}
+                color={hasRetweeted ? COLORS.cyan : undefined}
               />
             </TouchableOpacity>
             <Text style={[
               styles.iconText,
-              hasRetweeted && { color: '#17BF63' }
+              hasRetweeted && { color: COLORS.cyan }
             ]}>
               {updatedPost.retweetCount || 0}
             </Text>
@@ -652,7 +659,7 @@ const reactionStyles = StyleSheet.create({
     backgroundColor: COLORS.lighterBackground,
     borderRadius: 20,
     padding: 6,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -685,7 +692,7 @@ const reactionStyles = StyleSheet.create({
     paddingVertical: 4,
   },
   emojiText: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.size.lg,
   },
   existingReactionsContainer: {
     flexDirection: 'row',
@@ -714,12 +721,13 @@ const reactionStyles = StyleSheet.create({
     marginRight: 4,
   },
   reactionEmoji: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.size.md,
   },
   totalCount: {
     fontSize: TYPOGRAPHY.size.xs,
     color: COLORS.white,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
 });
 
@@ -735,12 +743,12 @@ const drawerStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   drawer: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 30 : 16,
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
@@ -751,27 +759,29 @@ const drawerStyles = StyleSheet.create({
     paddingVertical: 16,
   },
   drawerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     textAlign: 'center',
     marginBottom: 16,
-    color: '#333',
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   option: {
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: COLORS.borderDarkColor,
   },
   optionText: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.white,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   undoOption: {
     borderBottomWidth: 0,
   },
   undoText: {
-    color: '#e0245e',
+    color: COLORS.errorRed,
   },
   loader: {
     marginTop: 16,
@@ -780,27 +790,30 @@ const drawerStyles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#1d9bf0',
+    borderColor: COLORS.brandBlue,
     borderTopColor: 'transparent',
   },
   quoteContainer: {
     padding: 16,
   },
   quoteTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     marginBottom: 12,
-    color: '#333',
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   textInput: {
-    borderColor: '#ccc',
+    borderColor: COLORS.borderDarkColor,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
-    color: '#333',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.white,
     minHeight: 100,
     textAlignVertical: 'top',
+    backgroundColor: COLORS.lightBackground,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   quoteButtons: {
     flexDirection: 'row',
@@ -812,12 +825,13 @@ const drawerStyles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cancelText: {
-    fontSize: 15,
-    color: '#666',
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.greyMid,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   quoteButton: {
-    backgroundColor: '#1d9bf0',
+    backgroundColor: COLORS.brandBlue,
     paddingVertical: 10,
     paddingHorizontal: 24,
     borderRadius: 24,
@@ -825,14 +839,15 @@ const drawerStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   quoteButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   disabledButton: {
-    backgroundColor: '#8ec5f2',
+    backgroundColor: COLORS.lightBackground,
   },
   disabledText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: COLORS.greyMid,
   },
 });

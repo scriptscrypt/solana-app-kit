@@ -4,8 +4,8 @@ import Icons from '../../../../assets/svgs';
 import { useAuth } from '../../hooks/useAuth';
 import styles from '../../../../screens/Common/LoginScreen/LoginScreen.styles';
 import { useCustomization } from '../../../../config/CustomizationProvider';
-import {useAppNavigation} from '../../../../shared/hooks/useAppNavigation';
-import {useAppDispatch} from '../../../../shared/hooks/useReduxHooks';
+import { useAppNavigation } from '../../../../shared/hooks/useAppNavigation';
+import { useAppDispatch } from '../../../../shared/hooks/useReduxHooks';
 import { loginSuccess } from '../../../../shared/state/auth/reducer';
 import COLORS from '../../../../assets/colors';
 
@@ -159,18 +159,43 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
     }
   };
 
+  // If user + solanaWallet are present, it implies a Privy login
   useEffect(() => {
-    // If user + solanaWallet are present, it implies a Privy login
-    if (authConfig.provider === 'privy' && user && solanaWallet && onWalletConnected) {
-      const walletPublicKey =
-        solanaWallet.wallets && solanaWallet.wallets.length > 0
-          ? solanaWallet.wallets[0].publicKey
-          : null;
-      if (!solanaWallet || !walletPublicKey) {
-        Alert.alert('Wallet Error', 'Wallet not connected');
+    if (authConfig.provider === 'privy' && user && onWalletConnected) {
+      console.log('Checking Privy wallet status after auth...');
+      
+      if (!solanaWallet) {
+        console.log('Solana wallet not available yet');
         return;
       }
-      onWalletConnected({ provider: 'privy', address: walletPublicKey });
+      
+      // Check if it's the Privy SDK wallet type with status property
+      const isPrivySDKWallet = solanaWallet && 'status' in solanaWallet;
+      console.log('Is Privy SDK wallet:', isPrivySDKWallet);
+      
+      // Handle case where wallet isn't created yet (if it's the SDK type)
+      if (isPrivySDKWallet && solanaWallet.status === 'not-created') {
+        console.log('Wallet not created, waiting for creation...');
+        // We'll let the monitorSolanaWallet function in useAuth handle creation
+        return;
+      }
+      
+      // If we have a connected wallet with wallets in the array, use it
+      if (solanaWallet.wallets && solanaWallet.wallets.length > 0) {
+        const wallet = solanaWallet.wallets[0];
+        const walletPublicKey = wallet.publicKey;
+        
+        // Only proceed if we have a valid public key
+        if (walletPublicKey) {
+          console.log('Found Solana wallet with public key:', walletPublicKey);
+          onWalletConnected({ provider: 'privy', address: walletPublicKey });
+        } else {
+          console.log('Wallet found but public key is null');
+        }
+      } else if (isPrivySDKWallet && solanaWallet.status === 'connected') {
+        console.log('Wallet shows connected but no wallets in array');
+        Alert.alert('Wallet Error', 'Wallet appears connected but no addresses found');
+      }
     }
   }, [user, onWalletConnected, solanaWallet, authConfig.provider]);
 
@@ -237,13 +262,15 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
         <ArrowIcon />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleAppleLogin}>
-        <View style={styles.buttonContent}>
-          <Icons.Apple width={24} height={24} fill={COLORS.white} />
-          <Text style={styles.buttonText}>Continue with Apple</Text>
-        </View>
-        <ArrowIcon />
-      </TouchableOpacity>
+      {Platform.OS === 'ios' && (
+        <TouchableOpacity style={styles.loginButton} onPress={handleAppleLogin}>
+          <View style={styles.buttonContent}>
+            <Icons.Apple width={24} height={24} fill={COLORS.white} />
+            <Text style={styles.buttonText}>Continue with Apple</Text>
+          </View>
+          <ArrowIcon />
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.loginButton} onPress={handleEmailLogin}>
         <View style={styles.buttonContent}>

@@ -1,11 +1,13 @@
 import {StyleSheet, Platform, Dimensions} from 'react-native';
+import COLORS from '../../../../assets/colors';
+import TYPOGRAPHY from '../../../../assets/typography';
 
 const {width, height} = Dimensions.get('window');
 
 export default StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -13,7 +15,7 @@ export default StyleSheet.create({
   modalContainer: {
     width: '100%',
     maxHeight: height * 0.75,
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.lightBackground,
     borderRadius: 20,
     padding: 20,
     paddingBottom: 16,
@@ -28,6 +30,8 @@ export default StyleSheet.create({
         elevation: 10,
       },
     }),
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -37,11 +41,11 @@ export default StyleSheet.create({
     position: 'relative',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: TYPOGRAPHY.size.xl,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     textAlign: 'center',
     marginBottom: 0,
-    color: '#111827',
+    color: COLORS.white,
   },
   modalCloseButton: {
     position: 'absolute',
@@ -53,20 +57,20 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.lighterBackground,
   },
   modalCloseText: {
-    fontSize: 18,
-    color: '#4B5563',
+    fontSize: TYPOGRAPHY.size.lg,
+    color: COLORS.accessoryDarkColor,
     lineHeight: 18,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.borderDarkColor,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: COLORS.background,
     paddingHorizontal: 12,
     marginBottom: 16,
   },
@@ -75,8 +79,8 @@ export default StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.white,
     paddingVertical: 12,
   },
   loadingContainer: {
@@ -87,8 +91,8 @@ export default StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.accessoryDarkColor,
   },
   listContentContainer: {
     paddingBottom: 20,
@@ -100,15 +104,15 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.accessoryDarkColor,
     textAlign: 'center',
   },
   tokenItem: {
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: COLORS.borderDarkColor,
   },
   tokenItemContent: {
     flexDirection: 'row',
@@ -118,7 +122,7 @@ export default StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -127,26 +131,26 @@ export default StyleSheet.create({
     flex: 1,
   },
   tokenSymbol: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
   },
   tokenName: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.accessoryDarkColor,
   },
   closeButton: {
     marginTop: 16,
     marginBottom: 8,
-    backgroundColor: '#3871DD',
+    backgroundColor: COLORS.brandBlue,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#3871DD',
+        shadowColor: 'rgba(0, 171, 228, 0.5)',
         shadowOffset: {width: 0, height: 3},
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.25,
         shadowRadius: 4,
       },
       android: {
@@ -155,8 +159,8 @@ export default StyleSheet.create({
     }),
   },
   closeButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
   },
 });

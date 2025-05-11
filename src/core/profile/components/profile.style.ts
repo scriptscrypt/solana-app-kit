@@ -2,12 +2,59 @@
  * File: src/components/Profile/profile.style.ts
  */
 import COLORS from '@/assets/colors';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, Platform} from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  // Header styles
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16, 
+    paddingVertical: 10,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 0.2,
+    borderBottomColor: COLORS.borderDarkColor,
+    paddingTop: Platform.OS === 'ios' ? 0 : 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  headerTextContainer: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  headerUsername: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+  postCount: {
+    fontSize: 13,
+    color: COLORS.greyMid,
+    marginTop: 2,
+  },
+  headerLogoutButton: {
+    marginLeft: 'auto',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: 'red',
+    fontWeight: '500',
+  },
+  profileWrapper: {
+    flex: 1,
+    paddingTop: 8, // Add a small gap between header and profile content
   },
 });
 

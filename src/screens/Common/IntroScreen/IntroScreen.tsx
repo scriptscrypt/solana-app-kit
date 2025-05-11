@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 import COLORS from '@/assets/colors';
 import Logo from '@/assets/svgs/logo.svg';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/shared/state/store';
 import { getDynamicClient } from '@/modules/walletProviders/services/walletProviders/dynamic';
 
@@ -15,37 +17,41 @@ export default function IntroScreen() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       setIsCheckingAuth(true);
+      
+      // PRIORITIZE Redux state check first - fastest path for logged in users
+      if (isLoggedIn) {
+        console.log('User logged in according to Redux state, navigating to MainTabs');
+        navigation.navigate('MainTabs' as never);
+        setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Only if Redux state shows not logged in, check provider-specific auth
       try {
         // Check if user is already authenticated using Dynamic client
         const client = getDynamicClient();
         const authUser = client?.auth?.authenticatedUser;
 
         if (authUser) {
-          console.log('User already authenticated, navigating to MainTabs');
-          // User is authenticated, navigate to MainTabs
-          setTimeout(() => {
-            navigation.navigate('MainTabs' as never);
-            setIsCheckingAuth(false);
-          }, 1000); // Small delay for smooth transition
+          console.log('User authenticated via Dynamic client, navigating to MainTabs');
+          navigation.navigate('MainTabs' as never);
+          setIsCheckingAuth(false);
         } else {
           console.log('User not authenticated, navigating to LoginOptions');
-          // User is not authenticated, navigate to LoginOptions
+          // Only add a short delay for non-authenticated users to see splash
           setTimeout(() => {
             navigation.navigate('LoginOptions');
             setIsCheckingAuth(false);
-          }, 2000); // 2 seconds delay
+          }, 1000); 
         }
       } catch (e) {
         console.log('Dynamic client not initialized yet or error:', e);
-        // If there's an error or client not initialized, fallback to Redux state
+        // If there's an error with provider check but we already know we're not logged in
+        // via Redux state, go to login
         setTimeout(() => {
-          if (isLoggedIn) {
-            navigation.navigate('MainTabs' as never);
-          } else {
-            navigation.navigate('LoginOptions');
-          }
+          navigation.navigate('LoginOptions');
           setIsCheckingAuth(false);
-        }, 2000); // 2 seconds delay
+        }, 1000);
       }
     };
 
@@ -53,23 +59,29 @@ export default function IntroScreen() {
   }, [navigation, isLoggedIn]);
 
   return (
-    <View style={styles.container}>
-      <Logo width={250} height={120} />
-      {isCheckingAuth && (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={COLORS.brandPrimary} style={styles.loader} />
-        </View>
-      )}
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="light" backgroundColor="transparent" translucent={true} />
+      <View style={styles.container}>
+        <Logo width={250} height={120} />
+        {isCheckingAuth && (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color={COLORS.brandPrimary} style={styles.loader} />
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background, // Ensure background matches container
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
   },
   loaderContainer: {
     position: 'absolute',

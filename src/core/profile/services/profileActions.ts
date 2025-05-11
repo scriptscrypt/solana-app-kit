@@ -6,39 +6,7 @@
 
 import { HELIUS_API_KEY, HELIUS_STAKED_API_KEY } from '@env';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-
-// Basic action interface
-export interface Action {
-  signature?: string;
-  slot?: number | string;
-  transactionType?: string;
-  type?: string;
-  instructions?: any[];
-  description?: string;
-  fee?: number;
-  timestamp?: number; // in seconds
-  feePayer?: string;
-  source?: string;
-  events?: any;
-  amount?: number;
-  tokenTransfers?: any[];
-  nativeTransfers?: any[];
-  accountData?: any[];
-  enrichedType?: string;
-  enrichedData?: {
-    swapType?: 'TOKEN_TO_TOKEN' | 'SOL_TO_TOKEN' | 'TOKEN_TO_SOL';
-    transferType?: 'SOL' | 'TOKEN';
-    inputSymbol?: string;
-    outputSymbol?: string;
-    tokenSymbol?: string;
-    inputAmount?: number;
-    outputAmount?: number;
-    amount?: number;
-    direction?: 'IN' | 'OUT' | 'NEUTRAL';
-    counterparty?: string;
-    decimals?: number;
-  };
-}
+import { Action, TokenTransfer, SwapEvent } from '../types/index';
 
 /**
  * Redux thunk for fetching wallet actions
@@ -166,11 +134,11 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
       enrichedType = 'SWAP';
       
       // Extract swap details if available
-      const swap = action.events.swap;
+      const swap = action.events.swap as SwapEvent;
       const hasTokenInputs = swap.tokenInputs && swap.tokenInputs.length > 0;
       const hasTokenOutputs = swap.tokenOutputs && swap.tokenOutputs.length > 0;
       
-      if (hasTokenInputs && hasTokenOutputs) {
+      if (hasTokenInputs && hasTokenOutputs && swap.tokenInputs && swap.tokenOutputs) {
         // Extract token symbols if available
         const inputToken = swap.tokenInputs[0];
         const outputToken = swap.tokenOutputs[0];
@@ -192,34 +160,42 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
           outputAmount,
           direction: inputToken.userAccount === walletAddress ? 'OUT' : 'IN'
         };
-      } else if (swap.nativeInput && hasTokenOutputs) {
+      } else if (swap.nativeInput && hasTokenOutputs && swap.tokenOutputs) {
         // SOL to token swap
         const outputToken = swap.tokenOutputs[0];
         const outputAmount = outputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(outputToken.rawTokenAmount.tokenAmount) / Math.pow(10, outputToken.rawTokenAmount.decimals || 0)
           : 0;
           
+        const nativeAmount = typeof swap.nativeInput.amount === 'string' 
+          ? parseFloat(swap.nativeInput.amount) 
+          : swap.nativeInput.amount;
+          
         action.enrichedData = {
           swapType: 'SOL_TO_TOKEN',
           inputSymbol: 'SOL',
           outputSymbol: truncateAddress(outputToken.mint),
-          inputAmount: swap.nativeInput.amount / 1_000_000_000, // lamports to SOL
+          inputAmount: nativeAmount / 1_000_000_000, // lamports to SOL
           outputAmount,
           direction: swap.nativeInput.account === walletAddress ? 'OUT' : 'IN'
         };
-      } else if (hasTokenInputs && swap.nativeOutput) {
+      } else if (hasTokenInputs && swap.nativeOutput && swap.tokenInputs) {
         // Token to SOL swap
         const inputToken = swap.tokenInputs[0];
         const inputAmount = inputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
           : 0;
           
+        const nativeAmount = typeof swap.nativeOutput.amount === 'string' 
+          ? parseFloat(swap.nativeOutput.amount) 
+          : swap.nativeOutput.amount;
+          
         action.enrichedData = {
           swapType: 'TOKEN_TO_SOL',
           inputSymbol: truncateAddress(inputToken.mint),
           outputSymbol: 'SOL',
           inputAmount,
-          outputAmount: swap.nativeOutput.amount / 1_000_000_000, // lamports to SOL
+          outputAmount: nativeAmount / 1_000_000_000, // lamports to SOL
           direction: inputToken.userAccount === walletAddress ? 'OUT' : 'IN'
         };
       }
@@ -243,7 +219,7 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
     // Process token transfers
     else if (action.tokenTransfers && action.tokenTransfers.length > 0) {
       enrichedType = 'TOKEN_TRANSFER';
-      const transfer = action.tokenTransfers[0];
+      const transfer = action.tokenTransfers[0] as TokenTransfer;
       
       action.enrichedData = {
         transferType: 'TOKEN',

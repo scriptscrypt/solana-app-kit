@@ -374,7 +374,7 @@ export function LiquidityRemoveSection({
                   pool: poolAddress,
                   lpTokenAmount: numericLp,
                   slippage: increasedSlippage,
-                  userPublicKey: userAddress,
+                  userPublicKey: new PublicKey(userAddress),
                   connection,
                   solanaWallet,
                   onStatusUpdate: (msg) => {

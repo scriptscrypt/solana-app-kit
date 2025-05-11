@@ -9,12 +9,15 @@ const COLORS = {
   greyDark: '#999999',
   greyBorder: '#EDEFF3',
   greyBorderdark: '#E5E5E5',
+  lightGrey: '#33394A',
 
   // Branding & special use
   brandPrimary: '#32D4DE',
   brandPurple: '#B591FF',
   brandPurpleBg: '#EDECFF',
   brandBlue: '#00ABE4',
+  brandPink: '#F53987',
+  brandGreen: '#00C851',
   errorRed: '#e0245e',
 
   // Other usage

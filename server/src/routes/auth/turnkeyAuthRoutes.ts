@@ -39,7 +39,7 @@ const decodeJwt = (credential: string): JwtPayload | null => {
 /**
  * Route to get a sub-organization ID based on a filter
  */
-router.post('/getSubOrgId', async (req: Request, res: Response) => {
+router.post('/getSubOrgId', async (req: any, res: any) => {
   try {
     const { filterType, filterValue } = req.body;
     
@@ -71,7 +71,7 @@ router.post('/getSubOrgId', async (req: Request, res: Response) => {
 /**
  * Route to initialize OTP authentication
  */
-router.post('/initOtpAuth', async (req: Request, res: Response) => {
+router.post('/initOtpAuth', async (req: any, res: any) => {
   try {
     const { otpType, contact } = req.body;
     
@@ -126,7 +126,7 @@ router.post('/initOtpAuth', async (req: Request, res: Response) => {
 /**
  * Route to complete OTP authentication
  */
-router.post('/otpAuth', async (req: Request, res: Response) => {
+router.post('/otpAuth', async (req: any, res: any) => {
   try {
     const {
       otpId,
@@ -197,7 +197,7 @@ router.post('/otpAuth', async (req: Request, res: Response) => {
 /**
  * Route for OAuth login (Google, Apple)
  */
-router.post('/oAuthLogin', async (req: Request, res: Response) => {
+router.post('/oAuthLogin', async (req: any, res: any) => {
   try {
     const { oidcToken, providerName, targetPublicKey, expirationSeconds = '3600' } = req.body;
     

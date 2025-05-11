@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { useDevMode } from '../../context/DevModeContext';
 import { useEnvError } from '../../context/EnvErrorContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {navigationRef} from '../../shared/hooks/useAppNavigation';
+import { navigationRef } from '../../shared/hooks/useAppNavigation';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../shared/state/store';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 // Import specific environment variables needed for the frontend
 import {
     PRIVY_APP_ID,
@@ -65,17 +67,7 @@ const SCREEN_NODES = [
         type: 'root',
         route: null,
         params: {},
-        children: ['modules', 'feed', 'search', 'profile', 'otherScreens']
-    },
-
-    // Other Screens
-    {
-        id: 'otherScreens',
-        label: 'Other Screens',
-        type: 'category',
-        route: null,
-        params: {},
-        children: ['thread', 'otherProfile']
+        children: ['modules', 'feed', 'swap', 'chat', 'profile']
     },
 
     // Main level nodes
@@ -85,7 +77,7 @@ const SCREEN_NODES = [
         type: 'category',
         route: 'MainTabs',
         params: { screen: 'Modules' },
-        children: ['pumpFun', 'pumpSwap', 'tokenMill', 'nft', 'mercuro']
+        children: ['tokenMill', 'pumpFun', 'launchLab', 'meteora']
     },
     {
         id: 'feed',
@@ -93,14 +85,22 @@ const SCREEN_NODES = [
         type: 'screen',
         route: 'MainTabs',
         params: { screen: 'Feed' },
-        children: ['chat']
+        children: []
     },
     {
-        id: 'search',
-        label: 'Search',
+        id: 'swap',
+        label: 'Swap',
         type: 'screen',
         route: 'MainTabs',
-        params: { screen: 'Search' },
+        params: { screen: 'Swap' },
+        children: []
+    },
+    {
+        id: 'chat',
+        label: 'Chat',
+        type: 'screen',
+        route: 'ChatListScreen',
+        params: {},
         children: []
     },
     {
@@ -109,43 +109,6 @@ const SCREEN_NODES = [
         type: 'screen',
         route: 'ProfileScreen',
         params: {},
-        children: []
-    },
-
-    // Feed children
-    {
-        id: 'chat',
-        label: 'Chat Screen',
-        type: 'screen',
-        route: 'ChatScreen',
-        params: {},
-        children: []
-    },
-
-    // Other screens children
-    {
-        id: 'thread',
-        label: 'Thread Screen',
-        type: 'screen',
-        route: 'MainTabs',
-        params: {},
-        children: []
-    },
-    {
-        id: 'otherProfile',
-        label: 'Other Profile Screen',
-        type: 'screen',
-        route: 'OtherProfile',
-        params: {
-            userId: DUMMY_USER.userId,
-            username: DUMMY_USER.username,
-            displayName: DUMMY_USER.displayName,
-            bio: DUMMY_USER.bio,
-            profileImage: DUMMY_USER.profileImageUrl,
-            followerCount: DUMMY_USER.followerCount,
-            followingCount: DUMMY_USER.followingCount,
-            isVerified: DUMMY_USER.isVerified
-        },
         children: []
     },
 
@@ -159,14 +122,6 @@ const SCREEN_NODES = [
         children: []
     },
     {
-        id: 'pumpSwap',
-        label: 'Pump Swap',
-        type: 'screen',
-        route: 'PumpSwap',
-        params: {},
-        children: []
-    },
-    {
         id: 'tokenMill',
         label: 'Token Mill',
         type: 'screen',
@@ -175,18 +130,18 @@ const SCREEN_NODES = [
         children: []
     },
     {
-        id: 'nft',
-        label: 'NFT Screen',
+        id: 'launchLab',
+        label: 'Launch Lab',
         type: 'screen',
-        route: 'NftScreen',
+        route: 'LaunchlabsScreen',
         params: {},
         children: []
     },
     {
-        id: 'mercuro',
-        label: 'Mercuro Onramp/Offramp',
+        id: 'meteora',
+        label: 'Meteora',
         type: 'screen',
-        route: 'MercuroScreen',
+        route: 'MeteoraScreen',
         params: {},
         children: []
     }
@@ -199,9 +154,7 @@ const AppNavigationMap = ({ onScreenSelect }: { onScreenSelect: (route: RouteNam
     // Track which sections are expanded
     const [expandedSections, setExpandedSections] = React.useState<Record<string, boolean>>({
         bottomNav: true,
-        modules: false,
-        feed: false,
-        otherScreens: false
+        modules: false
     });
 
     // Toggle a section's expanded state
@@ -349,10 +302,164 @@ const MissingEnvVars = () => {
     );
 };
 
+// Log the server URL for debugging
+console.log('SERVER_URL', SERVER_URL);
+
+// Custom fetch with timeout function since AbortSignal.timeout is not supported
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 5000): Promise<Response> => {
+    // Create a promise that rejects after the specified timeout
+    const timeoutPromise = new Promise<Response>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), timeout)
+    );
+
+    // Create the fetch promise
+    const fetchPromise = fetch(url, options);
+
+    // Race the fetch against the timeout
+    return Promise.race([fetchPromise, timeoutPromise]);
+};
+
+// Component to display server connection status
+const ServerStatus = () => {
+    const { setServerStatus } = useDevMode();
+    const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+    const [lastChecked, setLastChecked] = useState<Date | null>(null);
+    const [serverUrl, setServerUrl] = useState<string>(SERVER_URL || 'http://localhost:8080');
+
+    // Check server connection status
+    const checkServerStatus = async () => {
+        setStatus('checking');
+        try {
+            console.log(`Checking server status at: ${serverUrl}`);
+
+            // Use the ws-health endpoint which should be lightweight and fast
+            const response = await fetchWithTimeout(`${serverUrl}/ws-health`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            }, 5000);
+
+            if (response.ok) {
+                console.log('Server response OK:', await response.text());
+                setStatus('online');
+                setServerStatus('online');
+            } else {
+                console.log('Server response NOT OK:', response.status);
+                setStatus('offline');
+                setServerStatus('offline');
+            }
+        } catch (error) {
+            console.error('Server connection check failed:', error);
+            setStatus('offline');
+            setServerStatus('offline');
+        }
+        setLastChecked(new Date());
+    };
+
+    // Check status when component mounts
+    useEffect(() => {
+        checkServerStatus();
+    }, []);
+
+    // Format the last checked time
+    const getLastCheckedTime = () => {
+        if (!lastChecked) return '';
+        return lastChecked.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    return (
+        <View style={styles.serverStatusContainer}>
+            <Text style={styles.serverStatusTitle}>Server Status</Text>
+
+            <View style={styles.serverStatusContent}>
+                <View style={styles.serverStatusIndicatorContainer}>
+                    {status === 'checking' ? (
+                        <ActivityIndicator size="small" color={COLORS.greyMid} />
+                    ) : (
+                        <View
+                            style={[
+                                styles.serverStatusIndicator,
+                                status === 'online' ? styles.serverStatusOnline : styles.serverStatusOffline
+                            ]}
+                        />
+                    )}
+                    <Text style={[
+                        styles.serverStatusText,
+                        status === 'online' ? styles.statusOnlineText :
+                            status === 'offline' ? styles.statusOfflineText :
+                                styles.statusCheckingText
+                    ]}>
+                        {status === 'checking' ? 'Checking...' :
+                            status === 'online' ? 'Server Online' : 'Server Offline'}
+                    </Text>
+                </View>
+
+                {/* <Text style={styles.serverUrlText}>
+                    {serverUrl}
+                </Text> */}
+
+                {lastChecked && (
+                    <Text style={styles.lastCheckedText}>
+                        Last checked: {getLastCheckedTime()}
+                    </Text>
+                )}
+            </View>
+
+            <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={checkServerStatus}
+            >
+                <Text style={styles.refreshButtonText}>Check Again</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
+
 const DevDrawer = () => {
-    const { isDevDrawerOpen, toggleDevDrawer } = useDevMode();
+    const { isDevDrawerOpen, toggleDevDrawer, setServerStatus } = useDevMode();
     const dispatch = useDispatch();
     const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+    const [serverConnectionStatus, setServerConnectionStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+
+    // Check server connection
+    const checkServerConnection = async () => {
+        try {
+            setServerConnectionStatus('checking');
+            console.log(`Checking server status in DevDrawer at: ${SERVER_URL || 'http://localhost:8080'}`);
+
+            // Use the ws-health endpoint which should be lightweight and fast
+            const response = await fetchWithTimeout(`${SERVER_URL || 'http://localhost:8080'}/ws-health`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            }, 5000);
+
+            if (response.ok) {
+                console.log('Server connection successful');
+                setServerConnectionStatus('online');
+                setServerStatus('online');
+            } else {
+                console.log('Server returned error status:', response.status);
+                setServerConnectionStatus('offline');
+                setServerStatus('offline');
+            }
+        } catch (error) {
+            console.error('Server connection check failed:', error);
+            setServerConnectionStatus('offline');
+            setServerStatus('offline');
+        }
+    };
+
+    // Check server connection when drawer opens
+    useEffect(() => {
+        if (isDevDrawerOpen) {
+            checkServerConnection();
+        }
+    }, [isDevDrawerOpen]);
 
     // Bypass authentication for dev mode
     const bypassAuth = () => {
@@ -443,6 +550,9 @@ const DevDrawer = () => {
                     </TouchableOpacity>
                 </View>
                 <ScrollView style={styles.content}>
+                    {/* Show server status */}
+                    <ServerStatus />
+
                     {/* Show missing environment variables */}
                     <MissingEnvVars />
 
@@ -474,8 +584,21 @@ const DevDrawer = () => {
 
                         <View style={styles.infoRow}>
                             <Text style={styles.infoLabel}>Login Status:</Text>
-                            <Text style={[styles.infoValue, { color: isLoggedIn ? '#34C759' : '#FF9500' }]}>
+                            <Text style={[styles.infoValue, { color: isLoggedIn ? COLORS.brandGreen : COLORS.brandPrimary }]}>
                                 {isLoggedIn ? 'Logged In' : 'Not Logged In'}
+                            </Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Server Status:</Text>
+                            <Text style={[
+                                styles.infoValue,
+                                serverConnectionStatus === 'online' ? { color: COLORS.brandGreen } :
+                                    serverConnectionStatus === 'offline' ? { color: COLORS.errorRed } :
+                                        { color: COLORS.greyMid }
+                            ]}>
+                                {serverConnectionStatus === 'checking' ? 'Checking...' :
+                                    serverConnectionStatus === 'online' ? 'Connected' : 'Disconnected'}
                             </Text>
                         </View>
                     </View>
@@ -509,23 +632,23 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
     },
     drawerContainer: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.background,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         maxHeight: Dimensions.get('window').height * 0.9,
-        shadowColor: '#000',
+        shadowColor: COLORS.black,
         shadowOffset: {
             width: 0,
             height: -3,
         },
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.3,
         shadowRadius: 10,
         elevation: 20,
     },
@@ -537,22 +660,22 @@ const styles = StyleSheet.create({
         paddingTop: 14,
         paddingBottom: 14,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
+        borderBottomColor: COLORS.borderDarkColor,
     },
     title: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#000000',
+        fontSize: TYPOGRAPHY.size.xl,
+        fontWeight: TYPOGRAPHY.weights.bold,
+        color: COLORS.white,
     },
     closeButtonContainer: {
         padding: 8,
         borderRadius: 6,
-        backgroundColor: 'rgba(0,122,255,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.1)',
     },
     closeButton: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#007AFF',
+        fontSize: TYPOGRAPHY.size.sm,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+        color: COLORS.brandPrimary,
     },
     content: {
         paddingHorizontal: 24,
@@ -562,16 +685,16 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     mapTitle: {
-        fontSize: 18,
-        fontWeight: '700',
+        fontSize: TYPOGRAPHY.size.lg,
+        fontWeight: TYPOGRAPHY.weights.bold,
         marginBottom: 8,
-        color: '#000',
+        color: COLORS.white,
     },
     mapDescription: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.greyMid,
         marginBottom: 16,
-        lineHeight: 20,
+        lineHeight: TYPOGRAPHY.lineHeight.sm,
     },
     navMapNode: {
         marginVertical: 4,
@@ -583,28 +706,28 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     rootNode: {
-        backgroundColor: '#F5F5F7',
+        backgroundColor: COLORS.lightBackground,
         borderLeftWidth: 3,
-        borderLeftColor: '#007AFF',
+        borderLeftColor: COLORS.brandBlue,
     },
     categoryNode: {
-        backgroundColor: '#F5F5F7',
+        backgroundColor: COLORS.lightBackground,
         borderLeftWidth: 3,
-        borderLeftColor: '#FF9500',
+        borderLeftColor: COLORS.brandPrimary,
     },
     screenNode: {
-        backgroundColor: '#F5F5F7',
+        backgroundColor: COLORS.lightBackground,
         borderLeftWidth: 3,
-        borderLeftColor: '#32D74B',
+        borderLeftColor: COLORS.brandGreen,
     },
     rootText: {
-        color: '#007AFF',
+        color: COLORS.brandBlue,
     },
     categoryText: {
-        color: '#FF9500',
+        color: COLORS.brandPrimary,
     },
     screenText: {
-        color: '#32D74B',
+        color: COLORS.brandGreen,
     },
     nodeContent: {
         flexDirection: 'row',
@@ -612,41 +735,41 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     nodeArrow: {
-        fontSize: 16,
+        fontSize: TYPOGRAPHY.size.lg,
         marginRight: 8,
-        fontWeight: '600',
+        fontWeight: TYPOGRAPHY.weights.semiBold,
     },
     nodeLabel: {
-        fontWeight: '500',
-        fontSize: 15,
+        fontWeight: TYPOGRAPHY.weights.medium,
+        fontSize: TYPOGRAPHY.size.md,
     },
     navButton: {
-        backgroundColor: 'rgba(0,0,0,0.05)',
+        backgroundColor: COLORS.lighterBackground,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
     },
     navButtonText: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: '#333',
+        fontSize: TYPOGRAPHY.size.xs,
+        fontWeight: TYPOGRAPHY.weights.medium,
+        color: COLORS.white,
     },
     childrenContainer: {
         marginTop: 2,
     },
     divider: {
         height: 1,
-        backgroundColor: 'rgba(0,0,0,0.06)',
+        backgroundColor: COLORS.borderDarkColor,
         marginVertical: 16,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#333333',
+        fontSize: TYPOGRAPHY.size.lg,
+        fontWeight: TYPOGRAPHY.weights.bold,
+        color: COLORS.white,
         marginBottom: 16,
     },
     infoCard: {
-        backgroundColor: '#F5F5F7',
+        backgroundColor: COLORS.lightBackground,
         borderRadius: 12,
         padding: 16,
         marginBottom: 20,
@@ -657,20 +780,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.04)',
+        borderBottomColor: COLORS.borderDarkColor,
     },
     infoLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#555',
+        fontSize: TYPOGRAPHY.size.sm,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+        color: COLORS.greyMid,
     },
     infoValue: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#333',
+        fontSize: TYPOGRAPHY.size.sm,
+        fontWeight: TYPOGRAPHY.weights.medium,
+        color: COLORS.white,
     },
     actionButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: COLORS.brandPrimary,
         paddingVertical: 14,
         paddingHorizontal: 20,
         borderRadius: 12,
@@ -678,57 +801,129 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     actionButtonText: {
-        color: '#FFFFFF',
-        fontWeight: '600',
-        fontSize: 15,
+        color: COLORS.background,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+        fontSize: TYPOGRAPHY.size.md,
     },
     envContainer: {
-        backgroundColor: '#F5F5F7',
+        backgroundColor: COLORS.lightBackground,
         borderRadius: 12,
         padding: 16,
         marginBottom: 24,
     },
     envTitle: {
-        fontSize: 18,
-        fontWeight: '700',
+        fontSize: TYPOGRAPHY.size.lg,
+        fontWeight: TYPOGRAPHY.weights.bold,
         marginBottom: 8,
-        color: '#000',
+        color: COLORS.white,
     },
     envDescription: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.greyMid,
         marginBottom: 16,
-        lineHeight: 18,
+        lineHeight: TYPOGRAPHY.lineHeight.sm,
     },
     envComplete: {
-        fontSize: 14,
-        color: '#34C759',
-        fontWeight: '500',
+        fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.brandGreen,
+        fontWeight: TYPOGRAPHY.weights.medium,
     },
     envVarItem: {
-        backgroundColor: 'rgba(255,76,76,0.1)',
+        backgroundColor: 'rgba(229,77,77,0.1)',
         borderRadius: 8,
         padding: 10,
         marginBottom: 8,
         borderLeftWidth: 3,
-        borderLeftColor: '#ff4c4c',
+        borderLeftColor: COLORS.errorRed,
     },
     envVarName: {
-        fontWeight: '600',
-        color: '#ff4c4c',
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+        color: COLORS.errorRed,
     },
     envHelper: {
-        fontSize: 12,
-        color: '#666',
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
         marginTop: 8,
         fontStyle: 'italic',
     },
     moreVarsText: {
-        fontSize: 13,
-        color: '#666',
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
         fontStyle: 'italic',
         marginVertical: 8,
-    }
+    },
+    // Server status styles
+    serverStatusContainer: {
+        backgroundColor: COLORS.lightBackground,
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 24,
+    },
+    serverStatusTitle: {
+        fontSize: TYPOGRAPHY.size.lg,
+        fontWeight: TYPOGRAPHY.weights.bold,
+        marginBottom: 12,
+        color: COLORS.white,
+    },
+    serverStatusContent: {
+        marginBottom: 12,
+    },
+    serverStatusIndicatorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    serverStatusIndicator: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginRight: 8,
+    },
+    serverStatusOnline: {
+        backgroundColor: COLORS.brandGreen,
+    },
+    serverStatusOffline: {
+        backgroundColor: COLORS.errorRed,
+    },
+    serverStatusText: {
+        fontSize: TYPOGRAPHY.size.md,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+    },
+    statusOnlineText: {
+        color: COLORS.brandGreen,
+    },
+    statusOfflineText: {
+        color: COLORS.errorRed,
+    },
+    statusCheckingText: {
+        color: COLORS.greyMid,
+    },
+    serverUrlText: {
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
+        marginLeft: 20,
+        marginTop: 4,
+        marginBottom: 4,
+    },
+    lastCheckedText: {
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
+        marginLeft: 20,
+    },
+    refreshButton: {
+        backgroundColor: COLORS.lightBackground,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
+        borderWidth: 1,
+        borderColor: COLORS.borderDarkColor,
+    },
+    refreshButtonText: {
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.white,
+        fontWeight: TYPOGRAPHY.weights.medium,
+    },
 });
 
 export default DevDrawer;

@@ -10,6 +10,8 @@ import {
   TextInput,
   Animated,
   Easing,
+  KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 
@@ -17,7 +19,7 @@ import PostHeader from '@/core/thread/components/post/PostHeader';
 import PostBody from '@/core/thread/components/post/PostBody';
 import PostFooter from '@/core/thread/components/post/PostFooter';
 import PostCTA from '@/core/thread/components/post/PostCTA';
-import ThreadComposer from '@/core/thread/components/ThreadComposer';
+import ThreadComposer from '@/core/thread/components/thread-composer/ThreadComposer';
 
 import {
   ThreadPost,
@@ -31,6 +33,8 @@ import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { deletePostAsync } from '@/shared/state/thread/reducer';
+import styles from './PostThreadScreen.style';
+import COLORS from '@/assets/colors';
 
 /**
  * Finds a post in the array by ID.
@@ -91,7 +95,7 @@ export default function PostThreadScreen() {
   const backgroundOpacity = useRef(new Animated.Value(0)).current;
   const composerTranslateY = useRef(new Animated.Value(0)).current;
 
-  const allPosts = useAppSelector(state => state.thread.allPosts);
+  const allPosts = useAppSelector((state) => state.thread.allPosts);
   const flatPosts = useMemo(() => flattenPosts(allPosts), [allPosts]);
 
   // Local state for editing
@@ -116,6 +120,33 @@ export default function PostThreadScreen() {
       : DEFAULT_IMAGES.user,
     verified: true,
   };
+
+  // Add state to track keyboard status
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Add keyboard listeners
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
 
   // Function to focus the comment input and highlight it
   const focusCommentInput = () => {
@@ -223,20 +254,18 @@ export default function PostThreadScreen() {
     const isQuoteRetweet = isRetweet && post.sections && post.sections.length > 0;
 
     return (
-      <View style={twitterRowStyles.rowContainer} key={post.id}>
-        <View style={twitterRowStyles.leftCol}>
-          {showTopLine && <View style={twitterRowStyles.verticalLineTop} />}
-          <View style={twitterRowStyles.dot} />
-          {showBottomLine && (
-            <View style={twitterRowStyles.verticalLineBottom} />
-          )}
+      <View style={styles.rowContainer} key={post.id}>
+        <View style={styles.leftCol}>
+          {showTopLine && <View style={styles.verticalLineTop} />}
+          <View style={styles.dot} />
+          {showBottomLine && <View style={styles.verticalLineBottom} />}
         </View>
-        <View style={twitterRowStyles.postContent}>
+        <View style={styles.postContent}>
           {/* If it's a retweet, show the retweet indicator */}
           {isRetweet && (
-            <View style={twitterRowStyles.retweetIndicator}>
-              <Icons.RetweetIdle width={12} height={12} color="#657786" />
-              <Text style={twitterRowStyles.retweetText}>
+            <View style={styles.retweetIndicator}>
+              <Icons.RetweetIdle width={12} height={12} color={COLORS.greyMid} />
+              <Text style={styles.retweetText}>
                 {post.user.username} Retweeted
               </Text>
             </View>
@@ -246,9 +275,9 @@ export default function PostThreadScreen() {
             <View>
               {/* For quote retweets, show the quote text first */}
               {isQuoteRetweet && (
-                <View style={twitterRowStyles.quoteContent}>
+                <View style={styles.quoteContent}>
                   {post.sections.map(section => (
-                    <Text key={section.id} style={twitterRowStyles.quoteText}>
+                    <Text key={section.id} style={styles.quoteText}>
                       {section.text}
                     </Text>
                   ))}
@@ -258,7 +287,7 @@ export default function PostThreadScreen() {
               {/* Display original post content for retweets */}
               {post.retweetOf && (
                 <TouchableOpacity
-                  style={twitterRowStyles.originalPostContainer}
+                  style={styles.originalPostContainer}
                   activeOpacity={0.8}
                   onPress={() => navigation.push('PostThread', { postId: post.retweetOf!.id })}
                 >
@@ -325,24 +354,22 @@ export default function PostThreadScreen() {
     return (
       <TouchableOpacity
         key={post.id}
-        style={twitterRowStyles.rowContainer}
+        style={styles.rowContainer}
         activeOpacity={0.8}
         onPress={() => {
           navigation.push('PostThread', { postId: post.id });
         }}>
-        <View style={twitterRowStyles.leftCol}>
-          {showTopLine && <View style={twitterRowStyles.verticalLineTop} />}
-          <View style={twitterRowStyles.dot} />
-          {showBottomLine && (
-            <View style={twitterRowStyles.verticalLineBottom} />
-          )}
+        <View style={styles.leftCol}>
+          {showTopLine && <View style={styles.verticalLineTop} />}
+          <View style={styles.dot} />
+          {showBottomLine && <View style={styles.verticalLineBottom} />}
         </View>
-        <View style={twitterRowStyles.postContent}>
+        <View style={styles.postContent}>
           {/* If it's a retweet, show the retweet indicator */}
           {isRetweet && (
-            <View style={twitterRowStyles.retweetIndicator}>
-              <Icons.RetweetIdle width={12} height={12} color="#657786" />
-              <Text style={twitterRowStyles.retweetText}>
+            <View style={styles.retweetIndicator}>
+              <Icons.RetweetIdle width={12} height={12} color={COLORS.greyMid} />
+              <Text style={styles.retweetText}>
                 {post.user.username} Retweeted
               </Text>
             </View>
@@ -352,9 +379,9 @@ export default function PostThreadScreen() {
             <View>
               {/* For quote retweets, show the quote text first */}
               {isQuoteRetweet && (
-                <View style={twitterRowStyles.quoteContent}>
+                <View style={styles.quoteContent}>
                   {post.sections.map(section => (
-                    <Text key={section.id} style={twitterRowStyles.quoteText}>
+                    <Text key={section.id} style={styles.quoteText}>
                       {section.text}
                     </Text>
                   ))}
@@ -364,7 +391,7 @@ export default function PostThreadScreen() {
               {/* Display original post content for retweets */}
               {post.retweetOf && (
                 <TouchableOpacity
-                  style={twitterRowStyles.originalPostContainer}
+                  style={styles.originalPostContainer}
                   activeOpacity={0.8}
                   onPress={() => navigation.push('PostThread', { postId: post.retweetOf!.id })}
                 >
@@ -418,254 +445,105 @@ export default function PostThreadScreen() {
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, Platform.OS === 'android' && { paddingTop: 30 }]}>
-      {/* Screen Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thread</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
+      <SafeAreaView
+        style={[styles.container, Platform.OS === 'android' && { paddingTop: 30 }]}>
+        {/* Screen Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Thread</Text>
+          <View style={styles.spacerView} />
+        </View>
 
-      <ScrollView
-        ref={scrollViewRef}
-        contentContainerStyle={styles.scrollContent}>
-        {currentPost ? (
-          <>
-            {ancestorChain.map(p => renderNonClickablePost(p))}
-            {directChildren.length > 0 && (
-              <>
-                <Text style={styles.repliesLabel}>Replies</Text>
-                {directChildren.map(child => (
-                  <View key={child.id} style={{ marginLeft: 10 }}>
-                    {renderClickableChildPost(child)}
-                  </View>
-                ))}
-              </>
-            )}
-          </>
-        ) : (
-          <View style={stylesNotFound.notFoundContainer}>
-            <Text style={stylesNotFound.notFoundText}>
-              Oops! Post not found.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {currentPost && (
-        <>
-          {/* Semi-transparent overlay for dimming effect */}
-          {isCommentHighlighted && (
-            <Animated.View
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                opacity: backgroundOpacity,
-                zIndex: 1
-              }}
-            />
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={[
+            styles.scrollContent,
+            // Add padding only on iOS since KeyboardAvoidingView works differently there
+            Platform.OS === 'ios' && keyboardVisible && { paddingBottom: keyboardHeight }
+          ]}
+          keyboardShouldPersistTaps="handled">
+          {currentPost ? (
+            <>
+              {ancestorChain.map(p => renderNonClickablePost(p))}
+              {directChildren.length > 0 && (
+                <>
+                  <Text style={styles.repliesLabel}>Replies</Text>
+                  {directChildren.map(child => (
+                    <View key={child.id} style={styles.childPostContainer}>
+                      {renderClickableChildPost(child)}
+                    </View>
+                  ))}
+                </>
+              )}
+            </>
+          ) : (
+            <View style={styles.notFoundContainer}>
+              <Text style={styles.notFoundText}>
+                Oops! Post not found.
+              </Text>
+            </View>
           )}
+        </ScrollView>
 
-          <Animated.View
-            style={[
-              styles.composerContainer,
-              {
-                transform: [{ translateY: composerTranslateY }],
-                zIndex: 2,
-                // Subtle elevation when focused
-                ...(isCommentHighlighted ? {
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: -2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 5,
-                  elevation: 5,
-                } : {})
-              }
-            ]}>
-            <ThreadComposer
-              ref={commentInputRef}
-              currentUser={localUser}
-              parentId={currentPost.id}
-              onPostCreated={() => {
-                console.log('Reply created successfully');
-              }}
-            />
-          </Animated.View>
-        </>
-      )}
+        {currentPost && (
+          <>
+            {/* Semi-transparent overlay for dimming effect */}
+            {isCommentHighlighted && (
+              <Animated.View
+                style={[
+                  styles.dimOverlay,
+                  { opacity: backgroundOpacity }
+                ]}
+              />
+            )}
 
-      {postToEdit && (
-        <ThreadEditModal
-          post={postToEdit}
-          visible={editModalVisible}
-          onClose={() => setEditModalVisible(false)}
-          currentUser={localUser}
-        />
-      )}
-    </SafeAreaView>
+            {/* On Android, manually position the composer over the keyboard */}
+            <Animated.View
+              style={[
+                styles.composerContainer,
+                {
+                  transform: [{ translateY: composerTranslateY }],
+                  zIndex: 2,
+                },
+                isCommentHighlighted && styles.composerElevated,
+                // On Android, manually position the composer above the keyboard
+                Platform.OS === 'android' && keyboardVisible && {
+                  position: 'absolute',
+                  bottom: keyboardHeight,
+                  left: 0,
+                  right: 0
+                }
+              ]}>
+              <ThreadComposer
+                ref={commentInputRef}
+                currentUser={localUser}
+                parentId={currentPost.id}
+                onPostCreated={() => {
+                  console.log('Reply created successfully');
+                }}
+              />
+            </Animated.View>
+          </>
+        )}
+
+        {postToEdit && (
+          <ThreadEditModal
+            post={postToEdit}
+            visible={editModalVisible}
+            onClose={() => setEditModalVisible(false)}
+            currentUser={localUser}
+          />
+        )}
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
-
-/** Styles for the post "twitter style" layout. */
-const twitterRowStyles = {
-  rowContainer: {
-    flexDirection: 'row' as const,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  leftCol: {
-    width: 40,
-    alignItems: 'center' as const,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#1d9bf0',
-  },
-  verticalLineTop: {
-    width: 2,
-    height: 16,
-    backgroundColor: '#AAB8C2',
-    marginBottom: 2,
-  },
-  verticalLineBottom: {
-    width: 2,
-    flex: 1,
-    backgroundColor: '#AAB8C2',
-    marginTop: 2,
-  },
-  postContent: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  retweetIndicator: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    marginBottom: 4,
-  },
-  retweetText: {
-    fontSize: 12,
-    color: '#657786',
-    marginLeft: 4,
-    fontWeight: '500' as const,
-  },
-  retweetContainer: {
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  originalPostContainer: {
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  quoteContent: {
-    marginBottom: 8,
-  },
-  quoteText: {
-    fontSize: 12,
-    color: '#657786',
-  },
-};
-
-const stylesNotFound = {
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6ECF0',
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E8F0FE',
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  backButtonText: {
-    fontSize: 18,
-    color: '#1d9bf0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#333',
-  },
-  notFoundContainer: {
-    flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  notFoundText: {
-    fontSize: 16,
-    color: '#888',
-  },
-};
-
-const styles = {
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6ECF0',
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E8F0FE',
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  backButtonText: {
-    fontSize: 18,
-    color: '#1d9bf0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#333',
-  },
-  scrollContent: {
-    paddingBottom: 80,
-  },
-  repliesLabel: {
-    marginLeft: 16,
-    marginVertical: 6,
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: '#555',
-  },
-  composerContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#E6ECF0',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-  },
-};

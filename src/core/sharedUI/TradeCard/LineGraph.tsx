@@ -31,6 +31,8 @@ import {
   Stop,
   Polygon,
 } from 'react-native-svg';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
 interface LineGraphProps {
   data: number[];
@@ -54,18 +56,18 @@ const LineGraph: React.FC<LineGraphProps> = ({
   executionTimestamp,
   timestamps,
   userAvatar,
-  executionColor = '#FF5722',
+  executionColor = COLORS.brandGreen,
   isLoading = false,
 }) => {
-  // The chart itself is 220px tall
-  const chartHeight = 220;
+  // The chart height is set to 130px
+  const chartHeight = 130;
 
   // We'll assume the caller either passes a width or we do a default
-  const containerWidth = width || Dimensions.get('window').width - 32;
+  const containerWidth = width || Dimensions.get('window').width - 64;
 
   // Adjusted padding to ensure rightmost points are visible
-  const HORIZONTAL_PADDING = 20; // Increased from 12 to ensure rightmost dot is visible
-  const usableChartWidth = containerWidth - HORIZONTAL_PADDING;
+  const HORIZONTAL_PADDING = 16;
+  const usableChartWidth = containerWidth ;
 
   // We'll animate data changes
   const animatedData = useRef(new Animated.Value(0)).current;
@@ -107,11 +109,11 @@ const LineGraph: React.FC<LineGraphProps> = ({
   // Calculate the Y position for a dataPoint
   const interpolateY = useCallback(
     (dataPoint: number) => {
-      const availableHeight = chartHeight - 20;
+      const availableHeight = chartHeight - 16;
       const ratio =
         (dataPoint - dataRange.min) /
         (dataRange.range === 0 ? 1 : dataRange.range);
-      return availableHeight - ratio * availableHeight + 10;
+      return availableHeight - ratio * availableHeight + 8;
     },
     [dataRange],
   );
@@ -321,17 +323,17 @@ const LineGraph: React.FC<LineGraphProps> = ({
   // Chart config
   const chartConfig = useMemo(
     () => ({
-      backgroundColor: '#ffffff',
-      backgroundGradientFrom: '#ffffff',
-      backgroundGradientTo: '#ffffff',
+      backgroundColor: COLORS.lightBackground,
+      backgroundGradientFrom: COLORS.lightBackground,
+      backgroundGradientTo: COLORS.lightBackground,
       decimalPlaces: 2,
-      color: () => '#318EF8',
-      labelColor: () => '#666666',
+      color: () => COLORS.brandBlue, // Use blue for the line
+      labelColor: () => COLORS.accessoryDarkColor,
       formatYLabel: (v: string) => `$${v}`,
-      style: { borderRadius: 16 },
+      style: { borderRadius: 0 },
       propsForDots: { r: '0' },
       propsForBackgroundLines: { strokeWidth: 0 },
-      propsForLabels: { fontSize: 10 },
+      propsForLabels: { fontSize: TYPOGRAPHY.size.xs, display: 'none' }, // Hide axis labels
     }),
     [],
   );
@@ -342,9 +344,9 @@ const LineGraph: React.FC<LineGraphProps> = ({
       labels: ['', '', '', '', '', ''],
       datasets: [
         {
-          data: displayData,
-          strokeWidth: 4,
-          color: () => '#318EF8',
+          data: displayData.length > 0 ? displayData : [0, 0],
+          strokeWidth: 3,
+          color: () => COLORS.brandBlue,
         },
       ],
     }),
@@ -358,17 +360,17 @@ const LineGraph: React.FC<LineGraphProps> = ({
   const renderTooltip = useCallback(
     (x: number, y: number, idx: number, price: number) => {
       // Shift tooltip horizontally if near edges
-      const tooltipWidth = 150;
-      const isNearLeft = x < 120;
-      const isNearRight = x > usableChartWidth - 120;
+      const tooltipWidth = 130;
+      const isNearLeft = x < 100;
+      const isNearRight = x > usableChartWidth - 100;
 
       let tX = x;
       let anchor: 'start' | 'middle' | 'end' = 'middle';
 
       if (isNearLeft) {
-        tX = tooltipWidth / 2 + 10;
+        tX = tooltipWidth / 2 + 8;
       } else if (isNearRight) {
-        tX = usableChartWidth - tooltipWidth / 2 - 10;
+        tX = usableChartWidth - tooltipWidth / 2 - 8;
       }
 
       return (
@@ -376,10 +378,10 @@ const LineGraph: React.FC<LineGraphProps> = ({
           {/* dashed line */}
           <Line
             x1={x}
-            y1={10}
+            y1={8}
             x2={x}
-            y2={chartHeight - 10}
-            stroke="#318EF8"
+            y2={chartHeight - 8}
+            stroke={COLORS.brandBlue}
             strokeWidth={1.5}
             strokeDasharray="3,3"
             strokeOpacity={0.8}
@@ -388,36 +390,36 @@ const LineGraph: React.FC<LineGraphProps> = ({
           <Circle
             cx={x}
             cy={y}
-            r={5}
-            fill="#318EF8"
-            stroke="white"
+            r={4}
+            fill={COLORS.brandBlue}
+            stroke={COLORS.background}
             strokeWidth={2}
           />
           {/* tooltip rect + text */}
           <G>
             <Defs>
               <LinearGradient id="tooltipBg" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#FFFFFF" stopOpacity={1} />
-                <Stop offset="1" stopColor="#F8FCFF" stopOpacity={1} />
+                <Stop offset="0" stopColor={COLORS.lighterBackground} stopOpacity={1} />
+                <Stop offset="1" stopColor={COLORS.lighterBackground} stopOpacity={1} />
               </LinearGradient>
             </Defs>
 
             <Rect
               x={tX - tooltipWidth / 2}
-              y={18}
+              y={16}
               width={tooltipWidth}
-              height={60}
-              rx={12}
+              height={50}
+              rx={10}
               fill="url(#tooltipBg)"
-              stroke="#D0E8FF"
+              stroke={COLORS.borderDarkColor}
               strokeWidth={1.5}
             />
 
             <SvgText
               x={tX}
-              y={40}
-              fill="#1A73E8"
-              fontSize="16"
+              y={35}
+              fill={COLORS.brandBlue}
+              fontSize={TYPOGRAPHY.size.md}
               fontWeight="bold"
               textAnchor="middle">
               {formatPrice(price)}
@@ -425,9 +427,9 @@ const LineGraph: React.FC<LineGraphProps> = ({
             {timestamps && timestamps[idx] && (
               <SvgText
                 x={tX}
-                y={58}
-                fill="#666"
-                fontSize="12"
+                y={50}
+                fill={COLORS.accessoryDarkColor}
+                fontSize={TYPOGRAPHY.size.xs}
                 textAnchor="middle">
                 {formatTimestamp(timestamps[idx])}
               </SvgText>
@@ -454,20 +456,20 @@ const LineGraph: React.FC<LineGraphProps> = ({
               <>
                 <Defs>
                   <ClipPath id={`avatar-clip-${index}`}>
-                    <Circle cx={x} cy={y} r={8} />
+                    <Circle cx={x} cy={y} r={10} />
                   </ClipPath>
                 </Defs>
                 <Circle
                   cx={x}
                   cy={y}
-                  r={9}
+                  r={11}
                   stroke={executionColor}
-                  strokeWidth={1}
-                  fill="white"
+                  strokeWidth={2}
+                  fill={executionColor}
                 />
                 <SvgImage
-                  x={x - 8}
-                  y={y - 8}
+                  x={x - 10}
+                  y={y - 10}
                   width={20}
                   height={20}
                   href={{ uri: avatarUri }}
@@ -483,7 +485,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
                   r={8}
                   stroke={executionColor}
                   strokeWidth={3}
-                  fill="white"
+                  fill={COLORS.background}
                 />
                 <Circle cx={x} cy={y} r={4} fill={executionColor} />
               </>
@@ -499,9 +501,9 @@ const LineGraph: React.FC<LineGraphProps> = ({
             key={`last-point-${index}`}
             cx={x}
             cy={y}
-            r={6}
-            fill="#318EF8"
-            stroke="white"
+            r={8}
+            fill={COLORS.brandBlue}
+            stroke={COLORS.background}
             strokeWidth={2}
           />
         );
@@ -543,14 +545,14 @@ const LineGraph: React.FC<LineGraphProps> = ({
     const { x: firstX } = pointsRef.current[0];
 
     // go down to bottom
-    fillPoints += `${lastX},${chartHeight - 10} ${firstX},${chartHeight - 10}`;
+    fillPoints += `${lastX},${chartHeight - 8} ${firstX},${chartHeight - 8}`;
 
     return (
       <G>
         <Defs>
           <LinearGradient id="hoverFillGradient" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#318EF8" stopOpacity={0.2} />
-            <Stop offset="1" stopColor="#318EF8" stopOpacity={0} />
+            <Stop offset="0" stopColor={COLORS.brandBlue} stopOpacity={0.2} />
+            <Stop offset="1" stopColor={COLORS.brandBlue} stopOpacity={0} />
           </LinearGradient>
         </Defs>
         <Polygon fill="url(#hoverFillGradient)" points={fillPoints.trim()} />
@@ -560,37 +562,42 @@ const LineGraph: React.FC<LineGraphProps> = ({
 
   return (
     <View style={styles.container}>
-      {isLoading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#1d9bf0" />
-        </View>
-      ) : (
-        <>
-          <LineChart
-            data={chartData}
-            width={containerWidth}
-            height={chartHeight}
-            chartConfig={chartConfig}
-            bezier
-            withDots
-            withHorizontalLines
-            withVerticalLines={false}
-            withHorizontalLabels
-            withVerticalLabels={false}
-            withShadow={false}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16,
-              paddingRight: 12, // Increased to ensure rightmost dot is visible
-              paddingLeft: 8,
-            }}
-            renderDotContent={renderDotContent}
-            decorator={renderHoverFill}
-          />
+      <LineChart
+        data={chartData}
+        width={containerWidth}
+        height={chartHeight}
+        chartConfig={chartConfig}
+        bezier
+        withDots
+        withHorizontalLines={false}
+        withVerticalLines={false}
+        withHorizontalLabels={false}
+        withVerticalLabels={false}
+        withShadow={false}
+        style={{
+          borderRadius: 0,
+          paddingRight: 0,
+          paddingLeft: 0,
+          paddingTop: 0,
+          paddingBottom: 0,
+          margin: 0,
+          backgroundColor: COLORS.lightBackground,
+          opacity: isLoading ? 0.5 : 1, // Dim the chart during loading
+        }}
+        renderDotContent={!isLoading ? renderDotContent : undefined}
+        decorator={!isLoading ? renderHoverFill : undefined}
+      />
 
-          {/* Transparent overlay that captures all pointer events */}
-          <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers} />
-        </>
+      {/* Loading overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={COLORS.brandBlue} />
+        </View>
+      )}
+
+      {/* Transparent overlay that captures all pointer events */}
+      {!isLoading && (
+        <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers} />
       )}
     </View>
   );
@@ -600,15 +607,28 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     width: '100%',
-    height: 220,
+    height: 130,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.lightBackground,
+    overflow: 'hidden',
   },
   loaderContainer: {
-    flex: 1,
+    height: 130,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.lightBackground,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
@@ -629,5 +649,6 @@ export default React.memo(LineGraph, (prev, next) => {
     return false;
   }
 
+  // Return true if none of the above conditions triggered a return false
   return true;
 });

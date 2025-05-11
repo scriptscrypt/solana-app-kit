@@ -22,6 +22,7 @@ import {
 } from '@/modules/dataModule/utils/tokenDetailsFormatters';
 import RiskAnalysisSection from './RiskAnalysisSection';
 import LineGraph from '@/core/sharedUI/TradeCard/LineGraph';
+import COLORS from '@/assets/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -82,13 +83,13 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                         <View style={styles.priceChangeContainer}>
                             <Text style={[
                                 styles.priceChangeAmount,
-                                { color: token.priceChange24h && token.priceChange24h >= 0 ? '#4CAF50' : '#F44336' }
+                                { color: token.priceChange24h && token.priceChange24h >= 0 ? COLORS.brandPrimary : COLORS.errorRed }
                             ]}>
                                 {formatDollarChange(token.price, token.priceChange24h)}
                             </Text>
                             <View style={[
                                 styles.percentageBox,
-                                { backgroundColor: token.priceChange24h && token.priceChange24h >= 0 ? '#4CAF50' : '#F44336' }
+                                { backgroundColor: token.priceChange24h && token.priceChange24h >= 0 ? COLORS.brandPrimary : COLORS.errorRed }
                             ]}>
                                 <Text style={styles.percentageText}>
                                     {formatPriceChange(token.priceChange24h)}
@@ -123,7 +124,7 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                         </View>
                         {loading ? (
                             <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color="#32D4DE" />
+                                <ActivityIndicator size="large" color={COLORS.brandPrimary} />
                                 <Text style={styles.loadingText}>Loading price data...</Text>
                             </View>
                         ) : priceHistory.length > 0 ? (
@@ -231,7 +232,7 @@ const TokenDetailsSheet: React.FC<TokenDetailsSheetProps> = ({
                                 <Text style={styles.performanceLabel}>Wallet Change</Text>
                                 <Text style={[
                                     styles.performanceValue,
-                                    { color: (tradeData?.unique_wallet_24h_change_percent || 0) >= 0 ? '#4CAF50' : '#F44336' }
+                                    { color: (tradeData?.unique_wallet_24h_change_percent || 0) >= 0 ? COLORS.brandPrimary : COLORS.errorRed }
                                 ]}>
                                     {tradeData?.unique_wallet_24h_change_percent
                                         ? `${tradeData.unique_wallet_24h_change_percent >= 0 ? '+' : ''}${tradeData.unique_wallet_24h_change_percent.toFixed(2)}%`

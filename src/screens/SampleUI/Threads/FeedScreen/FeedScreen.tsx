@@ -1,9 +1,10 @@
 // File: src/screens/SampleUI/Threads/FeedScreen/FeedScreen.tsx
 import React, { useCallback, useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Platform, ActivityIndicator, View } from 'react-native';
+import { SafeAreaView, StyleSheet, Platform, View, FlatList, StatusBar } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Thread } from '@/core/thread/components/Thread';
+import { Thread } from '@/core/thread/components/thread-container/Thread';
 import {
   ThreadUser,
   ThreadPost,
@@ -16,10 +17,16 @@ import COLORS from '@/assets/colors';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { DEFAULT_IMAGES } from '@/config/constants';
 import HomeEnvErrorBanner from '@/core/sharedUI/EnvErrors/HomeEnvErrorBanner';
+import FeedItemSkeleton from '@/core/feed/components/FeedSkeleton';
 
+/**
+ * FeedScreen component that displays user's social feed
+ * Includes wallet navigation functionality
+ */
 export default function FeedScreen() {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
 
   const allPosts = useAppSelector(state => state.thread.allPosts);
   const userWallet = useAppSelector(state => state.auth.address);
@@ -29,9 +36,9 @@ export default function FeedScreen() {
 
   const [feedPosts, setFeedPosts] = useState<ThreadPost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  // Add loading state for user profile
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileStable, setProfileStable] = useState(false);
+  const [areInitialPostsLoading, setAreInitialPostsLoading] = useState(true);
 
   // Build current user object from Redux data
   const currentUser: ThreadUser = {
@@ -44,9 +51,18 @@ export default function FeedScreen() {
     avatar: storedProfilePic ? { uri: storedProfilePic } : DEFAULT_IMAGES.user,
   };
 
-  // On mount, fetch all posts
+  // On mount, fetch all posts and set loading state for initial posts
   useEffect(() => {
-    dispatch(fetchAllPosts());
+    const initialFetchPosts = async () => {
+      try {
+        await dispatch(fetchAllPosts()).unwrap();
+      } catch (error) {
+        console.error("Failed to fetch initial posts:", error);
+      } finally {
+        setAreInitialPostsLoading(false);
+      }
+    };
+    initialFetchPosts();
   }, [dispatch]);
 
   // Once we have userWallet, fetch DB profile info (username, profile pic)
@@ -119,11 +135,22 @@ export default function FeedScreen() {
     },
   ];
 
-  // Show loading indicator until profile is stable
-  if (!profileStable) {
+  // Show skeleton until profile is stable AND initial posts are loaded
+  if (!profileStable || areInitialPostsLoading) {
     return (
-      <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={COLORS.brandPrimary} />
+      <SafeAreaView style={styles.container}>
+        <View style={[
+          Platform.OS === 'android' && {
+            paddingTop: Math.max(insets.top, 30)
+          }
+        ]}>
+          <FlatList
+            data={[1, 2, 3]}
+            keyExtractor={(item) => item.toString()}
+            renderItem={() => <FeedItemSkeleton />}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
       </SafeAreaView>
     );
   }
@@ -141,7 +168,9 @@ export default function FeedScreen() {
     <SafeAreaView
       style={[
         styles.container,
-        Platform.OS === 'android' && styles.androidContainer,
+        Platform.OS === 'android' && {
+          paddingTop: Math.max(insets.top, 30)
+        }
       ]}>
       {renderCustomHeader()}
       <Thread
@@ -169,10 +198,10 @@ export default function FeedScreen() {
           }
         }}
         themeOverrides={{
-          '--thread-bg-primary': '#F0F0F0',
-          '--retweet-border-color': '#E1E8ED',
-          '--retweet-bg-color': '#F8F8F8',
-          '--retweet-text-color': '#657786'
+          '--thread-bg-primary': COLORS.background,
+          '--retweet-border-color': COLORS.borderDarkColor,
+          '--retweet-bg-color': COLORS.lighterBackground,
+          '--retweet-text-color': COLORS.greyMid
         }}
         styleOverrides={{
           container: { padding: 6 },
@@ -187,7 +216,7 @@ export default function FeedScreen() {
           },
           retweetHeaderText: {
             fontSize: 13,
-            color: '#657786',
+            color: COLORS.greyMid,
             marginLeft: 6,
             fontWeight: '500',
           },
@@ -198,10 +227,10 @@ export default function FeedScreen() {
           originalPostContainer: {
             width: '100%',
             borderRadius: 12,
-            backgroundColor: '#F8F8F8',
+            backgroundColor: COLORS.lighterBackground,
             padding: 10,
             borderWidth: 1,
-            borderColor: '#E1E8ED',
+            borderColor: COLORS.borderDarkColor,
           },
         }}
         onPressUser={user => {
@@ -221,9 +250,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-  },
-  androidContainer: {
-    paddingTop: 30,
   },
   centerContent: {
     justifyContent: 'center',

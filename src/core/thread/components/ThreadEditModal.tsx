@@ -17,7 +17,7 @@ import {
 import { ThreadPost, ThreadUser } from './thread.types';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { updatePostAsync } from '@/shared/state/thread/reducer';
-import { getMergedTheme, createThreadStyles } from './thread.styles';
+import { createThreadStyles } from './thread.styles';
 import editModalStyles from './ThreadEditModal.style';
 
 /**
@@ -50,8 +50,7 @@ export default function ThreadEditModal({
   styleOverrides,
 }: ThreadEditModalProps) {
   const dispatch = useAppDispatch();
-  const mergedTheme = getMergedTheme(themeOverrides);
-  const baseStyles = createThreadStyles(mergedTheme, styleOverrides);
+  const baseStyles = createThreadStyles(styleOverrides);
 
   // We'll collect new text for every text-only section
   const initialTextStates = post.sections.map(s => s.type === 'TEXT_ONLY' ? s.text ?? '' : '');

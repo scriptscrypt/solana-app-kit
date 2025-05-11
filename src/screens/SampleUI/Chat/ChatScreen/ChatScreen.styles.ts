@@ -1,203 +1,223 @@
-import {StyleSheet, Platform, Dimensions} from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
 
-// Get screen width for responsive sizing
-const screenWidth = Dimensions.get('window').width;
+const { width, height } = Dimensions.get('window');
 
-export const chatBodyOverrides = StyleSheet.create({
-  extraContentContainer: {
-    marginVertical: 2,
-    width: '100%',
-  },
-  threadItemText: {
-    fontSize: 14,
-    color: '#232324',
-    flexWrap: 'wrap',
-  },
-  // Trade card specific overrides to prevent overflow
-  tradeCardContainer: {
-    width: '100%',
-    padding: 0,
-    marginBottom: 0,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  tradeCardCombinedSides: {
-    padding: 8,
-    marginBottom: 4,
-    borderRadius: 8,
-  },
-  // Hide token symbol in price display
-  tradeCardSolPrice: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  // LineGraph container styling
-  threadPostCTAContainer: {
-    width: '100%',
-    marginTop: 2,
-  },
-  // Ensure any images/media in the chat have proper constraints
-  threadItemImage: {
-    width: '100%',
-    height: undefined,
-    aspectRatio: 1.5,
-    borderRadius: 12,
-    marginTop: 6,
-  },
-});
-
-// Subtle color palette for a minimalist chat design
-const colors = {
-  background: '#F7F7F7',
-  sentBubble: '#E6F3FF',
-  receivedBubble: '#FFFFFF',
-  primaryText: '#262626',
-  secondaryText: '#757575',
-  border: '#E0E0E0',
-  accentLight: '#E8E8E8',
-  accent: '#2558D4',
-  chartBackground: '#FFFFFF',
-};
+// Calculate tab bar height for padding
+export const TAB_BAR_HEIGHT = 20;
 
 export const styles = StyleSheet.create({
-  chatScreenContainer: {
+  container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: COLORS.background,
   },
-  listContent: {
-    paddingTop: 12,
+  // Header styles similar to SwapScreen and Modules
+  headerContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderDarkColor,
+    position: 'relative' as const,
   },
-
-  messageWrapper: {
-    marginVertical: 8,
-    maxWidth: '90%', // Wider to accommodate TradeCard charts
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    width: 40,
   },
-
-  receivedWrapper: {
-    alignSelf: 'flex-start',
+  leftPlaceholder: {
+    width: 40,
   },
-  sentWrapper: {
-    alignSelf: 'flex-end',
-  },
-
-  headerRow: {
-    flexDirection: 'row',
+  titleContainer: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 4,
-    paddingLeft: 2,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 8,
-  },
-  usernameContainer: {
     justifyContent: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: -1,
   },
-  senderLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.primaryText,
-  },
-
-  /* BUBBLE */
-  bubbleContainer: {
-    borderRadius: 18,
-    padding: 12,
-    paddingBottom: 8, // Less padding at bottom for timestamps
-    minWidth: 60,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 1,
-    overflow: 'hidden', // Ensure content doesn't overflow bubble
-  },
-  receivedBubble: {
-    backgroundColor: colors.receivedBubble,
-    borderTopLeftRadius: 4,
-    marginLeft: 4,
-  },
-  sentBubble: {
-    backgroundColor: colors.sentBubble,
-    borderTopRightRadius: 4,
-  },
-
-  timeStampText: {
-    fontSize: 10,
-    color: colors.secondaryText,
-    marginTop: 6,
-    alignSelf: 'flex-end',
-    opacity: 0.8,
-  },
-
-  composerContainer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    padding: 12, 
-    paddingBottom: Platform.OS === 'ios' ? 24 : 12, // More padding on iOS for better spacing
-    backgroundColor: '#FFFFFF',
-  },
-  
-  quoteReplyButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
-    marginTop: 6,
-  },
-  quoteReplyText: {
-    color: colors.accent,
-    fontSize: 13,
-    fontWeight: '500',
+  titleText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     textAlign: 'center',
   },
-
-  // Styles for quoted replies in messages
-  quotedContentContainer: {
-    backgroundColor: colors.accentLight,
-    borderRadius: 12,
-    padding: 8,
-    marginTop: 4,
-    marginBottom: 8,
-    opacity: 0.9,
-    maxWidth: '100%',
-    borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
+  subtitleText: {
+    color: COLORS.greyMid,
+    fontSize: TYPOGRAPHY.size.xs,
+    marginTop: 2,
+    textAlign: 'center',
   },
+  iconsContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+  iconButton: {
+    marginLeft: 10,
+  },
+  headerBottomGradient: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    bottom: -1,
+    height: 1,
+  },
+  // End of header styles
   
-  // Custom styles for charts in messages
-  chartContainer: {
-    backgroundColor: colors.chartBackground,
-    borderRadius: 8,
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderDarkColor,
+  },
+  headerTitle: {
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    flexDirection: 'column' as const,
+  },
+  messagesContainer: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: COLORS.greyMid,
+    marginTop: 10,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+  },
+  emptySubtext: {
+    color: COLORS.greyMid,
     marginTop: 8,
-    marginBottom: 4,
-    overflow: 'hidden',
+  },
+  composerContainer: {
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderDarkColor,
+  },
+  messageBubble: {
+    maxWidth: '80%',
+    padding: 12,
+    borderRadius: 18,
+    marginBottom: 8,
+  },
+  currentUserBubble: {
+    backgroundColor: COLORS.brandBlue,
+    alignSelf: 'flex-end',
+    borderBottomRightRadius: 4,
+  },
+  otherUserBubble: {
+    backgroundColor: COLORS.darkerBackground,
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: 4,
+  },
+  messageText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  messageTime: {
+    fontSize: TYPOGRAPHY.size.xs,
+    color: 'rgba(255, 255, 255, 0.6)',
+    alignSelf: 'flex-end',
+    marginTop: 4,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  tabBarSpacer: {
     width: '100%',
   },
-  
-  // Trade button in chat
-  tradeButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    alignSelf: 'center',
-    marginTop: 8,
+  // Reply styling
+  messageWrapper: {
+    marginBottom: 8,
+    position: 'relative' as const,
   },
-  tradeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
+  replyMessageWrapper: {
+    marginLeft: 16,
+  },
+  replyIndicator: {
+    position: 'absolute' as const,
+    left: -10,
+    top: 10,
+    width: 2,
+    height: '80%',
+    backgroundColor: COLORS.borderDarkColor,
+    borderRadius: 1,
+  },
+  // Error handling styles
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: COLORS.errorRed,
+    fontSize: TYPOGRAPHY.size.md,
     textAlign: 'center',
+    marginBottom: 16,
   },
-});
-
-export const androidStyles = StyleSheet.create({
-  safeArea: {
-    paddingTop: 50,
+  retryButton: {
+    backgroundColor: COLORS.brandPrimary,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+  },
+  // Decorative elements
+  decorCircle1: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(50, 212, 222, 0.1)',
+    top: -50,
+    left: -50,
+    opacity: 0.5,
+  },
+  decorCircle2: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: 'rgba(181, 145, 255, 0.04)',
+    bottom: 100,
+    right: -100,
+  },
+  glow1: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    top: height * 0.3,
+    left: -width * 0.2,
   },
 });

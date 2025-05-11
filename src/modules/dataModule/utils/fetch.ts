@@ -1,8 +1,6 @@
 // File: src/utils/common/fetch.ts
 
 import {CLUSTER, HELIUS_API_KEY, HELIUS_STAKED_URL} from '@env';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../state/store';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { TokenEntry } from '../types/tokenTypes';
 import { ENDPOINTS } from '@/config/constants';

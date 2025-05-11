@@ -62,6 +62,7 @@ export async function jupiterSwapHandler(
       return;
     }
 
+    // Send the response directly from Jupiter
     res.json(data);
   } catch (err: any) {
     console.error('[jupiterSwapHandler] Error:', err);
