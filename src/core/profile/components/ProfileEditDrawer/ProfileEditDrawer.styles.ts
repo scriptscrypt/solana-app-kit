@@ -73,8 +73,6 @@ export const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1, // Allow scrollview to take available space
-    paddingHorizontal: 20,
-    paddingTop: 10, // Reduce top padding slightly
   },
   imageSection: {
     alignItems: 'center',
@@ -509,7 +507,7 @@ export const styles = StyleSheet.create({
     color: COLORS.brandPrimary,
   },
   saveButtonTextInactive: {
-    color: COLORS.accessoryDarkColor,
+    color: COLORS.greyMid, // Or a lighter shade for inactive state
   },
   
   // Upload progress overlay
@@ -579,6 +577,15 @@ export const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   bottomSpacerView: {
-    height: 50,
+    height: 60, // Add some space at the very bottom of the scroll view
+  },
+  scrollContentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10, // Reduce top padding slightly
+    paddingBottom: 40, // Add padding to the bottom to ensure last input can scroll up
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
+    width: '100%', // Ensure it takes full width
   },
 }); 

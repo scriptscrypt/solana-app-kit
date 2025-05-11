@@ -14,6 +14,8 @@ import {
     FlatList,
     InteractionManager,
     StyleSheet,
+    Platform,
+    KeyboardAvoidingView,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
@@ -94,9 +96,9 @@ const ProfileEditDrawer = ({
 
     // Memoize profileData to prevent unnecessary re-renders
     const memoizedProfileData = useMemo(() => profileData, [
-        profileData.userId, 
-        profileData.username, 
-        profileData.description, 
+        profileData.userId,
+        profileData.username,
+        profileData.description,
         profileData.profilePicUrl
     ]);
 
@@ -127,10 +129,10 @@ const ProfileEditDrawer = ({
             setSelectedNft(null);
             setIsProcessing(false);
             setCurrentView(DrawerView.PROFILE_EDIT);
-            
+
             // Do not reset showAvatarOptions here - this is what's causing the menu to close
             // if the user has clicked on avatar options
-            
+
             isInitialized.current = true;
         } else if (!visible) {
             // Reset initialization flag when drawer is closed
@@ -145,13 +147,13 @@ const ProfileEditDrawer = ({
         if (!isMounted.current) {
             return [];
         }
-        
+
         setNftsLoading(true);
         setNftsError(null);
-        
+
         try {
             const url = `${ENDPOINTS.tensorFlowBaseUrl}/api/v1/user/portfolio?wallet=${profileData.userId}&includeUnverified=true&includeCompressed=true&includeFavouriteCount=true`;
-            
+
             const resp = await fetchWithRetries(url, {
                 method: 'GET',
                 headers: {
@@ -159,17 +161,17 @@ const ProfileEditDrawer = ({
                     'x-tensor-api-key': TENSOR_API_KEY,
                 }
             });
-            
+
             if (!resp.ok) {
                 throw new Error(`Fetch NFTs failed: ${resp.status}`);
             }
-            
+
             const data = await resp.json();
-            
+
             if (!isMounted.current) {
                 return [];
             }
-            
+
             const dataArray = Array.isArray(data) ? data : [];
             const parsed = dataArray
                 .map((item: any) => {
@@ -183,19 +185,19 @@ const ProfileEditDrawer = ({
                     } as NftItem;
                 })
                 .filter(Boolean) as NftItem[];
-            
+
             if (!isMounted.current) {
-                 return [];
+                return [];
             }
-            
+
             setCachedNfts(parsed);
             setNftsError(null);
-            return parsed; 
+            return parsed;
         } catch (error: any) {
             if (!isMounted.current) return [];
             setNftsError('Failed to load NFTs. Please try again.');
             setCachedNfts([]);
-            return []; 
+            return [];
         } finally {
             if (isMounted.current) {
                 setNftsLoading(false);
@@ -207,7 +209,7 @@ const ProfileEditDrawer = ({
     const handleConfirmImageUpload = useCallback(async (imageUri?: string, source?: 'library' | 'nft') => {
         const useImageUri = imageUri || localImageUri;
         const useSource = source || selectedSource;
-        
+
         if (isUploading || !useImageUri) {
             setIsProcessing(false);
             return;
@@ -221,7 +223,7 @@ const ProfileEditDrawer = ({
 
         setIsUploading(true);
         setIsProcessing(true);
-        
+
         // Show progress bar overlay
         setShowUploadProgress(true);
         setUploadProgress(0);
@@ -240,7 +242,7 @@ const ProfileEditDrawer = ({
 
         try {
             const newUrl = await uploadProfileAvatar(profileData.userId, useImageUri);
-            
+
             // Clear interval and set to 100% when complete
             clearInterval(progressInterval);
             if (isMounted.current) {
@@ -250,20 +252,20 @@ const ProfileEditDrawer = ({
                     if (isMounted.current) setShowUploadProgress(false);
                 }, 500);
             }
-            
+
             if (!isMounted.current) {
                 return;
             }
-            
+
             dispatch(updateProfilePic(newUrl));
             if (onProfileUpdated) onProfileUpdated('image');
-            
+
             Alert.alert(
                 'Success',
                 'Profile picture updated successfully',
                 [{ text: 'OK' }]
             );
-            
+
             setSelectedNft(null);
             setLocalImageUri(null);
             setSelectedSource(null);
@@ -284,12 +286,12 @@ const ProfileEditDrawer = ({
         console.log('[ProfileEditDrawer] handleToggleAvatarOptions called');
         console.log('[ProfileEditDrawer] isProcessing:', isProcessing, 'isUploading:', isUploading);
         console.log('[ProfileEditDrawer] Current showAvatarOptions:', showAvatarOptions);
-        
+
         if (isProcessing || isUploading) {
             console.log('[ProfileEditDrawer] Skipping toggle due to processing state');
             return;
         }
-        
+
         // Use a direct state update with a specific timeout to ensure we don't get caught in 
         // any re-render loops or other state updates
         setTimeout(() => {
@@ -306,10 +308,10 @@ const ProfileEditDrawer = ({
         if (isProcessing || isUploading || isPreparingNfts) {
             return;
         }
-        
+
         setIsProcessing(true);
         setShowAvatarOptions(false);
-        
+
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -322,12 +324,12 @@ const ProfileEditDrawer = ({
                 setIsProcessing(false);
                 return;
             }
-            
+
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 setLocalImageUri(result.assets[0].uri);
                 setSelectedSource('library');
-                
-                        handleConfirmImageUpload(result.assets[0].uri, 'library');
+
+                handleConfirmImageUpload(result.assets[0].uri, 'library');
             } else {
                 setIsProcessing(false);
             }
@@ -340,21 +342,21 @@ const ProfileEditDrawer = ({
     // Prepare NFT Selection
     const handlePrepareAndShowNfts = useCallback(async () => {
         if (isProcessing || isPreparingNfts || isUploading) {
-            return; 
+            return;
         }
-        
+
         setIsProcessing(true);
         setIsPreparingNfts(true);
         setShowAvatarOptions(false);
-        
+
         await fetchNFTs();
-        
+
         if (!isMounted.current) {
             setIsPreparingNfts(false);
             setIsProcessing(false);
             return;
         }
-        
+
         setCurrentView(DrawerView.NFT_LIST);
         setIsPreparingNfts(false);
         setIsProcessing(false);
@@ -365,16 +367,16 @@ const ProfileEditDrawer = ({
         if (isProcessing || isUploading) {
             return;
         }
-        
+
         if (!nft.image) {
             Alert.alert('Invalid NFT', 'This NFT does not have a valid image.');
             return;
         }
-        
+
         setSelectedNft(nft);
         setLocalImageUri(nft.image);
         setSelectedSource('nft');
-        
+
         setCurrentView(DrawerView.NFT_CONFIRM);
     }, [isProcessing, isUploading, setCurrentView]);
 
@@ -383,11 +385,11 @@ const ProfileEditDrawer = ({
         if (isProcessing || isUploading) {
             return;
         }
-        
+
         setSelectedNft(null);
         setLocalImageUri(null);
         setSelectedSource(null);
-        
+
         setCurrentView(DrawerView.NFT_LIST);
     }, [isProcessing, isUploading, setCurrentView]);
 
@@ -396,7 +398,7 @@ const ProfileEditDrawer = ({
         if (isProcessing || isUploading) {
             return;
         }
-        
+
         setSelectedNft(null);
         setLocalImageUri(null);
         setSelectedSource(null);
@@ -442,7 +444,7 @@ const ProfileEditDrawer = ({
 
         setIsProcessing(true);
         let changesMade = false;
-        
+
         try {
             if (usernameChanged) {
                 await dispatch(
@@ -462,7 +464,7 @@ const ProfileEditDrawer = ({
 
             if (changesMade) {
                 Alert.alert('Profile Updated', 'Your profile has been updated successfully');
-                onClose(); 
+                onClose();
             }
         } catch (err: any) {
             const message = err?.message || err?.toString() || 'An unknown error occurred during update.';
@@ -494,9 +496,9 @@ const ProfileEditDrawer = ({
         </View>
     ), []);
 
-    const keyExtractor = useCallback((item: NftItem) => 
-        item.mint || `nft-${Math.random().toString(36).substring(2, 9)}`, 
-    []);
+    const keyExtractor = useCallback((item: NftItem) =>
+        item.mint || `nft-${Math.random().toString(36).substring(2, 9)}`,
+        []);
 
     const renderNftItem = useCallback(({ item }: { item: NftItem }) => (
         <TouchableOpacity
@@ -504,7 +506,7 @@ const ProfileEditDrawer = ({
             onPress={() => handleSelectNft(item)}
             disabled={isProcessing || isUploading}
             activeOpacity={0.7}>
-            
+
             <View style={styles.nftListImageContainer}>
                 {item.image ? (
                     <Image
@@ -519,7 +521,7 @@ const ProfileEditDrawer = ({
                     </View>
                 )}
             </View>
-            
+
             <View style={styles.nftListInfo}>
                 <Text style={styles.nftListName} numberOfLines={1}>{item.name || 'Unnamed NFT'}</Text>
                 {item.collection ? (
@@ -531,7 +533,7 @@ const ProfileEditDrawer = ({
                     </Text>
                 )}
             </View>
-            
+
             <View style={styles.nftListSelectIconContainer}>
                 <Text style={styles.nftListSelectIcon}>⟩</Text>
             </View>
@@ -562,7 +564,7 @@ const ProfileEditDrawer = ({
                             <Text style={styles.viewHeaderTitle}>Choose an NFT</Text>
                             <View style={styles.viewHeaderButton} />
                         </View>
-                        
+
                         <View style={styles.nftInstructionsContainer}>
                             <Text style={styles.nftInstructionsText}>
                                 Select an NFT from your collection to use as your profile picture
@@ -608,7 +610,7 @@ const ProfileEditDrawer = ({
                         )}
                     </View>
                 );
-                    
+
             case DrawerView.NFT_CONFIRM:
                 return (
                     <View style={styles.nftConfirmContainer}>
@@ -639,7 +641,7 @@ const ProfileEditDrawer = ({
                                 {selectedNft.collection && (
                                     <Text style={styles.nftConfirmCollection}>{selectedNft.collection}</Text>
                                 )}
-                                
+
                                 <Text style={styles.nftConfirmInstructions}>
                                     This NFT will be used as your profile picture
                                 </Text>
@@ -674,167 +676,178 @@ const ProfileEditDrawer = ({
             case DrawerView.PROFILE_EDIT:
             default:
                 return (
-                    <ScrollView style={styles.scrollContent} keyboardShouldPersistTaps="handled">
-                    <View style={styles.imageSection}>
-                        <TouchableOpacity
-                            onPress={(event) => {
-                                console.log('[ProfileEditDrawer] Image container pressed');
-                                // Prevent event from reaching overlay
-                                event.stopPropagation?.();
-                                handleToggleAvatarOptions();
-                            }}
-                            style={styles.imageContainer}
-                            activeOpacity={0.8}
-                            disabled={isProcessing || isUploading}>
-                            <IPFSAwareImage
-                                style={styles.profileImage as ImageStyle}
-                                source={
-                                    localImageUri
-                                        ? { uri: localImageUri }
-                                        : profileData.profilePicUrl
-                                            ? getValidImageSource(profileData.profilePicUrl)
-                                            : require('@/assets/images/User.png')
-                                }
-                                defaultSource={require('@/assets/images/User.png')}
-                            />
-                            
-                            <View style={styles.profileImageOverlay}>
-                                <View style={styles.profileImageEditIconContainer}>
-                                    <Text style={styles.profileImageEditIcon}>✏️</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity
-                            onPress={(event) => {
-                                console.log('[ProfileEditDrawer] Edit picture button pressed');
-                                // Prevent event from reaching overlay
-                                event.stopPropagation?.();
-                                handleToggleAvatarOptions();
-                            }}
-                            activeOpacity={0.7}
-                            disabled={isProcessing || isUploading}
-                            style={styles.editPictureButton}>
-                            <Text style={styles.editPictureText}>Edit picture</Text>
-                        </TouchableOpacity>
-
-                        {showAvatarOptions && (
-                            <View 
-                                style={styles.avatarOptionsContainer}
-                                pointerEvents="box-none"
-                                onStartShouldSetResponder={(e) => {
-                                    console.log('[ProfileEditDrawer] Avatar options container capturing responder');
-                                    // Block all events from getting through
-                                    e.stopPropagation?.();
-                                    return true;
-                                }}
-                                onTouchEnd={(e) => {
-                                    console.log('[ProfileEditDrawer] Avatar options container touch end');
-                                    // Prevent touch events from propagating through
-                                    e.stopPropagation?.();
-                                    return true;
-                                }}
-                            >
-                                <View 
-                                    style={{
-                                        borderRadius: 8,
-                                        padding: 8,
-                                        flexDirection: 'row',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={styles.keyboardAvoidingContainer}
+                        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+                    >
+                        <ScrollView
+                            style={styles.scrollContent}
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={styles.scrollContentContainer}
+                        >
+                            <View style={styles.imageSection}>
+                                <TouchableOpacity
+                                    onPress={(event) => {
+                                        console.log('[ProfileEditDrawer] Image container pressed');
+                                        // Prevent event from reaching overlay
+                                        event.stopPropagation?.();
+                                        handleToggleAvatarOptions();
                                     }}
-                                >
-                                    <TouchableOpacity
-                                        style={[styles.avatarOptionButton, styles.avatarOptionButtonWithMargin]}
-                                        onPress={(e) => {
-                                            console.log('[ProfileEditDrawer] Library button pressed');
-                                            e.stopPropagation();
-                                            handleSelectImageFromLibrary();
+                                    style={styles.imageContainer}
+                                    activeOpacity={0.8}
+                                    disabled={isProcessing || isUploading}>
+                                    <IPFSAwareImage
+                                        style={styles.profileImage as ImageStyle}
+                                        source={
+                                            localImageUri
+                                                ? { uri: localImageUri }
+                                                : profileData.profilePicUrl
+                                                    ? getValidImageSource(profileData.profilePicUrl)
+                                                    : require('@/assets/images/User.png')
+                                        }
+                                        defaultSource={require('@/assets/images/User.png')}
+                                    />
+
+                                    <View style={styles.profileImageOverlay}>
+                                        <View style={styles.profileImageEditIconContainer}>
+                                            <Text style={styles.profileImageEditIcon}>✏️</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={(event) => {
+                                        console.log('[ProfileEditDrawer] Edit picture button pressed');
+                                        // Prevent event from reaching overlay
+                                        event.stopPropagation?.();
+                                        handleToggleAvatarOptions();
+                                    }}
+                                    activeOpacity={0.7}
+                                    disabled={isProcessing || isUploading}
+                                    style={styles.editPictureButton}>
+                                    <Text style={styles.editPictureText}>Edit picture</Text>
+                                </TouchableOpacity>
+
+                                {showAvatarOptions && (
+                                    <View
+                                        style={styles.avatarOptionsContainer}
+                                        pointerEvents="box-none"
+                                        onStartShouldSetResponder={(e) => {
+                                            console.log('[ProfileEditDrawer] Avatar options container capturing responder');
+                                            // Block all events from getting through
+                                            e.stopPropagation?.();
+                                            return true;
                                         }}
-                                        disabled={isProcessing || isUploading || isPreparingNfts}
-                                        activeOpacity={0.7}>
-                                        <Text style={styles.avatarOptionButtonIcon}>🖼️</Text>
-                                        <Text style={styles.avatarOptionText}>Library</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.avatarOptionButton}
-                                        onPress={(e) => {
-                                            console.log('[ProfileEditDrawer] NFT button pressed');
-                                            e.stopPropagation();
-                                            handlePrepareAndShowNfts();
+                                        onTouchEnd={(e) => {
+                                            console.log('[ProfileEditDrawer] Avatar options container touch end');
+                                            // Prevent touch events from propagating through
+                                            e.stopPropagation?.();
+                                            return true;
                                         }}
-                                        disabled={isProcessing || isUploading || isPreparingNfts}
-                                        activeOpacity={0.7}>
-                                        {isPreparingNfts ? (
-                                            <ActivityIndicator size="small" color={COLORS.white} style={styles.activityIndicatorMargin}/>
-                                        ) : (
-                                            <Text style={styles.avatarOptionButtonIcon}>🎆</Text>
-                                        )}
-                                        <Text style={styles.avatarOptionText}>My NFTs</Text>
-                                    </TouchableOpacity>
-                                </View>
+                                    >
+                                        <View
+                                            style={{
+                                                borderRadius: 8,
+                                                padding: 8,
+                                                flexDirection: 'row',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                            }}
+                                        >
+                                            <TouchableOpacity
+                                                style={[styles.avatarOptionButton, styles.avatarOptionButtonWithMargin]}
+                                                onPress={(e) => {
+                                                    console.log('[ProfileEditDrawer] Library button pressed');
+                                                    e.stopPropagation();
+                                                    handleSelectImageFromLibrary();
+                                                }}
+                                                disabled={isProcessing || isUploading || isPreparingNfts}
+                                                activeOpacity={0.7}>
+                                                <Text style={styles.avatarOptionButtonIcon}>🖼️</Text>
+                                                <Text style={styles.avatarOptionText}>Library</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={styles.avatarOptionButton}
+                                                onPress={(e) => {
+                                                    console.log('[ProfileEditDrawer] NFT button pressed');
+                                                    e.stopPropagation();
+                                                    handlePrepareAndShowNfts();
+                                                }}
+                                                disabled={isProcessing || isUploading || isPreparingNfts}
+                                                activeOpacity={0.7}>
+                                                {isPreparingNfts ? (
+                                                    <ActivityIndicator size="small" color={COLORS.white} style={styles.activityIndicatorMargin} />
+                                                ) : (
+                                                    <Text style={styles.avatarOptionButtonIcon}>🎆</Text>
+                                                )}
+                                                <Text style={styles.avatarOptionText}>My NFTs</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                )}
                             </View>
-                        )}
-                    </View>
 
-                    <View style={styles.inputSection}>
-                        <View style={styles.inputLabelContainer}>
-                            <Text style={styles.inputLabel}>Display name</Text>
-                            <Text style={styles.characterCount}>{tempUsername.length}/50</Text>
-                        </View>
-                        <TextInput
-                            style={[
-                                styles.textInput,
-                                tempUsername.length >= 50 && styles.textInputAtLimit
-                            ]}
-                            value={tempUsername}
-                            onChangeText={setTempUsername}
-                            placeholder="Enter your display name"
-                            placeholderTextColor={COLORS.greyMid}
-                            maxLength={50}
-                            editable={!isProcessing && !isUploading}
-                        />
-                        <Text style={styles.inputHelperText}>This is the name that will be displayed to others</Text>
-                    </View>
+                            <View style={styles.inputSection}>
+                                <View style={styles.inputLabelContainer}>
+                                    <Text style={styles.inputLabel}>Display name</Text>
+                                    <Text style={styles.characterCount}>{tempUsername.length}/50</Text>
+                                </View>
+                                <TextInput
+                                    style={[
+                                        styles.textInput,
+                                        tempUsername.length >= 50 && styles.textInputAtLimit
+                                    ]}
+                                    value={tempUsername}
+                                    onChangeText={setTempUsername}
+                                    placeholder="Enter your display name"
+                                    placeholderTextColor={COLORS.greyMid}
+                                    maxLength={50}
+                                    editable={!isProcessing && !isUploading}
+                                />
+                                <Text style={styles.inputHelperText}>This is the name that will be displayed to others</Text>
+                            </View>
 
-                    <View style={styles.inputSection}>
-                        <Text style={styles.inputLabel}>Wallet address</Text>
-                        <TextInput
-                            style={[styles.textInput, styles.disabledInput]}
-                            value={`@${profileData.userId.substring(0, 6)}...${profileData.userId.slice(-4)}`}
-                            editable={false}
-                        />
-                        <Text style={styles.inputHelperText}>Your wallet address cannot be changed</Text>
-                    </View>
+                            <View style={styles.inputSection}>
+                                <Text style={styles.inputLabel}>Wallet address</Text>
+                                <TextInput
+                                    style={[styles.textInput, styles.disabledInput]}
+                                    value={`@${profileData.userId.substring(0, 6)}...${profileData.userId.slice(-4)}`}
+                                    editable={false}
+                                />
+                                <Text style={styles.inputHelperText}>Your wallet address cannot be changed</Text>
+                            </View>
 
-                    <View style={styles.inputSection}>
-                        <View style={styles.inputLabelContainer}>
-                            <Text style={styles.inputLabel}>Bio</Text>
-                            <Text style={[
-                                styles.characterCount,
-                                tempDescription.length > 150 && styles.characterCountWarning
-                            ]}>
-                                {tempDescription.length}/160
-                            </Text>
-                        </View>
-                        <TextInput
-                            style={[
-                                styles.textInput, 
-                                styles.bioInput,
-                                tempDescription.length >= 160 && styles.textInputAtLimit
-                            ]}
-                            value={tempDescription}
-                            onChangeText={setTempDescription}
-                            placeholder="Write a short bio about yourself"
-                            placeholderTextColor={COLORS.greyMid}
-                            multiline
-                            maxLength={160}
-                            editable={!isProcessing && !isUploading}
-                        />
-                        <Text style={styles.inputHelperText}>Tell others about yourself in a few words</Text>
-                    </View>
-                         <View style={styles.bottomSpacerView} />
-                </ScrollView>
+                            <View style={styles.inputSection}>
+                                <View style={styles.inputLabelContainer}>
+                                    <Text style={styles.inputLabel}>Bio</Text>
+                                    <Text style={[
+                                        styles.characterCount,
+                                        tempDescription.length > 150 && styles.characterCountWarning
+                                    ]}>
+                                        {tempDescription.length}/160
+                                    </Text>
+                                </View>
+                                <TextInput
+                                    style={[
+                                        styles.textInput,
+                                        styles.bioInput,
+                                        tempDescription.length >= 160 && styles.textInputAtLimit
+                                    ]}
+                                    value={tempDescription}
+                                    onChangeText={setTempDescription}
+                                    placeholder="Write a short bio about yourself"
+                                    placeholderTextColor={COLORS.greyMid}
+                                    multiline
+                                    maxLength={160}
+                                    editable={!isProcessing && !isUploading}
+                                />
+                                <Text style={styles.inputHelperText}>Tell others about yourself in a few words</Text>
+                            </View>
+                            <View style={styles.bottomSpacerView} />
+                        </ScrollView>
+                    </KeyboardAvoidingView>
                 );
         }
     };
@@ -857,32 +870,32 @@ const ProfileEditDrawer = ({
             }}
         >
             <TouchableWithoutFeedback onPress={(event) => {
-                 console.log('[ProfileEditDrawer] Overlay pressed');
-                 if (isProcessing || isUploading) {
-                     console.log('[ProfileEditDrawer] Ignoring overlay press due to processing state');
-                     return;
-                 }
-                 
-                 // Prevent event bubbling
-                 event.stopPropagation?.();
-                 console.log('[ProfileEditDrawer] After stopPropagation');
-                 
-                 // If avatar options are shown, just hide them instead of closing the drawer
-                 if (showAvatarOptions) {
-                     console.log('[ProfileEditDrawer] Hiding avatar options instead of closing drawer');
-                     setShowAvatarOptions(false);
-                     return;
-                 }
-                 
-                 console.log('[ProfileEditDrawer] Closing drawer');
-                 onClose();
+                console.log('[ProfileEditDrawer] Overlay pressed');
+                if (isProcessing || isUploading) {
+                    console.log('[ProfileEditDrawer] Ignoring overlay press due to processing state');
+                    return;
+                }
+
+                // Prevent event bubbling
+                event.stopPropagation?.();
+                console.log('[ProfileEditDrawer] After stopPropagation');
+
+                // If avatar options are shown, just hide them instead of closing the drawer
+                if (showAvatarOptions) {
+                    console.log('[ProfileEditDrawer] Hiding avatar options instead of closing drawer');
+                    setShowAvatarOptions(false);
+                    return;
+                }
+
+                console.log('[ProfileEditDrawer] Closing drawer');
+                onClose();
             }}>
                 <View style={styles.overlay} />
             </TouchableWithoutFeedback>
 
             <View style={styles.drawerContainer}>
                 {currentView === DrawerView.PROFILE_EDIT && (
-                     <View style={styles.headerContainer}>
+                    <View style={styles.headerContainer}>
                         <TouchableOpacity
                             onPress={(e) => {
                                 e.stopPropagation?.();
@@ -892,9 +905,9 @@ const ProfileEditDrawer = ({
                             disabled={isProcessing || isUploading}>
                             <Text style={styles.backButtonText}>✕</Text>
                         </TouchableOpacity>
-                        
+
                         <Text style={styles.headerTitle}>Edit Profile</Text>
-                        
+
                         <TouchableOpacity
                             style={[
                                 styles.saveButton,
@@ -919,11 +932,11 @@ const ProfileEditDrawer = ({
                         <View style={styles.uploadProgressContainer}>
                             <Text style={styles.uploadProgressTitle}>Uploading Image</Text>
                             <View style={styles.uploadProgressBarContainer}>
-                                <View 
+                                <View
                                     style={[
                                         styles.uploadProgressBar,
                                         { width: `${uploadProgress}%` }
-                                    ]} 
+                                    ]}
                                 />
                             </View>
                             <Text style={styles.uploadProgressText}>
@@ -933,7 +946,7 @@ const ProfileEditDrawer = ({
                     </View>
                 )}
 
-                </View>
+            </View>
         </Modal>
     );
 };
