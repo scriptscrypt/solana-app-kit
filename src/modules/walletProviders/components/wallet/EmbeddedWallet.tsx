@@ -228,10 +228,27 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
 
   const handleEmailLogin = async () => {
     try {
-      if (loginWithEmail) await loginWithEmail();
+      console.log('Starting email login process...');
+      if (loginWithEmail) {
+        await loginWithEmail();
+        console.log('Email login successful, proceeding to wallet monitoring');
+        // The onWalletConnected callback in monitorSolanaWallet will handle the next steps
+      }
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Authentication Error', 'Failed to authenticate with Email. Please try again.');
+      console.error('Email login error:', error);
+      
+      // Provide more specific error messages based on error type
+      if (error instanceof Error) {
+        if (error.message.includes('auth') || error.message.includes('verif')) {
+          Alert.alert('Authentication Error', 'Failed to authenticate with Email. Please check your email and password.');
+        } else if (error.message.includes('network') || error.message.includes('connect')) {
+          Alert.alert('Connection Error', 'Network problem detected. Please check your internet connection and try again.');
+        } else {
+          Alert.alert('Authentication Error', 'Failed to authenticate with Email. Please try again later.');
+        }
+      } else {
+        Alert.alert('Authentication Error', 'Failed to authenticate with Email. Please try again.');
+      }
     }
   };
 
@@ -254,7 +271,7 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleGoogleLogin}>
+      {/* <TouchableOpacity style={styles.loginButton} onPress={handleGoogleLogin}>
         <View style={styles.buttonContent}>
           <Icons.Google width={24} height={24} />
           <Text style={styles.buttonText}>Continue with Google</Text>
@@ -270,7 +287,7 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
           </View>
           <ArrowIcon />
         </TouchableOpacity>
-      )}
+      )} */}
 
       <TouchableOpacity style={styles.loginButton} onPress={handleEmailLogin}>
         <View style={styles.buttonContent}>

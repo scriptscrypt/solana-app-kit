@@ -11,8 +11,6 @@ import {
 import { Keypair, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { NATIVE_MINT } from '@solana/spl-token';
 import BN from 'bn.js';
-import axios from 'axios';
-import base58 from 'bs58';
 import { initSdk } from './config';
 import { uploadToIpfs } from '../../utils/ipfs';
 import FormData from 'form-data';
