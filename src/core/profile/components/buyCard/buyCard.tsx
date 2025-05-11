@@ -679,7 +679,7 @@ const BuyCard: React.FC<BuyCardProps> = ({
         initialInputToken={tradeModalData.initialInputToken}
         initialOutputToken={tradeModalData.initialOutputToken}
         initialActiveTab="PAST_SWAPS"
-        onShare={() => {}}
+        onShare={() => { }}
       />
 
       {/* Portfolio Modal */}
@@ -747,12 +747,9 @@ const BuyCard: React.FC<BuyCardProps> = ({
                   <Text style={styles.retryText}>Retry</Text>
                 </TouchableOpacity>
               </View>
-            ) : portfolio.items?.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No assets found in this wallet.</Text>
-              </View>
             ) : (
-              <ScrollView style={styles.assetsContainer}>
+              // Always render ScrollView if not loading or error
+              <ScrollView style={styles.assetsContainer} keyboardShouldPersistTaps="handled">
                 {/* SOL Balance */}
                 {portfolio.nativeBalance && (
                   <View style={styles.solBalanceContainer}>
@@ -773,7 +770,7 @@ const BuyCard: React.FC<BuyCardProps> = ({
                 )}
 
                 {/* Tokens Section */}
-                {tokens.length > 0 && (
+                {tokens.length > 0 ? (
                   <View style={styles.sectionContainer}>
                     <Text style={styles.sectionTitle}>Tokens</Text>
                     <View style={styles.tokenListContainer}>
@@ -788,17 +785,24 @@ const BuyCard: React.FC<BuyCardProps> = ({
                       ))}
                     </View>
                   </View>
+                ) : (
+                  // Show this message only if in selection mode and no tokens exist
+                  onSelectAsset && (
+                    <View style={[styles.sectionContainer, styles.emptySectionInfo]}>
+                      <Text style={styles.emptySectionText}>No tokens found in this wallet.</Text>
+                    </View>
+                  )
                 )}
 
-                {/* NFT Collections Section with Search */}
+                {/* NFT Collections Section with Search - Always visible */}
                 <View style={styles.sectionContainer}>
-                  <Text style={styles.sectionTitle}>NFTs</Text>
+                  <Text style={styles.sectionTitle}>Search NFTs & Collections</Text>
 
                   {/* Search Input */}
                   <View style={styles.searchContainer}>
                     <TextInput
                       style={styles.searchInput}
-                      placeholder="Search collections..."
+                      placeholder="Search collections by name..."
                       placeholderTextColor={COLORS.textLight}
                       value={collectionName}
                       onChangeText={setCollectionName}
@@ -838,9 +842,9 @@ const BuyCard: React.FC<BuyCardProps> = ({
                   ) : (
                     <View style={styles.emptyContainer}>
                       <Text style={styles.emptyText}>
-                        {collectionName.trim()
-                          ? 'No collections found. Try a different search term.'
-                          : 'Search for NFT collections to pin to your profile.'}
+                        {collectionName.trim() && !loadingSearch
+                          ? 'No collections found for your search.'
+                          : 'Search for NFT collections by name to pin to your profile.'}
                       </Text>
                     </View>
                   )}
