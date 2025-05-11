@@ -77,7 +77,7 @@ const SCREEN_NODES = [
         type: 'category',
         route: 'MainTabs',
         params: { screen: 'Modules' },
-        children: ['tokenMill', 'pumpFun', 'launchLab']
+        children: ['tokenMill', 'pumpFun', 'launchLab', 'meteora']
     },
     {
         id: 'feed',
@@ -134,6 +134,14 @@ const SCREEN_NODES = [
         label: 'Launch Lab',
         type: 'screen',
         route: 'LaunchlabsScreen',
+        params: {},
+        children: []
+    },
+    {
+        id: 'meteora',
+        label: 'Meteora',
+        type: 'screen',
+        route: 'MeteoraScreen',
         params: {},
         children: []
     }

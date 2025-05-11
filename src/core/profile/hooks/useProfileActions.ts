@@ -12,6 +12,7 @@ import { fetchWalletActionsWithCache, pruneOldActionData } from '@/shared/state/
  */
 export function useProfileActions(walletAddress: string | undefined) {
   const dispatch = useAppDispatch();
+  const [hasFetchedInitial, setHasFetchedInitial] = useState<Record<string, boolean>>({});
   
   // Get actions data from Redux state
   const profileActions = useAppSelector(state => state.profile.actions);
@@ -27,31 +28,45 @@ export function useProfileActions(walletAddress: string | undefined) {
     : null;
 
   // Fetch actions with caching
-  const fetchActions = useCallback(async () => {
+  const fetchActions = useCallback(async (forceRefresh = false) => {
     if (!walletAddress) return;
     
     try {
-      await dispatch(fetchWalletActionsWithCache({ walletAddress }));
+      await dispatch(fetchWalletActionsWithCache({ 
+        walletAddress,
+        forceRefresh 
+      }));
       
       // Prune old action data after fetching new data
       // This helps keep the store optimized
       dispatch(pruneOldActionData());
+      
+      // Mark this wallet as having fetched initial data
+      setHasFetchedInitial(prev => ({
+        ...prev,
+        [walletAddress]: true
+      }));
     } catch (error) {
       console.error('Error fetching wallet actions:', error);
+      // Still mark as fetched even on error to prevent continuous retries
+      setHasFetchedInitial(prev => ({
+        ...prev,
+        [walletAddress]: true
+      }));
     }
   }, [walletAddress, dispatch]);
 
-  // Load actions when the wallet address changes
+  // Load actions when the wallet address changes, but only if we haven't fetched for this wallet before
   useEffect(() => {
-    if (walletAddress) {
+    if (walletAddress && !hasFetchedInitial[walletAddress]) {
       fetchActions();
     }
-  }, [walletAddress, fetchActions]);
+  }, [walletAddress, fetchActions, hasFetchedInitial]);
 
   return {
     actions: myActions,
     loadingActions,
     fetchActionsError,
-    refreshActions: fetchActions,
+    refreshActions: () => fetchActions(true), // Force refresh when manually refreshing
   };
 } 

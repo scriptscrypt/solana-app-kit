@@ -587,32 +587,53 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
     }
   }, [loadingActions, isRefreshing, hasAttemptedLoad]);
 
-  // Mark initial load as complete when actions are loaded
+  // Mark initial load as complete when actions are loaded or failed
   useEffect(() => {
-    if (!loadingActions && !isRefreshing && !hasCompletedInitialLoad) {
+    if (!loadingActions && !hasCompletedInitialLoad) {
       setHasCompletedInitialLoad(true);
+      setHasAttemptedLoad(true);
     }
-  }, [loadingActions, isRefreshing, hasCompletedInitialLoad]);
+  }, [loadingActions, hasCompletedInitialLoad]);
+
+  // Prevent additional fetches for new wallets
+  useEffect(() => {
+    if (hasCompletedInitialLoad && !myActions?.length && !fetchActionsError) {
+      // If we've completed an initial load with no actions and no error,
+      // consider this a new wallet with no transactions
+      setHasAttemptedLoad(true);
+    }
+  }, [hasCompletedInitialLoad, myActions, fetchActionsError]);
 
   const handleRefresh = useCallback(async () => {
     if (!walletAddress) return;
+
+    // Set refreshing state
     setIsRefreshing(true);
+
     try {
+      // Explicitly dispatch with forceRefresh to bypass cache
       await dispatch(fetchWalletActionsWithCache({
         walletAddress,
         forceRefresh: true
       })).unwrap();
+
+      // Reset attempted load flags to handle the case where a new wallet gets its first transaction
+      setHasAttemptedLoad(true);
+      setHasCompletedInitialLoad(true);
+
+      console.log("Actions refreshed successfully");
     } catch (err) {
       console.error('Error refreshing actions:', err);
     } finally {
-      setIsRefreshing(false);
-      setHasAttemptedLoad(true);
-      setHasCompletedInitialLoad(true);
+      // Ensure we always clear the refreshing state
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 500); // Small timeout to ensure UI feedback
     }
   }, [walletAddress, dispatch]);
 
   // If still initial loading and not having attempted to load yet, show loading
-  if (loadingActions && !isRefreshing && !hasAttemptedLoad && !hasCompletedInitialLoad) {
+  if (loadingActions && !hasAttemptedLoad && !hasCompletedInitialLoad) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={COLORS.brandBlue} />
@@ -627,10 +648,26 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
         <FontAwesome5 name="exclamation-circle" size={32} color={COLORS.errorRed} />
         <Text style={styles.errorText}>{fetchActionsError}</Text>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={[
+            styles.retryButton,
+            isRefreshing && { opacity: 0.7 }
+          ]}
           onPress={handleRefresh}
+          disabled={isRefreshing}
         >
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            {isRefreshing ? (
+              <>
+                <ActivityIndicator size="small" color={COLORS.white} />
+                <Text style={[styles.retryButtonText, { marginLeft: 8 }]}>Retrying...</Text>
+              </>
+            ) : (
+              <>
+                <FontAwesome5 name="redo" size={14} color={COLORS.white} />
+                <Text style={[styles.retryButtonText, { marginLeft: 8 }]}>Retry</Text>
+              </>
+            )}
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -646,12 +683,29 @@ const ActionsPage: React.FC<ActionsPageProps> = ({
         <Text style={[styles.emptyText, { fontSize: 14, marginTop: 8, opacity: 0.7, maxWidth: '80%', textAlign: 'center' }]}>
           Make your first transaction on Solana to see it here
         </Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
+
+        {/* <TouchableOpacity
+          style={[
+            styles.refreshButton,
+            isRefreshing && { opacity: 0.7 }
+          ]}
           onPress={handleRefresh}
+          disabled={isRefreshing}
         >
-          <Text style={styles.refreshButtonText}>Refresh</Text>
-        </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            {isRefreshing ? (
+              <>
+                <ActivityIndicator size="small" color={COLORS.white} />
+                <Text style={[styles.refreshButtonText, { marginLeft: 8 }]}>Refreshing...</Text>
+              </>
+            ) : (
+              <>
+                <FontAwesome5 name="sync" size={14} color={COLORS.white} />
+                <Text style={[styles.refreshButtonText, { marginLeft: 8 }]}>Refresh</Text>
+              </>
+            )}
+          </View>
+        </TouchableOpacity> */}
       </View>
     );
   }

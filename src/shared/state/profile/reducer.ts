@@ -11,6 +11,8 @@ interface ProfileState {
     error: Record<string, string | null>;
     // Track last fetch time to prevent unnecessary fetches
     lastFetched: Record<string, number>;
+    // Track if this wallet had zero actions (avoid repeated fetches for new wallets)
+    emptyWallets: Record<string, boolean>;
   };
 }
 
@@ -20,6 +22,7 @@ const initialState: ProfileState = {
     loading: {},
     error: {},
     lastFetched: {},
+    emptyWallets: {},
   },
 };
 
@@ -38,13 +41,22 @@ export const fetchWalletActionsWithCache = createAsyncThunk(
     const lastFetched = state.profile.actions.lastFetched[walletAddress] || 0;
     const currentTime = Date.now();
     
-    // Skip fetch if we have data and it's less than 1 minute old (unless forceRefresh is true)
-    const dataExists = !!state.profile.actions.data[walletAddress]?.length;
-    const isFresh = currentTime - lastFetched < 60000; // 1 minute cache
+    // Skip fetch if this wallet is known to be empty (no transactions) and it was checked recently
+    // Use a longer cache time (5 minutes) for empty wallets to reduce API load
+    const isEmptyWallet = state.profile.actions.emptyWallets[walletAddress];
+    const emptyWalletCacheTime = 5 * 60 * 1000; // 5 minutes for empty wallets
+    const standardCacheTime = 60 * 1000; // 1 minute for wallets with transactions
     
-    if (dataExists && isFresh && !forceRefresh) {
-      // Return existing data to avoid unnecessary fetch
-      return [...state.profile.actions.data[walletAddress]];
+    // Determine which cache time to use
+    const cacheTime = isEmptyWallet ? emptyWalletCacheTime : standardCacheTime;
+    
+    // Skip fetch if within cache time unless force refresh
+    const dataExists = !!state.profile.actions.data[walletAddress]?.length;
+    const isFresh = currentTime - lastFetched < cacheTime;
+    
+    if ((dataExists || isEmptyWallet) && isFresh && !forceRefresh) {
+      // Return existing data (or empty array for empty wallets) to avoid unnecessary fetch
+      return [...(state.profile.actions.data[walletAddress] || [])];
     }
     
     // Otherwise proceed with the fetch
@@ -261,6 +273,9 @@ const profileSlice = createSlice({
       }
       state.actions.loading[walletAddress] = false;
       state.actions.lastFetched[walletAddress] = Date.now();
+      
+      // Mark this wallet as empty if it has no actions (for better caching)
+      state.actions.emptyWallets[walletAddress] = action.payload.length === 0;
     });
     
     builder.addCase(fetchWalletActionsWithCache.rejected, (state, action) => {
