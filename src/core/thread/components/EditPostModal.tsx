@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -11,13 +11,20 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
-    Alert
+    Alert,
+    Dimensions,
+    Animated,
+    Easing,
+    PanResponder
 } from 'react-native';
 import { ThreadPost, ThreadSection } from './thread.types';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { updatePostAsync } from '@/shared/state/thread/reducer';
-import COLORS from '@/assets/colors'; // Import colors
-import Icons from '@/assets/svgs'; // Import icons if needed for section headers
+import COLORS from '@/assets/colors';
+import TYPOGRAPHY from '@/assets/typography';
+import Icons from '@/assets/svgs';
+
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface EditPostModalProps {
     isVisible: boolean;
@@ -31,18 +38,100 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Animation values
+    const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+    const backdropOpacity = useRef(new Animated.Value(0)).current;
+
+    // Pan responder for swipe down to dismiss
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                return gestureState.dy > 10;
+            },
+            onPanResponderMove: (_, gestureState) => {
+                if (gestureState.dy > 0) {
+                    translateY.setValue(gestureState.dy);
+                }
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                if (gestureState.dy > 100 || gestureState.vy > 0.5) {
+                    // User swiped down with enough velocity or distance
+                    hideModal();
+                } else {
+                    // Reset position
+                    Animated.spring(translateY, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                        tension: 100,
+                        friction: 8
+                    }).start();
+                }
+            }
+        })
+    ).current;
+
+    // Show/hide animations
+    const showModal = () => {
+        Animated.parallel([
+            Animated.timing(backdropOpacity, {
+                toValue: 1,
+                duration: 300,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true
+            }),
+            Animated.spring(translateY, {
+                toValue: 0,
+                tension: 90,
+                friction: 13,
+                useNativeDriver: true
+            })
+        ]).start();
+    };
+
+    const hideModal = () => {
+        Animated.parallel([
+            Animated.timing(backdropOpacity, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true
+            }),
+            Animated.timing(translateY, {
+                toValue: SCREEN_HEIGHT,
+                duration: 250,
+                easing: Easing.in(Easing.cubic),
+                useNativeDriver: true
+            })
+        ]).start(() => {
+            if (!isLoading) {
+                onClose();
+            }
+        });
+    };
+
     // Initialize sections from post when modal opens or post changes
     useEffect(() => {
         if (isVisible && post && post.sections) {
             // Deep copy to avoid mutating the original post
             setSections([...post.sections]);
             setError(null); // Clear previous errors
+            showModal(); // Animate in
         } else if (!isVisible) {
             // Reset state when modal closes
+            translateY.setValue(SCREEN_HEIGHT);
+            backdropOpacity.setValue(0);
             setSections([]);
             setError(null);
         }
     }, [isVisible, post]);
+
+    // Close modal when back button is pressed
+    const handleBackPress = () => {
+        if (!isLoading) {
+            hideModal();
+        }
+        return true;
+    };
 
     // Bail out early if no post is provided
     if (!post) {
@@ -88,7 +177,7 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
 
         try {
             // Filter out empty text sections before saving, unless it's the only section
-             const sectionsToSave = sections.filter((s, index, arr) => {
+            const sectionsToSave = sections.filter((s, index, arr) => {
                 if (s.type === 'TEXT_ONLY') {
                     return s.text?.trim() !== '' || arr.length === 1;
                 }
@@ -96,11 +185,11 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                 return true;
             });
 
-             // Prevent saving if all text sections are now empty (and there were multiple originally)
+            // Prevent saving if all text sections are now empty (and there were multiple originally)
             if (sectionsToSave.length === 0 && sections.length > 0) {
-                 Alert.alert("Cannot Save", "Post content cannot be empty.");
-                 setIsLoading(false);
-                 return;
+                Alert.alert("Cannot Save", "Post content cannot be empty.");
+                setIsLoading(false);
+                return;
             }
 
 
@@ -108,7 +197,8 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                 postId: post.id,
                 sections: sectionsToSave // Save the potentially filtered sections
             })).unwrap();
-            onClose(); // Close modal on success
+
+            hideModal(); // Animate out before closing
         } catch (err: any) {
             setError(err.message || 'Failed to update post');
             console.error("Update post error:", err);
@@ -138,7 +228,7 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                         uniqueSectionsMap.set(section.type, section);
                     }
                     break;
-                 // Types where each instance is unique (by ID)
+                // Types where each instance is unique (by ID)
                 case 'TEXT_ONLY':
                     if (!uniqueSectionsMap.has(sectionId)) {
                         uniqueSectionsMap.set(sectionId, section);
@@ -146,7 +236,7 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                     break;
                 default:
                     // Handle potential unknown types gracefully
-                     if (!uniqueSectionsMap.has(sectionId)) {
+                    if (!uniqueSectionsMap.has(sectionId)) {
                         uniqueSectionsMap.set(sectionId, section);
                     }
                     break;
@@ -167,6 +257,9 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                 placeholder={placeholder}
                 placeholderTextColor={COLORS.greyMid}
                 multiline
+                autoCapitalize="sentences"
+                keyboardAppearance="dark"
+                maxLength={1000}
             />
         );
 
@@ -201,16 +294,17 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                 );
 
             case 'TEXT_VIDEO':
-                 // Assuming video URL is stored similarly to imageUrl
+                // Assuming video URL is stored similarly to imageUrl
                 const videoUrl = (section as any).videoUrl || 'Video Preview Unavailable';
                 return (
                     <View style={styles.sectionContainer}>
                         {renderTextEditor("Edit video caption...")}
-                         <View style={styles.mediaPreviewContainer}>
-                             {/* Basic Video Placeholder */}
-                             <View style={styles.videoPlaceholder}>
-                                 <Text style={styles.videoPlaceholderText}>Video</Text>
-                             </View>
+                        <View style={styles.mediaPreviewContainer}>
+                            {/* Basic Video Placeholder */}
+                            <View style={styles.videoPlaceholder}>
+                                <Icons.BlueCheck width={24} height={24} color={COLORS.white} style={{ opacity: 0.7 }} />
+                                <Text style={styles.videoPlaceholderText}>Video Preview</Text>
+                            </View>
                             <Text style={styles.helperText}>
                                 Video cannot be changed
                             </Text>
@@ -218,16 +312,15 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                     </View>
                 );
 
-             case 'TEXT_TRADE':
-                 const tradeInfo = (section as any).tradeInfo || {}; // Assuming trade data exists
-                 return (
+            case 'TEXT_TRADE':
+                const tradeInfo = (section as any).tradeInfo || {}; // Assuming trade data exists
+                return (
                     <View style={styles.sectionContainer}>
                         {renderTextEditor("Edit trade caption...")}
                         <View style={styles.mediaPreviewContainer}>
                             <View style={styles.tradePlaceholder}>
+                                <Icons.NFTIcon width={24} height={24} color={COLORS.brandPrimary} />
                                 <Text style={styles.tradePlaceholderText}>Trade Details</Text>
-                                {/* Optionally display some basic trade info if available */}
-                                {/* <Text style={styles.helperText}>{`Token: ${tradeInfo.tokenSymbol}`}</Text> */}
                             </View>
                             <Text style={styles.helperText}>
                                 Trade data cannot be changed
@@ -237,12 +330,12 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                 );
 
 
-             case 'NFT_LISTING':
-                 const nftInfo = (section as any).nftInfo || {}; // Assuming NFT data exists
+            case 'NFT_LISTING':
+                const nftInfo = (section as any).nftInfo || {}; // Assuming NFT data exists
                 return (
                     <View style={[styles.sectionContainer, styles.nonEditableSection]}>
                         <Text style={styles.sectionTitle}>NFT Listing</Text>
-                         {nftInfo.imageUrl && (
+                        {nftInfo.imageUrl && (
                             <Image source={{ uri: nftInfo.imageUrl }} style={styles.nftPreview} resizeMode="contain" />
                         )}
                         <Text style={styles.helperTextBold}>
@@ -251,13 +344,13 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                     </View>
                 );
 
-             case 'POLL':
-                 const pollOptions = (section as any).pollOptions || [];
+            case 'POLL':
+                const pollOptions = (section as any).pollOptions || [];
                 return (
                     <View style={[styles.sectionContainer, styles.nonEditableSection]}>
                         <Text style={styles.sectionTitle}>Poll</Text>
-                         {pollOptions.map((opt: string, i: number) => (
-                            <Text key={i} style={styles.pollOptionText}>{`- ${opt}`}</Text>
+                        {pollOptions.map((opt: string, i: number) => (
+                            <Text key={i} style={styles.pollOptionText}>{`• ${opt}`}</Text>
                         ))}
                         <Text style={styles.helperTextBold}>
                             Poll data cannot be edited
@@ -267,12 +360,12 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
 
 
             default:
-                 // Render a generic non-editable state for unknown types
+                // Render a generic non-editable state for unknown types
                 return (
                     <View style={[styles.sectionContainer, styles.nonEditableSection]}>
                         <Text style={styles.sectionTitle}>Unsupported Section</Text>
                         <Text style={styles.helperTextBold}>
-                             This section type cannot be edited.
+                            This section type cannot be edited.
                         </Text>
                     </View>
                 );
@@ -285,30 +378,70 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
     return (
         <Modal
             visible={isVisible}
-            animationType="slide"
+            animationType="none"
             transparent={true}
-            onRequestClose={() => !isLoading && onClose()} // Prevent closing while loading
+            onRequestClose={handleBackPress}
         >
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.keyboardAvoidingView}
             >
-                <View style={styles.modalOverlay}>
+                <Animated.View
+                    style={[
+                        styles.modalOverlay,
+                        { opacity: backdropOpacity }
+                    ]}
+                >
                     {/* Touchable overlay to close modal */}
-                     <TouchableOpacity
+                    <TouchableOpacity
                         style={StyleSheet.absoluteFill}
                         activeOpacity={1}
-                        onPress={() => !isLoading && onClose()}
+                        onPress={() => !isLoading && hideModal()}
                     />
-                    <View style={styles.modalContent}>
+
+                    {/* Drawer Content */}
+                    <Animated.View
+                        style={[
+                            styles.drawerContainer,
+                            { transform: [{ translateY: translateY }] }
+                        ]}
+                        {...panResponder.panHandlers}
+                    >
+                        {/* Drawer handle */}
+                        <View style={styles.drawerHandleContainer}>
+                            <View style={styles.drawerHandle} />
+                        </View>
+
                         <View style={styles.modalHeader}>
+                            <TouchableOpacity
+                                onPress={() => !isLoading && hideModal()}
+                                style={styles.closeButton}
+                                disabled={isLoading}
+                            >
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+
                             <Text style={styles.modalTitle}>Edit Post</Text>
-                            <TouchableOpacity onPress={() => !isLoading && onClose()} style={styles.closeButton} disabled={isLoading}>
-                                <Text style={styles.closeButtonText}>✕</Text>
+
+                            <TouchableOpacity
+                                style={[styles.saveButtonTop, isLoading && styles.buttonDisabled]}
+                                onPress={handleSave}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator size="small" color={COLORS.brandBlue} />
+                                ) : (
+                                    <Text style={styles.saveButtonTopText}>Save</Text>
+                                )}
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+                        <ScrollView
+                            style={styles.scrollView}
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={styles.scrollViewContent}
+                            keyboardShouldPersistTaps="handled"
+                        >
                             {uniqueDisplaySections.length === 0 && !isLoading && (
                                 <Text style={styles.helperText}>No editable content found.</Text>
                             )}
@@ -319,33 +452,41 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                             ))}
 
                             {error && (
-                                <Text style={styles.errorText}>{error}</Text>
+                                <View style={styles.errorContainer}>
+                                    <Icons.NotifBell width={18} height={18} color={COLORS.errorRed} />
+                                    <Text style={styles.errorText}>{error}</Text>
+                                </View>
                             )}
+
+                            {/* Add some bottom padding */}
+                            <View style={{ height: 20 }} />
                         </ScrollView>
 
-                        {/* Footer with buttons */}
-                        <View style={styles.footer}>
-                             <TouchableOpacity
-                                style={[styles.button, styles.cancelButton]}
-                                onPress={onClose}
-                                disabled={isLoading}
-                            >
-                                <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.button, styles.saveButton, isLoading && styles.buttonDisabled]}
-                                onPress={handleSave}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? (
-                                    <ActivityIndicator size="small" color={COLORS.white} />
-                                ) : (
-                                    <Text style={[styles.buttonText, styles.saveButtonText]}>Save Changes</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
+                        {/* Footer with buttons - shown only on Android */}
+                        {Platform.OS === 'android' && (
+                            <View style={styles.footer}>
+                                <TouchableOpacity
+                                    style={[styles.button, styles.cancelButton]}
+                                    onPress={hideModal}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.button, styles.saveButton, isLoading && styles.buttonDisabled]}
+                                    onPress={handleSave}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <ActivityIndicator size="small" color={COLORS.white} />
+                                    ) : (
+                                        <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </Animated.View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </Modal>
     );
@@ -355,190 +496,235 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
 const styles = StyleSheet.create({
     keyboardAvoidingView: {
         flex: 1,
+        justifyContent: 'flex-end',
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker overlay
-        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    drawerContainer: {
+        backgroundColor: COLORS.lighterBackground,
+        borderTopLeftRadius: 14,
+        borderTopRightRadius: 14,
+        maxHeight: SCREEN_HEIGHT * 0.85,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 20,
+    },
+    drawerHandleContainer: {
+        paddingVertical: 12,
         alignItems: 'center',
     },
-    modalContent: {
-        width: '92%', // Slightly wider
-        maxHeight: '85%', // Allow more height
-        backgroundColor: COLORS.white,
-        borderRadius: 16, // More rounded corners
-        overflow: 'hidden',
-        elevation: 8, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 6,
+    drawerHandle: {
+        width: 36,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 12,
         paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.greyBorder, // Use existing border color
+        paddingBottom: 14,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: COLORS.borderDarkColor,
     },
     modalTitle: {
-        fontSize: 18,
-        fontWeight: '600', // Slightly bolder
-        color: COLORS.black,
+        fontSize: TYPOGRAPHY.size.lg,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+        color: COLORS.white,
+        textAlign: 'center',
+        flex: 1,
     },
     closeButton: {
-        padding: 8, // Easier to tap
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+        minWidth: 60,
     },
-    closeButtonText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: COLORS.greyDark,
+    cancelText: {
+        fontSize: TYPOGRAPHY.size.md,
+        fontWeight: TYPOGRAPHY.weights.medium,
+        color: COLORS.greyMid,
+    },
+    saveButtonTop: {
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+        minWidth: 60,
+        alignItems: 'flex-end',
+    },
+    saveButtonTopText: {
+        fontSize: TYPOGRAPHY.size.md,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+        color: COLORS.brandBlue,
     },
     scrollView: {
+        maxHeight: SCREEN_HEIGHT * 0.7,
+    },
+    scrollViewContent: {
         paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 8, // Add padding at the bottom
+        paddingTop: 20,
     },
     sectionContainer: {
-        marginBottom: 16,
+        marginBottom: 20,
         borderWidth: 1,
-        borderColor: COLORS.greyBorder, // Use existing border color
-        borderRadius: 8,
-        padding: 12,
-        backgroundColor: COLORS.background, // Subtle background difference
+        borderColor: COLORS.borderDarkColor,
+        borderRadius: 12,
+        padding: 16,
+        backgroundColor: COLORS.lightBackground,
     },
-     nonEditableSection: {
-        backgroundColor: COLORS.greyLight, // Different background for non-editable
-        borderColor: COLORS.greyMid,
+    nonEditableSection: {
+        backgroundColor: COLORS.darkerBackground,
+        borderColor: COLORS.borderDarkColor,
     },
     sectionTitle: {
-        fontSize: 14, // Smaller title
-        fontWeight: '600',
-        marginBottom: 10,
-        color: COLORS.greyDark, // Use existing grey color
+        fontSize: TYPOGRAPHY.size.md,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
+        marginBottom: 12,
+        color: COLORS.white,
     },
     textInput: {
         borderWidth: 1,
-        borderColor: COLORS.greyBorder, // Use existing border color
-        borderRadius: 8, // More rounded
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        minHeight: 100, // Slightly taller
-        fontSize: 16,
-        color: COLORS.black, // Use black for primary text
-        backgroundColor: COLORS.white,
-        textAlignVertical: 'top', // Align text top on Android
+        borderColor: COLORS.borderDarkColor,
+        borderRadius: 10,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        minHeight: 120,
+        fontSize: TYPOGRAPHY.size.md,
+        color: COLORS.white,
+        backgroundColor: COLORS.background,
+        textAlignVertical: 'top',
+        lineHeight: TYPOGRAPHY.lineHeight.md,
     },
     mediaPreviewContainer: {
-        marginTop: 12,
+        marginTop: 16,
         alignItems: 'center',
-        padding: 8,
-        backgroundColor: COLORS.greyLight, // Background for media
-        borderRadius: 8,
+        padding: 12,
+        backgroundColor: COLORS.background,
+        borderRadius: 10,
+        overflow: 'hidden',
     },
     imagePreview: {
         width: '100%',
-        aspectRatio: 16 / 9, // Standard aspect ratio
-        borderRadius: 6,
-        marginBottom: 8,
+        aspectRatio: 16 / 9,
+        borderRadius: 8,
+        marginBottom: 10,
     },
     nftPreview: {
-        width: 100,
-        height: 100,
-        borderRadius: 6,
-        marginBottom: 8,
+        width: 120,
+        height: 120,
+        borderRadius: 8,
+        marginVertical: 10,
         alignSelf: 'center',
     },
-     videoPlaceholder: {
+    videoPlaceholder: {
         width: '100%',
         aspectRatio: 16 / 9,
-        borderRadius: 6,
-        backgroundColor: COLORS.black,
+        borderRadius: 8,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 10,
+        flexDirection: 'row',
+        gap: 8,
     },
     videoPlaceholderText: {
         color: COLORS.white,
-        fontWeight: 'bold',
+        fontWeight: TYPOGRAPHY.weights.medium,
+        opacity: 0.9,
     },
-     tradePlaceholder: {
+    tradePlaceholder: {
         width: '100%',
-        paddingVertical: 20,
-        borderRadius: 6,
-        backgroundColor: COLORS.greyLight, // Fallback to greyLight
+        paddingVertical: 30,
+        borderRadius: 8,
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 10,
+        flexDirection: 'row',
+        gap: 8,
     },
     tradePlaceholderText: {
-        color: COLORS.brandPrimary, // Use primary brand color
-        fontWeight: 'bold',
+        color: COLORS.brandPrimary,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
     },
     pollOptionText: {
-        fontSize: 14,
-        color: COLORS.greyDark, // Use existing grey color
-        marginBottom: 4,
+        fontSize: TYPOGRAPHY.size.sm,
+        color: COLORS.white,
+        marginBottom: 6,
+        paddingHorizontal: 4,
     },
     helperText: {
-        fontSize: 13, // Slightly larger helper text
-        color: COLORS.greyDark, // Use existing grey color
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
         fontStyle: 'italic',
         textAlign: 'center',
         marginTop: 4,
     },
     helperTextBold: {
-        fontSize: 13,
-        color: COLORS.greyDark, // Use existing grey color
-        fontWeight: '600', // Bolder for non-editable
+        fontSize: TYPOGRAPHY.size.xs,
+        color: COLORS.greyMid,
+        fontWeight: TYPOGRAPHY.weights.medium,
         textAlign: 'center',
         marginTop: 8,
+    },
+    errorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginVertical: 16,
+        backgroundColor: 'rgba(224, 36, 94, 0.1)',
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        gap: 8,
+    },
+    errorText: {
+        color: COLORS.errorRed,
+        fontSize: TYPOGRAPHY.size.sm,
+        fontWeight: TYPOGRAPHY.weights.medium,
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
         padding: 16,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.greyBorder, // Use existing border color
-        backgroundColor: COLORS.white, // Ensure footer background
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: COLORS.borderDarkColor,
+        backgroundColor: COLORS.lighterBackground,
     },
     button: {
-        paddingVertical: 12, // Taller buttons
-        paddingHorizontal: 24, // Wider buttons
-        borderRadius: 25, // Pill shape
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 10,
         marginLeft: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        minWidth: 100, // Minimum width
+        minWidth: 120,
     },
     buttonDisabled: {
-        opacity: 0.6,
+        opacity: 0.5,
     },
     cancelButton: {
-        backgroundColor: COLORS.greyLight, // Lighter cancel
+        backgroundColor: COLORS.darkerBackground,
         borderWidth: 1,
-        borderColor: COLORS.greyBorder, // Use existing border color
+        borderColor: COLORS.borderDarkColor,
     },
     saveButton: {
-        backgroundColor: COLORS.brandPrimary, // Use theme primary
+        backgroundColor: COLORS.brandBlue,
     },
     buttonText: {
-        fontSize: 16,
-        fontWeight: '600', // Bolder text
+        fontSize: TYPOGRAPHY.size.md,
+        fontWeight: TYPOGRAPHY.weights.semiBold,
     },
     cancelButtonText: {
-         color: COLORS.greyDark, // Use existing grey color
+        color: COLORS.white,
     },
     saveButtonText: {
         color: COLORS.white,
-    },
-    errorText: {
-        color: '#FF3B30', // Standard iOS red for errors
-        marginVertical: 10,
-        textAlign: 'center',
-        fontWeight: '600',
     },
 });
 
