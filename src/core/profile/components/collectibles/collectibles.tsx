@@ -414,14 +414,14 @@ const Collectibles: React.FC<CollectiblesProps> = ({
     return (
       <View style={portfolioStyles.emptyContainer}>
         <Text style={portfolioStyles.emptyText}>No assets found in this wallet.</Text>
-        {onRefresh && (
+        {/* {onRefresh && (
           <TouchableOpacity
             style={portfolioStyles.retryButton}
             onPress={onRefresh}
           >
             <Text style={portfolioStyles.retryText}>Refresh</Text>
           </TouchableOpacity>
-        )}
+        )} */}
       </View>
     );
   }
