@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 
 import { useAuth } from '../../walletProviders/hooks/useAuth';
 import { useWallet } from '../../walletProviders/hooks/useWallet';
@@ -23,6 +23,8 @@ import { AppHeader } from '@/core/sharedUI';
 import { RaydiumService, LaunchpadConfigData } from '../services/raydiumService';
 import { CLUSTER, HELIUS_STAKED_URL } from '@env';
 import { ENDPOINTS } from '@/config/constants';
+import { Buffer } from 'buffer';
+import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
 
 export default function LaunchlabsScreen() {
     const { solanaWallet } = useAuth();
@@ -53,15 +55,74 @@ export default function LaunchlabsScreen() {
     // Use the wallet's address directly when available
     const userPublicKey = walletPublicKey?.toString() || walletAddress || myWallet || null;
     
-    // Log wallet info for debugging
-    useEffect(() => {
-        if (userPublicKey) {
-            console.log('[LaunchlabsScreen] Using wallet address:', userPublicKey);
-            console.log('[LaunchlabsScreen] walletPublicKey:', walletPublicKey?.toString());
-            console.log('[LaunchlabsScreen] walletAddress:', walletAddress);
-            console.log('[LaunchlabsScreen] myWallet:', myWallet);
+    // Enhanced sendTransaction wrapper for Raydium service
+    const handleSendTransaction = useCallback(async (base64Transaction: string) => {
+        if (!userPublicKey || !connected || !walletPublicKey) {
+            throw new Error('Wallet not connected');
         }
-    }, [userPublicKey, walletPublicKey, walletAddress, myWallet]);
+        
+        try {
+            // Decode the base64 transaction
+            const txBuffer = Buffer.from(base64Transaction, 'base64');
+            
+            // Get RPC URL from env vars or constants
+            const rpcUrl = HELIUS_STAKED_URL || ENDPOINTS.helius || `https://api.${CLUSTER}.solana.com`;
+            const connection = new Connection(rpcUrl, 'confirmed');
+            
+            // Always try to deserialize as a VersionedTransaction first
+            let transaction: Transaction | VersionedTransaction;
+            
+            try {
+                // Deserialize as a VersionedTransaction (V0)
+                transaction = VersionedTransaction.deserialize(new Uint8Array(txBuffer));
+                console.log('[LaunchlabsScreen] Successfully deserialized as VersionedTransaction');
+                
+                // For VersionedTransaction, we need to pass it directly without modifying
+                // The wallet adapter will handle the signing
+            } catch (e) {
+                console.log('[LaunchlabsScreen] Failed to deserialize as VersionedTransaction, trying legacy format');
+                
+                // If that fails, try to deserialize as a legacy Transaction
+                transaction = Transaction.from(txBuffer);
+                
+                // For Legacy transaction, set the fee payer
+                transaction.feePayer = walletPublicKey;
+                
+                // Get a recent blockhash
+                const { blockhash } = await connection.getLatestBlockhash('confirmed');
+                transaction.recentBlockhash = blockhash;
+            }
+            
+            // Log transaction details for debugging
+            console.log('[LaunchlabsScreen] Transaction type:', transaction instanceof VersionedTransaction ? 'Versioned' : 'Legacy');
+            
+            // Send the transaction
+            const signature = await sendTransaction(
+                transaction,
+                connection,
+                {
+                    statusCallback: (status) => {
+                        if (mountedRef.current) {
+                            TransactionService.filterStatusUpdate(status, (filteredStatus) => {
+                                setStatus(filteredStatus);
+                            });
+                        }
+                    },
+                    confirmTransaction: true
+                }
+            );
+            
+            // Show success notification
+            if (mountedRef.current) {
+                TransactionService.showSuccess(signature, 'token');
+            }
+            
+            return signature;
+        } catch (error) {
+            console.error('[LaunchlabsScreen] Transaction send error:', error);
+            throw error;
+        }
+    }, [userPublicKey, connected, walletPublicKey, sendTransaction]);
 
     const handleBack = useCallback(() => {
         if (showAdvancedOptions) {
@@ -96,30 +157,12 @@ export default function LaunchlabsScreen() {
         setStatus('Creating token with JustSendIt...');
         
         try {
-            // Create image data from URI if available
-            let imageData = undefined;
-            if (data.imageUri) {
-                try {
-                    // In a real app, you would convert the image to base64 here
-                    // For this example, we'll use a placeholder
-                    imageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...';
-                } catch (error) {
-                    console.error('Failed to convert image:', error);
-                }
+            // Create a PublicKey from the string - make sure it's valid
+            if (!PublicKey.isOnCurve(new PublicKey(userPublicKey))) {
+                throw new Error('Invalid wallet public key');
             }
             
-            // Create token data for the API
-            const launchpadTokenData = {
-                name: data.name,
-                symbol: data.symbol,
-                description: data.description,
-                decimals: 9, // Default to 9 decimals for Solana tokens
-                uri: undefined, // Will be generated by the server
-                twitter: data.twitter,
-                telegram: data.telegram,
-                website: data.website,
-                imageData
-            };
+            const userWalletPublicKey = new PublicKey(userPublicKey);
             
             // Create default configuration for JustSendIt mode (standard settings)
             // According to Raydium docs, JustSendIt uses standard bonding curve settings
@@ -133,26 +176,20 @@ export default function LaunchlabsScreen() {
                 mode: 'justSendIt' // Set mode to justSendIt
             };
             
-            // Create a PublicKey from the string - make sure it's valid
-            if (!PublicKey.isOnCurve(new PublicKey(userPublicKey))) {
-                throw new Error('Invalid wallet public key');
-            }
-            
-            const userWalletPublicKey = new PublicKey(userPublicKey);
-            
-            // Log the exact public key we're using for debugging
-            console.log(`[LaunchlabsScreen] Using public key for transaction: ${userWalletPublicKey.toString()}`);
-            
-            // Create a connection
-            const rpcUrl = HELIUS_STAKED_URL || ENDPOINTS.helius || `https://api.${CLUSTER}.solana.com`;
-            const connection = new Connection(rpcUrl, 'confirmed');
-            
             // Call the RaydiumService to create the token with standard settings
             const result = await RaydiumService.createAndLaunchToken(
-                launchpadTokenData,
+                {
+                    name: data.name,
+                    symbol: data.symbol,
+                    description: data.description || '',
+                    image: data.imageUri || undefined,
+                    twitter: data.twitter,
+                    telegram: data.telegram,
+                    website: data.website
+                },
                 defaultConfig,
                 userWalletPublicKey,
-                sendTransaction,
+                handleSendTransaction,
                 {
                     statusCallback: setStatus,
                     isComponentMounted
@@ -181,7 +218,7 @@ export default function LaunchlabsScreen() {
             setLoading(false);
             setStatus(null);
         }
-    }, [userPublicKey, isComponentMounted, connected, sendTransaction]);
+    }, [userPublicKey, isComponentMounted, connected, handleSendTransaction]);
 
     // Handle token creation with custom parameters (LaunchLab mode)
     const handleCreateToken = useCallback(async (configData: LaunchpadConfigData) => {
@@ -200,36 +237,6 @@ export default function LaunchlabsScreen() {
         setStatus('Creating token with LaunchLab...');
         
         try {
-            // Convert image to base64 if available
-            let imageData = undefined;
-            if (tokenData.imageUri) {
-                try {
-                    // In a real app, you would convert the image to base64 here
-                    imageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...';
-                } catch (error) {
-                    console.error('Failed to convert image:', error);
-                }
-            }
-            
-            // Create token data object for the API
-            const launchpadTokenData = {
-                name: tokenData.name,
-                symbol: tokenData.symbol,
-                description: tokenData.description,
-                decimals: 9, // Default to 9 decimals for Solana tokens
-                uri: undefined, // Will be generated by the server if not provided
-                twitter: tokenData.twitter,
-                telegram: tokenData.telegram,
-                website: tokenData.website,
-                imageData
-            };
-            
-            // Set the mode to launchLab for custom settings
-            const fullConfigData: LaunchpadConfigData = {
-                ...configData,
-                mode: 'launchLab' as 'justSendIt' | 'launchLab'
-            };
-            
             // Create a PublicKey from the string - make sure it's valid
             if (!PublicKey.isOnCurve(new PublicKey(userPublicKey))) {
                 throw new Error('Invalid wallet public key');
@@ -237,19 +244,26 @@ export default function LaunchlabsScreen() {
             
             const userWalletPublicKey = new PublicKey(userPublicKey);
             
-            // Log the exact public key we're using for debugging
-            console.log(`[LaunchlabsScreen] Using public key for transaction: ${userWalletPublicKey.toString()}`);
-            
-            // Create a connection
-            const rpcUrl = HELIUS_STAKED_URL || ENDPOINTS.helius || `https://api.${CLUSTER}.solana.com`;
-            const connection = new Connection(rpcUrl, 'confirmed');
+            // Set the mode to launchLab for custom settings
+            const fullConfigData: LaunchpadConfigData = {
+                ...configData,
+                mode: 'launchLab' as 'justSendIt' | 'launchLab'
+            };
             
             // Call the RaydiumService to create the token with custom settings
             const result = await RaydiumService.createAndLaunchToken(
-                launchpadTokenData,
+                {
+                    name: tokenData.name,
+                    symbol: tokenData.symbol,
+                    description: tokenData.description || '',
+                    image: tokenData.imageUri || undefined,
+                    twitter: tokenData.twitter,
+                    telegram: tokenData.telegram,
+                    website: tokenData.website
+                },
                 fullConfigData,
                 userWalletPublicKey,
-                sendTransaction,
+                handleSendTransaction,
                 {
                     statusCallback: setStatus,
                     isComponentMounted
@@ -279,7 +293,7 @@ export default function LaunchlabsScreen() {
             setLoading(false);
             setStatus(null);
         }
-    }, [tokenData, userPublicKey, isComponentMounted, connected, sendTransaction]);
+    }, [tokenData, userPublicKey, isComponentMounted, connected, handleSendTransaction]);
 
     if (!userPublicKey) {
         return (
