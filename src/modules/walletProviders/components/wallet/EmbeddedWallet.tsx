@@ -271,7 +271,7 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
         </TouchableOpacity>
       )}
 
-      {/* <TouchableOpacity style={styles.loginButton} onPress={handleGoogleLogin}>
+      <TouchableOpacity style={styles.loginButton} onPress={handleGoogleLogin}>
         <View style={styles.buttonContent}>
           <Icons.Google width={24} height={24} />
           <Text style={styles.buttonText}>Continue with Google</Text>
@@ -287,7 +287,7 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
           </View>
           <ArrowIcon />
         </TouchableOpacity>
-      )} */}
+      )}
 
       <TouchableOpacity style={styles.loginButton} onPress={handleEmailLogin}>
         <View style={styles.buttonContent}>

@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   },
   bottomButtonsContainer: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 60,
     width: '100%',
     alignItems: 'center',
   },
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     lineHeight: TYPOGRAPHY.lineHeight.sm,
     letterSpacing: TYPOGRAPHY.letterSpacing,
     position: 'absolute',
-    bottom: 100,
+    bottom: 30,
     textAlign: 'center',
     color: COLORS.greyDark,
   },
