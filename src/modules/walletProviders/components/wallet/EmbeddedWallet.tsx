@@ -216,13 +216,38 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
   const handleAppleLogin = async () => {
     try {
       if (loginWithApple) {
-        console.log('Logging in with Apple and passing navigation');
+        console.log('Starting Apple login in EmbeddedWallet...');
+        
+        // Check if we're on iOS
+        if (Platform.OS !== 'ios') {
+          Alert.alert('Warning', 'Native Apple login is only available on iOS devices');
+          return;
+        }
+        
         await loginWithApple();
         // Navigation will now be handled inside loginWithApple
       }
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Authentication Error', 'Failed to authenticate with Apple. Please try again.');
+      console.error('Apple login error in EmbeddedWallet:', error);
+      
+      // Provide more specific error messages based on error type
+      if (error instanceof Error) {
+        if (error.message.includes('cancelled') || error.message.includes('cancel')) {
+          // User cancelled the login, no need to show an error
+          console.log('User cancelled Apple login');
+          return;
+        } else if (error.message.includes('auth') || error.message.includes('verif')) {
+          Alert.alert('Authentication Error', 'Failed to authenticate with Apple. Please check your Apple ID and try again.');
+        } else if (error.message.includes('network') || error.message.includes('connect')) {
+          Alert.alert('Connection Error', 'Network problem detected. Please check your internet connection and try again.');
+        } else if (error.message.includes('No tokens') || error.message.includes('failed to complete')) {
+          Alert.alert('Authentication Failed', 'The Apple authentication process did not complete successfully. Please make sure you are signed in to your Apple ID on this device.');
+        } else {
+          Alert.alert('Authentication Error', 'Failed to authenticate with Apple. Please try again later.');
+        }
+      } else {
+        Alert.alert('Authentication Error', 'Failed to authenticate with Apple. Please try again.');
+      }
     }
   };
 
