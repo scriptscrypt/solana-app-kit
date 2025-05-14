@@ -107,9 +107,20 @@ export function useAuth() {
 
     const loginWithApple = useCallback(async () => {
       try {
-        // Use direct OAuth login instead of handlePrivyLogin
-        const result = await loginWithOAuth({ provider: 'apple' });
+        console.log('[useAuth] Starting Apple login process...');
+        // Use direct OAuth login with proper error handling
+        const result = await loginWithOAuth({ 
+          provider: 'apple',
+          // Don't pass isLegacyAppleIosBehaviorEnabled to use native flow
+        });
+        
         console.log('[useAuth] Apple OAuth login result:', result);
+        
+        // Check if we have a valid authentication result before proceeding
+        if (!result) {
+          console.error('[useAuth] Apple authentication failed - no result returned');
+          throw new Error('Apple authentication failed to complete');
+        }
         
         console.log('[useAuth] Starting Solana wallet monitoring after successful login');
         
@@ -146,6 +157,7 @@ export function useAuth() {
         });
       } catch (error) {
         console.error('[useAuth] Apple login error:', error);
+        throw error; // Re-throw to allow component-level error handling
       }
     }, [loginWithOAuth, monitorSolanaWallet, solanaWallet, dispatch, navigation]);
 
