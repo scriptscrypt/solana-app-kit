@@ -544,7 +544,7 @@ profileImageRouter.post('/updateDescription', async (req: any, res: any) => {
 profileImageRouter.delete(
   '/delete-account',
   // requireAuth, // Middleware REMOVED
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: any, res: any, next: NextFunction) => {
     console.log(`[Route /delete-account] Received request. Body:`, req.body);
     try {
       const { userId } = req.body; // userId now expected from request body
