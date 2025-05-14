@@ -63,7 +63,7 @@ export function useTokenSearch(
         // If we have a search query, use the search API
         const params: TokenSearchParams = {
           keyword: debouncedQuery,
-          sort_by: 'marketcap',
+          sort_by: 'volume_24h_usd',
           sort_type: 'desc',
           offset: isLoadingMore ? offset : 0,
           limit: 20

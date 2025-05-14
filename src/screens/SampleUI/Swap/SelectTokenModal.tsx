@@ -193,7 +193,7 @@ export default function SelectTokenModal({
 }: SelectTokenModalProps) {
   // Use the new token search hook with debounce
   const {
-    tokens,
+    tokens: rawTokens,
     loading,
     error,
     searchQuery,
@@ -202,14 +202,42 @@ export default function SelectTokenModal({
     refresh
   } = useTokenSearch('', 300);
 
-  // Keep track of whether the component is mounted
-  const isMounted = useRef(true);
+  // State for deduplicated tokens
+  const [tokens, setTokens] = useState<TokenInfo[]>([]);
 
-  // Reset search and refresh tokens when modal becomes visible
+  // Deduplicate tokens when rawTokens change
   useEffect(() => {
-    if (visible) {
+    // Use a Map to keep only the first occurrence of each token address
+    const uniqueTokensMap = new Map<string, TokenInfo>();
+
+    rawTokens.forEach(token => {
+      if (!uniqueTokensMap.has(token.address)) {
+        uniqueTokensMap.set(token.address, token);
+      }
+    });
+
+    // Convert Map values back to array
+    setTokens(Array.from(uniqueTokensMap.values()));
+  }, [rawTokens]);
+
+  // Keep track of whether the component is mounted and user's input
+  const isMounted = useRef(true);
+  const hasUserSearched = useRef(false);
+
+  // Add a unique index map for handling duplicate tokens (as backup)
+  const uniqueTokens = useRef(new Map());
+
+  // Reset search ONLY when modal initially becomes visible
+  useEffect(() => {
+    if (visible && !hasUserSearched.current) {
       setSearchQuery('');
       refresh();
+    }
+
+    // When modal becomes invisible, reset the search flag and clear uniqueTokens map
+    if (!visible) {
+      hasUserSearched.current = false;
+      uniqueTokens.current.clear();
     }
   }, [visible, refresh, setSearchQuery]);
 
@@ -221,10 +249,18 @@ export default function SelectTokenModal({
   }, []);
 
   /**
+   * Handles search input changes
+   */
+  const handleSearchChange = (text: string) => {
+    hasUserSearched.current = true; // Mark that user has started searching
+    setSearchQuery(text);
+  };
+
+  /**
    * Handles end of list reached to load more tokens
    */
   const handleEndReached = () => {
-    if (!loading) {
+    if (!loading && rawTokens.length > 0) {
       loadMore();
     }
   };
@@ -289,7 +325,7 @@ export default function SelectTokenModal({
    */
   const renderFooter = () => {
     if (!loading) return null;
-    
+
     return (
       <View style={styles.loadingFooter}>
         <ActivityIndicator size="small" color={COLORS.brandPrimary} />
@@ -324,9 +360,16 @@ export default function SelectTokenModal({
               placeholder="Search by name, symbol, or address"
               placeholderTextColor={COLORS.greyMid}
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={handleSearchChange}
               clearButtonMode="while-editing"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => handleSearchChange('')}>
+                <Ionicons name="close-circle" size={18} color={COLORS.greyMid} style={{ marginLeft: 8 }} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {!tokens.length && loading ? (
@@ -341,7 +384,7 @@ export default function SelectTokenModal({
             <>
               <FlatList
                 data={tokens}
-                keyExtractor={item => item.address}
+                keyExtractor={(item) => item.address}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContentContainer}
                 showsVerticalScrollIndicator={true}
@@ -354,10 +397,18 @@ export default function SelectTokenModal({
                 ListEmptyComponent={
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>
-                      {error ? `Error: ${error}` : 
-                      searchQuery ? `No tokens found matching "${searchQuery}"` : 
-                      'No tokens available'}
+                      {error ? `Error: ${error}` :
+                        searchQuery ? `No tokens found matching "${searchQuery}"` :
+                          'No tokens available'}
                     </Text>
+                    {error && (
+                      <TouchableOpacity
+                        style={{ marginTop: 12, padding: 8 }}
+                        onPress={refresh}
+                      >
+                        <Text style={{ color: COLORS.brandPrimary }}>Try Again</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 }
               />
