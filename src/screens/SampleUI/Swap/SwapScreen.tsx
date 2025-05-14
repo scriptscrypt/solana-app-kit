@@ -98,6 +98,7 @@ export default function SwapScreen() {
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [currentTokenPrice, setCurrentTokenPrice] = useState<number | null>(null);
   const [estimatedOutputAmount, setEstimatedOutputAmount] = useState<string>('');
+  const [outputTokenUsdValue, setOutputTokenUsdValue] = useState('$0.00');
 
   // Transaction States
   const [loading, setLoading] = useState(false);
@@ -108,6 +109,11 @@ export default function SwapScreen() {
   // Refs
   const isMounted = useRef(true);
   const pendingTokenOps = useRef<{ input: boolean, output: boolean }>({ input: false, output: false });
+
+  // Add a ref to track the last token price fetch time
+  const lastPriceFetchTime = useRef<Record<string, number>>({});
+  const lastBalanceFetchTime = useRef<number>(0);
+  const estimateInProgress = useRef<boolean>(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -151,8 +157,8 @@ export default function SwapScreen() {
       }
 
       try {
-      if (routeParams.outputToken && routeParams.outputToken.address) {
-        console.log('[SwapScreen] Using output token from route params:', routeParams.outputToken);
+        if (routeParams.outputToken && routeParams.outputToken.address) {
+          console.log('[SwapScreen] Using output token from route params:', routeParams.outputToken);
           initialOutputToken = await fetchTokenMetadata(routeParams.outputToken.address);
         } else {
           // Default to USDC if not specified
@@ -192,10 +198,10 @@ export default function SwapScreen() {
               setCurrentBalance(balance);
               if (initialInputToken) {
                 fetchTokenPrice(initialInputToken).then(price => {
-                if (isMounted.current && price !== null) {
-                  setCurrentTokenPrice(price);
-                }
-              });
+                  if (isMounted.current && price !== null) {
+                    setCurrentTokenPrice(price);
+                  }
+                });
               }
             }
           });
@@ -207,65 +213,7 @@ export default function SwapScreen() {
     }
   }, [userPublicKey, routeParams]);
 
-  // Initialize tokens on component mount or when route params change
-  useEffect(() => {
-    if (!tokensInitialized) {
-      initializeTokens();
-    } else if (routeParams.shouldInitialize) {
-      // If the component needs to re-initialize with new route params
-      console.log('[SwapScreen] Re-initializing from route params', routeParams);
-      setTokensInitialized(false); // This will trigger initializeTokens() in the next effect
-
-      // Clear the shouldInitialize flag to prevent re-initialization loops
-      if (route.params) {
-        // Update the route params to remove shouldInitialize
-        navigation.setParams({ ...route.params, shouldInitialize: false });
-      }
-    }
-  }, [tokensInitialized, initializeTokens, routeParams, route.params, navigation]);
-
-  // Handle visibility changes to reset states and initialize tokens if needed
-  useEffect(() => {
-    // Reset states
-    setResultMsg('');
-    setErrorMsg('');
-    setSolscanTxSig('');
-
-    console.log('[SwapScreen] Component mounted/became visible. Current token price:', currentTokenPrice);
-
-    // Initialize tokens if not already initialized
-    if (!tokensInitialized) {
-      initializeTokens();
-    } else if (connected && userPublicKey && inputToken) {
-      // If tokens are already initialized, fetch both balance and price
-      console.log('[SwapScreen] Fetching balance and price for initialized tokens');
-
-      // Force a token price update when becoming visible
-      fetchTokenPrice(inputToken).then(price => {
-        if (isMounted.current && price !== null) {
-          console.log('[SwapScreen] Fetched token price on visibility change:', price);
-          setCurrentTokenPrice(price);
-        } else {
-          console.log('[SwapScreen] Failed to fetch token price on visibility change');
-        }
-      });
-
-      // Use a small timeout to avoid state updates colliding
-      const timer = setTimeout(() => {
-        if (isMounted.current) {
-          fetchTokenBalance(userPublicKey, inputToken).then(() => {
-            if (isMounted.current) {
-              fetchTokenPrice(inputToken);
-            }
-          });
-        }
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-  }, [tokensInitialized, initializeTokens, connected, userPublicKey, fetchTokenBalance, inputToken, currentTokenPrice]);
-
-  // Fetch token balance
+  // Modify fetchBalance to add throttling
   const fetchBalance = useCallback(async (tokenToUse?: TokenInfo | null) => {
     if (!connected || !userPublicKey) {
       console.log("[SwapScreen] No wallet connected, cannot fetch balance");
@@ -273,16 +221,27 @@ export default function SwapScreen() {
     }
 
     const tokenForBalance = tokenToUse || inputToken;
-    
+
     // Cannot fetch balance if token is null
     if (!tokenForBalance) {
       console.log("[SwapScreen] No token provided, cannot fetch balance");
       return null;
     }
 
+    // Add throttling for balance fetches (15 seconds)
+    const now = Date.now();
+    const timeSinceLastFetch = now - lastBalanceFetchTime.current;
+    if (timeSinceLastFetch < 15000 && currentBalance !== null) {
+      // console.log(`[SwapScreen] Using cached balance for ${tokenForBalance.symbol}, last fetched ${timeSinceLastFetch}ms ago`);
+      return currentBalance;
+    }
+
     try {
       console.log(`[SwapScreen] Fetching balance for ${tokenForBalance.symbol}...`);
       const balance = await fetchTokenBalance(userPublicKey, tokenForBalance);
+
+      // Update last fetch time
+      lastBalanceFetchTime.current = now;
 
       // Only update state if component is still mounted and balance is non-null
       if (isMounted.current) {
@@ -299,34 +258,285 @@ export default function SwapScreen() {
       }
     }
     return null;
-  }, [connected, userPublicKey, inputToken]);
+  }, [connected, userPublicKey, inputToken, currentBalance]);
 
-  // Fetch token price
+  // Modify getTokenPrice to add caching based on time
   const getTokenPrice = useCallback(async (tokenToUse?: TokenInfo | null): Promise<number | null> => {
     const tokenForPrice = tokenToUse || inputToken;
-    
+
     // Cannot fetch price if token is null
     if (!tokenForPrice) {
       console.log("[SwapScreen] No token provided, cannot fetch price");
       return null;
     }
 
+    // Check if we've recently fetched this price (within last 10 seconds)
+    const now = Date.now();
+    const lastFetchTime = lastPriceFetchTime.current[tokenForPrice.address] || 0;
+    const timeSinceLastFetch = now - lastFetchTime;
+
+    // Use cached price if fetched within throttle period (10 seconds)
+    if (timeSinceLastFetch < 10000 && currentTokenPrice && tokenForPrice.address === inputToken?.address) {
+      // console.log(`[SwapScreen] Using cached price for ${tokenForPrice.symbol}, last fetched ${timeSinceLastFetch}ms ago`);
+      return currentTokenPrice;
+    }
+
     try {
       console.log(`[SwapScreen] Fetching price for ${tokenForPrice.symbol}...`);
       const price = await fetchTokenPrice(tokenForPrice);
+
+      // Update last fetch time for this token
+      lastPriceFetchTime.current[tokenForPrice.address] = now;
+
       if (isMounted.current) {
         console.log(`[SwapScreen] Token price fetched for ${tokenForPrice.symbol}: ${price}`);
-        setCurrentTokenPrice(price);
+        // Only update state if we're looking up the input token
+        if (tokenForPrice.address === inputToken?.address) {
+          setCurrentTokenPrice(price);
+        }
         return price;
       }
     } catch (err) {
       console.error('[SwapScreen] Error fetching token price:', err);
-      if (isMounted.current) {
+      if (isMounted.current && tokenForPrice.address === inputToken?.address) {
         setCurrentTokenPrice(null);
       }
     }
     return null;
-  }, [inputToken]);
+  }, [inputToken, currentTokenPrice]);
+
+  // Modify estimateSwap to prevent simultaneous calls
+  const estimateSwap = useCallback(async () => {
+    if (!connected || parseFloat(inputValue) <= 0 || !inputToken || !outputToken) {
+      return;
+    }
+
+    // Prevent multiple simultaneous estimation calls
+    if (estimateInProgress.current) {
+      // console.log('[SwapScreen] Estimation already in progress, skipping');
+      return;
+    }
+
+    estimateInProgress.current = true;
+
+    try {
+      // Get prices for both tokens
+      const inputPrice = await getTokenPrice(inputToken);
+      const outputPrice = await getTokenPrice(outputToken);
+
+      if (inputPrice && outputPrice && isMounted.current) {
+        const inputValueNum = parseFloat(inputValue);
+
+        // Calculate USD value
+        const inputValueUsd = inputValueNum * inputPrice;
+
+        // Calculate output amount based on equivalent USD value (minus simulated 0.3% fee)
+        const estimatedOutput = (inputValueUsd / outputPrice) * 0.997;
+
+        // Format the number properly based on token decimals
+        const formattedOutput = estimatedOutput.toFixed(outputToken.decimals <= 6 ? outputToken.decimals : 6);
+
+        // Only log and update if the value has changed
+        if (formattedOutput !== estimatedOutputAmount) {
+          setEstimatedOutputAmount(formattedOutput);
+          console.log(`[SwapScreen] Estimate: ${inputValueNum} ${inputToken.symbol} (${inputPrice} USD) → ${estimatedOutput} ${outputToken.symbol} (${outputPrice} USD)`);
+        }
+      }
+    } catch (error) {
+      console.error('[SwapScreen] Error estimating swap:', error);
+    } finally {
+      estimateInProgress.current = false;
+    }
+  }, [connected, inputValue, getTokenPrice, inputToken, outputToken, estimatedOutputAmount]);
+
+  // Replace calculateUsdValue with a memoized version
+  const calculateUsdValue = useCallback((amount: string, tokenPrice: number | null) => {
+    // Add better error handling for invalid inputs
+    if (!tokenPrice || tokenPrice <= 0 || !amount || isNaN(parseFloat(amount))) {
+      return '$0.00';
+    }
+
+    try {
+      const numericAmount = parseFloat(amount);
+      const usdValue = numericAmount * tokenPrice;
+
+      // Format based on value size
+      if (usdValue >= 1000000) {
+        return `$${(usdValue / 1000000).toFixed(2)}M`;
+      } else if (usdValue >= 1000) {
+        return `$${(usdValue / 1000).toFixed(2)}K`;
+      } else if (usdValue < 0.01 && usdValue > 0) {
+        return `$${usdValue.toFixed(6)}`;
+      } else {
+        return `$${usdValue.toFixed(2)}`;
+      }
+    } catch (error) {
+      console.error('Error calculating USD value:', error);
+      return '$0.00';
+    }
+  }, []);
+
+  // Replace debugFiatValue with a cached version that doesn't log
+  const debugFiatValue = useMemo(() => {
+    // Only calculate and return the USD value without logging
+    return calculateUsdValue(inputValue, currentTokenPrice);
+  }, [inputValue, currentTokenPrice, calculateUsdValue]);
+
+  // Replace multiple token initialization effects with a single effect
+  // This fixes the circular dependency issue and consolidates token fetching
+  useEffect(() => {
+    if (!tokensInitialized) {
+      initializeTokens();
+    } else if (routeParams.shouldInitialize) {
+      // If the component needs to re-initialize with new route params
+      console.log('[SwapScreen] Re-initializing from route params', routeParams);
+      setTokensInitialized(false); // This will trigger initializeTokens() in the next effect
+
+      // Clear the shouldInitialize flag to prevent re-initialization loops
+      if (route.params) {
+        // Update the route params to remove shouldInitialize
+        navigation.setParams({ ...route.params, shouldInitialize: false });
+      }
+    }
+  }, [tokensInitialized, initializeTokens, routeParams, route.params, navigation]);
+
+  // Improve the single consolidated effect to be more selective
+  useEffect(() => {
+    // Only run this effect on significant changes to these dependencies
+    if (connected && userPublicKey && inputToken && tokensInitialized) {
+      console.log('[SwapScreen] Tokens initialized, fetching balance and price for:', inputToken.symbol);
+
+      const fetchData = async () => {
+        try {
+          // First get the price, as it doesn't depend on wallet connection
+          await getTokenPrice(inputToken);
+
+          // Then fetch balance if connected
+          if (connected && userPublicKey && isMounted.current) {
+            await fetchBalance(inputToken);
+          }
+
+          // Update output estimate if we have valid inputs
+          if (parseFloat(inputValue) > 0 && isMounted.current) {
+            await estimateSwap();
+          }
+        } catch (error) {
+          console.error('[SwapScreen] Error fetching initial token data:', error);
+        }
+      };
+
+      fetchData();
+
+      // Clear previous state when changing tokens
+      setResultMsg('');
+      setErrorMsg('');
+      setSolscanTxSig('');
+    }
+  }, [connected, userPublicKey, inputToken, tokensInitialized]);
+
+  // Improve focus listener to use a debounce to avoid multiple calls
+  useEffect(() => {
+    let focusTimeout: NodeJS.Timeout | null = null;
+    const handleFocus = () => {
+      console.log('[SwapScreen] Screen focused, refreshing data');
+      // Cancel any previous timeout
+      if (focusTimeout) {
+        clearTimeout(focusTimeout);
+      }
+
+      // Set a new timeout for refreshing data
+      focusTimeout = setTimeout(() => {
+        if (isMounted.current && connected && userPublicKey && inputToken && tokensInitialized) {
+          // Force reset cache timers to ensure fresh data on focus
+          lastPriceFetchTime.current = {};
+          lastBalanceFetchTime.current = 0;
+
+          getTokenPrice(inputToken).then(() => {
+            if (isMounted.current) {
+              fetchBalance(inputToken);
+            }
+          });
+        }
+      }, 300); // longer debounce for focus event
+    };
+
+    // Create a focus listener for when the screen becomes visible again
+    const unsubscribe = navigation.addListener('focus', handleFocus);
+
+    // Cleanup listener on unmount
+    return () => {
+      if (focusTimeout) {
+        clearTimeout(focusTimeout);
+      }
+      unsubscribe();
+    };
+  }, [navigation, connected, userPublicKey, inputToken, tokensInitialized, getTokenPrice, fetchBalance]);
+
+  // Improve debounce for input value changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (parseFloat(inputValue) > 0) {
+        estimateSwap();
+      } else {
+        setEstimatedOutputAmount('0');
+      }
+    }, 300); // Increase debounce time
+
+    return () => clearTimeout(timer);
+  }, [inputValue, estimateSwap]);
+
+  // Improve output token USD value calculation with better debounce
+  useEffect(() => {
+    // Skip if estimate is zero
+    if (parseFloat(estimatedOutputAmount) <= 0 || !outputToken) {
+      setOutputTokenUsdValue('$0.00');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const outputPrice = await getTokenPrice(outputToken);
+        if (outputPrice && isMounted.current) {
+          setOutputTokenUsdValue(calculateUsdValue(estimatedOutputAmount, outputPrice));
+        }
+      } catch (error) {
+        console.error('[SwapScreen] Error calculating output USD value:', error);
+      }
+    }, 350); // Longer timeout to avoid colliding with other operations
+
+    return () => clearTimeout(timer);
+  }, [estimatedOutputAmount, outputToken, getTokenPrice, calculateUsdValue]);
+
+  // Calculate conversion rate
+  const getConversionRate = useCallback(() => {
+    if (!inputToken || !outputToken || !estimatedOutputAmount || parseFloat(inputValue || '0') <= 0) {
+      return `1 ${inputToken?.symbol || 'token'} = 0 ${outputToken?.symbol || 'token'}`;
+    }
+
+    const inputAmt = parseFloat(inputValue);
+    const outputAmt = parseFloat(estimatedOutputAmount);
+    const rate = outputAmt / inputAmt;
+
+    return `1 ${inputToken.symbol} = ${rate.toFixed(6)} ${outputToken.symbol}`;
+  }, [inputToken, outputToken, inputValue, estimatedOutputAmount]);
+
+  // Function to handle keypad input
+  const handleKeyPress = (key: string) => {
+    if (key === 'delete') {
+      setInputValue(prev => prev.slice(0, -1) || '0');
+      return;
+    }
+
+    if (key === '.') {
+      if (inputValue.includes('.')) return;
+    }
+
+    if (inputValue === '0' && key !== '.') {
+      setInputValue(key);
+    } else {
+      setInputValue(prev => prev + key);
+    }
+  };
 
   // Handle token selection
   const handleTokenSelected = useCallback(async (token: TokenInfo) => {
@@ -454,151 +664,6 @@ export default function SwapScreen() {
       }
     }
   }, [currentBalance, fetchBalance, inputToken, userPublicKey, connected]);
-
-  // Estimate the output amount based on input
-  const estimateSwap = useCallback(async () => {
-    if (!connected || parseFloat(inputValue) <= 0 || !inputToken || !outputToken) {
-      return;
-    }
-
-    try {
-      // Get prices for both tokens
-      const inputPrice = await getTokenPrice(inputToken);
-      const outputPrice = await getTokenPrice(outputToken);
-
-      if (inputPrice && outputPrice && isMounted.current) {
-        const inputValueNum = parseFloat(inputValue);
-
-        // Calculate USD value
-        const inputValueUsd = inputValueNum * inputPrice;
-
-        // Calculate output amount based on equivalent USD value (minus simulated 0.3% fee)
-        const estimatedOutput = (inputValueUsd / outputPrice) * 0.997;
-
-        // Format the number properly based on token decimals
-        setEstimatedOutputAmount(estimatedOutput.toFixed(outputToken.decimals <= 6 ? outputToken.decimals : 6));
-
-        console.log(`[SwapScreen] Estimate: ${inputValueNum} ${inputToken.symbol} (${inputPrice} USD) → ${estimatedOutput} ${outputToken.symbol} (${outputPrice} USD)`);
-      }
-    } catch (error) {
-      console.error('[SwapScreen] Error estimating swap:', error);
-    }
-  }, [connected, inputValue, getTokenPrice, inputToken, outputToken]);
-
-  // Calculate USD value for a given token amount
-  const calculateUsdValue = useCallback((amount: string, tokenPrice: number | null) => {
-    // Add better error handling for invalid inputs
-    if (!tokenPrice || tokenPrice <= 0 || !amount || isNaN(parseFloat(amount))) {
-      return '$0.00';
-    }
-    
-    try {
-      const numericAmount = parseFloat(amount);
-      const usdValue = numericAmount * tokenPrice;
-      
-      // Format based on value size
-      if (usdValue >= 1000000) {
-        return `$${(usdValue / 1000000).toFixed(2)}M`;
-      } else if (usdValue >= 1000) {
-        return `$${(usdValue / 1000).toFixed(2)}K`;
-      } else if (usdValue < 0.01 && usdValue > 0) {
-        return `$${usdValue.toFixed(6)}`;
-      } else {
-        return `$${usdValue.toFixed(2)}`;
-      }
-    } catch (error) {
-      console.error('Error calculating USD value:', error);
-      return '$0.00';
-    }
-  }, []);
-
-  // Calculate USD value for output token
-  const [outputTokenUsdValue, setOutputTokenUsdValue] = useState('$0.00');
-
-  // Update output token USD value when estimated amount changes
-  useEffect(() => {
-    const updateOutputUsdValue = async () => {
-      if (parseFloat(estimatedOutputAmount) > 0) {
-        const outputPrice = await getTokenPrice(outputToken);
-        if (outputPrice && isMounted.current) {
-          setOutputTokenUsdValue(calculateUsdValue(estimatedOutputAmount, outputPrice));
-        }
-      } else {
-        setOutputTokenUsdValue('$0.00');
-      }
-    };
-
-    updateOutputUsdValue();
-  }, [estimatedOutputAmount, outputToken, getTokenPrice, calculateUsdValue]);
-
-  // Calculate conversion rate
-  const getConversionRate = useCallback(() => {
-    if (!inputToken || !outputToken || !estimatedOutputAmount || parseFloat(inputValue || '0') <= 0) {
-      return `1 ${inputToken?.symbol || 'token'} = 0 ${outputToken?.symbol || 'token'}`;
-    }
-
-    const inputAmt = parseFloat(inputValue);
-    const outputAmt = parseFloat(estimatedOutputAmount);
-    const rate = outputAmt / inputAmt;
-
-    return `1 ${inputToken.symbol} = ${rate.toFixed(6)} ${outputToken.symbol}`;
-  }, [inputToken, outputToken, inputValue, estimatedOutputAmount]);
-
-  // Update output estimate when input changes
-  useEffect(() => {
-    if (parseFloat(inputValue) > 0) {
-      estimateSwap();
-    } else {
-      setEstimatedOutputAmount('0');
-    }
-  }, [inputValue, estimateSwap]);
-
-  // Add an effect specifically to update token price whenever needed
-  useEffect(() => {
-    if (inputToken && connected && userPublicKey) {
-      console.log('[SwapScreen] Updating token price for', inputToken.symbol);
-      getTokenPrice(inputToken).then(price => {
-        console.log('[SwapScreen] Token price updated:', price);
-        // After getting price, also update the balance
-        if (userPublicKey) {
-          fetchTokenBalance(userPublicKey, inputToken).then(balance => {
-            if (isMounted.current && balance !== null) {
-              setCurrentBalance(balance);
-            }
-          });
-        }
-      });
-    }
-  }, [inputToken, connected, userPublicKey, getTokenPrice]);
-
-  // For debugging USD value calculation
-  const debugFiatValue = useMemo(() => {
-    console.log('[SwapScreen] Debug USD calculation:', { 
-      inputValue, 
-      currentTokenPrice, 
-      calculation: inputValue && currentTokenPrice ? parseFloat(inputValue) * currentTokenPrice : 'N/A' 
-    });
-    
-    return calculateUsdValue(inputValue, currentTokenPrice);
-  }, [inputValue, currentTokenPrice, calculateUsdValue]);
-
-  // Function to handle keypad input
-  const handleKeyPress = (key: string) => {
-    if (key === 'delete') {
-      setInputValue(prev => prev.slice(0, -1) || '0');
-      return;
-    }
-
-    if (key === '.') {
-      if (inputValue.includes('.')) return;
-    }
-
-    if (inputValue === '0' && key !== '.') {
-      setInputValue(key);
-    } else {
-      setInputValue(prev => prev + key);
-    }
-  };
 
   // Check if a provider is available for selection
   const isProviderAvailable = useCallback((provider: SwapProvider) => {
