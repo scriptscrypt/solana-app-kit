@@ -29,10 +29,9 @@ import SelectTokenModal from './SelectTokenModal';
 import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
 import {
   TokenInfo,
-  DEFAULT_SOL_TOKEN,
-  DEFAULT_USDC_TOKEN,
   fetchTokenBalance,
   fetchTokenPrice,
+  fetchTokenMetadata,
   ensureCompleteTokenInfo,
   estimateTokenUsdValue
 } from '@/modules/dataModule';
@@ -92,21 +91,9 @@ export default function SwapScreen() {
   const [poolAddress, setPoolAddress] = useState(''); // Add state for PumpSwap pool address
   const [slippage, setSlippage] = useState(10); // Add state for slippage, default to 10%
 
-  // Token States - Initialize with route params if available
-  const [inputToken, setInputToken] = useState<TokenInfo>(routeParams.inputToken as TokenInfo || DEFAULT_SOL_TOKEN);
-  const [outputToken, setOutputToken] = useState<TokenInfo>(
-    routeParams.outputToken ?
-      {
-        ...DEFAULT_USDC_TOKEN,
-        address: routeParams.outputToken.address,
-        symbol: routeParams.outputToken.symbol || 'Unknown',
-        // Preserve the original logo URL if provided
-        logoURI: routeParams.outputToken.logoURI || DEFAULT_USDC_TOKEN.logoURI,
-        // Preserve the original name if provided
-        name: routeParams.outputToken.name || routeParams.outputToken.symbol || 'Unknown Token'
-      } :
-      DEFAULT_USDC_TOKEN
-  );
+  // Token States - Initialize with null, will load on component mount
+  const [inputToken, setInputToken] = useState<TokenInfo | null>(null);
+  const [outputToken, setOutputToken] = useState<TokenInfo | null>(null);
   const [tokensInitialized, setTokensInitialized] = useState(false);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [currentTokenPrice, setCurrentTokenPrice] = useState<number | null>(null);
@@ -144,84 +131,51 @@ export default function SwapScreen() {
       pendingTokenOps.current = { input: true, output: true };
       console.log('[SwapScreen] Initializing tokens...', routeParams);
 
-      // Use tokens from route params if available, otherwise use defaults
-      let startingInputToken = DEFAULT_SOL_TOKEN;
-      if (routeParams.inputToken) {
-        // If we have a partial token from the route, create a token object with it
-        if (routeParams.inputToken.address) {
+      // Fetch initial tokens
+      let initialInputToken: TokenInfo | null = null;
+      let initialOutputToken: TokenInfo | null = null;
+
+      // Use tokens from route params if available, otherwise fetch SOL and USDC
+      try {
+        if (routeParams.inputToken && routeParams.inputToken.address) {
           console.log('[SwapScreen] Using input token from route params:', routeParams.inputToken);
-          startingInputToken = {
-            ...DEFAULT_SOL_TOKEN,  // Start with default values
-            ...routeParams.inputToken, // Override with provided values
-          };
+          initialInputToken = await fetchTokenMetadata(routeParams.inputToken.address);
+        } else {
+          // Default to SOL if not specified
+          initialInputToken = await fetchTokenMetadata('So11111111111111111111111111111111111111112');
         }
+      } catch (err) {
+        console.error('[SwapScreen] Error fetching input token:', err);
+        // If we can't fetch the input token, try with SOL as a fallback
+        initialInputToken = await fetchTokenMetadata('So11111111111111111111111111111111111111112');
       }
 
-      // For output token, if we have route params, create a proper token info object
-      let startingOutputToken = DEFAULT_USDC_TOKEN;
+      try {
       if (routeParams.outputToken && routeParams.outputToken.address) {
         console.log('[SwapScreen] Using output token from route params:', routeParams.outputToken);
-        startingOutputToken = {
-          ...DEFAULT_USDC_TOKEN, // Use default as base
-          address: routeParams.outputToken.address,
-          symbol: routeParams.outputToken.symbol || 'Unknown',
-          // Preserve the original logo URL if provided
-          logoURI: routeParams.outputToken.logoURI || DEFAULT_USDC_TOKEN.logoURI,
-          // Preserve the original name if provided
-          name: routeParams.outputToken.name || routeParams.outputToken.symbol || 'Unknown Token'
-        };
+          initialOutputToken = await fetchTokenMetadata(routeParams.outputToken.address);
+        } else {
+          // Default to USDC if not specified
+          initialOutputToken = await fetchTokenMetadata('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+        }
+      } catch (err) {
+        console.error('[SwapScreen] Error fetching output token:', err);
+        // If we can't fetch the output token, try with USDC as a fallback
+        initialOutputToken = await fetchTokenMetadata('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
       }
 
-      // Fetch complete token information including logos, decimals, etc.
-      console.log('[SwapScreen] Fetching token details for:',
-        startingInputToken.symbol,
-        startingOutputToken.symbol
-      );
-
-      // Save the original values before fetching complete info
-      const origInputSymbol = startingInputToken.symbol;
-      const origInputLogoURI = startingInputToken.logoURI;
-
-      const origOutputSymbol = startingOutputToken.symbol;
-      const origOutputLogoURI = startingOutputToken.logoURI;
-      const origOutputName = startingOutputToken.name;
-
-      // Get complete token information
-      const completeInputToken = await ensureCompleteTokenInfo(startingInputToken);
-      const completeOutputToken = await ensureCompleteTokenInfo(startingOutputToken);
-
-      // Preserve the original symbols if they were specified in route params
-      if (routeParams.inputToken?.symbol && routeParams.inputToken.symbol !== completeInputToken.symbol) {
-        console.log(`[SwapScreen] Preserving original input symbol: ${routeParams.inputToken.symbol}`);
-        completeInputToken.symbol = routeParams.inputToken.symbol;
-      }
-
-      if (routeParams.outputToken?.symbol && routeParams.outputToken.symbol !== completeOutputToken.symbol) {
-        console.log(`[SwapScreen] Preserving original output symbol: ${routeParams.outputToken.symbol}`);
-        completeOutputToken.symbol = routeParams.outputToken.symbol;
-      }
-
-      // Preserve original logo URLs if they were provided
-      if (origInputLogoURI && origInputLogoURI !== '') {
-        console.log('[SwapScreen] Preserving original input token logo');
-        completeInputToken.logoURI = origInputLogoURI;
-      }
-
-      if (origOutputLogoURI && origOutputLogoURI !== '') {
-        console.log('[SwapScreen] Preserving original output token logo');
-        completeOutputToken.logoURI = origOutputLogoURI;
-      }
-
-      // Preserve original name if provided
-      if (origOutputName && origOutputName !== completeOutputToken.name) {
-        console.log('[SwapScreen] Preserving original output token name');
-        completeOutputToken.name = origOutputName;
+      // Handle case where token fetching fails
+      if (!initialInputToken || !initialOutputToken) {
+        console.error('[SwapScreen] Failed to initialize tokens after multiple attempts');
+        setErrorMsg('Failed to load token information. Please try again.');
+        pendingTokenOps.current = { input: false, output: false };
+        return;
       }
 
       if (isMounted.current) {
-        // Batch state updates to reduce rerenders
-        setInputToken(completeInputToken);
-        setOutputToken(completeOutputToken);
+        // Set the tokens
+        setInputToken(initialInputToken);
+        setOutputToken(initialOutputToken);
         pendingTokenOps.current = { input: false, output: false };
         setTokensInitialized(true);
 
@@ -232,15 +186,17 @@ export default function SwapScreen() {
         }
 
         // Fetch balance and price
-        if (userPublicKey) {
-          fetchTokenBalance(userPublicKey, completeInputToken).then(balance => {
+        if (userPublicKey && initialInputToken) {
+          fetchTokenBalance(userPublicKey, initialInputToken).then(balance => {
             if (isMounted.current && balance !== null) {
               setCurrentBalance(balance);
-              fetchTokenPrice(completeInputToken).then(price => {
+              if (initialInputToken) {
+                fetchTokenPrice(initialInputToken).then(price => {
                 if (isMounted.current && price !== null) {
                   setCurrentTokenPrice(price);
                 }
               });
+              }
             }
           });
         }
@@ -275,12 +231,24 @@ export default function SwapScreen() {
     setErrorMsg('');
     setSolscanTxSig('');
 
+    console.log('[SwapScreen] Component mounted/became visible. Current token price:', currentTokenPrice);
+
     // Initialize tokens if not already initialized
     if (!tokensInitialized) {
       initializeTokens();
-    } else if (connected && userPublicKey) {
+    } else if (connected && userPublicKey && inputToken) {
       // If tokens are already initialized, fetch both balance and price
       console.log('[SwapScreen] Fetching balance and price for initialized tokens');
+
+      // Force a token price update when becoming visible
+      fetchTokenPrice(inputToken).then(price => {
+        if (isMounted.current && price !== null) {
+          console.log('[SwapScreen] Fetched token price on visibility change:', price);
+          setCurrentTokenPrice(price);
+        } else {
+          console.log('[SwapScreen] Failed to fetch token price on visibility change');
+        }
+      });
 
       // Use a small timeout to avoid state updates colliding
       const timer = setTimeout(() => {
@@ -295,16 +263,22 @@ export default function SwapScreen() {
 
       return () => clearTimeout(timer);
     }
-  }, [tokensInitialized, initializeTokens, connected, userPublicKey, fetchTokenBalance, inputToken]);
+  }, [tokensInitialized, initializeTokens, connected, userPublicKey, fetchTokenBalance, inputToken, currentTokenPrice]);
 
   // Fetch token balance
-  const fetchBalance = useCallback(async (tokenToUse?: TokenInfo) => {
+  const fetchBalance = useCallback(async (tokenToUse?: TokenInfo | null) => {
     if (!connected || !userPublicKey) {
       console.log("[SwapScreen] No wallet connected, cannot fetch balance");
       return null;
     }
 
     const tokenForBalance = tokenToUse || inputToken;
+    
+    // Cannot fetch balance if token is null
+    if (!tokenForBalance) {
+      console.log("[SwapScreen] No token provided, cannot fetch balance");
+      return null;
+    }
 
     try {
       console.log(`[SwapScreen] Fetching balance for ${tokenForBalance.symbol}...`);
@@ -328,8 +302,14 @@ export default function SwapScreen() {
   }, [connected, userPublicKey, inputToken]);
 
   // Fetch token price
-  const getTokenPrice = useCallback(async (tokenToUse?: TokenInfo): Promise<number | null> => {
+  const getTokenPrice = useCallback(async (tokenToUse?: TokenInfo | null): Promise<number | null> => {
     const tokenForPrice = tokenToUse || inputToken;
+    
+    // Cannot fetch price if token is null
+    if (!tokenForPrice) {
+      console.log("[SwapScreen] No token provided, cannot fetch price");
+      return null;
+    }
 
     try {
       console.log(`[SwapScreen] Fetching price for ${tokenForPrice.symbol}...`);
@@ -423,7 +403,7 @@ export default function SwapScreen() {
     }
 
     // Validate wallet connection
-    if (!connected || !userPublicKey) {
+    if (!connected || !userPublicKey || !inputToken) {
       if (isMounted.current) {
         Alert.alert(
           "Wallet Not Connected",
@@ -446,7 +426,7 @@ export default function SwapScreen() {
     }
 
     try {
-      const balance = await fetchBalance();
+      const balance = await fetchBalance(inputToken);
 
       if (isMounted.current) {
         setLoading(false);
@@ -469,15 +449,15 @@ export default function SwapScreen() {
       if (isMounted.current) {
         setLoading(false);
         setResultMsg("");
-        setErrorMsg(`Failed to fetch your ${inputToken.symbol} balance`);
+        setErrorMsg(`Failed to fetch your ${inputToken?.symbol || 'token'} balance`);
         setTimeout(() => isMounted.current && setErrorMsg(''), 3000);
       }
     }
-  }, [currentBalance, fetchBalance, inputToken.symbol, userPublicKey, connected]);
+  }, [currentBalance, fetchBalance, inputToken, userPublicKey, connected]);
 
   // Estimate the output amount based on input
   const estimateSwap = useCallback(async () => {
-    if (!connected || parseFloat(inputValue) <= 0) {
+    if (!connected || parseFloat(inputValue) <= 0 || !inputToken || !outputToken) {
       return;
     }
 
@@ -507,10 +487,29 @@ export default function SwapScreen() {
 
   // Calculate USD value for a given token amount
   const calculateUsdValue = useCallback((amount: string, tokenPrice: number | null) => {
-    if (!tokenPrice || !amount || isNaN(parseFloat(amount))) {
+    // Add better error handling for invalid inputs
+    if (!tokenPrice || tokenPrice <= 0 || !amount || isNaN(parseFloat(amount))) {
       return '$0.00';
     }
-    return `$${(parseFloat(amount) * tokenPrice).toFixed(2)}`;
+    
+    try {
+      const numericAmount = parseFloat(amount);
+      const usdValue = numericAmount * tokenPrice;
+      
+      // Format based on value size
+      if (usdValue >= 1000000) {
+        return `$${(usdValue / 1000000).toFixed(2)}M`;
+      } else if (usdValue >= 1000) {
+        return `$${(usdValue / 1000).toFixed(2)}K`;
+      } else if (usdValue < 0.01 && usdValue > 0) {
+        return `$${usdValue.toFixed(6)}`;
+      } else {
+        return `$${usdValue.toFixed(2)}`;
+      }
+    } catch (error) {
+      console.error('Error calculating USD value:', error);
+      return '$0.00';
+    }
   }, []);
 
   // Calculate USD value for output token
@@ -535,7 +534,7 @@ export default function SwapScreen() {
   // Calculate conversion rate
   const getConversionRate = useCallback(() => {
     if (!inputToken || !outputToken || !estimatedOutputAmount || parseFloat(inputValue || '0') <= 0) {
-      return `1 ${inputToken.symbol} = 0 ${outputToken.symbol}`;
+      return `1 ${inputToken?.symbol || 'token'} = 0 ${outputToken?.symbol || 'token'}`;
     }
 
     const inputAmt = parseFloat(inputValue);
@@ -553,6 +552,35 @@ export default function SwapScreen() {
       setEstimatedOutputAmount('0');
     }
   }, [inputValue, estimateSwap]);
+
+  // Add an effect specifically to update token price whenever needed
+  useEffect(() => {
+    if (inputToken && connected && userPublicKey) {
+      console.log('[SwapScreen] Updating token price for', inputToken.symbol);
+      getTokenPrice(inputToken).then(price => {
+        console.log('[SwapScreen] Token price updated:', price);
+        // After getting price, also update the balance
+        if (userPublicKey) {
+          fetchTokenBalance(userPublicKey, inputToken).then(balance => {
+            if (isMounted.current && balance !== null) {
+              setCurrentBalance(balance);
+            }
+          });
+        }
+      });
+    }
+  }, [inputToken, connected, userPublicKey, getTokenPrice]);
+
+  // For debugging USD value calculation
+  const debugFiatValue = useMemo(() => {
+    console.log('[SwapScreen] Debug USD calculation:', { 
+      inputValue, 
+      currentTokenPrice, 
+      calculation: inputValue && currentTokenPrice ? parseFloat(inputValue) * currentTokenPrice : 'N/A' 
+    });
+    
+    return calculateUsdValue(inputValue, currentTokenPrice);
+  }, [inputValue, currentTokenPrice, calculateUsdValue]);
 
   // Function to handle keypad input
   const handleKeyPress = (key: string) => {
@@ -594,11 +622,17 @@ export default function SwapScreen() {
   // Execute swap
   const handleSwap = useCallback(async () => {
     console.log('[SwapScreen] ⚠️⚠️⚠️ SWAP BUTTON CLICKED ⚠️⚠️⚠️');
-    console.log(`[SwapScreen] Provider: ${activeProvider}, Amount: ${inputValue} ${inputToken.symbol}`);
+    console.log(`[SwapScreen] Provider: ${activeProvider}, Amount: ${inputValue} ${inputToken?.symbol || 'token'}`);
 
     if (!connected || !userPublicKey) {
       console.log('[SwapScreen] Error: Wallet not connected');
       Alert.alert('Wallet not connected', 'Please connect your wallet first.');
+      return;
+    }
+
+    if (!inputToken || !outputToken) {
+      console.log('[SwapScreen] Error: Tokens not initialized');
+      Alert.alert('Tokens not loaded', 'Please wait for tokens to load or select tokens first.');
       return;
     }
 
@@ -1055,22 +1089,22 @@ export default function SwapScreen() {
                       setShowSelectTokenModal(true);
                     }}
                   >
-                    {inputToken.logoURI ? (
+                    {inputToken?.logoURI ? (
                       <Image source={{ uri: inputToken.logoURI }} style={styles.tokenIcon} />
                     ) : (
                       <View style={[styles.tokenIcon, { backgroundColor: COLORS.lighterBackground, justifyContent: 'center', alignItems: 'center' }]}>
                         <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 10 }}>
-                          {inputToken.symbol?.charAt(0) || '?'}
+                          {inputToken?.symbol?.charAt(0) || '?'}
                         </Text>
                       </View>
                     )}
                     <View style={styles.tokenInfo}>
                       <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
-                        {inputToken.symbol}
+                        {inputToken?.symbol || 'Select'}
                       </Text>
                       <Text style={styles.tokenBalance} numberOfLines={1} ellipsizeMode="tail">
                         {currentBalance !== null
-                          ? `Balance: ${currentBalance.toFixed(6)} ${inputToken.symbol}`
+                          ? `Balance: ${currentBalance.toFixed(6)} ${inputToken?.symbol || ''}`
                           : connected ? 'Loading...' : 'Connect wallet'}
                       </Text>
                     </View>
@@ -1080,7 +1114,7 @@ export default function SwapScreen() {
                         {inputValue}
                       </Text>
                       <Text style={styles.fiatValue} numberOfLines={1} ellipsizeMode="tail">
-                        {calculateUsdValue(inputValue, currentTokenPrice)}
+                        {debugFiatValue}
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -1119,18 +1153,18 @@ export default function SwapScreen() {
                       setShowSelectTokenModal(true);
                     }}
                   >
-                    {outputToken.logoURI ? (
+                    {outputToken?.logoURI ? (
                       <Image source={{ uri: outputToken.logoURI }} style={styles.tokenIcon} />
                     ) : (
                       <View style={[styles.tokenIcon, { backgroundColor: COLORS.lighterBackground, justifyContent: 'center', alignItems: 'center' }]}>
                         <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 10 }}>
-                          {outputToken.symbol?.charAt(0) || '?'}
+                          {outputToken?.symbol?.charAt(0) || '?'}
                         </Text>
                       </View>
                     )}
                     <View style={styles.tokenInfo}>
                       <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
-                        {outputToken.symbol}
+                        {outputToken?.symbol || 'Select'}
                       </Text>
                       <Text style={styles.tokenBalance}></Text>
                     </View>

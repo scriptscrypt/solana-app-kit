@@ -1,172 +1,133 @@
-import express from 'express';
-import {PublicKey, Keypair, Transaction, VersionedTransaction} from '@solana/web3.js';
+import express, { Request, Response } from 'express';
 import {RaydiumLaunchpadService} from '../../service/raydium/launchpadService';
-import {txToBase64} from '@raydium-io/raydium-sdk-v2';
-import {Buffer} from 'buffer';
+import multer from 'multer';
+import {uploadToIpfs, uploadToPinata} from '../../utils/ipfs';
 
 const router = express.Router();
+// Use memory storage for uploaded files
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
- * @route   POST /api/raydium/launchpad/get-parameters
- * @desc    Get token launch parameters for client-side tx creation
+ * @route   POST /api/raydium/launchpad/uploadMetadata
+ * @desc    Upload token metadata and image to IPFS (supports both Pump.fun and Pinata)
  * @access  Public
  */
-router.post('/get-parameters', async (req: any, res: any) => {
+router.post('/uploadMetadata', upload.single('image'), async (req: any, res: any) => {
   try {
-    const {
-      tokenName,
-      tokenSymbol,
-      decimals,
+    const {tokenName, tokenSymbol, description, twitter, telegram, website} = req.body;
+    
+    if (!tokenName || !tokenSymbol || !description) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields (tokenName, tokenSymbol, description)',
+      });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Image file is required. (Form field name: "image")',
+      });
+    }
+
+    // Upload image and metadata to IPFS via selected provider (defaults to Pump.fun)
+    const imageBuffer = req.file.buffer;
+    if (!imageBuffer) {
+      return res.status(400).json({
+        success: false,
+        error: 'Image buffer is missing from the uploaded file',
+      });
+    }
+
+    const metadataObj = {
+      name: tokenName,
+      symbol: tokenSymbol,
       description,
-      uri,
-      twitter,
-      telegram,
-      website,
-      imageData,
-      quoteTokenMint,
-      tokenSupply,
-      solRaised,
-      bondingCurvePercentage,
-      poolMigration,
-      vestingPercentage,
-      vestingDuration,
-      vestingCliff,
-      enableFeeSharingPost,
-      userPublicKey,
-      mode,
-    } = req.body;
+      showName: true,
+      twitter: twitter || '',
+      telegram: telegram || '',
+      website: website || '',
+      createdOn: 'https://raydium.io/',
+    };
+    
+    const metadataUri = await uploadToPinata(imageBuffer, metadataObj);
 
-    // Validate required fields
-    if (
-      !tokenName ||
-      !tokenSymbol ||
-      !quoteTokenMint ||
-      !tokenSupply ||
-      !userPublicKey
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required parameters',
-      });
-    }
-
-    // Validate user public key
-    try {
-      // Check if the public key is valid
-      const pubKey = new PublicKey(userPublicKey);
-      
-      // Verify the public key is on the ed25519 curve
-      if (!PublicKey.isOnCurve(pubKey)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid user public key: not on ed25519 curve',
-        });
-      }
-    } catch (e: any) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid user public key: ${e.message}`,
-      });
-    }
-
-    // Create metadata URI if needed
-    const metadataUri =
-      uri ||
-      (await RaydiumLaunchpadService.generateMetadataUri({
-        name: tokenName,
-        symbol: tokenSymbol,
-        description,
-        image: imageData,
-        external_url: website,
-        twitter,
-        telegram,
-      }));
-
-    try {
-      // Generate launch parameters
-      const launchParams = await RaydiumLaunchpadService.generateLaunchParameters({
-        tokenName,
-        tokenSymbol,
-        decimals: 9, // Always use 9 decimals for Solana tokens
-        metadataUri,
-        quoteTokenMint,
-        tokenSupply: tokenSupply.toString(),
-        solRaised: solRaised.toString(),
-        bondingCurvePercentage: bondingCurvePercentage.toString(),
-        poolMigration: poolMigration.toString(),
-        vestingPercentage: vestingPercentage?.toString() || '0',
-        vestingDuration: vestingDuration?.toString(),
-        vestingCliff: vestingCliff?.toString(),
-        enableFeeSharingPost: enableFeeSharingPost === true,
-        userPublicKey,
-        mode: mode || 'justSendIt',
-      });
-
-      // Return parameters to the client
-      return res.json({
-        success: true,
-        parameters: launchParams,
-      });
-    } catch (error: any) {
-      console.error('[LaunchpadRoutes] Error generating parameters:', error);
-      return res.status(500).json({
-        success: false,
-        error: error.message || 'Failed to generate launch parameters',
-      });
-    }
-  } catch (error: any) {
-    console.error('[LaunchpadRoutes] Error:', error);
+    return res.json({
+      success: true,
+      metadataUri,
+      provider: 'pinata',
+    });
+  } catch (err: any) {
+    console.error('[RaydiumLaunchpad] Upload Metadata Error:', err);
     return res.status(500).json({
       success: false,
-      error: error.message || 'An error occurred',
+      error: err?.message || 'Unknown error uploading metadata.',
     });
   }
 });
 
 /**
- * @route   POST /api/raydium/launchpad/sign-transaction
- * @desc    Signs a transaction with server-side keypair for launchpad operations
+ * @route   POST /api/raydium/launchpad/uploadMetadataPinata
+ * @desc    Upload token metadata and image to IPFS via Pinata
  * @access  Public
  */
-router.post('/sign-transaction', async (req: any, res: any) => {
+router.post('/uploadMetadataPinata', upload.single('image'), async (req: any, res: any) => {
   try {
-    const {tx} = req.body;
+    const {tokenName, tokenSymbol, description, twitter, telegram, website} = req.body;
     
-    if (!tx) {
+    if (!tokenName || !tokenSymbol || !description) {
       return res.status(400).json({
         success: false,
-        error: 'Missing transaction data',
+        error: 'Missing required fields (tokenName, tokenSymbol, description)',
       });
     }
     
-    try {
-      // Use the dedicated method for signing transactions
-      const signedTx = await RaydiumLaunchpadService.signTransaction(tx);
-      
-      // Return the signed transaction
-      return res.json({
-        success: true,
-        tx: signedTx,
-      });
-    } catch (error: any) {
-      console.error('[LaunchpadRoutes] Error signing transaction:', error);
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        error: `Failed to sign transaction: ${error.message}`,
+        error: 'Image file is required. (Form field name: "image")',
       });
     }
-  } catch (error: any) {
-    console.error('[LaunchpadRoutes] Error:', error);
+
+    // Upload image and metadata to IPFS via Pinata
+    const imageBuffer = req.file.buffer;
+    if (!imageBuffer) {
+      return res.status(400).json({
+        success: false,
+        error: 'Image buffer is missing from the uploaded file',
+      });
+    }
+
+    const metadataObj = {
+      name: tokenName,
+      symbol: tokenSymbol,
+      description,
+      showName: true,
+      twitter: twitter || '',
+      telegram: telegram || '',
+      website: website || '',
+      createdOn: 'https://raydium.io/',
+    };
+    
+    const metadataUri = await uploadToPinata(imageBuffer, metadataObj);
+
+    return res.json({
+      success: true,
+      metadataUri,
+      provider: 'pinata'
+    });
+  } catch (err: any) {
+    console.error('[RaydiumLaunchpad] Upload Metadata Error:', err);
     return res.status(500).json({
       success: false,
-      error: error.message || 'An error occurred while signing the transaction',
+      error: err?.message || 'Unknown error uploading metadata.',
     });
   }
 });
 
 /**
  * @route   POST /api/raydium/launchpad/create
- * @desc    Create and launch a token on Raydium (legacy endpoint)
+ * @desc    Create and launch a token on Raydium
  * @access  Public
  */
 router.post('/create', async (req: any, res: any) => {
@@ -174,9 +135,9 @@ router.post('/create', async (req: any, res: any) => {
     const {
       tokenName,
       tokenSymbol,
-      decimals,
+      decimals, // We'll override this with 9
       description,
-      uri,
+      uri, // This can now come from the uploadMetadata endpoint
       twitter,
       telegram,
       website,
@@ -189,104 +150,67 @@ router.post('/create', async (req: any, res: any) => {
       vestingPercentage,
       vestingDuration,
       vestingCliff,
+      vestingTimeUnit,
       enableFeeSharingPost,
       userPublicKey,
-      mode,
+      mode, // Extract the mode parameter
+      createOnly, // Extract createOnly parameter (boolean)
+      initialBuyAmount, // Extract initialBuyAmount parameter
+      migrateType, // Add migrateType parameter ('amm' or 'cpmm')
+      shareFeeReceiver, // Address receiving share fees
+      shareFeeRate, // Rate for fee sharing
+      platformFeeRate, // Platform fee rate
+      slippageBps, // Slippage tolerance in basis points
+      computeBudgetConfig, // Compute budget settings
     } = req.body;
 
     // Validate required fields
-    if (
-      !tokenName ||
-      !tokenSymbol ||
-      !quoteTokenMint ||
-      !tokenSupply ||
-      !userPublicKey
-    ) {
+    if (!tokenName || !tokenSymbol || !userPublicKey || !uri) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required parameters',
+        error: 'Missing required parameters (tokenName, tokenSymbol, userPublicKey)',
       });
     }
 
-    // Validate user public key
-    try {
-      // Check if the public key is valid
-      const pubKey = new PublicKey(userPublicKey);
-      
-      // Verify the public key is on the ed25519 curve
-      if (!PublicKey.isOnCurve(pubKey)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid user public key: not on ed25519 curve',
-        });
-      }
-    } catch (e: any) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid user public key: ${e.message}`,
-      });
-    }
+    console.log('[RaydiumLaunchpad] Creating token with metadataUri:', uri);
 
-    // Create metadata URI if needed
-    const metadataUri =
-      uri ||
-      (await RaydiumLaunchpadService.generateMetadataUri({
-        name: tokenName,
-        symbol: tokenSymbol,
-        description,
-        image: imageData,
-        external_url: website,
-        twitter,
-        telegram,
-      }));
+    // Generate and return the transaction
+    const result = await RaydiumLaunchpadService.createLaunchpadToken({
+      tokenName,
+      tokenSymbol,
+      decimals: 9, // Always use 9 decimals for Solana tokens regardless of input
+      metadataUri: uri,
+      quoteTokenMint,
+      tokenSupply: tokenSupply?.toString() || '1000000000',
+      solRaised: solRaised?.toString() || '85',
+      bondingCurvePercentage: bondingCurvePercentage?.toString() || '50',
+      poolMigration: poolMigration?.toString() || '30',
+      vestingPercentage: vestingPercentage?.toString() || '0',
+      vestingDuration: vestingDuration?.toString(),
+      vestingCliff: vestingCliff?.toString(),
+      vestingTimeUnit,
+      enableFeeSharingPost: enableFeeSharingPost === true,
+      userPublicKey,
+      mode: mode || 'justSendIt', // Default to justSendIt if not specified
+      createOnly: createOnly === true, // Pass createOnly parameter explicitly as boolean
+      initialBuyAmount: initialBuyAmount?.toString(), // Pass initialBuyAmount parameter
+      migrateType: migrateType || 'amm', // Default to 'amm' if not specified
+      shareFeeReceiver: shareFeeReceiver || userPublicKey, // Default to user's address if not specified
+      shareFeeRate: shareFeeRate || 10000, // Default to 10000 (as per Raydium docs)
+      platformFeeRate: platformFeeRate || 0, // Default to 0
+      slippageBps: slippageBps || 100, // Default to 1% slippage
+      computeBudgetConfig, // Pass compute budget settings
+    });
 
-    // Note: This endpoint is now mainly for backward compatibility
-    // We recommend using the new get-parameters and sign-transaction endpoints
-    console.log('[LaunchpadRoutes] Warning: Using legacy /create endpoint. Consider using the new flow.');
-
-    try {
-      // Generate and return the transaction
-      const result = await RaydiumLaunchpadService.createLaunchpadToken({
-        tokenName,
-        tokenSymbol,
-        decimals: 9, // Always use 9 decimals for Solana tokens regardless of input
-        metadataUri,
-        quoteTokenMint,
-        tokenSupply: tokenSupply.toString(),
-        solRaised: solRaised.toString(),
-        bondingCurvePercentage: bondingCurvePercentage.toString(),
-        poolMigration: poolMigration.toString(),
-        vestingPercentage: vestingPercentage?.toString() || '0',
-        vestingDuration: vestingDuration?.toString(),
-        vestingCliff: vestingCliff?.toString(),
-        enableFeeSharingPost: enableFeeSharingPost === true,
-        userPublicKey,
-        mode: mode || 'justSendIt', // Default to justSendIt if not specified
-      });
-
-      // Return the result to the client
-      return res.json({
-        success: true,
-        transaction: result.transaction,
-        mintAddress: result.mintAddress,
-        poolId: result.poolId,
-      });
-    } catch (error: any) {
-      // Check for specific error about user's public key not being in transaction
-      if (error.message?.includes('does not contain user\'s public key')) {
-        console.error('[LaunchpadRoutes] User public key error:', error.message);
-        return res.status(400).json({
-          success: false,
-          error: error.message,
-          code: 'USER_KEY_NOT_IN_TX',
-        });
-      }
-      
-      // Other errors
-      throw error;
-    }
+    // Return the result to the client
+    return res.json({
+      success: true,
+      transaction: result.transaction,
+      mintAddress: result.mintAddress,
+      poolId: result.poolId,
+    });
   } catch (error: any) {
-    console.error('[LaunchpadRoutes] Error:', error);
+    console.error('[RaydiumLaunchpad] Create Error:', error);
     return res.status(500).json({
       success: false,
       error: error.message || 'An error occurred while creating the token',
