@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,9 +17,9 @@ import {
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
-import { TokenInfo } from '@/modules/dataModule';
+import { TokenInfo, useTokenSearch } from '@/modules/dataModule';
 
-const { height, width } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 // Styles specific to this modal
 const styles = StyleSheet.create({
@@ -120,6 +120,22 @@ const styles = StyleSheet.create({
     color: COLORS.greyMid,
     marginTop: 2,
   },
+  tokenStats: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tokenPrice: {
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyLight,
+  },
+  tokenChange: {
+    fontSize: TYPOGRAPHY.size.xs,
+    marginLeft: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
   loadingContainer: {
     paddingVertical: 48,
     alignItems: 'center',
@@ -154,6 +170,11 @@ const styles = StyleSheet.create({
     fontWeight: String(TYPOGRAPHY.medium) as any,
     color: COLORS.white,
   },
+  loadingFooter: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 interface SelectTokenModalProps {
@@ -170,76 +191,43 @@ export default function SelectTokenModal({
   onClose,
   onTokenSelected,
 }: SelectTokenModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [tokens, setTokens] = useState<TokenInfo[]>([]);
-  const [searchInput, setSearchInput] = useState('');
+  // Use the new token search hook with debounce
+  const {
+    tokens,
+    loading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    loadMore,
+    refresh
+  } = useTokenSearch('', 300);
 
   // Keep track of whether the component is mounted
   const isMounted = useRef(true);
 
+  // Reset search and refresh tokens when modal becomes visible
   useEffect(() => {
-    // Clean up function for unmounting
+    if (visible) {
+      setSearchQuery('');
+      refresh();
+    }
+  }, [visible, refresh, setSearchQuery]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       isMounted.current = false;
     };
   }, []);
 
-  useEffect(() => {
-    if (visible) {
-      fetchTokens();
-    } else {
-      // Clear search when modal closes
-      setSearchInput('');
-    }
-  }, [visible]);
-
   /**
-   * Fetches the list of verified tokens from Jupiter's API
-   * @returns {Promise<void>}
+   * Handles end of list reached to load more tokens
    */
-  const fetchTokens = async () => {
-    setLoading(true);
-    try {
-      const url = 'https://api.jup.ag/tokens/v1/tagged/verified';
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error(`Failed to load tokens: ${resp.status}`);
-      }
-      const data = await resp.json();
-      if (!data || !Array.isArray(data)) {
-        throw new Error('Invalid data structure from tokens API');
-      }
-
-      // Add default empty string for logoURI if missing
-      const result: TokenInfo[] = data.map((item: any) => ({
-        address: item.address,
-        symbol: item.symbol,
-        name: item.name,
-        decimals: item.decimals,
-        logoURI: item.logoURI || '',
-      }));
-
-      if (isMounted.current) {
-        setTokens(result);
-      }
-    } catch (err: any) {
-      console.error('fetchTokens error:', err);
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
+  const handleEndReached = () => {
+    if (!loading) {
+      loadMore();
     }
   };
-
-  const filteredTokens = useMemo(() => {
-    if (!searchInput.trim()) return tokens;
-    return tokens.filter(
-      t =>
-        t.symbol.toLowerCase().includes(searchInput.toLowerCase()) ||
-        t.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-        t.address.toLowerCase().includes(searchInput.toLowerCase()),
-    );
-  }, [tokens, searchInput]);
 
   /**
    * Renders a single token item in the list
@@ -248,7 +236,8 @@ export default function SelectTokenModal({
     <TouchableOpacity
       style={styles.tokenItem}
       onPress={() => onTokenSelected(item)}
-      activeOpacity={0.7}>
+      activeOpacity={0.7}
+    >
       <View style={styles.tokenItemContent}>
         {item.logoURI ? (
           <Image
@@ -259,21 +248,54 @@ export default function SelectTokenModal({
         ) : (
           <View style={styles.tokenLogo}>
             <Text style={{ color: COLORS.white, fontWeight: '600', fontSize: 12 }}>
-              {item.symbol.charAt(0)}
+              {item.symbol && typeof item.symbol === 'string' ? item.symbol.charAt(0) : '?'}
             </Text>
           </View>
         )}
         <View style={styles.tokenTextContainer}>
           <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">
-            {item.symbol}
+            {item.symbol || 'Unknown'}
           </Text>
           <Text style={styles.tokenName} numberOfLines={1} ellipsizeMode="tail">
-            {item.name}
+            {item.name || 'Unknown Token'}
           </Text>
+          <View style={styles.tokenStats}>
+            {item.price !== undefined && item.price !== null && (
+              <Text style={styles.tokenPrice}>
+                ${item.price.toFixed(item.price < 0.01 ? 6 : 2)}
+              </Text>
+            )}
+            {item.priceChange24h !== undefined && item.priceChange24h !== null && (
+              <Text
+                style={[
+                  styles.tokenChange,
+                  {
+                    backgroundColor: item.priceChange24h >= 0 ? 'rgba(0, 200, 83, 0.2)' : 'rgba(255, 45, 85, 0.2)',
+                    color: item.priceChange24h >= 0 ? '#00C853' : '#FF2D55'
+                  }
+                ]}
+              >
+                {item.priceChange24h >= 0 ? '+' : ''}{item.priceChange24h.toFixed(2)}%
+              </Text>
+            )}
+          </View>
         </View>
       </View>
     </TouchableOpacity>
   );
+
+  /**
+   * Renders a loading indicator at the bottom when loading more tokens
+   */
+  const renderFooter = () => {
+    if (!loading) return null;
+    
+    return (
+      <View style={styles.loadingFooter}>
+        <ActivityIndicator size="small" color={COLORS.brandPrimary} />
+      </View>
+    );
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide">
@@ -282,7 +304,8 @@ export default function SelectTokenModal({
       </TouchableWithoutFeedback>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.modalOverlay}>
+        style={styles.modalOverlay}
+      >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select a Token</Text>
@@ -300,13 +323,13 @@ export default function SelectTokenModal({
               style={styles.searchInput}
               placeholder="Search by name, symbol, or address"
               placeholderTextColor={COLORS.greyMid}
-              value={searchInput}
-              onChangeText={setSearchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
               clearButtonMode="while-editing"
             />
           </View>
 
-          {loading ? (
+          {!tokens.length && loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator
                 size="large"
@@ -317,16 +340,23 @@ export default function SelectTokenModal({
           ) : (
             <>
               <FlatList
-                data={filteredTokens}
+                data={tokens}
                 keyExtractor={item => item.address}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContentContainer}
                 showsVerticalScrollIndicator={true}
                 keyboardShouldPersistTaps="handled"
+                onEndReached={handleEndReached}
+                onEndReachedThreshold={0.5}
+                refreshing={loading && tokens.length === 0}
+                onRefresh={refresh}
+                ListFooterComponent={renderFooter}
                 ListEmptyComponent={
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>
-                      No tokens found matching "{searchInput}"
+                      {error ? `Error: ${error}` : 
+                      searchQuery ? `No tokens found matching "${searchQuery}"` : 
+                      'No tokens available'}
                     </Text>
                   </View>
                 }
@@ -334,7 +364,8 @@ export default function SelectTokenModal({
 
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={onClose}>
+                onPress={onClose}
+              >
                 <Text style={styles.closeButtonText}>Cancel</Text>
               </TouchableOpacity>
             </>

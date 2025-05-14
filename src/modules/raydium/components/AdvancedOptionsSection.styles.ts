@@ -33,11 +33,23 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderDarkColor,
   },
+  fixedWidthContainer: {
+    marginBottom: 20,
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  feeSharingTextContainer: {
+    flex: 1,
+    marginRight: 16,
   },
   sectionTitle: {
     fontSize: 16,
@@ -86,6 +98,12 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.borderDarkColor,
+  },
+  dropdownText: {
+    color: COLORS.white,
+    fontSize: 16,
+    padding: 4,
+    flex: 1,
   },
   tokenSelectRow: {
     flexDirection: 'row',
@@ -164,10 +182,27 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
   },
+  dropdownOptionDescription: {
+    color: COLORS.greyMid,
+    fontSize: 12,
+    marginTop: 4,
+  },
   percentSign: {
     color: COLORS.white,
     fontSize: 16,
     marginRight: 12,
+  },
+  bpsText: {
+    color: COLORS.white,
+    position: 'absolute',
+    right: 12,
+    fontSize: 14,
+  },
+  helperText: {
+    color: COLORS.greyMid,
+    fontSize: 12,
+    marginTop: 4,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   twoColumnContainer: {
     flexDirection: 'row',
@@ -190,6 +225,71 @@ export const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorText: {
+    color: '#f44336',
+    fontSize: 12,
+    marginTop: 4,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  calculatedContainer: {
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    alignItems: 'center',
+  },
+  calculatedValue: {
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  calculatedDescription: {
+    color: COLORS.greyMid,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  graphLegendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    marginTop: 15,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 5,
+  },
+  legendText: {
+    color: COLORS.white,
+    fontSize: 10,
+    marginRight: 5,
+  },
+  legendValue: {
+    color: COLORS.white,
+    fontSize: 10,
+    opacity: 0.8,
+  },
+  tokenAmountText: {
+    color: COLORS.brandPurple,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  sectionTitleContainer: {
+    flex: 1,
+  },
+  sectionSubtitle: {
+    color: COLORS.greyMid,
+    fontSize: 12,
+    marginTop: 2,
   },
 });
 
@@ -319,4 +419,4 @@ export const modalStyles = StyleSheet.create({
     fontWeight: String(TYPOGRAPHY.medium) as any,
     color: COLORS.white,
   },
-}); 
+});
