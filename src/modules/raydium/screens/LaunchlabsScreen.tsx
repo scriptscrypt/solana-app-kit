@@ -11,6 +11,9 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {Connection, PublicKey} from '@solana/web3.js';
+import {NATIVE_MINT} from '@solana/spl-token';
+import * as FileSystem from 'expo-file-system';
+import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 
 import {useAuth} from '../../walletProviders/hooks/useAuth';
 import {useWallet} from '../../walletProviders/hooks/useWallet';
@@ -22,7 +25,7 @@ import LaunchlabsLaunchSection, {
 } from '../components/LaunchlabsLaunchSection';
 import {AdvancedOptionsSection} from '../components/AdvancedOptionsSection';
 import {AppHeader} from '@/core/sharedUI';
-import {RaydiumService, LaunchpadConfigData} from '../services/raydiumService';
+import {RaydiumService, LaunchpadConfigData, LaunchpadTokenData} from '../services/raydiumService';
 import {CLUSTER, HELIUS_STAKED_URL} from '@env';
 import {ENDPOINTS} from '@/config/constants';
 
@@ -109,19 +112,11 @@ export default function LaunchlabsScreen() {
 
       try {
         // Create image data from URI if available
-        let imageData = undefined;
-        if (data.imageUri) {
-          try {
-            // In a real app, you would convert the image to base64 here
-            // For this example, we'll use a placeholder
-            imageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...';
-          } catch (error) {
-            console.error('Failed to convert image:', error);
-          }
-        }
+        let imageData = data.imageUri || undefined;
+        console.log('[LaunchlabsScreen] Using image URI:', imageData);
 
         // Create token data for the API
-        const launchpadTokenData = {
+        const launchpadTokenData: LaunchpadTokenData = {
           name: data.name,
           symbol: data.symbol,
           description: data.description,
@@ -130,20 +125,19 @@ export default function LaunchlabsScreen() {
           twitter: data.twitter,
           telegram: data.telegram,
           website: data.website,
-          imageData,
+          imageData: imageData as string | undefined, // Explicitly cast to string | undefined
         };
 
         // Create default configuration for JustSendIt mode (standard settings)
-        // According to Raydium docs, JustSendIt uses standard bonding curve settings
-        const defaultConfig: LaunchpadConfigData = {
-          quoteTokenMint: 'So11111111111111111111111111111111111111112', // SOL
-          tokenSupply: '1000000000', // 1 billion tokens
-          solRaised: '85', // 85 SOL threshold for migrating to AMM pool
-          bondingCurvePercentage: '70', // Raydium standard is 50% of tokens on curve
-          poolMigration: '30', // Threshold in SOL
-          vestingPercentage: '0', // No vesting in JustSendIt mode
-          mode: 'justSendIt', // Set mode to justSendIt
-        };
+        // JustSendIt mode uses these standard values per Raydium docs:
+        // - Token Supply: 1 billion tokens (1,000,000,000)
+        // - SOL Raised: 85 SOL for AMM threshold
+        // - Bonding Curve: 51% of tokens on the bonding curve (Raydium min)
+        // - Pool Migration: 49% of tokens (100% - bondingCurve%)
+        // - No vesting (0%)
+        // - Always use power curve type (default)
+        // - Initial buy: Will execute an initial token purchase
+        // - createOnly: false (will create token AND buy initial tokens)
 
         // Create a PublicKey from the string - make sure it's valid
         if (!PublicKey.isOnCurve(new PublicKey(userPublicKey))) {
@@ -164,16 +158,21 @@ export default function LaunchlabsScreen() {
           `https://api.${CLUSTER}.solana.com`;
         const connection = new Connection(rpcUrl, 'confirmed');
 
+        const configData: LaunchpadConfigData = {
+          mode: 'justSendIt',
+          initialBuyAmount: data.initialBuyAmount,
+        };
+
         // Call the RaydiumService to create the token with standard settings
         const result = await RaydiumService.createAndLaunchToken(
           launchpadTokenData,
-          defaultConfig,
           userWalletPublicKey,
           sendTransaction,
           {
             statusCallback: setStatus,
             isComponentMounted,
           },
+          configData
         );
 
         if (result.success) {
@@ -225,19 +224,12 @@ export default function LaunchlabsScreen() {
       setStatus('Creating token with LaunchLab...');
 
       try {
-        // Convert image to base64 if available
-        let imageData = undefined;
-        if (tokenData.imageUri) {
-          try {
-            // In a real app, you would convert the image to base64 here
-            imageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...';
-          } catch (error) {
-            console.error('Failed to convert image:', error);
-          }
-        }
+        // Use the image URI directly
+        let imageData = tokenData.imageUri || undefined;
+        console.log('[LaunchlabsScreen] Using image URI:', imageData);
 
         // Create token data object for the API
-        const launchpadTokenData = {
+        const launchpadTokenData: LaunchpadTokenData = {
           name: tokenData.name,
           symbol: tokenData.symbol,
           description: tokenData.description,
@@ -246,13 +238,14 @@ export default function LaunchlabsScreen() {
           twitter: tokenData.twitter,
           telegram: tokenData.telegram,
           website: tokenData.website,
-          imageData,
+          imageData: imageData as string | undefined, // Explicitly cast to string | undefined
         };
 
-        // Set the mode to launchLab for custom settings
-        const fullConfigData: LaunchpadConfigData = {
+        // Update the createOnly parameter based on tokenData.initialBuyEnabled
+        const updatedConfigData = {
           ...configData,
-          mode: 'launchLab' as 'justSendIt' | 'launchLab',
+          createOnly: !tokenData.initialBuyEnabled, // Override with value from tokenData
+          initialBuyAmount: tokenData.initialBuyAmount, // Include the initial buy amount
         };
 
         // Create a PublicKey from the string - make sure it's valid
@@ -277,13 +270,13 @@ export default function LaunchlabsScreen() {
         // Call the RaydiumService to create the token with custom settings
         const result = await RaydiumService.createAndLaunchToken(
           launchpadTokenData,
-          fullConfigData,
           userWalletPublicKey,
           sendTransaction,
           {
             statusCallback: setStatus,
             isComponentMounted,
           },
+          updatedConfigData
         );
 
         if (result.success) {

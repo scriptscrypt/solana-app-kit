@@ -3,30 +3,12 @@ import {
   Transaction,
   VersionedTransaction,
   PublicKey,
-  Keypair,
-  LAMPORTS_PER_SOL,
-  SystemProgram
 } from '@solana/web3.js';
 import {ENDPOINTS} from '../../../config/constants';
-import {CLUSTER, HELIUS_STAKED_URL} from '@env';
+import {CLUSTER, HELIUS_STAKED_URL, SERVER_URL} from '@env';
 import {TransactionService} from '../../walletProviders/services/transaction/transactionService';
 import {TokenInfo} from '../../dataModule/types/tokenTypes';
 import {Buffer} from 'buffer';
-// Note: You'll need to install this package
-// import {
-//   createCreateMetadataAccountV3Instruction,
-//   PROGRAM_ID as METADATA_PROGRAM_ID,
-//   findMetadataPda,
-// } from '@metaplex-foundation/mpl-token-metadata';
-import {
-  createInitializeMintInstruction, 
-  getMint, 
-  getAssociatedTokenAddress, 
-  createAssociatedTokenAccountInstruction, 
-  createMintToInstruction,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
-import BN from 'bn.js';
 
 // Constants
 const DEFAULT_SLIPPAGE_BPS = 300; // 2% default slippage for Raydium
@@ -56,19 +38,33 @@ export interface LaunchpadTokenData {
   telegram?: string;
   website?: string;
   imageData?: string;
+  imageUri?: string; // New field for image URI
 }
 
 export interface LaunchpadConfigData {
-  quoteTokenMint: string;
-  tokenSupply: string;
-  solRaised: string;
-  bondingCurvePercentage: string;
-  poolMigration: string;
-  vestingPercentage: string;
-  vestingDuration?: string; // Duration in months
-  vestingCliff?: string; // Cliff in months
-  enableFeeSharingPost?: boolean; // Whether to enable fee sharing after pool migration
-  mode: 'justSendIt' | 'launchLab'; // Mode to identify which creation path to use
+  quoteTokenMint?: string;
+  tokenSupply?: string;
+  solRaised?: string;
+  bondingCurvePercentage?: string;
+  poolMigration?: string;
+  vestingPercentage?: string;
+  vestingDuration?: string;
+  vestingCliff?: string;
+  vestingTimeUnit?: string;
+  enableFeeSharingPost?: boolean;
+  mode: 'justSendIt' | 'launchLab';
+  migrateType?: 'amm' | 'cpmm';
+  shareFeeRate?: number;
+  slippageBps?: number;
+  createOnly?: boolean; // Whether to only create token without executing initial buy
+  initialBuyAmount?: string; // Amount of SOL for initial token purchase
+  // Fee configuration
+  shareFeeReceiver?: string; // Address receiving share fees
+  platformFeeRate?: number; // Platform fee rate
+  computeBudgetConfig?: {
+    units?: number; // Compute units
+    microLamports?: number; // Price per compute unit
+  };
 }
 
 export interface LaunchpadResponse {
@@ -79,68 +75,10 @@ export interface LaunchpadResponse {
   mintAddress?: string;
 }
 
-// Token launch parameters from server
-export interface TokenLaunchParameters {
-  mintAccount: string; // base64 encoded secret key
-  programId: string;
-  mintPubkey: string;
-  configId: string;
-  configInfo: any; // LaunchpadConfig data
-  mintBInfo: any; // Token info for quote token
-  solRaisedAmount: string; // in lamports
-  bondingCurvePercent: number;
-  metadataUri: string;
-  tokenName: string;
-  tokenSymbol: string;
-  decimals: number;
-  poolId: string;
-}
-
-// Stub for metadata instructions since we don't have the library
-// In a real implementation, install @metaplex-foundation/mpl-token-metadata
-const findMetadataPda = (mint: PublicKey): PublicKey => {
-  // This is a placeholder - in real code you'd use the actual metaplex function
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('metadata'), new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s').toBuffer(), mint.toBuffer()],
-    new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')
-  )[0];
-};
-
-// Stub for metadata instructions
-const createCreateMetadataAccountV3Instruction = (
-  accounts: {
-    metadata: PublicKey;
-    mint: PublicKey;
-    mintAuthority: PublicKey;
-    payer: PublicKey;
-    updateAuthority: PublicKey;
-  },
-  args: {
-    createMetadataAccountArgsV3: {
-      data: {
-        name: string;
-        symbol: string;
-        uri: string;
-        sellerFeeBasisPoints: number;
-        creators: null;
-        collection: null;
-        uses: null;
-      };
-      isMutable: boolean;
-      collectionDetails: null;
-    };
-  }
-) => {
-  // This is a placeholder - in a real implementation, you'd use the actual metaplex instruction
-  return SystemProgram.transfer({
-    fromPubkey: accounts.payer,
-    toPubkey: accounts.metadata,
-    lamports: 0,
-  });
-};
-
 /**
- * RaydiumService - Client-side service for executing Raydium operations
+ * RaydiumService - Client-side service for executing Raydium swaps
+ *
+ * This is just a thin wrapper around the server API. All logic is on the server.
  */
 export class RaydiumService {
   /**
@@ -153,319 +91,70 @@ export class RaydiumService {
   }
 
   /**
-   * Creates a new token and launches it on Raydium
-   * Using Raydium's approach: client-side transaction creation
+   * Upload token metadata and image to IPFS
    */
-  static async createAndLaunchToken(
-    tokenData: LaunchpadTokenData,
-    configData: LaunchpadConfigData,
-    walletPublicKey: PublicKey,
-    sendTransaction: (
-      transaction: Transaction | VersionedTransaction,
-      connection: Connection,
-      options?: {
-        statusCallback?: (status: string) => void;
-        confirmTransaction?: boolean;
-      },
-    ) => Promise<string>,
-    callbacks?: RaydiumSwapCallback,
-  ): Promise<LaunchpadResponse> {
-    const safeUpdateStatus = (status: string) => {
-      if (!callbacks?.isComponentMounted || callbacks.isComponentMounted()) {
-        callbacks?.statusCallback?.(status);
-      }
-    };
+  static async uploadTokenMetadata({
+    tokenName,
+    tokenSymbol,
+    description,
+    twitter,
+    telegram,
+    website,
+    imageUri,
+  }: {
+    tokenName: string;
+    tokenSymbol: string;
+    description: string;
+    twitter?: string;
+    telegram?: string;
+    website?: string;
+    imageUri: string;
+  }): Promise<string> {
+    console.log('[RaydiumService] Uploading token metadata with image:', {
+      tokenName,
+      tokenSymbol,
+      imageUri: imageUri ? `${imageUri.substring(0, 20)}...` : undefined,
+    });
 
     try {
-      safeUpdateStatus('Preparing token launch...');
-
-      // Parse token supply (remove commas)
-      const cleanSupply = configData.tokenSupply.replace(/,/g, '');
-
-      // Step 1: Get token launch parameters from the server
-      safeUpdateStatus('Getting token launch parameters...');
-      const response = await fetch(
-        `${ENDPOINTS.serverBase}/api/raydium/launchpad/get-parameters`,
-        {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            tokenName: tokenData.name,
-            tokenSymbol: tokenData.symbol,
-            decimals: tokenData.decimals || 9,
-            description: tokenData.description,
-            uri: tokenData.uri,
-            twitter: tokenData.twitter,
-            telegram: tokenData.telegram,
-            website: tokenData.website,
-            imageData: tokenData.imageData,
-            quoteTokenMint: configData.quoteTokenMint,
-            tokenSupply: cleanSupply,
-            solRaised: configData.solRaised,
-            bondingCurvePercentage: configData.bondingCurvePercentage,
-            poolMigration: configData.poolMigration,
-            vestingPercentage: configData.vestingPercentage,
-            vestingDuration: configData.vestingDuration,
-            vestingCliff: configData.vestingCliff,
-            enableFeeSharingPost: configData.enableFeeSharingPost,
-            userPublicKey: walletPublicKey.toString(),
-            mode: configData.mode,
-          }),
-        },
-      );
-
-      if (callbacks?.isComponentMounted && !callbacks.isComponentMounted()) {
-        throw new Error('Component unmounted');
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error: ${errorText || response.statusText}`);
-      }
-
-      const paramsData = await response.json();
-
-      if (callbacks?.isComponentMounted && !callbacks.isComponentMounted()) {
-        throw new Error('Component unmounted');
-      }
-
-      if (!paramsData.success || !paramsData.parameters) {
-        throw new Error(
-          paramsData.error || 'Failed to get token launch parameters',
-        );
-      }
-
-      // Get the launch parameters
-      const params: TokenLaunchParameters = paramsData.parameters;
-
-      // Step 2: Create transaction on the client side
-      safeUpdateStatus('Creating transaction...');
+      const uploadEndpoint = `${SERVER_URL}/api/raydium/launchpad/uploadMetadata`;
+      const formData = new FormData();
       
-      // Setup connection
-      const rpcUrl =
-        HELIUS_STAKED_URL ||
-        ENDPOINTS.helius ||
-        `https://api.${CLUSTER}.solana.com`;
-      const connection = new Connection(rpcUrl, 'confirmed');
-
-      // Get latest blockhash
-      const { blockhash, lastValidBlockHeight } = 
-        await connection.getLatestBlockhash();
+      // Add metadata fields
+      formData.append('tokenName', tokenName);
+      formData.append('tokenSymbol', tokenSymbol);
+      formData.append('description', description);
+      formData.append('twitter', twitter || '');
+      formData.append('telegram', telegram || '');
+      formData.append('website', website || '');
       
-      // Create a new transaction
-      const transaction = new Transaction({
-        feePayer: walletPublicKey,
-        blockhash,
-        lastValidBlockHeight,
+      // Add image
+      formData.append('image', {
+        uri: imageUri,
+        name: 'token.png',
+        type: 'image/png',
+      } as any);
+
+      const uploadResponse = await fetch(uploadEndpoint, {
+        method: 'POST',
+        body: formData,
       });
       
-      // Reconstruct the mint account from the provided secret key
-      const mintKeyBuffer = Buffer.from(params.mintAccount, 'base64');
-      const mintKeypair = Keypair.fromSecretKey(
-        new Uint8Array(mintKeyBuffer)
-      );
-      
-      // Add instructions to create the token mint
-      const mintPubkey = new PublicKey(params.mintPubkey);
-      const decimals = params.decimals;
-      
-      // Create and initialize the mint account
-      const mintRent = await connection.getMinimumBalanceForRentExemption(
-        82 // Mint account size
-      );
-      
-      // Create mint account
-      transaction.add(
-        SystemProgram.createAccount({
-          fromPubkey: walletPublicKey,
-          newAccountPubkey: mintPubkey,
-          space: 82,
-          lamports: mintRent,
-          programId: TOKEN_PROGRAM_ID,
-        })
-      );
-      
-      // Initialize mint
-      transaction.add(
-        createInitializeMintInstruction(
-          mintPubkey,
-          decimals,
-          walletPublicKey,
-          walletPublicKey
-        )
-      );
-      
-      // Create metadata
-      const metadataPDA = findMetadataPda(mintPubkey);
-      
-      // Add metadata instruction
-      transaction.add(
-        createCreateMetadataAccountV3Instruction(
-          {
-            metadata: metadataPDA,
-            mint: mintPubkey,
-            mintAuthority: walletPublicKey,
-            payer: walletPublicKey,
-            updateAuthority: walletPublicKey,
-          },
-          {
-            createMetadataAccountArgsV3: {
-              data: {
-                name: params.tokenName,
-                symbol: params.tokenSymbol,
-                uri: params.metadataUri,
-                sellerFeeBasisPoints: 0,
-                creators: null,
-                collection: null,
-                uses: null,
-              },
-              isMutable: true,
-              collectionDetails: null,
-            },
-          }
-        )
-      );
-      
-      // Create token account for the user if it doesn't exist
-      const userTokenAccount = await getAssociatedTokenAddress(
-        mintPubkey,
-        walletPublicKey
-      );
-      
-      // Add instruction to create token account
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          walletPublicKey,
-          userTokenAccount,
-          walletPublicKey,
-          mintPubkey
-        )
-      );
-      
-      // Mint initial tokens to the user
-      const totalSupply = new BN(params.solRaisedAmount)
-        .mul(new BN(10).pow(new BN(params.decimals)));
-      
-      transaction.add(
-        createMintToInstruction(
-          mintPubkey,
-          userTokenAccount,
-          walletPublicKey,
-          totalSupply.toNumber()
-        )
-      );
-      
-      // Step 3: Sign the transaction with user wallet
-      safeUpdateStatus('Please approve the transaction...');
-      
-      const { blockhash: newBlockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = newBlockhash;
-      
-      // The partially signed transaction needs to include both the user's signature and the mint keypair's signature
-      transaction.partialSign(mintKeypair);
-      
-      // Get serialized transaction with the mint keypair signature
-      const serializedTx = transaction.serialize({
-        requireAllSignatures: false, // Important: don't require all signatures yet
-      }).toString('base64');
-      
-      // Step 4: Send to the client's wallet for signing
-      const userSignedTxId = await sendTransaction(transaction, connection, {
-        statusCallback: status => {
-          safeUpdateStatus(`Signing: ${status}`);
-        },
-        confirmTransaction: false, // Don't confirm yet
-      });
-      
-      // Step 5: Send user-signed transaction to server for additional signing (if needed)
-      safeUpdateStatus('Transaction signed, finalizing...');
-      
-      const signResponse = await fetch(
-        `${ENDPOINTS.serverBase}/api/raydium/launchpad/sign-transaction`,
-        {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            tx: userSignedTxId, // This contains the serialized transaction
-          }),
-        }
-      );
-      
-      if (!signResponse.ok) {
-        const errorText = await signResponse.text();
-        throw new Error(`Server error during signing: ${errorText || signResponse.statusText}`);
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        throw new Error(`Metadata upload failed: ${errorText}`);
       }
       
-      const signData = await signResponse.json();
-      
-      if (!signData.success || !signData.tx) {
-        throw new Error('Failed to get signed transaction');
+      const uploadJson = await uploadResponse.json();
+      if (!uploadJson?.success || !uploadJson.metadataUri) {
+        throw new Error(uploadJson?.error || 'No metadataUri returned');
       }
       
-      // Step 6: Submit the fully signed transaction to the network
-      safeUpdateStatus('Submitting transaction to the network...');
-      
-      // Deserialize the fully signed transaction
-      const fullSignedTxBuffer = Buffer.from(signData.tx, 'base64');
-      let finalTx;
-      
-      try {
-        finalTx = Transaction.from(fullSignedTxBuffer);
-      } catch (e) {
-        // Try as VersionedTransaction if Transaction.from fails
-        finalTx = VersionedTransaction.deserialize(new Uint8Array(fullSignedTxBuffer));
-      }
-      
-      // Send the transaction
-      const signature = await connection.sendRawTransaction(
-        finalTx.serialize(),
-        { skipPreflight: true }
-      );
-      
-      // Wait for confirmation
-      safeUpdateStatus('Waiting for confirmation...');
-      const confirmation = await connection.confirmTransaction({
-        signature,
-        blockhash: newBlockhash,
-        lastValidBlockHeight,
-      });
-      
-      if (confirmation.value.err) {
-        throw new Error(`Transaction failed: ${confirmation.value.err.toString()}`);
-      }
-      
-      // Success!
-      safeUpdateStatus('Token created successfully!');
-      TransactionService.showSuccess(signature, 'token');
-      
-      return {
-        success: true,
-        signature,
-        mintAddress: params.mintPubkey,
-        poolId: params.poolId,
-      };
-      
-    } catch (err: any) {
-      if (err.message === 'Component unmounted') {
-        console.log(
-          '[RaydiumService] Operation cancelled because component unmounted',
-        );
-        return {
-          success: false,
-          error: new Error('Operation cancelled'),
-        };
-      }
-
-      console.error('[RaydiumService] Error:', err);
-
-      if (!callbacks?.isComponentMounted || callbacks.isComponentMounted()) {
-        TransactionService.showError(err);
-      }
-
-      return {
-        success: false,
-        error: err,
-      };
+      console.log('[RaydiumService] Metadata URI created:', uploadJson.metadataUri);
+      return uploadJson.metadataUri;
+    } catch (error: any) {
+      console.error('[RaydiumService] Error uploading metadata:', error);
+      throw new Error(`Failed to upload metadata: ${error.message}`);
     }
   }
 
@@ -620,6 +309,205 @@ export class RaydiumService {
         error: err,
         inputAmount: 0,
         outputAmount: 0,
+      };
+    }
+  }
+
+  /**
+   * Creates a new token and launches it on Raydium
+   */
+  static async createAndLaunchToken(
+    tokenData: LaunchpadTokenData,
+    walletPublicKey: PublicKey,
+    sendTransaction: (
+      transaction: Transaction | VersionedTransaction,
+      connection: Connection,
+      options?: {
+        statusCallback?: (status: string) => void;
+        confirmTransaction?: boolean;
+      },
+    ) => Promise<string>,
+    callbacks?: RaydiumSwapCallback,
+    configData?: LaunchpadConfigData,
+  ): Promise<LaunchpadResponse> {
+    const safeUpdateStatus = (status: string) => {
+      if (!callbacks?.isComponentMounted || callbacks.isComponentMounted()) {
+        callbacks?.statusCallback?.(status);
+      }
+    };
+
+    try {
+      safeUpdateStatus('Preparing token launch...');
+      
+      // If there's an imageUri but no uri, upload the metadata and image first
+      let metadataUri = tokenData.uri;
+      if (tokenData.imageData && !metadataUri) {
+        safeUpdateStatus('Uploading token image and metadata...');
+        
+        try {
+          metadataUri = await this.uploadTokenMetadata({
+            tokenName: tokenData.name,
+            tokenSymbol: tokenData.symbol,
+            description: tokenData.description || '',
+            twitter: tokenData.twitter,
+            telegram: tokenData.telegram,
+            website: tokenData.website,
+            imageUri: tokenData.imageData,
+          });
+          console.log('[RaydiumService] Metadata URI:', metadataUri);
+          safeUpdateStatus('Metadata uploaded successfully');
+        } catch (uploadError: any) {
+          console.error('[RaydiumService] Metadata upload error:', uploadError);
+          safeUpdateStatus('Metadata upload failed, using fallback method...');
+        }
+      }
+
+      // Parse token supply (remove commas)
+      const cleanSupply = configData?.tokenSupply?.replace(/,/g, '');
+
+      const response = await fetch(
+        `${ENDPOINTS.serverBase}/api/raydium/launchpad/create`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            tokenName: tokenData.name,
+            tokenSymbol: tokenData.symbol,
+            decimals: tokenData.decimals || 9,
+            description: tokenData.description,
+            uri: metadataUri, // Use the URI we got from the upload if available
+            twitter: tokenData.twitter,
+            telegram: tokenData.telegram,
+            website: tokenData.website,
+            imageData: tokenData.imageData, // Fallback image data if upload failed
+            quoteTokenMint: configData?.quoteTokenMint,
+            tokenSupply: cleanSupply,
+            solRaised: configData?.solRaised,
+            bondingCurvePercentage: configData?.bondingCurvePercentage,
+            poolMigration: configData?.poolMigration,
+            vestingPercentage: configData?.vestingPercentage,
+            vestingDuration: configData?.vestingDuration,
+            vestingCliff: configData?.vestingCliff,
+            vestingTimeUnit: configData?.vestingTimeUnit,
+            enableFeeSharingPost: configData?.enableFeeSharingPost,
+            userPublicKey: walletPublicKey.toString(),
+            mode: configData?.mode,
+            createOnly: configData?.createOnly,
+            migrateType: configData?.migrateType || 'amm', // Default to 'amm' if not specified
+            shareFeeReceiver: configData?.shareFeeReceiver,
+            shareFeeRate: configData?.shareFeeRate,
+            platformFeeRate: configData?.platformFeeRate,
+            slippageBps: configData?.slippageBps,
+            initialBuyAmount: configData?.initialBuyAmount,
+            computeBudgetConfig: configData?.computeBudgetConfig,
+          }),
+        },
+      );
+
+      if (callbacks?.isComponentMounted && !callbacks.isComponentMounted()) {
+        throw new Error('Component unmounted');
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${errorText || response.statusText}`);
+      }
+
+      const launchData = await response.json();
+
+      if (callbacks?.isComponentMounted && !callbacks.isComponentMounted()) {
+        throw new Error('Component unmounted');
+      }
+
+      if (!launchData.success || !launchData.transaction) {
+        throw new Error(
+          launchData.error || 'Failed to create token launch transaction',
+        );
+      }
+
+      safeUpdateStatus('Transaction received, please approve...');
+      const txBuffer = Buffer.from(launchData.transaction, 'base64');
+
+      let transaction: Transaction | VersionedTransaction;
+      try {
+        transaction = VersionedTransaction.deserialize(
+          new Uint8Array(txBuffer),
+        );
+      } catch (e) {
+        transaction = Transaction.from(txBuffer);
+        transaction.feePayer = walletPublicKey;
+      }
+
+      if (callbacks?.isComponentMounted && !callbacks.isComponentMounted()) {
+        throw new Error('Component unmounted');
+      }
+
+      const rpcUrl =
+        HELIUS_STAKED_URL ||
+        ENDPOINTS.helius ||
+        `https://api.${CLUSTER}.solana.com`;
+      const connection = new Connection(rpcUrl, 'confirmed');
+
+      const signature = await sendTransaction(transaction, connection, {
+        statusCallback: status => {
+          if (
+            !callbacks?.isComponentMounted ||
+            callbacks.isComponentMounted()
+          ) {
+            TransactionService.filterStatusUpdate(status, filteredStatus => {
+              safeUpdateStatus(filteredStatus);
+            });
+          }
+        },
+        confirmTransaction: true,
+      });
+
+      if (callbacks?.isComponentMounted && !callbacks.isComponentMounted()) {
+        console.log(
+          '[RaydiumService] Component unmounted after transaction, but token creation was successful with signature:',
+          signature,
+        );
+        return {
+          success: true,
+          signature,
+          poolId: launchData.poolId,
+          mintAddress: launchData.mintAddress,
+        };
+      }
+
+      console.log(
+        '[RaydiumService] Token creation transaction sent with signature:',
+        signature,
+      );
+      TransactionService.showSuccess(signature, 'token');
+      safeUpdateStatus('Token launched successfully!');
+
+      return {
+        success: true,
+        signature,
+        poolId: launchData.poolId,
+        mintAddress: launchData.mintAddress,
+      };
+    } catch (err: any) {
+      if (err.message === 'Component unmounted') {
+        console.log(
+          '[RaydiumService] Operation cancelled because component unmounted',
+        );
+        return {
+          success: false,
+          error: new Error('Operation cancelled'),
+        };
+      }
+
+      console.error('[RaydiumService] Error:', err);
+
+      if (!callbacks?.isComponentMounted || callbacks.isComponentMounted()) {
+        TransactionService.showError(err);
+      }
+
+      return {
+        success: false,
+        error: err,
       };
     }
   }
