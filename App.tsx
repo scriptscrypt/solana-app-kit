@@ -5,7 +5,6 @@ global.Buffer = Buffer;
 
 // Add a global dev mode flag that can be used anywhere in the app
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Linking from 'expo-linking';
 
 // Declare global type for TypeScript
 declare global {
@@ -15,17 +14,6 @@ declare global {
     }
   }
   var __DEV_MODE__: boolean;
-}
-
-// Force initialize deep linking with the scheme from app.json to prevent the error
-// "Cannot make a deep link into a standalone app with no custom scheme defined"
-try {
-  // Initialize scheme at app startup before any linking operations
-  const scheme = 'solanaappkit';
-  const prefix = Linking.createURL('/');
-  console.log('Initialized deep linking with scheme:', scheme, 'prefix:', prefix);
-} catch (error) {
-  console.warn('Failed to initialize deep linking:', error);
 }
 
 // Set a global __DEV_MODE__ flag during app initialization
