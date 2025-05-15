@@ -1,6 +1,6 @@
 // App.tsx
 import 'react-native-get-random-values';
-import {Buffer} from 'buffer';
+import { Buffer } from 'buffer';
 global.Buffer = Buffer;
 
 // Add a global dev mode flag that can be used anywhere in the app
@@ -54,24 +54,24 @@ const forceDevMode = async () => {
 forceDevMode().catch(console.error);
 
 import 'react-native-gesture-handler';
-import React, {useEffect, useState} from 'react';
-import {Provider as ReduxProvider} from 'react-redux';
-import {NavigationContainer} from '@react-navigation/native';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
+import { Provider as ReduxProvider } from 'react-redux';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/shared/navigation/RootNavigator';
-import {navigationRef} from './src/shared/hooks/useAppNavigation';
-import {store, persistor} from './src/shared/state/store';
+import { navigationRef } from './src/shared/hooks/useAppNavigation';
+import { store, persistor } from './src/shared/state/store';
 import './src/shared/utils/polyfills';
 import COLORS from './src/assets/colors';
-import {View, ActivityIndicator} from 'react-native';
-import {PersistGate} from 'redux-persist/integration/react';
+import { View, ActivityIndicator, StatusBar } from 'react-native';
+import { PersistGate } from 'redux-persist/integration/react';
 
-import {PrivyProvider, PrivyElements} from '@privy-io/expo';
-import {TurnkeyProvider} from '@turnkey/sdk-react-native';
+import { PrivyProvider, PrivyElements } from '@privy-io/expo';
+import { TurnkeyProvider } from '@turnkey/sdk-react-native';
 
 // Dynamic client initialization
-import {CustomizationProvider} from './src/config/CustomizationProvider';
-import {DefaultCustomizationConfig} from './src/config';
+import { CustomizationProvider } from './src/config/CustomizationProvider';
+import { DefaultCustomizationConfig } from './src/config';
 import {
   getDynamicClient,
   initDynamicClient,
@@ -79,16 +79,16 @@ import {
 import TransactionNotification from './src/core/sharedUI/TransactionNotification';
 
 // Import DevMode components
-import {DevModeProvider, useDevMode} from './src/context/DevModeContext';
+import { DevModeProvider, useDevMode } from './src/context/DevModeContext';
 import DevDrawer from './src/core/devMode/DevDrawer';
 
 // Import Environment Error provider and new components
-import {EnvErrorProvider} from './src/context/EnvErrorContext';
+import { EnvErrorProvider } from './src/context/EnvErrorContext';
 import DevModeStatusBar from './src/core/devMode/DevModeStatusBar';
 
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {
-  const {isDevMode} = useDevMode();
+  const { isDevMode } = useDevMode();
 
   if (!isDevMode) return null;
 
@@ -164,11 +164,12 @@ export default function App() {
   return (
     <CustomizationProvider config={config}>
       <SafeAreaProvider>
+        <StatusBar backgroundColor={COLORS.background} barStyle="light-content" translucent={true} />
         <ReduxProvider store={store}>
           <PersistGate loading={<PersistLoading />} persistor={persistor}>
             <DevModeProvider>
               <EnvErrorProvider>
-                <View style={{flex: 1, backgroundColor: COLORS.background}}>
+                <View style={{ flex: 1, backgroundColor: COLORS.background }}>
                   {config.auth.provider === 'privy' ? (
                     <PrivyProvider
                       appId={config.auth.privy.appId}
