@@ -61,8 +61,9 @@ const modules = [
     title: 'Meteora',
     subtitle: 'Powerful DEX with concentrated liquidity',
     navigateTo: 'MeteoraScreen',
-    iconComponent: Icons.RadyuimIcom, // Reusing an existing icon temporarily
-    backgroundImage: require('@/assets/images/TokenMill_bg.png'), // Reusing an existing background temporarily
+    iconImage: require('@/assets/images/meteora.jpg'),
+    backgroundImage: require('@/assets/images/new_meteora_cover.png'),
+    usePngIcon: true,
   },
   // {
   //   key: 'nft',
