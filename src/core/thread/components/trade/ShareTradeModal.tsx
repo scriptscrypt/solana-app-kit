@@ -517,6 +517,7 @@ export default function TradeModal({
     if (isMounted.current) {
       setLoading(true);
       setResultMsg('Preparing share...');
+      setErrorMsg(''); // Clear any previous errors
     }
 
     try {
@@ -568,21 +569,49 @@ export default function TradeModal({
         executionTimestamp: timestampMs,
       };
 
-      // Call the parent's onShare handler with our manually created tradeData
-      await onShare(tradeData);
+      console.log('[ShareTradeModal] Sharing trade with data:', JSON.stringify(tradeData, null, 2));
 
-      if (isMounted.current) {
-        setResultMsg('Trade shared!');
+      // CRITICAL FIX: Actually call the parent's onShare handler and await its completion
+      // Do not close modal until the parent component has processed the data
+      if (onShare) {
+        await onShare(tradeData);
+      } else {
+        console.error('[ShareTradeModal] No onShare handler provided');
+        throw new Error('No onShare handler provided');
       }
 
-      // Close the modal after successful share
-      setTimeout(() => handleClose(), 1000);
+      if (isMounted.current) {
+        setResultMsg('Trade shared successfully!');
 
+        // Wait a brief moment so user can see success message before closing
+        setTimeout(() => {
+          // Show a success alert to confirm the action to the user
+          Alert.alert(
+            'Success',
+            'Your trade has been shared to the feed.',
+            [
+              { text: 'OK', onPress: handleClose }
+            ]
+          );
+        }, 500);
+      }
     } catch (err: any) {
       console.error('[handleSharePastSwap] Error =>', err);
+
+      // Determine a user-friendly error message
+      const errorMessage = err?.message || 'Failed to share past swap. Please try again.';
+
       if (isMounted.current) {
-        setErrorMsg('Failed to share past swap');
+        setErrorMsg(errorMessage);
+
+        // Show error alert to make the error visible to the user
+        Alert.alert(
+          'Error Sharing Trade',
+          errorMessage,
+          [{ text: 'OK' }]
+        );
       }
+
       TransactionService.showError(err);
     } finally {
       if (isMounted.current) {

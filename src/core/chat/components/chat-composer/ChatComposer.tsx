@@ -547,6 +547,8 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
 
   // Define the onShare handler for Trade modal
   const handleShareTrade = useCallback(async (data: TradeData) => {
+    console.log(`[ChatComposer] Sharing Trade with data:`, JSON.stringify(data, null, 2));
+
     if (chatContext) {
       // Share to Chat
       console.log(`[ChatComposer] Sharing Trade to chat ${chatContext.chatId}`);
@@ -556,7 +558,7 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         const resultAction = await dispatch(sendMessage({
           chatId: chatContext.chatId,
           userId: currentUser.id,
-          content: '',
+          content: `Shared a trade: ${data.inputSymbol} → ${data.outputSymbol}`,
           additionalData: { tradeData: data }, // Send Trade data here
         })).unwrap();
 
@@ -573,10 +575,16 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
 
           // Send via socket (if connected)
           socketService.sendMessage(chatContext.chatId, socketPayload);
+
+          // Alert the user that the trade was shared successfully
+          Alert.alert('Success', 'Trade shared to chat successfully!');
         }
+
+        return resultAction; // Return result for the modal to handle
       } catch (error) {
         console.error('Failed to send trade message:', error);
-        Alert.alert('Error', 'Could not share trade to chat.');
+        Alert.alert('Error', 'Could not share trade to chat. Please try again.');
+        throw error; // Rethrow to let modal handle it
       } finally {
         setIsSubmitting(false);
       }
@@ -587,12 +595,13 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         id: 'section-' + Math.random().toString(36).substr(2, 9),
         type: 'TEXT_TRADE',
         tradeData: data,
-        text: `Executed a trade: ${data.inputSymbol} -> ${data.outputSymbol}`
+        text: `Executed a trade: ${data.inputSymbol} → ${data.outputSymbol}`
       }];
+
       const fallbackPost = {
         id: 'local-' + Math.random().toString(36).substr(2, 9),
         user: currentUser,
-        sections: [], // We can't add the sections here because we don't have the image URLs
+        sections, // Include sections in the fallback post
         createdAt: new Date().toISOString(),
         parentId: parentId ?? undefined,
         replies: [],
@@ -600,20 +609,32 @@ export const ChatComposer = forwardRef<{ focus: () => void }, ChatComposerProps>
         retweetCount: 0,
         quoteCount: 0,
       };
+
       setIsSubmitting(true);
       try {
-        await dispatch(createRootPostAsync({
+        const result = await dispatch(createRootPostAsync({
           userId: currentUser.id,
           sections,
         })).unwrap();
+
+        console.log('[ChatComposer] Trade post created successfully:', result);
+
+        // Alert the user that the trade was shared successfully
+        Alert.alert('Success', 'Trade shared to feed successfully!');
+
+        return result; // Return result for the modal to handle
       } catch (error: any) {
-        console.warn('Feed post failed, adding locally', error);
+        console.warn('Feed post failed, adding locally:', error);
         dispatch(addPostLocally(fallbackPost as ThreadPost));
+
+        // Even though we added it locally, still alert the user
+        Alert.alert('Note', 'Post added locally due to network issues. It will be synced when reconnected.');
+        throw error; // Rethrow to let modal handle it
       } finally {
         setIsSubmitting(false);
       }
     }
-  }, [chatContext, currentUser.id, dispatch]);
+  }, [chatContext, currentUser, dispatch, parentId]);
 
   /**
    * Prepare sections for Thread submission
