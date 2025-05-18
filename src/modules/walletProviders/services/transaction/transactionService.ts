@@ -921,7 +921,7 @@ export class TransactionService {
             identity: {
               name: 'Solana App Kit',
               uri: 'https://solanaappkit.com',
-              icon: 'https://solanaappkit.com/favicon.ico',
+              icon: 'favicon.ico',
             },
           });
           
