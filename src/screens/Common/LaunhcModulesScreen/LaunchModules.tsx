@@ -48,14 +48,7 @@ const modules = [
     iconComponent: Icons.RadyuimIcom,
     backgroundImage: require('@/assets/images/Rayduim_bg.png'),
   },
-  {
-    key: 'tokenmill',
-    title: 'Token Mill',
-    subtitle: 'Launch tokens with customizable bonding curve',
-    navigateTo: 'TokenMill',
-    iconComponent: Icons.TokenMillIcon,
-    backgroundImage: require('@/assets/images/TokenMill_bg.png'),
-  },
+
   {
     key: 'meteora',
     title: 'Meteora',
@@ -64,6 +57,14 @@ const modules = [
     iconImage: require('@/assets/images/meteora.jpg'),
     backgroundImage: require('@/assets/images/new_meteora_cover.png'),
     usePngIcon: true,
+  },
+  {
+    key: 'tokenmill',
+    title: 'Token Mill',
+    subtitle: 'Launch tokens with customizable bonding curve',
+    navigateTo: 'TokenMill',
+    iconComponent: Icons.TokenMillIcon,
+    backgroundImage: require('@/assets/images/TokenMill_bg.png'),
   },
   // {
   //   key: 'nft',
