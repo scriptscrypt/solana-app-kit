@@ -220,12 +220,13 @@ export const deleteAccountAction = createAsyncThunk<
     try {
       console.log(`[AuthThunk deleteAccountAction] Attempting to delete account for userId: ${userId}`);
       const response = await fetch(
-        `${SERVER_BASE_URL}/api/profile/delete-account`, // Corrected API path
+        `${SERVER_BASE_URL}/api/profile/delete-account`,
         {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          // Since requireAuth is removed, server expects userId in body.
-          // This is insecure and needs to be addressed by reinstating auth.
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userId}` // Add the user's wallet address as a Bearer token
+          },
           body: JSON.stringify({ userId }),
         },
       );
