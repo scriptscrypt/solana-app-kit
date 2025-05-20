@@ -19,7 +19,7 @@ import ProfileScreen from '@/screens/SampleUI/Threads/ProfileScreen/ProfileScree
 import IntroScreen from '@/screens/Common/IntroScreen/IntroScreen';
 import LoginScreen from '@/screens/Common/LoginScreen/LoginScreen';
 import { MercuroScreen } from '@/modules/mercuryo';
-import SwapScreen from '@/screens/SampleUI/Swap/SwapScreen';
+import SwapScreen from '@/modules/swap/screens/SwapScreen';
 import { WalletScreen } from '@/screens/Common';
 import OnrampScreen from '@/modules/moonpay/screens/OnrampScreen';
 import socketService from '@/shared/services/socketService';

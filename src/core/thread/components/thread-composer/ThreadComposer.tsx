@@ -25,7 +25,12 @@ import {
 } from '../../../../shared/state/thread/reducer';
 import { getThreadComposerBaseStyles } from './ThreadComposer.styles'; // Import new base styles function
 import { mergeStyles } from '../../utils'; // Import the utility function
-import { ThreadSection, ThreadSectionType, ThreadUser } from '../../types';
+import {
+  ThreadUser,
+  ThreadSection,
+  ThreadSectionType,
+  ThreadPost
+} from '../thread.types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
 import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
@@ -137,7 +142,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
 
   // 1. Get base styles (no theme needed)
   const baseComponentStyles = getThreadComposerBaseStyles();
-  
+
   // 2. Merge styles using the utility function
   const styles = mergeStyles(baseComponentStyles, styleOverrides, userStyleSheet);
 
@@ -558,21 +563,70 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
       <TradeModal
         visible={showTradeModal}
         onClose={() => setShowTradeModal(false)}
-        onShare={(tradeData) => {
-          // Handle the trade data here
-          // Create a section with the trade data
-          const section: ThreadSection = {
-            id: 'section-' + Math.random().toString(36).substr(2, 9),
-            type: 'TEXT_TRADE',
-            tradeData,
-          };
-          
-          // You can process the section here or add it to state
-          // For now, simply close the modal
-          setShowTradeModal(false);
-          
-          // If needed, you can call onPostCreated here
-          onPostCreated && onPostCreated();
+        onShare={async (tradeData) => {
+          try {
+            console.log('[ThreadComposer] Received trade data to share:', JSON.stringify(tradeData, null, 2));
+
+            // Create a section with the trade data
+            const section: ThreadSection = {
+              id: 'section-' + Math.random().toString(36).substr(2, 9),
+              type: 'TEXT_TRADE',
+              tradeData,
+            };
+
+            // Dispatch action to create post with trade data
+            await dispatch(createRootPostAsync({
+              userId: currentUser.id,
+              sections: [section],
+            })).unwrap();
+
+            console.log('[ThreadComposer] Successfully dispatched trade post to Redux');
+
+            // Close the modal
+            setShowTradeModal(false);
+
+            // Call onPostCreated callback to refresh the feed
+            if (onPostCreated) {
+              onPostCreated();
+              console.log('[ThreadComposer] Called onPostCreated callback');
+            }
+
+            return true;
+          } catch (error) {
+            console.error('[ThreadComposer] Error sharing trade:', error);
+
+            // Create fallback post for local display
+            const fallbackPost = {
+              id: 'local-' + Math.random().toString(36).substr(2, 9),
+              user: currentUser,
+              sections: [{
+                id: 'section-' + Math.random().toString(36).substr(2, 9),
+                type: 'TEXT_TRADE',
+                tradeData,
+              }],
+              createdAt: new Date().toISOString(),
+              parentId: undefined,
+              replies: [],
+              reactionCount: 0,
+              retweetCount: 0,
+              quoteCount: 0,
+            };
+
+            // Add locally via Redux
+            dispatch(addPostLocally(fallbackPost as ThreadPost));
+            console.log('[ThreadComposer] Added trade post locally');
+
+            // Close the modal
+            setShowTradeModal(false);
+
+            // Call onPostCreated callback to refresh the feed
+            if (onPostCreated) {
+              onPostCreated();
+              console.log('[ThreadComposer] Called onPostCreated callback');
+            }
+
+            throw error; // Rethrow for the modal to handle
+          }
         }}
         currentUser={currentUser}
       />

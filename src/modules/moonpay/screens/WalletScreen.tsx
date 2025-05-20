@@ -552,18 +552,6 @@ function WalletScreen({
               <Text style={styles.actionBadgeText}>MoonPay</Text>
             </View>
           </TouchableOpacity>
-
-          {/* Add Transaction History Card */}
-          {nativeBalance !== null && nativeBalance > 0 && (
-            <View style={styles.transactionHistoryCard}>
-              <Text style={styles.transactionHistoryTitle}>Recent Activity</Text>
-              <View style={styles.transactionHistoryContent}>
-                <Text style={styles.transactionHistoryEmpty}>
-                  Your recent transactions will appear here
-                </Text>
-              </View>
-            </View>
-          )}
         </View>
 
         {/* Legal Links Section */}

@@ -1,10 +1,13 @@
 <div align="center">
 
-# 🚀 Solana App Kit
+# Solana App Kit
+
+### Open-Source React Native Scaffold for Building iOS and Android Crypto Mobile Apps with Solana Protocols.
+
+<p> From AI to Social, Launchpads to Wallets, and Trading — build mobile apps in under 15 minutes. </p>
 
 ![Solana App Kit - Cover](https://github.com/user-attachments/assets/202830af-1638-4fa1-b40f-7faac03a1cef)
 
-### A modern React Native development kit for building Solana-powered social applications
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SendArcade/solana-app-kit)
 [![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/releases)
@@ -12,16 +15,38 @@
 [![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/blob/main/LICENSE)
 [![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/sendarcadefun)
 
-<p>A complete starter kit for building decentralized social experiences on Solana.</p>
-<p>Anyone—whether a seasoned React Native developer or a newcomer—can bring their ideas and seamlessly integrate them with Solana protocols.</p>
+<p> Anyone — whether a seasoned React Native developer or a Solana developer — can build mobile apps faster with 10+ protocol integrations. </div>
 
-</div>
+## Key Protocol Integrations
+
+1. **Swaps:**  
+   In-App trading via [Jupiter](https://jup.ag/) for the best prices across all DEXs, and native [Pump AMM](https://swap.pump.fun/)
+
+2. **Launchpads:**  
+   The three biggest Solana launchpads with configurable bonding curves – [Pump.fun](https://pump.fun/), [Raydium](https://raydium.io/launchpad/), and [Meteora](https://app.meteora.ag/) – along with [Token Mill](https://tokenmill.xyz/)
+
+3. **Embedded Wallets:**  
+   Top wallets like [Privy](https://www.privy.io/), [Turnkey](https://turnkey.com/), and [Dynamic](https://www.dynamic.xyz/), along with Mobile Wallet Adapter support by [Solana Mobile](https://solanamobile.com/) for external wallet connections.
+
+4. **Token Data & Prices:**  
+   Live prices and token info from [Coingecko](https://www.coingecko.com/), [Birdeye](https://birdeye.so/), and [Rugcheck](https://rugcheck.xyz/)
+
+5. **NFTs:**  
+   NFT minting via [Metaplex](https://www.metaplex.com/) and trading via [Tensor](https://www.tensor.trade/)
+
+6. **AI Integration:**  
+   [SendAI](https://sendai.fun/) for AI chat integration to take Solana actions
+
+7. **On/Off-Ramps:**  
+   Buy/sell crypto using cards or Apple Pay with [MoonPay](https://www.moonpay.com/) and [Mercuryo](https://mercuryo.io/)
+
+8. **Miscellaneous Tools:**  
+   [Jito Bundles](https://www.jito.network/) and [Helius](https://www.helius.dev/) for transaction landing
 
 ---
 
-## 📋 Table of Contents
+## 📋 Detailed Table of Contents
 
-- [💎 Core Blockchain Features](#-core-blockchain-features)
 - [📱 App Features](#-app-features)
 - [📚 Documentation](#-documentation)
 - [📦 Core Installation](#-core-installation)
@@ -45,25 +70,14 @@
 
 ---
 
-## 💎 Core Blockchain Features
-
-| Feature | Description |
-|---------|-------------|
-| 🔗 **Token Operations** | • Create and launch tokens with TokenMill<br>• Trade tokens through PumpSwap SDK<br>• View token balances and transaction history<br>• Configure and visualize bonding curves |
-| 🖼️ **NFT Integration** | • Fetch and display NFTs<br>• List and purchase NFTs<br>• View collections with floor prices<br>• Support for compressed NFTs |
-| 💹 **DeFi Capabilities** | • Swap tokens via PumpSwap<br>• Create and manage liquidity pools<br>• Stake and vest tokens<br>• Access market data<br>• Manage funds for users and markets |
-| 📊 **Market Data** | • Display real-time price charts<br>• Track portfolio performance<br>• Integrate with CoinGecko, BirdEye, and CoinMarketCap |
-
----
-
 ## 📱 App Features
 
 | Feature | Description |
 |---------|-------------|
-| 👛 **Wallet Integration** | • Multiple wallet connection methods<br>• Embedded wallet support via Privy<br>• External wallet connections<br>• Transaction signing and management<br>• Turnkey wallet management |
-| 👥 **Social Features** | • User profiles and following system<br>• Social feed with posts and interactions<br>• Messaging via Dialect Blinks<br>• Community engagement features<br>• NFT display and management<br>• IPFS storage for metadata |
+| 👛 **Wallet Integration** | • Multiple wallet connection methods<br>• Embedded wallet support via Privy, Dynamic, and Turnkey<br>• External wallet connections via Solana Mobile MWA<br>• Transaction signing and management<br>
+| 👥 **Social Features** | • User profiles and following system<br>• Social feed with posts and interactions<br>• Community engagement features<br>• NFT display and management<br>• IPFS storage for metadata |
 | 🎨 **UI/UX** | • Modern, responsive design<br>• Tab-based navigation<br>• Interactive charts and visualizations<br>• Elegant loading states and error handling<br>• Platform-specific optimizations |
-| 🖥️ **Backend Features** | • RESTful API for token operations<br>• Social data storage and retrieval<br>• Token market creation and management<br>• Token swapping via Jupiter and PumpSwap<br>• Staking and vesting functionality<br>• Image upload and storage |
+| 🖥️ **Backend Features** | • RESTful API for token operations<br>• Social data storage and retrieval<br>• Token market creation and management<br>• Token swapping via Jupiter and PumpSwap<br>• Token launching via different launchpads like Pump, Raydium, and Meteora <br>• Image upload and storage |
 
 ---
 
@@ -76,7 +90,7 @@ You can view the full documentation of the kit at: [https://docs.1doma.in/docs/i
 ## 📦 Core Installation
 
 ```sh
-npm install solana-app-kit
+npx start-solana-app
 ```
 
 ---
@@ -410,7 +424,7 @@ The Solana App Kit provides several modular features that can be used independen
 | 🖼️ **nft** | • NFT display, management, and trading<br>• Collection viewing with floor prices<br>• Compressed NFT support<br>• Integration with threads and posts |
 | 💱 **pumpSwap** | • Token swapping using PumpSwap SDK<br>• Liquidity pool creation with custom token pairs<br>• Liquidity management (add and remove liquidity)<br>• Pool creation with custom parameters<br>• Real-time quotes and price impact estimates<br>• Transaction status monitoring |
 | 🚀 **pumpFun** | • Integration with the Pump.fun ecosystem<br>• Meme token creation and management<br>• Community engagement tools |
-| 💸 **mercuro** | • Advanced financial transaction utilities<br>• Custom financial operations |
+| 💸 **Moonpay** | • Advanced financial transaction utilities<br>• Custom financial operations |
 
 ---
 
@@ -500,6 +514,6 @@ Custom hooks for using the Birdeye API:
 
 <div align="center">
 
-Built with ❤️ for the Solana ecosystem by Send Arcade
+Built with ❤️ for the Solana ecosystem by SendAI and Send Arcade.
 
 </div>

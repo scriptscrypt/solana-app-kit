@@ -48,6 +48,16 @@ const modules = [
     iconComponent: Icons.RadyuimIcom,
     backgroundImage: require('@/assets/images/Rayduim_bg.png'),
   },
+
+  {
+    key: 'meteora',
+    title: 'Meteora',
+    subtitle: 'Powerful DEX with concentrated liquidity',
+    navigateTo: 'MeteoraScreen',
+    iconImage: require('@/assets/images/meteora.jpg'),
+    backgroundImage: require('@/assets/images/new_meteora_cover.png'),
+    usePngIcon: true,
+  },
   {
     key: 'tokenmill',
     title: 'Token Mill',
@@ -55,14 +65,6 @@ const modules = [
     navigateTo: 'TokenMill',
     iconComponent: Icons.TokenMillIcon,
     backgroundImage: require('@/assets/images/TokenMill_bg.png'),
-  },
-  {
-    key: 'meteora',
-    title: 'Meteora',
-    subtitle: 'Powerful DEX with concentrated liquidity',
-    navigateTo: 'MeteoraScreen',
-    iconComponent: Icons.RadyuimIcom, // Reusing an existing icon temporarily
-    backgroundImage: require('@/assets/images/TokenMill_bg.png'), // Reusing an existing background temporarily
   },
   // {
   //   key: 'nft',
