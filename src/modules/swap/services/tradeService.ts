@@ -1,5 +1,5 @@
 import { Connection, Transaction, VersionedTransaction, PublicKey, SystemProgram } from '@solana/web3.js';
-import { TokenInfo } from '../types/tokenTypes';
+import { TokenInfo } from '../../dataModule/types/tokenTypes';
 import { JupiterService, JupiterSwapResponse } from './jupiterService';
 import { RaydiumService } from '../../raydium/services/raydiumService';
 import { Direction } from '../../pumpFun/services/pumpSwapService';

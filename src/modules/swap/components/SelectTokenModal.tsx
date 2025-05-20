@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import {
   Platform,
   Dimensions,
   StyleSheet,
+  Alert,
+  Animated,
+  Easing
 } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import COLORS from '@/assets/colors';
@@ -20,6 +23,80 @@ import TYPOGRAPHY from '@/assets/typography';
 import { TokenInfo, useTokenSearch } from '@/modules/dataModule';
 
 const { height } = Dimensions.get('window');
+
+// Enhanced Shimmer effect component for loading states
+const Shimmer = ({ 
+  width: componentWidth, 
+  height, 
+  style, 
+  borderRadius = 4 
+}: { 
+  width: number | string, 
+  height: number | string, 
+  style?: any,
+  borderRadius?: number 
+}) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const actualWidth = typeof componentWidth === 'number' ? componentWidth : 100;
+
+  useEffect(() => {
+    const shimmerAnimation = Animated.loop(
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 1800,
+        easing: Easing.linear,
+        useNativeDriver: false
+      })
+    );
+    
+    shimmerAnimation.start();
+    
+    return () => {
+      shimmerAnimation.stop();
+      animatedValue.setValue(0);
+    };
+  }, []);
+
+  // Create a more smooth gradient effect
+  const shimmerOpacity = animatedValue.interpolate({
+    inputRange: [0, 0.3, 0.6, 1],
+    outputRange: [0.2, 0.4, 0.2, 0.2]
+  });
+  
+  // Create a smoother horizontal movement
+  const translateX = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-actualWidth, actualWidth]
+  });
+
+  return (
+    <View 
+      style={[
+        { 
+          width: componentWidth, 
+          height, 
+          backgroundColor: COLORS.darkerBackground,
+          overflow: 'hidden',
+          borderRadius: borderRadius
+        },
+        style
+      ]}
+    >
+      <Animated.View
+        style={{
+          width: '100%',
+          height: '100%',
+          transform: [{ translateX }],
+          opacity: shimmerOpacity,
+          backgroundColor: COLORS.white,
+          position: 'absolute',
+          left: 0,
+          top: 0
+        }}
+      />
+    </View>
+  );
+};
 
 // Styles specific to this modal
 const styles = StyleSheet.create({
@@ -175,7 +252,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tokenSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderDarkColor,
+  },
+  selectionOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  selectionTextContainer: {
+    backgroundColor: COLORS.lightBackground,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    width: '80%',
+  },
+  selectionText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  favoriteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: COLORS.darkerBackground + '80',
+  },
+  favoriteHeaderText: {
+    color: COLORS.greyLight,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: String(TYPOGRAPHY.bold) as any,
+    marginLeft: 8,
+  }
 });
+
+// Token item skeleton for loading states
+const TokenItemSkeleton = () => (
+  <View style={styles.tokenSkeleton}>
+    <Shimmer width={40} height={40} borderRadius={20} />
+    <View style={{ marginLeft: 16, flex: 1 }}>
+      <Shimmer width={100} height={18} borderRadius={4} style={{ marginBottom: 6 }} />
+      <Shimmer width={150} height={14} borderRadius={3} />
+    </View>
+  </View>
+);
 
 interface SelectTokenModalProps {
   /** Whether the modal is visible */
@@ -191,7 +326,7 @@ export default function SelectTokenModal({
   onClose,
   onTokenSelected,
 }: SelectTokenModalProps) {
-  // Use the new token search hook with debounce
+  // Use the enhanced token search hook with debounce
   const {
     tokens: rawTokens,
     loading,
@@ -199,11 +334,34 @@ export default function SelectTokenModal({
     searchQuery,
     setSearchQuery,
     loadMore,
-    refresh
+    refresh,
+    isRefreshing
   } = useTokenSearch('', 300);
 
   // State for deduplicated tokens
   const [tokens, setTokens] = useState<TokenInfo[]>([]);
+  
+  // State to track token selection in progress
+  const [selecting, setSelecting] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
+
+  // Keep track of component mounting state
+  const isMounted = useRef(true);
+  const hasUserSearched = useRef(false);
+  
+  // Token selection timeout
+  const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Deduplicate tokens when rawTokens change
   useEffect(() => {
@@ -220,13 +378,6 @@ export default function SelectTokenModal({
     setTokens(Array.from(uniqueTokensMap.values()));
   }, [rawTokens]);
 
-  // Keep track of whether the component is mounted and user's input
-  const isMounted = useRef(true);
-  const hasUserSearched = useRef(false);
-
-  // Add a unique index map for handling duplicate tokens (as backup)
-  const uniqueTokens = useRef(new Map());
-
   // Reset search ONLY when modal initially becomes visible
   useEffect(() => {
     if (visible && !hasUserSearched.current) {
@@ -234,19 +385,18 @@ export default function SelectTokenModal({
       refresh();
     }
 
-    // When modal becomes invisible, reset the search flag and clear uniqueTokens map
+    // When modal becomes invisible, reset the states
     if (!visible) {
       hasUserSearched.current = false;
-      uniqueTokens.current.clear();
+      setSelecting(false);
+      setSelectedToken(null);
+      
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+        selectionTimeoutRef.current = null;
+      }
     }
   }, [visible, refresh, setSearchQuery]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   /**
    * Handles search input changes
@@ -264,6 +414,50 @@ export default function SelectTokenModal({
       loadMore();
     }
   };
+  
+  /**
+   * Enhanced token selection handler with safeguards
+   */
+  const handleTokenSelection = useCallback((token: TokenInfo) => {
+    if (selecting) return; // Prevent duplicate selections
+    
+    setSelecting(true);
+    setSelectedToken(token);
+    
+    // Clear any existing timeout
+    if (selectionTimeoutRef.current) {
+      clearTimeout(selectionTimeoutRef.current);
+    }
+    
+    // Set a timeout to prevent infinite loading
+    selectionTimeoutRef.current = setTimeout(() => {
+      if (isMounted.current && selecting) {
+        setSelecting(false);
+        setSelectedToken(null);
+        Alert.alert(
+          "Selection Timed Out",
+          "Please try selecting the token again.",
+          [{ text: "OK" }]
+        );
+      }
+    }, 10000); // 10 second timeout
+    
+    // Call the parent callback
+    onTokenSelected(token);
+    
+    // Automatically close modal after selection (will be cancelled if modal remains open)
+    const closeTimeout = setTimeout(() => {
+      if (isMounted.current && selecting) {
+        // If we're still selecting after 3.5 seconds, close the modal to prevent UI hangs
+        setSelecting(false);
+        onClose();
+      }
+    }, 3500);
+    
+    return () => {
+      clearTimeout(closeTimeout);
+    };
+  }, [selecting, onTokenSelected, onClose]);
 
   /**
    * Renders a single token item in the list
@@ -271,8 +465,9 @@ export default function SelectTokenModal({
   const renderItem = ({ item }: { item: TokenInfo }) => (
     <TouchableOpacity
       style={styles.tokenItem}
-      onPress={() => onTokenSelected(item)}
+      onPress={() => handleTokenSelection(item)}
       activeOpacity={0.7}
+      disabled={selecting}
     >
       <View style={styles.tokenItemContent}>
         {item.logoURI ? (
@@ -324,7 +519,7 @@ export default function SelectTokenModal({
    * Renders a loading indicator at the bottom when loading more tokens
    */
   const renderFooter = () => {
-    if (!loading) return null;
+    if (!loading && !isRefreshing) return null;
 
     return (
       <View style={styles.loadingFooter}>
@@ -332,6 +527,31 @@ export default function SelectTokenModal({
       </View>
     );
   };
+
+  /**
+   * Render popular tokens section
+   */
+  const renderPopularTokensHeader = () => {
+    if (searchQuery.trim() !== '' || tokens.length === 0) return null;
+    
+    return (
+      <View style={styles.favoriteHeader}>
+        <FontAwesome5 name="star" size={12} color={COLORS.greyLight} />
+        <Text style={styles.favoriteHeaderText}>Popular Tokens</Text>
+      </View>
+    );
+  };
+  
+  /**
+   * Render skeleton loaders when initially loading
+   */
+  const renderSkeletonLoaders = () => (
+    <View>
+      {Array.from({ length: 8 }).map((_, index) => (
+        <TokenItemSkeleton key={`skeleton-${index}`} />
+      ))}
+    </View>
+  );
 
   return (
     <Modal visible={visible} transparent animationType="slide">
@@ -348,6 +568,7 @@ export default function SelectTokenModal({
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={onClose}
+              disabled={selecting}
             >
               <Ionicons name="close" size={24} color={COLORS.white} />
             </TouchableOpacity>
@@ -364,22 +585,17 @@ export default function SelectTokenModal({
               clearButtonMode="while-editing"
               autoCapitalize="none"
               autoCorrect={false}
+              editable={!selecting}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => handleSearchChange('')}>
+              <TouchableOpacity onPress={() => handleSearchChange('')} disabled={selecting}>
                 <Ionicons name="close-circle" size={18} color={COLORS.greyMid} style={{ marginLeft: 8 }} />
               </TouchableOpacity>
             )}
           </View>
 
-          {!tokens.length && loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator
-                size="large"
-                color={COLORS.brandPrimary}
-              />
-              <Text style={styles.loadingText}>Loading tokens...</Text>
-            </View>
+          {loading && tokens.length === 0 ? (
+            renderSkeletonLoaders()
           ) : (
             <>
               <FlatList
@@ -391,9 +607,10 @@ export default function SelectTokenModal({
                 keyboardShouldPersistTaps="handled"
                 onEndReached={handleEndReached}
                 onEndReachedThreshold={0.5}
-                refreshing={loading && tokens.length === 0}
-                onRefresh={refresh}
+                ListHeaderComponent={renderPopularTokensHeader}
                 ListFooterComponent={renderFooter}
+                refreshing={isRefreshing}
+                onRefresh={refresh}
                 ListEmptyComponent={
                   <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>
@@ -416,10 +633,23 @@ export default function SelectTokenModal({
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={onClose}
+                disabled={selecting}
               >
                 <Text style={styles.closeButtonText}>Cancel</Text>
               </TouchableOpacity>
             </>
+          )}
+          
+          {/* Selection in progress overlay */}
+          {selecting && (
+            <View style={styles.selectionOverlay}>
+              <View style={styles.selectionTextContainer}>
+                <Text style={styles.selectionText}>
+                  {selectedToken ? `Loading ${selectedToken.symbol}...` : 'Loading selected token...'}
+                </Text>
+                <ActivityIndicator size="large" color={COLORS.brandPrimary} />
+              </View>
+            </View>
           )}
         </View>
       </KeyboardAvoidingView>

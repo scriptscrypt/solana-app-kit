@@ -36,7 +36,6 @@ export {
 
 // Export other services
 export * from './services/coingeckoService';
-export * from './services/tradeService';
 export * from './services/swapTransactions';
 // Explicitly export renamed services to avoid conflicts
 export {
