@@ -11,7 +11,7 @@ import TYPOGRAPHY from '@/assets/typography';
 
 import AnimatedTabIcon from './AnimatedTabIcon';
 import FeedScreen from '@/screens/SampleUI/Threads/FeedScreen/FeedScreen';
-import SwapScreen from '@/screens/SampleUI/Swap';
+import SwapScreen from '@/modules/swap/screens/SwapScreen';
 import ModuleScreen from '@/screens/Common/LaunhcModulesScreen/LaunchModules';
 import { ChatListScreen } from '@/screens/SampleUI/Chat';
 
