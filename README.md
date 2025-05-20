@@ -423,7 +423,7 @@ The Solana App Kit provides several modular features that can be used independen
 | 🖼️ **nft** | • NFT display, management, and trading<br>• Collection viewing with floor prices<br>• Compressed NFT support<br>• Integration with threads and posts |
 | 💱 **pumpSwap** | • Token swapping using PumpSwap SDK<br>• Liquidity pool creation with custom token pairs<br>• Liquidity management (add and remove liquidity)<br>• Pool creation with custom parameters<br>• Real-time quotes and price impact estimates<br>• Transaction status monitoring |
 | 🚀 **pumpFun** | • Integration with the Pump.fun ecosystem<br>• Meme token creation and management<br>• Community engagement tools |
-| 💸 **mercuro** | • Advanced financial transaction utilities<br>• Custom financial operations |
+| 💸 **Moonpay** | • Advanced financial transaction utilities<br>• Custom financial operations |
 
 ---
 
