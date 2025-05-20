@@ -17,7 +17,7 @@ export default function IntroScreen() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       setIsCheckingAuth(true);
-      
+
       // PRIORITIZE Redux state check first - fastest path for logged in users
       if (isLoggedIn) {
         console.log('User logged in according to Redux state, navigating to MainTabs');
@@ -25,7 +25,7 @@ export default function IntroScreen() {
         setIsCheckingAuth(false);
         return;
       }
-      
+
       // Only if Redux state shows not logged in, check provider-specific auth
       try {
         // Check if user is already authenticated using Dynamic client
@@ -40,16 +40,22 @@ export default function IntroScreen() {
           console.log('User not authenticated, navigating to LoginOptions');
           // Only add a short delay for non-authenticated users to see splash
           setTimeout(() => {
-            navigation.navigate('LoginOptions');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'LoginOptions' }],
+            });
             setIsCheckingAuth(false);
-          }, 1000); 
+          }, 1000);
         }
       } catch (e) {
         console.log('Dynamic client not initialized yet or error:', e);
         // If there's an error with provider check but we already know we're not logged in
         // via Redux state, go to login
         setTimeout(() => {
-          navigation.navigate('LoginOptions');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'LoginOptions' }],
+          });
           setIsCheckingAuth(false);
         }, 1000);
       }
