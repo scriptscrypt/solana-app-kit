@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo} from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text as RNText,
@@ -12,8 +12,8 @@ import {
   Switch,
   Alert,
 } from 'react-native';
-import {TextInput} from 'react-native-gesture-handler';
-import {Feather, Ionicons} from '@expo/vector-icons';
+import { TextInput } from 'react-native-gesture-handler';
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 import Svg, {
   Path,
@@ -26,8 +26,8 @@ import Svg, {
 } from 'react-native-svg';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
-import {LaunchpadConfigData} from '../services/raydiumService';
-import {styles, modalStyles} from './AdvancedOptionsSection.styles';
+import { LaunchpadConfigData } from '../services/raydiumService';
+import { styles, modalStyles } from './AdvancedOptionsSection.styles';
 import {
   calculateGraphData,
   validateBondingCurvePercentage,
@@ -115,11 +115,11 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
     // Allow any input to be entered first - just filter to numbers only
     const filtered = value.replace(/[^0-9]/g, '');
     setBondingCurve(filtered);
-    
+
     // Only show validation errors if the field is not empty
     if (filtered) {
       const num = parseInt(filtered, 10);
-      
+
       // Apply constraints in real-time
       if (num < 51) {
         setBondingCurveError('Bonding curve percentage must be at least 51%');
@@ -133,12 +133,12 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
       // Clear error when field is empty
       setBondingCurveError(null);
     }
-    
+
     // Validate vesting percentage when bonding curve changes to ensure total doesn't exceed 80%
     if (vestingEnabled && filtered) {
       const validValue = filtered ? Math.max(51, Math.min(80, parseInt(filtered, 10))) : 51;
       const vestingResult = validateVestingPercentage(vestingPercentage, String(validValue));
-      
+
       if (!vestingResult.valid) {
         setVestingPercentage(vestingResult.value);
         setVestingPercentageError(vestingResult.message);
@@ -158,17 +158,17 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
   const handleVestingPercentageChange = (value: string) => {
     // Only allow numeric input
     const filtered = value.replace(/[^0-9]/g, '');
-    
+
     if (filtered) {
       const num = parseInt(filtered, 10);
-      
+
       // Apply max limit of 30%
       if (num > 30) {
         setVestingPercentage('30');
         setVestingPercentageError('Vesting percentage cannot exceed 30%');
         return;
       }
-      
+
       // Validate against bonding curve to ensure total doesn't exceed 80%
       const result = validateVestingPercentage(filtered, bondingCurve);
       setVestingPercentage(result.value);
@@ -188,7 +188,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
   // Handle vesting toggle
   const handleVestingToggle = (value: boolean) => {
     setVestingEnabled(value);
-    
+
     // If disabling vesting, clear vesting percentage
     if (!value) {
       setVestingPercentage('0');
@@ -213,7 +213,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
     const bondingAmount = supply * (parseInt(bondingCurve, 10) || 0) / 100;
     const vestingAmount = supply * (parseInt(vestingPercentage, 10) || 0) / 100;
     const migrationAmount = supply * (parseInt(poolMigration, 10) || 0) / 100;
-    
+
     return {
       bondingAmount: formatNumber(bondingAmount),
       vestingAmount: formatNumber(vestingAmount),
@@ -227,7 +227,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
       const bondingCurveResult = validateBondingCurvePercentage(bondingCurve);
       const solRaisedResult = validateSolRaised(solRaised);
       const vestingResult = validateVestingPercentage(
-        vestingEnabled ? vestingPercentage : '0', 
+        vestingEnabled ? vestingPercentage : '0',
         bondingCurve
       );
 
@@ -305,7 +305,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
         )}
         <RNText style={styles.headerTitle}>
           {tokenName && tokenSymbol
-            ? `Configure ${tokenName} (${tokenSymbol})`
+            ? `Configure ${tokenName} ($${tokenSymbol})`
             : 'Advanced Options'}
         </RNText>
       </View>
@@ -425,7 +425,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
             ))}
           </Svg>
         </View>
-        
+
         {/* Graph legend */}
         <View style={styles.graphLegendContainer}>
           <View style={styles.legendItem}>
@@ -451,7 +451,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
           <View style={styles.tokenSelectRow}>
             {quoteToken.logoURI ? (
               <Image
-                source={{uri: quoteToken.logoURI}}
+                source={{ uri: quoteToken.logoURI }}
                 style={styles.tokenIcon}
               />
             ) : (
@@ -492,7 +492,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
           <View style={styles.tokenIconSmallContainer}>
             {quoteToken.logoURI ? (
               <Image
-                source={{uri: quoteToken.logoURI}}
+                source={{ uri: quoteToken.logoURI }}
                 style={styles.tokenIconSmall}
               />
             ) : (
@@ -555,7 +555,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
             <View style={styles.tokenIconSmallContainer}>
               {SAMPLE_TOKENS[0].logoURI ? (
                 <Image
-                  source={{uri: SAMPLE_TOKENS[0].logoURI}}
+                  source={{ uri: SAMPLE_TOKENS[0].logoURI }}
                   style={styles.tokenIconSmall}
                 />
               ) : (
@@ -703,7 +703,7 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
                 <RNText style={styles.dropdownText}>{selectedTimeUnitLabel}</RNText>
                 <Feather name="chevron-down" size={20} color={COLORS.white} />
               </TouchableOpacity>
-              
+
               {showTimeUnitOptions && (
                 <View style={styles.dropdownOptions}>
                   {TIME_UNIT_OPTIONS.map((option, index) => (
@@ -838,24 +838,24 @@ export const AdvancedOptionsSection: React.FC<AdvancedOptionsSectionProps> = ({
                 data={filteredTokens}
                 keyExtractor={item => item.address}
                 contentContainerStyle={modalStyles.listContentContainer}
-                renderItem={({item}) => (
+                renderItem={({ item }) => (
                   <TouchableOpacity
                     style={modalStyles.tokenItem}
                     onPress={() => handleTokenSelected(item)}>
                     <View style={modalStyles.tokenItemContent}>
                       {item.logoURI ? (
                         <Image
-                          source={{uri: item.logoURI}}
+                          source={{ uri: item.logoURI }}
                           style={modalStyles.tokenLogo}
                         />
                       ) : (
                         <View
                           style={[
                             modalStyles.tokenLogo,
-                            {justifyContent: 'center', alignItems: 'center'},
+                            { justifyContent: 'center', alignItems: 'center' },
                           ]}>
                           <RNText
-                            style={{color: COLORS.white, fontWeight: 'bold'}}>
+                            style={{ color: COLORS.white, fontWeight: 'bold' }}>
                             {item.symbol.charAt(0)}
                           </RNText>
                         </View>
