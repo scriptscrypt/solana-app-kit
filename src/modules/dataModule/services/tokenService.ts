@@ -257,8 +257,8 @@ export async function fetchTokenList(params: TokenListParams = {}): Promise<Toke
     // Default parameters for sorting by market cap high to low
     const defaultParams = {
       chain: 'solana', // Add chain as a query parameter
-      sort_by: 'market_cap',
-      sort_type: 'desc',
+      sort_by: 'liquidity',
+      sort_type: 'asc',
       limit: 100,
       offset: 0,
     };

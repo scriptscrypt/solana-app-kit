@@ -14,14 +14,25 @@ import { SwapTransaction, TokenMetadata } from '../../../../modules/dataModule/s
 import COLORS from '../../../../assets/colors';
 import TYPOGRAPHY from '../../../../assets/typography';
 
+// Import the enhanced type or define it here
+interface EnhancedSwapTransaction extends SwapTransaction {
+  uniqueId?: string;
+  volumeUsd?: number;
+  isMultiHop?: boolean;
+  hopCount?: number;
+  childTransactions?: EnhancedSwapTransaction[];
+}
+
 const { width } = Dimensions.get('window');
 
 interface PastSwapItemProps {
-  swap: SwapTransaction;
-  onSelect: (swap: SwapTransaction) => void;
+  swap: EnhancedSwapTransaction;
+  onSelect: (swap: EnhancedSwapTransaction) => void;
   selected: boolean;
   inputTokenLogoURI?: string; // New prop for input token logo
   outputTokenLogoURI?: string; // New prop for output token logo
+  isMultiHop?: boolean; // Indicates if this is a multi-hop transaction
+  hopCount?: number; // Number of hops in the transaction
 }
 
 /**
@@ -106,6 +117,8 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
   selected,
   inputTokenLogoURI,
   outputTokenLogoURI,
+  isMultiHop,
+  hopCount,
 }) => {
   const { inputToken, outputToken, timestamp } = swap;
 
@@ -144,11 +157,20 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
       <View style={styles.swapHeader}>
         <Text style={styles.dateText}>{formatDate(timestamp)}</Text>
 
-        {/* Signature badge */}
-        <View style={styles.signatureBadge}>
-          <Text style={styles.signatureText}>
-            {swap.signature.slice(0, 4)}...{swap.signature.slice(-4)}
-          </Text>
+        <View style={styles.headerRightContainer}>
+          {/* Multi-hop indicator */}
+          {isMultiHop && hopCount && (
+            <View style={styles.multiHopBadge}>
+              <Text style={styles.multiHopText}>{hopCount}-hop</Text>
+            </View>
+          )}
+
+          {/* Signature badge */}
+          <View style={styles.signatureBadge}>
+            <Text style={styles.signatureText}>
+              {swap.signature.slice(0, 4)}...{swap.signature.slice(-4)}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -188,7 +210,11 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
 
         {/* Arrow */}
         <View style={styles.arrowContainer}>
-          <FontAwesome5 name="arrow-right" size={12} color={COLORS.brandBlue} />
+          <FontAwesome5
+            name={isMultiHop ? "route" : "arrow-right"}
+            size={12}
+            color={COLORS.brandBlue}
+          />
         </View>
 
         {/* Output Token */}
@@ -272,6 +298,10 @@ const styles = StyleSheet.create({
     color: COLORS.accessoryDarkColor,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
+  headerRightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   signatureBadge: {
     backgroundColor: COLORS.darkerBackground,
     paddingHorizontal: 8,
@@ -281,6 +311,18 @@ const styles = StyleSheet.create({
   signatureText: {
     fontSize: TYPOGRAPHY.size.xs,
     color: COLORS.accessoryDarkColor,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+  },
+  multiHopBadge: {
+    backgroundColor: COLORS.brandBlue + '30', // 30% opacity
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  multiHopText: {
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.brandBlue,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   tokensContainer: {

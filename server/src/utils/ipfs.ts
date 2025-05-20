@@ -4,6 +4,11 @@ import path from 'path';
 // import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { PinataSDK } from 'pinata';
+import axios from 'axios';
+
+// Use environment variables for API keys
+const PINATA_API_KEY = process.env.PINATA_API_KEY;
+const PINATA_SECRET_KEY = process.env.PINATA_SECRET_KEY;
 
 export async function uploadToIpfs(
   imagePathOrBuffer: string | Buffer,
@@ -38,7 +43,7 @@ export async function uploadToIpfs(
   if (metadata.twitter) formData.append('twitter', metadata.twitter);
   if (metadata.telegram) formData.append('telegram', metadata.telegram);
   if (metadata.website) formData.append('website', metadata.website);
-  if (metadata.createdOn) formData.append('createdOn', metadata.createdOn || 'https://pump.fun');
+  if (metadata.createdOn) formData.append('createdOn', 'https://www.solanaappkit.com');
   formData.append('showName', metadata.showName?.toString() || 'true');
 
   // 3) Upload to Pump Fun IPFS API
@@ -156,9 +161,9 @@ export async function uploadToPinata(
     
     // Upload the metadata JSON
     const metadataUpload = await pinata.upload.public.json(metadataObject);
-    
+    console.log('metadataUpload', metadataUpload);
     // Return the IPFS link to the metadata
-    const metadataUri = `https://ipfs.io/ipfs/${metadataUpload.cid}`;
+    const metadataUri = `https://${process.env.PINATA_GATEWAY}/ipfs/${metadataUpload.cid}`;
     
     console.log('Metadata uploaded to Pinata, URI:', metadataUri);
     return metadataUri;
@@ -167,6 +172,22 @@ export async function uploadToPinata(
     if (fs.existsSync(tempFilePath)) {
       fs.unlinkSync(tempFilePath);
     }
+  }
+}
+
+/**
+ * Fallback function that creates a JSON metadata file and hosts it on the server
+ * This is used when Pinata/IPFS integration is not available
+ */
+export async function createLocalMetadata(metadata: any): Promise<string> {
+  try {
+    // In a real implementation, this would save the file and return a URL
+    // For now, we'll just return a mock URL
+    console.log('Creating local metadata:', metadata);
+    return `https://meteora.ag/metadata/${Date.now()}.json`;
+  } catch (error) {
+    console.error('Error creating local metadata:', error);
+    throw new Error('Failed to create metadata');
   }
 }
 

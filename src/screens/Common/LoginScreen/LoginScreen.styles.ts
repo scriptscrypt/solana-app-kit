@@ -130,6 +130,31 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT,
     zIndex: -1,
   },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: COLORS.darkerBackground,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 200,
+  },
+  loadingText: {
+    color: COLORS.white,
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '500',
+  },
 });
 
 export default styles;

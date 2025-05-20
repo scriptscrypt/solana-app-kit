@@ -86,9 +86,13 @@ interface BirdeyeSwapResponse {
   };
 }
 
-// Extended SwapTransaction with Birdeye data
-interface ExtendedSwapTransaction extends SwapTransaction {
+// Extend the SwapTransaction type to include uniqueId
+interface EnhancedSwapTransaction extends SwapTransaction {
+  uniqueId?: string;
   volumeUsd?: number;
+  isMultiHop?: boolean;
+  hopCount?: number;
+  childTransactions?: EnhancedSwapTransaction[];
 }
 
 interface UpdatedTradeModalProps {
@@ -147,10 +151,10 @@ export default function TradeModal({
   const [solscanTxSig, setSolscanTxSig] = useState('');
 
   // State for selected past swap
-  const [selectedPastSwap, setSelectedPastSwap] = useState<SwapTransaction | null>(null);
+  const [selectedPastSwap, setSelectedPastSwap] = useState<EnhancedSwapTransaction | null>(null);
 
   // State for past swaps
-  const [swaps, setSwaps] = useState<SwapTransaction[]>([]);
+  const [swaps, setSwaps] = useState<EnhancedSwapTransaction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -307,12 +311,12 @@ export default function TradeModal({
   /**
    * Convert a Birdeye swap transaction to our app's SwapTransaction format
    */
-  const convertBirdeyeToSwapTransaction = useCallback((birdeyeSwap: BirdeyeSwapTransaction): ExtendedSwapTransaction => {
+  const convertBirdeyeToSwapTransaction = useCallback((birdeyeSwap: BirdeyeSwapTransaction, index: number): EnhancedSwapTransaction => {
     // Determine which token is input and which is output
     const inputToken = birdeyeSwap.base.type_swap === 'from' ? birdeyeSwap.base : birdeyeSwap.quote;
     const outputToken = birdeyeSwap.base.type_swap === 'to' ? birdeyeSwap.base : birdeyeSwap.quote;
 
-    // Create SwapTransaction in our app's format
+    // Create SwapTransaction in our app's format with a unique ID
     return {
       signature: birdeyeSwap.tx_hash,
       timestamp: birdeyeSwap.block_unix_time,
@@ -332,13 +336,14 @@ export default function TradeModal({
       },
       success: true, // Birdeye only returns successful transactions
       volumeUsd: birdeyeSwap.volume_usd,
+      uniqueId: `${birdeyeSwap.tx_hash}-${birdeyeSwap.ins_index}-${birdeyeSwap.inner_ins_index}-${index}` // Create unique ID
     };
   }, []);
 
   /**
    * Fetch swap transactions using Birdeye API
    */
-  const fetchSwapsWithBirdeye = useCallback(async (ownerAddress: string): Promise<ExtendedSwapTransaction[]> => {
+  const fetchSwapsWithBirdeye = useCallback(async (ownerAddress: string): Promise<EnhancedSwapTransaction[]> => {
     if (!ownerAddress) {
       throw new Error('Wallet address is required');
     }
@@ -372,8 +377,10 @@ export default function TradeModal({
         return [];
       }
 
-      // Convert Birdeye format to our app's format
-      const convertedSwaps = result.data.items.map(convertBirdeyeToSwapTransaction);
+      // Convert Birdeye format to our app's format with index to create unique IDs
+      const convertedSwaps = result.data.items.map((item, index) =>
+        convertBirdeyeToSwapTransaction(item, index)
+      );
 
       return convertedSwaps;
     } catch (error) {
@@ -383,9 +390,90 @@ export default function TradeModal({
   }, [convertBirdeyeToSwapTransaction]);
 
   /**
+   * Group related swaps by timestamp (within 5 seconds)
+   * For routes that go through multiple hops (USDC->MEW->WSOL->SEND)
+   */
+  const groupRelatedSwaps = useCallback((swaps: EnhancedSwapTransaction[]): EnhancedSwapTransaction[] => {
+    if (!swaps.length) return [];
+
+    // Sort by timestamp ascending
+    const sortedSwaps = [...swaps].sort((a, b) => a.timestamp - b.timestamp);
+    const groupedSwaps: EnhancedSwapTransaction[] = [];
+    let currentGroup: EnhancedSwapTransaction[] = [];
+
+    // Time window in seconds to consider swaps related (5 seconds)
+    const TIME_WINDOW = 5;
+
+    sortedSwaps.forEach((swap, index) => {
+      if (index === 0) {
+        currentGroup = [swap];
+      } else {
+        const prevSwap = sortedSwaps[index - 1];
+        const timeDiff = Math.abs(swap.timestamp - prevSwap.timestamp);
+
+        // If within time window, add to current group
+        if (timeDiff <= TIME_WINDOW) {
+          currentGroup.push(swap);
+        } else {
+          // Process the completed group
+          if (currentGroup.length > 0) {
+            if (currentGroup.length === 1) {
+              // Single swap, add as is
+              groupedSwaps.push(currentGroup[0]);
+            } else {
+              // Multi-hop swap, combine first input and last output
+              const firstSwap = currentGroup[0];
+              const lastSwap = currentGroup[currentGroup.length - 1];
+
+              // Create a new transaction representing the full route
+              const combinedSwap: EnhancedSwapTransaction = {
+                ...firstSwap,
+                outputToken: lastSwap.outputToken,
+                uniqueId: `${firstSwap.uniqueId}-combined`,
+                isMultiHop: true,
+                hopCount: currentGroup.length,
+                childTransactions: currentGroup
+              };
+
+              groupedSwaps.push(combinedSwap);
+            }
+          }
+
+          // Start a new group
+          currentGroup = [swap];
+        }
+      }
+    });
+
+    // Handle the last group
+    if (currentGroup.length > 0) {
+      if (currentGroup.length === 1) {
+        groupedSwaps.push(currentGroup[0]);
+      } else {
+        const firstSwap = currentGroup[0];
+        const lastSwap = currentGroup[currentGroup.length - 1];
+
+        const combinedSwap: EnhancedSwapTransaction = {
+          ...firstSwap,
+          outputToken: lastSwap.outputToken,
+          uniqueId: `${firstSwap.uniqueId}-combined`,
+          isMultiHop: true,
+          hopCount: currentGroup.length,
+          childTransactions: currentGroup
+        };
+
+        groupedSwaps.push(combinedSwap);
+      }
+    }
+
+    // Sort final result by timestamp descending (newest first)
+    return groupedSwaps.sort((a, b) => b.timestamp - a.timestamp);
+  }, []);
+
+  /**
    * Create trade data object from a past swap transaction
    */
-  const createTradeDataFromSwap = useCallback(async (swap: ExtendedSwapTransaction): Promise<TradeData> => {
+  const createTradeDataFromSwap = useCallback(async (swap: EnhancedSwapTransaction): Promise<TradeData> => {
     const inputQty = swap.inputToken.amount / Math.pow(10, swap.inputToken.decimals);
     const outputQty = swap.outputToken.amount / Math.pow(10, swap.outputToken.decimals);
     const timestampMs = swap.timestamp < 10000000000 ? swap.timestamp * 1000 : swap.timestamp;
@@ -436,7 +524,7 @@ export default function TradeModal({
   /**
    * Handle selection of a past swap from the PastSwapsTab
    */
-  const handlePastSwapSelected = useCallback((swap: SwapTransaction) => {
+  const handlePastSwapSelected = useCallback((swap: EnhancedSwapTransaction) => {
     setSelectedPastSwap(swap);
   }, []);
 
@@ -457,12 +545,15 @@ export default function TradeModal({
       // Use the new Birdeye API function
       const birdeyeSwaps = await fetchSwapsWithBirdeye(walletAddress);
 
+      // Group related swaps before setting state
+      const groupedSwaps = groupRelatedSwaps(birdeyeSwaps);
+
       if (isMounted.current) {
-        setSwaps(birdeyeSwaps);
+        setSwaps(groupedSwaps);
 
         // If no swap is selected yet and we have swaps, select the first one
-        if (!selectedPastSwap && birdeyeSwaps.length > 0) {
-          setSelectedPastSwap(birdeyeSwaps[0]);
+        if (!selectedPastSwap && groupedSwaps.length > 0) {
+          setSelectedPastSwap(groupedSwaps[0]);
         }
       }
     } catch (err: any) {
@@ -475,7 +566,7 @@ export default function TradeModal({
       isRefreshingRef.current = false;
       hasLoadedInitialDataRef.current = true;
     }
-  }, [walletAddress, selectedPastSwap, fetchSwapsWithBirdeye]);
+  }, [walletAddress, selectedPastSwap, fetchSwapsWithBirdeye, groupRelatedSwaps]);
 
   /**
    * Handle refresh explicitly with a forced update
@@ -517,6 +608,7 @@ export default function TradeModal({
     if (isMounted.current) {
       setLoading(true);
       setResultMsg('Preparing share...');
+      setErrorMsg(''); // Clear any previous errors
     }
 
     try {
@@ -568,21 +660,49 @@ export default function TradeModal({
         executionTimestamp: timestampMs,
       };
 
-      // Call the parent's onShare handler with our manually created tradeData
-      await onShare(tradeData);
+      console.log('[ShareTradeModal] Sharing trade with data:', JSON.stringify(tradeData, null, 2));
 
-      if (isMounted.current) {
-        setResultMsg('Trade shared!');
+      // CRITICAL FIX: Actually call the parent's onShare handler and await its completion
+      // Do not close modal until the parent component has processed the data
+      if (onShare) {
+        await onShare(tradeData);
+      } else {
+        console.error('[ShareTradeModal] No onShare handler provided');
+        throw new Error('No onShare handler provided');
       }
 
-      // Close the modal after successful share
-      setTimeout(() => handleClose(), 1000);
+      if (isMounted.current) {
+        setResultMsg('Trade shared successfully!');
 
+        // Wait a brief moment so user can see success message before closing
+        setTimeout(() => {
+          // Show a success alert to confirm the action to the user
+          Alert.alert(
+            'Success',
+            'Your trade has been shared to the feed.',
+            [
+              { text: 'OK', onPress: handleClose }
+            ]
+          );
+        }, 500);
+      }
     } catch (err: any) {
       console.error('[handleSharePastSwap] Error =>', err);
+
+      // Determine a user-friendly error message
+      const errorMessage = err?.message || 'Failed to share past swap. Please try again.';
+
       if (isMounted.current) {
-        setErrorMsg('Failed to share past swap');
+        setErrorMsg(errorMessage);
+
+        // Show error alert to make the error visible to the user
+        Alert.alert(
+          'Error Sharing Trade',
+          errorMessage,
+          [{ text: 'OK' }]
+        );
       }
+
       TransactionService.showError(err);
     } finally {
       if (isMounted.current) {
@@ -699,8 +819,22 @@ export default function TradeModal({
                                     return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png';
                                   }
 
+                                  // Add SEND token logo
+                                  if (token.symbol === 'SEND') {
+                                    return 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/SEDDd5UrYYCpvi9ajsuhbahTFbmQGCwinRcxpHtZoAd/logo.png';
+                                  }
+
                                   // No logo found
                                   return null;
+                                };
+
+                                // Create a prop object without isMultiHop and hopCount
+                                const pastSwapProps = {
+                                  swap: item,
+                                  onSelect: handlePastSwapSelected,
+                                  selected: selectedPastSwap?.uniqueId === item.uniqueId,
+                                  inputTokenLogoURI: getTokenLogoUrl(item.inputToken),
+                                  outputTokenLogoURI: getTokenLogoUrl(item.outputToken)
                                 };
 
                                 return (
@@ -710,16 +844,12 @@ export default function TradeModal({
                                     activeOpacity={0.7}
                                   >
                                     <PastSwapItem
-                                      swap={item}
-                                      onSelect={handlePastSwapSelected}
-                                      selected={selectedPastSwap?.signature === item.signature}
-                                      inputTokenLogoURI={getTokenLogoUrl(item.inputToken)}
-                                      outputTokenLogoURI={getTokenLogoUrl(item.outputToken)}
+                                      {...pastSwapProps}
                                     />
                                   </TouchableOpacity>
                                 );
                               }}
-                              keyExtractor={(item, index) => `${item.signature}-${index}`}
+                              keyExtractor={(item) => item.uniqueId || `${item.signature}-${Math.random()}`}
                               contentContainerStyle={styles.swapsList}
                               showsVerticalScrollIndicator={true}
                               initialNumToRender={5}
