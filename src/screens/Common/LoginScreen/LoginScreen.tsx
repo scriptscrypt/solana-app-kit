@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Animated, Text, Dimensions, Alert, Platform } from 'react-native';
+import { View, Animated, Text, Dimensions, Alert, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
@@ -16,6 +16,7 @@ import { RootState } from '@/shared/state/store';
 import { useCustomization } from '@/config/CustomizationProvider';
 import axios from 'axios';
 import { SERVER_URL } from '@env';
+import COLORS from '@/assets/colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -94,7 +95,8 @@ export default function LoginScreen() {
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const { auth: authConfig } = useCustomization();
-  
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
   // State for app info that needs to be loaded asynchronously
   const [appInfo, setAppInfo] = useState({
     bundleId: 'Loading...',
@@ -107,17 +109,17 @@ export default function LoginScreen() {
       try {
         // Platform-specific bundle ID detection
         let detectedBundleId = 'com.sendai.solanaappkit'; // Default fallback
-        
+
         if (Platform.OS === 'ios') {
-          detectedBundleId = Application.applicationId || 
-                            Constants.expoConfig?.ios?.bundleIdentifier || 
-                            'com.sendai.solanaappkit';
+          detectedBundleId = Application.applicationId ||
+            Constants.expoConfig?.ios?.bundleIdentifier ||
+            'com.sendai.solanaappkit';
         } else {
-          detectedBundleId = Application.applicationId || 
-                            Constants.expoConfig?.android?.package || 
-                            'com.sendai.solanaappkit';
+          detectedBundleId = Application.applicationId ||
+            Constants.expoConfig?.android?.package ||
+            'com.sendai.solanaappkit';
         }
-        
+
         // Detect URL scheme from native config
         // This is initialized at app startup in App.tsx
         // Just get a URL and extract the scheme part
@@ -131,18 +133,18 @@ export default function LoginScreen() {
         } catch (error) {
           console.warn('Error detecting URL scheme:', error);
         }
-        
+
         // Update state with detected values
         setAppInfo({
           bundleId: detectedBundleId,
           urlScheme: detectedScheme
         });
-        
-        console.log('App info loaded:', { 
-          bundleId: detectedBundleId, 
-          urlScheme: detectedScheme 
+
+        console.log('App info loaded:', {
+          bundleId: detectedBundleId,
+          urlScheme: detectedScheme
         });
-        
+
       } catch (error) {
         console.error('Error loading app info:', error);
         // Set defaults if detection fails
@@ -152,10 +154,10 @@ export default function LoginScreen() {
         });
       }
     };
-    
+
     loadAppInfo();
   }, []);
-  
+
   // Animation values for SVG elements
   const circleAnim = useRef(new Animated.Value(0)).current;
   const leftStartAnim = useRef(new Animated.Value(0)).current;
@@ -413,6 +415,7 @@ export default function LoginScreen() {
 
   const handleWalletConnected = async (info: { provider: string; address: string }) => {
     console.log('Wallet connected:', info);
+    setIsAuthenticating(true);
     try {
       // First check if user already exists
       try {
@@ -422,12 +425,12 @@ export default function LoginScreen() {
           username: info.address.slice(0, 6), // Initially set to wallet address
           handle: '@' + info.address.slice(0, 6),
         });
-        
+
         console.log('User creation response:', response.data);
       } catch (createError: any) {
         // Log error information once, but don't show response details that might include stack traces
         console.log('User creation error (might be already existing):', createError?.response?.status || createError.message);
-        
+
         // Only show detailed errors in development
         if (process.env.NODE_ENV === 'development') {
           console.log('Create user error details:', {
@@ -435,17 +438,17 @@ export default function LoginScreen() {
             message: createError?.response?.data?.message || createError.message
           });
         }
-        
+
         // Don't log the full error object to prevent duplicate verbose errors in console
         // Only log critical errors that aren't related to user already existing
-        const isNonCriticalError = 
+        const isNonCriticalError =
           // User already exists (409)
-          createError?.response?.status === 409 || 
+          createError?.response?.status === 409 ||
           // Server error but likely just user exists (500 from server but with specific message)
-          (createError?.response?.status === 500 && 
-            (createError?.response?.data?.message?.includes('already exists') || 
-             createError?.response?.data?.message?.includes('duplicate key')));
-        
+          (createError?.response?.status === 500 &&
+            (createError?.response?.data?.message?.includes('already exists') ||
+              createError?.response?.data?.message?.includes('duplicate key')));
+
         if (!isNonCriticalError) {
           console.warn('Non-critical error creating user. Login will proceed.');
         }
@@ -465,6 +468,7 @@ export default function LoginScreen() {
         'Connection Error',
         'Successfully connected to wallet but encountered an error proceeding to the app.',
       );
+      setIsAuthenticating(false);
     }
   };
 
@@ -817,6 +821,16 @@ export default function LoginScreen() {
         <Text style={styles.agreementText}>
           By continuing you agree to our t&c and Privacy Policy
         </Text>
+
+        {/* Loading Overlay */}
+        {isAuthenticating && (
+          <View style={styles.loadingOverlay}>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.brandPrimary} />
+              <Text style={styles.loadingText}>Connecting to wallet...</Text>
+            </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
