@@ -712,7 +712,7 @@ const ProfileEditDrawer = ({
 
                                     <View style={styles.profileImageOverlay}>
                                         <View style={styles.profileImageEditIconContainer}>
-                                            <Text style={styles.profileImageEditIcon}>✏️</Text>
+                                            <Icons.EditIcon width={20} height={20} color={COLORS.white} />
                                         </View>
                                     </View>
                                 </TouchableOpacity>
@@ -732,59 +732,44 @@ const ProfileEditDrawer = ({
 
                                 {showAvatarOptions && (
                                     <View
-                                        style={styles.avatarOptionsContainer}
-                                        pointerEvents="box-none"
-                                        onStartShouldSetResponder={(e) => {
-                                            console.log('[ProfileEditDrawer] Avatar options container capturing responder');
-                                            // Block all events from getting through
-                                            e.stopPropagation?.();
-                                            return true;
-                                        }}
-                                        onTouchEnd={(e) => {
-                                            console.log('[ProfileEditDrawer] Avatar options container touch end');
-                                            // Prevent touch events from propagating through
-                                            e.stopPropagation?.();
-                                            return true;
+                                        style={{
+                                            borderRadius: 16,
+                                            padding: 12,
+                                            flexDirection: 'row',
+                                            justifyContent: 'space-around',
+                                            alignItems: 'center',
+                                            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                                            marginHorizontal: 16,
                                         }}
                                     >
-                                        <View
-                                            style={{
-                                                borderRadius: 8,
-                                                padding: 8,
-                                                flexDirection: 'row',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
+                                        <TouchableOpacity
+                                            style={[styles.avatarOptionButton, styles.avatarOptionButtonWithMargin]}
+                                            onPress={(e) => {
+                                                console.log('[ProfileEditDrawer] Library button pressed');
+                                                e.stopPropagation();
+                                                handleSelectImageFromLibrary();
                                             }}
-                                        >
-                                            <TouchableOpacity
-                                                style={[styles.avatarOptionButton, styles.avatarOptionButtonWithMargin]}
-                                                onPress={(e) => {
-                                                    console.log('[ProfileEditDrawer] Library button pressed');
-                                                    e.stopPropagation();
-                                                    handleSelectImageFromLibrary();
-                                                }}
-                                                disabled={isProcessing || isUploading || isPreparingNfts}
-                                                activeOpacity={0.7}>
-                                                <Text style={styles.avatarOptionButtonIcon}>🖼️</Text>
-                                                <Text style={styles.avatarOptionText}>Library</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={styles.avatarOptionButton}
-                                                onPress={(e) => {
-                                                    console.log('[ProfileEditDrawer] NFT button pressed');
-                                                    e.stopPropagation();
-                                                    handlePrepareAndShowNfts();
-                                                }}
-                                                disabled={isProcessing || isUploading || isPreparingNfts}
-                                                activeOpacity={0.7}>
-                                                {isPreparingNfts ? (
-                                                    <ActivityIndicator size="small" color={COLORS.white} style={styles.activityIndicatorMargin} />
-                                                ) : (
-                                                    <Text style={styles.avatarOptionButtonIcon}>🎆</Text>
-                                                )}
-                                                <Text style={styles.avatarOptionText}>My NFTs</Text>
-                                            </TouchableOpacity>
-                                        </View>
+                                            disabled={isProcessing || isUploading || isPreparingNfts}
+                                            activeOpacity={0.7}>
+                                            <Icons.GalleryIcon width={20} height={20} color={COLORS.white} style={{ marginRight: 8 }} />
+                                            <Text style={styles.avatarOptionText}>Library</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.avatarOptionButton}
+                                            onPress={(e) => {
+                                                console.log('[ProfileEditDrawer] NFT button pressed');
+                                                e.stopPropagation();
+                                                handlePrepareAndShowNfts();
+                                            }}
+                                            disabled={isProcessing || isUploading || isPreparingNfts}
+                                            activeOpacity={0.7}>
+                                            {isPreparingNfts ? (
+                                                <ActivityIndicator size="small" color={COLORS.white} style={styles.activityIndicatorMargin} />
+                                            ) : (
+                                                <Icons.NftIcon width={20} height={20} color={COLORS.white} style={{ marginRight: 8 }} />
+                                            )}
+                                            <Text style={styles.avatarOptionText}>My NFTs</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 )}
                             </View>
