@@ -6,7 +6,8 @@
 
 <p> From AI to Social, Launchpads to Wallets, and Trading — build mobile apps in under 15 minutes. </p>
 
-![Solana App Kit - Cover](https://github.com/user-attachments/assets/202830af-1638-4fa1-b40f-7faac03a1cef)
+![githubReadme](https://github.com/user-attachments/assets/2976e07f-adf5-4909-94b3-489ad0604fd0)
+
 
 [![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/releases)
 [![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/network/members)
