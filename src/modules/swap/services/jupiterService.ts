@@ -1,10 +1,10 @@
 import { Connection, clusterApiUrl, Cluster, Transaction, VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { Buffer } from 'buffer';
-import { ENDPOINTS } from '../../../config/constants';
+import { ENDPOINTS } from '@/shared/config/constants';
 import { CLUSTER, HELIUS_STAKED_URL } from '@env';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
-import { TokenInfo } from '../types/tokenTypes';
-import { SwapCallback } from './tradeService';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
+import { SwapCallback } from '@/modules/swap/services/tradeService';
+import { TokenInfo } from '@/modules/data-module';
 
 // Define JupiterToken interface
 interface JupiterToken {

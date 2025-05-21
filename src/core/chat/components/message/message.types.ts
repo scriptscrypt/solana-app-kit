@@ -1,6 +1,6 @@
 import { ImageSourcePropType, TextStyle, ViewStyle } from 'react-native';
 import { ThreadPost, ThreadUser } from '@/core/thread/components/thread.types';
-import { TradeData } from '@/core/sharedUI/TradeCard/TradeCard';
+import { TradeData } from '@/core/shared-ui/TradeCard/TradeCard';
 import { NftListingData as ModuleNftListingData } from '@/modules/nft/types';
 
 export type NftListingData = ModuleNftListingData;

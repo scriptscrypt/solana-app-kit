@@ -33,9 +33,9 @@ import {
 } from '../thread.types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { useWallet } from '../../../../modules/wallet-providers/hooks/useWallet';
 import TradeModal from '../trade/ShareTradeModal';
-import { DEFAULT_IMAGES } from '../../../../config/constants';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import { NftListingModal, useFetchNFTs, NftItem } from '../../../../modules/nft';
 import { uploadThreadImage } from '../../services/threadImageService';
 import {
@@ -44,7 +44,6 @@ import {
   fixAllImageUrls,
 } from '@/shared/utils/IPFSImage';
 import COLORS from '@/assets/colors';
-import TYPOGRAPHY from '@/assets/typography';
 import Svg, { Path } from 'react-native-svg';
 
 /**

@@ -1,123 +1,185 @@
 # Thread Module
 
-The Thread module is a comprehensive implementation of thread/post functionality similar to social media applications like Twitter. This module is designed to be modular, customizable, and easy to contribute to.
+The The Thread module provides a comprehensive set of components, hooks, services, and utilities for implementing a social media-style thread or feed functionality within your application. It is designed to be modular, customizable, and easy to integrate.
 
-## Directory Structure
+## Module Structure
+
+The module is organized into the following main directories:
 
 ```
 src/core/thread/
-├── components/            # UI Components
-│   ├── post/              # Post-specific components
-│   ├── sections/          # Content section components
-│   ├── retweet/           # Retweet-related components
-│   ├── trade/             # Trade-related components
-│   └── FollowersFollowingListScreen/  # User followers/following screen
-├── types/                 # TypeScript interfaces and types
-├── utils/                 # Utility functions
-├── services/              # API and data fetching functions
-└── hooks/                 # Custom React hooks
+├── components/            # Reusable UI components for threads and posts
+│   ├── post/              # Components specific to individual post rendering (Header, Body, Footer, CTA)
+│   ├── sections/          # Components for different content types within a post (Text, Image, Video, Poll, Trade, NFT)
+│   ├── retweet/           # Components related to retweeting functionality (Preview, Modal, Drawer)
+│   ├── trade/             # Components for sharing and displaying trades (Share Modal, Past Swaps)
+│   ├── thread-ancestors/  # Component for displaying parent posts in a reply chain
+│   ├── thread-composer/   # Component for creating new posts or replies
+│   ├── thread-container/  # Main container component for rendering a thread
+│   └── thread-item/       # Component for rendering a single item in a thread
+├── hooks/                 # Custom React hooks for thread-related logic (e.g., `useThread`, `useThreadAnimations`)
+├── services/              # Functions for interacting with backend APIs or data sources (e.g., `createPost`, `fetchPosts`)
+├── types/                 # TypeScript type definitions for all data structures used within the module
+├── utils/                 # Utility functions for common tasks (e.g., `gatherAncestorChain`, `mergeStyles`)
+└── index.ts               # Main barrel file for exporting all public APIs of the module
 ```
 
-## Components
+## Core Components
 
-The components directory contains all UI-related elements:
+- **`Thread`**: The main container component that renders a list of posts. It handles fetching and displaying root posts and integrates the `ThreadComposer`.
+- **`ThreadItem`**: Renders a single post within a thread, including its header, body, footer, and any CTAs. It also handles the display of retweets and replies.
+- **`ThreadComposer`**: A rich text editor for creating new posts or replies. Supports text, image attachments, NFT listings, and trade sharing.
+- **`ThreadAncestors`**: Displays the chain of parent posts when viewing a reply, providing context.
+- **`EditPostModal`**: A modal for editing the content of an existing post.
+- **`ThreadEditModal`**: (Potentially an older or alternative edit modal, review usage).
+- **`FeedSkeleton`**: A skeleton loader component to display while feed content is loading.
 
-- `Thread.tsx` - Main thread component displaying a list of posts
-- `ThreadItem.tsx` - Individual post component
-- `ThreadComposer.tsx` - Post creation/editing component
-- `ThreadAncestors.tsx` - Displays ancestor/parent posts
-- `ThreadEditModal.tsx` - Modal for editing a post
-- `NftListingModal.tsx` - Modal for NFT listings within posts
-- `EditPostModal.tsx` - Modal for editing post content
+### Post Sub-Components
 
-### Component Organization
+- **`PostHeader`**: Renders the top part of a post, including user avatar, username, handle, timestamp, and action menu (edit/delete).
+- **`PostBody`**: Renders the main content of a post by iterating through its sections and using the appropriate section-specific component.
+- **`PostFooter`**: Renders the bottom part of a post, including action icons (comment, retweet, react, bookmark) and their counts.
+- **`PostCTA`**: Renders call-to-action buttons for posts containing trades or NFT listings (e.g., "Copy Trade", "Buy NFT").
 
-Each component follows a structured organization:
+### Section Components
 
-1. Import statements
-2. Component props interface
-3. Component definition
-4. Helper functions
-5. Render logic
+These components render specific types of content within a `PostBody`:
 
-## Types
+- `SectionTextOnly`
+- `SectionTextImage`
+- `SectionTextVideo`
+- `SectionPoll`
+- `SectionTrade` (integrates `TradeCard` from shared-ui)
+- `SectionNftListing` (integrates `NftDetailsSection` from the NFT module)
 
-The `types` directory contains all TypeScript interfaces and type definitions:
+### Retweet Components
 
-- ThreadPost - The main post interface
-- ThreadUser - User data interface
-- ThreadSection - Content section interface
-- Component props interfaces (ThreadProps, ThreadItemProps, etc.)
+- **`RetweetPreview`**: Displays a preview of a retweeted post.
+- **`RetweetModal`**: A modal for creating a quote retweet (adding a comment).
+- **`RetweetDrawer`**: A bottom drawer offering options to repost directly or quote.
 
-## Utils
+### Trade Components
 
-The `utils` directory contains utility functions:
-
-- `gatherAncestorChain` - Builds ancestry chain for a post
-- `flattenPosts` - Flattens nested post structure
-- `findPostById` - Finds a post by ID
-- `removePostRecursive` - Recursively removes a post and its replies
-
-## Services
-
-The `services` directory contains API and data-related functions:
-
-- `createPost` - Creates a new post
-- `updatePost` - Updates an existing post
-- `deletePost` - Deletes a post
-- `fetchPosts` - Fetches posts from the API
-- `addReaction` - Adds a reaction to a post
-- `createRetweet` - Creates a retweet
+- **`ShareTradeModal`**: A modal allowing users to select and share past trades from their transaction history.
+- **`PastSwapsTab` / `PastSwapItem`**: Components used within `ShareTradeModal` to display a list of historical swaps.
 
 ## Hooks
 
-The `hooks` directory contains custom React hooks:
+- **`useThread`**: (Example) A custom hook to manage thread data, including fetching, adding, and removing posts. (Actual implementation might vary, check `src/core/thread/hooks/`)
+- **`useThreadAnimations`**: (Example) A hook for managing animations related to thread interactions.
 
-- `useThread` - Main thread data management hook
-- `useThreadAnimations` - Animations for thread interactions
+## Services
 
-## Usage
+The `services` directory contains functions for backend interactions, such as:
 
-To use the Thread module in your application:
+- `createPost(postData)`
+- `updatePost(postId, updates)`
+- `deletePost(postId)`
+- `fetchPosts(filters)`
+- `addReaction(postId, reactionType)`
+- `createRetweet(originalPostId, quoteText)`
+- `threadImageService.ts`: Service for uploading images related to threads.
+
+## Types
+
+All TypeScript interfaces and type definitions for the Thread module are centralized in `src/core/thread/types/index.ts`. Key types include:
+
+- `ThreadPost`: Defines the structure of a single post.
+- `ThreadUser`: Defines the structure of a user associated with a post.
+- `ThreadSection`: Defines the structure for different content sections within a post (text, image, video, trade, NFT, poll).
+- Props interfaces for all components (e.g., `ThreadProps`, `ThreadItemProps`).
+
+## Utilities
+
+The `utils` directory provides helper functions for various tasks:
+
+- `gatherAncestorChain(postId, allPosts)`: Builds the parent chain for a reply.
+- `mergeStyles(baseStyles, ...overrides)`: Merges multiple StyleSheet objects.
+- Other common utility functions for post manipulation or data transformation.
+
+## Usage Example
+
+To integrate the Thread module into a screen:
 
 ```tsx
-import {Thread} from '../core/thread/components';
-import {useThread} from '../core/thread/hooks';
+import { Thread, useThread, ThreadUser, ThreadPost } from '@/core/thread'; // Assuming @ is an alias for src
+import React, { useState, useEffect } from 'react';
+
+// Placeholder for current user data
+const currentUser: ThreadUser = {
+  id: 'user123',
+  username: 'Current User',
+  handle: '@currentUser',
+  avatar: require('@/assets/images/default-avatar.png'), // Replace with actual path or URI
+  verified: true,
+};
+
+// Placeholder for fetching initial posts
+async function getInitialPosts(): Promise<ThreadPost[]> {
+  // Replace with actual API call or data source
+  return []; 
+}
 
 function ThreadScreen() {
-  const {posts, addPost, removePost} = useThread(initialPosts);
+  const [rootPosts, setRootPosts] = useState<ThreadPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Example of using a custom hook (if useThread is structured this way)
+  // const { posts, addPost, removePost } = useThread(initialPostsFromApi);
+
+  useEffect(() => {
+    getInitialPosts().then(posts => {
+      setRootPosts(posts);
+      setLoading(false);
+    });
+  }, []);
+
+  const handlePostCreated = () => {
+    // Logic to refetch posts or update the list
+    console.log('New post created, refresh feed!');
+    getInitialPosts().then(posts => setRootPosts(posts));
+  };
+
+  const handlePostPress = (post: ThreadPost) => {
+    console.log('Post pressed:', post.id);
+    // Navigate to post details screen, etc.
+  };
+
+  const handleUserPress = (user: ThreadUser) => {
+    console.log('User pressed:', user.id);
+    // Navigate to user profile screen, etc.
+  };
+
+  if (loading) {
+    // return <FeedSkeleton count={5} />; // Or use FeedSkeleton if available and suitable
+    return <Text>Loading posts...</Text>;
+  }
 
   return (
     <Thread
-      rootPosts={posts}
+      rootPosts={rootPosts}
       currentUser={currentUser}
-      onPostCreated={() => {
-        // Handle post creation
-      }}
-      onPressPost={post => {
-        // Handle post press
-      }}
+      onPostCreated={handlePostCreated}
+      onPressPost={handlePostPress}
+      onPressUser={handleUserPress}
+      // You can also pass styleOverrides, themeOverrides, etc.
     />
   );
 }
+
+export default ThreadScreen;
 ```
 
 ## Contributing
 
-When contributing to the Thread module:
+When contributing to the Thread module, please adhere to the following guidelines:
 
-1. Maintain separation of concerns between components, types, utils, services, and hooks
-2. Add new utility functions to the utils directory
-3. Add new API methods to the services directory
-4. Create custom hooks for complex logic
-5. Keep components focused on UI rendering
-6. Follow the established naming conventions
-
-## Styling
-
-Thread styling is handled through a combination of:
-
-1. Base styles in `thread.styles.ts`
-2. Theme configuration in `thread.theme.ts`
-3. Component-specific style files (e.g., `ThreadEditModal.style.ts`)
-4. Style overrides through component props
+- Maintain a clear separation of concerns between components, hooks, services, types, and utilities.
+- Place new UI components within the appropriate subdirectory in `components/`.
+- Add new custom hooks to the `hooks/` directory.
+- Implement API interaction logic within the `services/` directory.
+- Define all new types in `types/index.ts`.
+- Add reusable helper functions to `utils/index.ts`.
+- Ensure components are modular and primarily focused on UI rendering, delegating complex logic to hooks or services.
+- Follow established naming conventions and coding styles.
+- Write unit tests for new functionalities and components.

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { format } from 'date-fns';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { SwapTransaction, TokenMetadata } from '../../../../modules/dataModule/services/swapTransactions';
+import { SwapTransaction, TokenMetadata } from '../../../../modules/data-module/services/swapTransactions';
 import COLORS from '../../../../assets/colors';
 import TYPOGRAPHY from '../../../../assets/typography';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, ActivityIndicator, TouchableOpacity, Animated, Easing, Dimensions, StyleSheet } from 'react-native';
-import { DEFAULT_IMAGES } from '../../../config/constants';
-import TokenDetailsDrawer from '../../../core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
+import TokenDetailsDrawer from '@/core/shared-ui/TokenDetailsDrawer/TokenDetailsDrawer';
 
 // Import types
 import { NftListingData } from '../types';

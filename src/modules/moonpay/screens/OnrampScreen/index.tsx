@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 
-import AppHeader from '@/core/sharedUI/AppHeader';
+import AppHeader from '@/core/shared-ui/AppHeader';
 import MoonPayWidget from '@/modules/moonpay/components/MoonPayWidget';
 import COLORS from '@/assets/colors';
 import { MOONPAY_API_KEY } from '@env';

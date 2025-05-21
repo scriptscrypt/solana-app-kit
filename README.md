@@ -368,7 +368,7 @@ solana-app-kit/
 │   ├── core/           # Core application components
 │   │   ├── devMode/    # Development mode utilities
 │   │   ├── profile/    # User profile related components
-│   │   ├── sharedUI/   # Common UI components
+│   │   ├── shared-ui/   # Common UI components
 │   │   └── thread/     # Thread-related components
 │   ├── modules/        # Feature modules (core functionality)
 │   │   ├── dataModule/ # Data management module

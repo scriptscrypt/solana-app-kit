@@ -1,8 +1,8 @@
 // File: src/components/Profile/ProfileView.tsx
 import React, { useMemo, memo, useEffect, useCallback } from 'react';
 import { View, StyleProp, ViewStyle, ActivityIndicator } from 'react-native';
-import UserProfileInfo from './ProfileInfo/UserProfileInfo';
-import ProfileTabs from './ProfileTabs/ProfileTabs';
+import UserProfileInfo from './profile-info/UserProfileInfo';
+import ProfileTabs from './profile-tabs/ProfileTabs';
 
 import { styles as profileStyles } from './profile.style';
 import COLORS from '../../../assets/colors';

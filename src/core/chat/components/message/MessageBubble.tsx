@@ -7,7 +7,7 @@ import { IPFSAwareImage, getValidImageSource, fixIPFSUrl } from '@/shared/utils/
 import MessageTradeCard from './MessageTradeCard';
 import MessageNFT from './MessageNFT';
 import COLORS from '@/assets/colors';
-import { DEFAULT_IMAGES } from '@/config/constants';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import Icons from '@/assets/svgs';
 import { ThreadPost } from '@/core/thread/components/thread.types';
 

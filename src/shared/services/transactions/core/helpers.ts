@@ -7,7 +7,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
 import { FeeMapping, FeeTier, TransactionMode, TransactionType, StatusCallback } from './types';
 import { DEFAULT_FEE_MAPPING, TRANSACTION_RETRIES } from './constants';
 
