@@ -16,8 +16,7 @@ import OtherProfileScreen from '@/screens/sample-ui/Threads/other-profile-screen
 import PostThreadScreen from '@/screens/sample-ui/Threads/post-thread-screen/PostthreadScreen';
 import FollowersFollowingListScreen from '@/core/profile/components/followers-following-listScreen/FollowersFollowingListScreen';
 import ProfileScreen from '@/screens/sample-ui/Threads/profile-screen/ProfileScreen';
-import IntroScreen from '@/screens/common/intro-screen/IntroScreen';
-import LoginScreen from '@/screens/common/login-screen/LoginScreen';
+
 import { MercuroScreen } from '@/modules/mercuryo';
 import SwapScreen from '@/modules/swap/screens/SwapScreen';
 import OnrampScreen from '@/modules/moonpay/screens/OnrampScreen';
@@ -25,9 +24,9 @@ import socketService from '@/shared/services/socketService';
 import { fetchUserChats } from '@/shared/state/chat/slice';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { TokenInfo } from '@/modules/data-module';
-import WebViewScreen from '@/screens/common/WebViewScreen';
-import DeleteAccountConfirmationScreen from '@/screens/common/DeleteAccountConfirmationScreen';
+
 import WalletScreen from '@/modules/moonpay/screens/WalletScreen';
+import { DeleteAccountConfirmationScreen, IntroScreen, LoginScreen, WebViewScreen } from '@/screens';
 
 export type RootStackParamList = {
   IntroScreen: undefined;

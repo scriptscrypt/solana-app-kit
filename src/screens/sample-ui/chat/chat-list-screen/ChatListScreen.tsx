@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -209,36 +209,38 @@ const ChatListScreen: React.FC = () => {
   };
 
   // Initial data load (runs once on mount or when userId changes)
-  useEffect(() => {
-    // No need for setIsLoading here, rely on loadingChats from Redux
-    const loadInitialData = async () => {
-      try {
-        // Fetch all posts for global chat (if needed)
-        // await dispatch(fetchAllPosts()).unwrap(); // Keep commented if global chat is not shown
+  useFocusEffect(
+    useCallback(() => {
+      const loadInitialData = async () => {
+        try {
+          // Fetch user's chats if user is authenticated
+          if (userId) {
+            console.log('[ChatListScreen] Focus: Fetching user chats...');
+            const chatResponse = await dispatch(fetchUserChats(userId)).unwrap();
 
-        // Fetch user's chats if user is authenticated
-        if (userId) {
-          console.log('[ChatListScreen] Fetching initial user chats...');
-          const chatResponse = await dispatch(fetchUserChats(userId)).unwrap();
-
-          // Join all chat rooms after fetching them
-          if (chatResponse && Array.isArray(chatResponse)) {
-            const chatIds = chatResponse.map(chat => chat.id).filter(Boolean);
-            if (chatIds.length > 0) {
-              console.log('Joining initial user chats:', chatIds);
-              socketService.joinChats(chatIds);
+            // Join all chat rooms after fetching them
+            if (chatResponse && Array.isArray(chatResponse)) {
+              const chatIds = chatResponse.map(chat => chat.id).filter(Boolean) as string[];
+              if (chatIds.length > 0) {
+                console.log('[ChatListScreen] Focus: Joining chat rooms:', chatIds);
+                socketService.joinChats(chatIds);
+              }
             }
           }
+        } catch (error) {
+          console.error('Error loading chat data on focus:', error);
+          // Error is handled by the error state in Redux
         }
-      } catch (error) {
-        console.error('Error loading initial chat data:', error);
-        // Error is handled by the error state in Redux
-        // Alert.alert('Error', 'Failed to load chats. Please try again.');
-      }
-    };
+      };
 
-    loadInitialData();
-  }, [dispatch, userId]); // Dependency array ensures this runs when userId is available
+      loadInitialData();
+
+      // Optional: Return a cleanup function if needed for specific effects,
+      // but for fetching data on focus, it's often not required unless
+      // you need to cancel the fetch if the screen becomes unfocused quickly.
+      // return () => {};
+    }, [dispatch, userId]) // Dependencies for useCallback: re-run effect if dispatch or userId changes
+  );
 
   // Format most recent post for Global chat preview
   const getGlobalChatLastMessage = useCallback(() => {
