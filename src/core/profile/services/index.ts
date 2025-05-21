@@ -3,4 +3,4 @@
  */
 
 export * from './profileService';
-export * from '../utils/profileActionsUtils'; 
+export * from './profileActions'; 

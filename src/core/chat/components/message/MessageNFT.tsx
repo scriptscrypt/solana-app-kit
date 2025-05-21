@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Ale
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import { buyNft, buyCollectionFloor } from '@/modules/nft';
-import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
-import TokenDetailsDrawer from '@/core/sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
+import TokenDetailsDrawer from '@/core/shared-ui/TokenDetailsDrawer/TokenDetailsDrawer';
 // Import the shared NFTData interface
 import { NFTData } from './message.types';
 

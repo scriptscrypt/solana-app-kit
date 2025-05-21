@@ -17,12 +17,12 @@ import {
 import Icons from '../../../assets/svgs';
 import { TENSOR_API_KEY } from '@env';
 import { DEFAULT_IMAGES } from '../../../config/constants';
-import { useWallet } from '../../walletProviders/hooks/useWallet';
+import { useWallet } from '../../wallet-providers/hooks/useWallet';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
 import { createRootPostAsync, addPostLocally } from '@/shared/state/thread/reducer';
 import { ThreadSection, ThreadSectionType, ThreadUser } from '@/core/thread/components/thread.types';
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import { TransactionService } from '../../wallet-providers/services/transaction/transactionService';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 

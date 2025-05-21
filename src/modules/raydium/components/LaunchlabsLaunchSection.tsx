@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';
-import PumpfunCard from '../../pumpFun/components/PumpfunCard';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import PumpfunCard from '../../pump-fun/components/PumpfunCard';
+import { TransactionService } from '../../wallet-providers/services/transaction/transactionService';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 

@@ -6,7 +6,7 @@ import {
   SystemProgram,
   ComputeBudgetProgram,
 } from '@solana/web3.js';
-import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
 import { Buffer } from 'buffer';
 import { CLUSTER } from '@env';
 import {

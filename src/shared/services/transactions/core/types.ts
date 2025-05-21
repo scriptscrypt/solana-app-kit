@@ -1,5 +1,5 @@
 import { PublicKey, Connection, Transaction, VersionedTransaction, TransactionInstruction } from '@solana/web3.js';
-import { StandardWallet } from '@/modules/walletProviders/types';
+import { StandardWallet } from '@/modules/wallet-providers/types';
 
 /**
  * Transaction modes available in the app

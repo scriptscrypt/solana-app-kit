@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import knex from '../../db/knex';
-import {uploadToIpfs} from '../../utils/ipfs';
+import {uploadToIpfs, uploadToPinata} from '../../utils/ipfs';
 // import fetch from 'node-fetch';
 
 // Assuming userController and requireAuth are structured like this
@@ -66,20 +66,20 @@ profileImageRouter.post(
         showName: false,
       };
 
-      // 4) Upload image to IPFS
-      const ipfsResult = await uploadToIpfs(tempFilePath, metadata);
+      // 4) Upload image and metadata to Pinata
+      const pinataResult = await uploadToPinata(tempFilePath, metadata);
 
       // 5) Clean up temp file
       await fs.promises.unlink(tempFilePath);
 
-      // 6) Attempt to fetch the returned metadata JSON
-      let ipfsImageUrl = ipfsResult;
+      // 6) Attempt to fetch the image URL from the returned Pinata metadata JSON
+      let imageUrl = pinataResult; // Default to metadata URI if image extraction fails
       const {default: fetch} = await import('node-fetch');
-      const metadataResponse = await fetch(ipfsResult);
+      const metadataResponse = await fetch(pinataResult); // Fetch the metadata from Pinata
       if (metadataResponse.ok) {
         const metadataJson: any = await metadataResponse.json();
         if (metadataJson.image) {
-          ipfsImageUrl = metadataJson.image;
+          imageUrl = metadataJson.image; // Extract the direct image URL
         }
       }
 
@@ -90,18 +90,18 @@ profileImageRouter.post(
           id: userId,
           username: userId, // default
           handle: '@' + userId.slice(0, 6),
-          profile_picture_url: ipfsImageUrl,
+          profile_picture_url: imageUrl, // Use the extracted image URL
           created_at: new Date(),
           updated_at: new Date(),
         });
       } else {
         await knex('users').where({id: userId}).update({
-          profile_picture_url: ipfsImageUrl,
+          profile_picture_url: imageUrl, // Use the extracted image URL
           updated_at: new Date(),
         });
       }
 
-      return res.json({success: true, url: ipfsImageUrl});
+      return res.json({success: true, url: imageUrl}); // Return the direct image URL
     } catch (error: any) {
       console.error('[Profile upload error]', error);
       return res.status(500).json({success: false, error: error.message});

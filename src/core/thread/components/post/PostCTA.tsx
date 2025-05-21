@@ -15,10 +15,10 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/shared/state/store';
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
 import { CLUSTER } from '@env';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
-import { DEFAULT_IMAGES, ENDPOINTS } from '@/config/constants';
-import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { DEFAULT_IMAGES, ENDPOINTS } from '@/shared/config/constants';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -27,7 +27,7 @@ import { buyNft, buyCollectionFloor } from '@/modules/nft';
 import { createPostCTAStyles } from './PostCTA.styles';
 
 // Import the DEFAULT_SOL_TOKEN for trading
-import { DEFAULT_SOL_TOKEN, TokenInfo } from '@/modules/dataModule';
+import { DEFAULT_SOL_TOKEN, TokenInfo } from '@/modules/data-module';
 
 // Import the RootStackParamList for type-safe navigation
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';

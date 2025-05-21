@@ -1,9 +1,9 @@
 import { Connection, Transaction, VersionedTransaction, PublicKey, SystemProgram } from '@solana/web3.js';
-import { TokenInfo } from '../../dataModule/types/tokenTypes';
+import { TokenInfo } from '../../data-module/types/tokenTypes';
 import { JupiterService, JupiterSwapResponse } from './jupiterService';
 import { RaydiumService } from '../../raydium/services/raydiumService';
-import { Direction } from '../../pumpFun/services/pumpSwapService';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import { Direction } from '../../pump-fun/services/pumpSwapService';
+import { TransactionService } from '../../wallet-providers/services/transaction/transactionService';
 import { COMMISSION_WALLET, SERVER_URL } from '@env';
 import { Alert } from 'react-native';
 

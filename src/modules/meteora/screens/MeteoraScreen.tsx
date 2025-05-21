@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import { AppHeader } from '@/core/sharedUI';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
+import { AppHeader } from '@/core/shared-ui';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import { SwapForm, LiquidityPanel, TokenCreationForm } from '../components';

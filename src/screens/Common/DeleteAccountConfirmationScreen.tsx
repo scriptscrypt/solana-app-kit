@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
-import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
+import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
-import AppHeader from '@/core/sharedUI/AppHeader';
+import AppHeader from '@/core/shared-ui/AppHeader';
 import { deleteAccountAction } from '@/shared/state/auth/reducer';
 
 function DeleteAccountConfirmationScreen() {

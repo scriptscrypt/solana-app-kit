@@ -16,9 +16,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { styles } from './SwapScreen.styles';
 import SelectTokenModal from '../components/SelectTokenModal';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
-import { AppHeader } from '@/core/sharedUI';
+import { AppHeader } from '@/core/shared-ui';
 import Icons from '@/assets/svgs';
 
 // Import our new components and hook
