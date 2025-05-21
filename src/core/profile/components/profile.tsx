@@ -22,8 +22,8 @@ import { fetchAllPosts } from '@/shared/state/thread/reducer';
 
 import { useFetchNFTs } from '@/modules/nft';
 import { NftItem } from '@/modules/nft/types';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
+import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
 import {
   fetchFollowers,
   fetchFollowing,
@@ -42,8 +42,8 @@ import { ProfileProps, UserProfileData } from '@/core/profile/types';
 import ProfileView from './ProfileView';
 import { styles } from './profile.style';
 import { ThreadPost } from '@/core/thread/types';
-import { useFetchPortfolio } from '@/modules/dataModule/hooks/useFetchTokens';
-import { AssetItem } from '@/modules/dataModule/types/assetTypes';
+import { useFetchPortfolio } from '@/modules/data-module/hooks/useFetchTokens';
+import { AssetItem } from '@/modules/data-module/types/assetTypes';
 import EditPostModal from '@/core/thread/components/EditPostModal';
 import Icons from '@/assets/svgs';
 import AccountSettingsDrawer from './AccountSettingsDrawer';

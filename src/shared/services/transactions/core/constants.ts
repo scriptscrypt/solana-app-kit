@@ -1,6 +1,6 @@
 import { COMMISSION_WALLET } from '@env';
 import { FeeMapping } from './types';
-import { ENDPOINTS } from '@/config/constants';
+import { ENDPOINTS } from '@/shared/config/constants';
 
 /**
  * Default fee mapping for priority transactions

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { MessageHeaderProps } from './message.types';
 import { messageHeaderStyles } from './message.styles';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
-import { DEFAULT_IMAGES } from '@/config/constants';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 
 function MessageHeader({ message, showAvatar = true, onPressUser }: MessageHeaderProps) {
   // Handle ThreadPost or MessageData types

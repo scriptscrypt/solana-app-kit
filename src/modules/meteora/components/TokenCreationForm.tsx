@@ -27,7 +27,7 @@ import {
 import { buildCurveByMarketCap, createPool, createTokenWithCurve, uploadTokenMetadata } from '../services/meteoraService';
 import BondingCurveVisualizer from './BondingCurveVisualizer';
 import { Connection } from '@solana/web3.js';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import BN from 'bn.js';
 import { HELIUS_STAKED_URL } from '@env';
 

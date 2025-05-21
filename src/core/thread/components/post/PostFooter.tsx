@@ -28,7 +28,7 @@ import {
   updatePostAsync,
 } from '@/shared/state/thread/reducer';
 import { nanoid } from '@reduxjs/toolkit';
-import { DEFAULT_IMAGES } from '@/config/constants';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 

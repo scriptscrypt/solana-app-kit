@@ -16,7 +16,7 @@ import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import { executeTrade, fetchSwapQuote } from '../services/meteoraService';
 import { MeteoraTrade } from '../types';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import { SERVER_URL } from '@env';
 import {
     TokenInfo,
@@ -24,7 +24,7 @@ import {
     DEFAULT_USDC_TOKEN,
     ensureCompleteTokenInfo,
     fetchTokenPrice
-} from '@/modules/dataModule';
+} from '@/modules/data-module';
 
 // Helper function to format token amounts properly
 const formatTokenAmount = (amount: string, decimals: number = 9): string => {

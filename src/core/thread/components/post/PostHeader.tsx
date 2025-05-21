@@ -16,7 +16,7 @@ import Icons from '../../../../assets/svgs';
 import { createPostHeaderStyles } from './PostHeader.styles';
 import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
-import { useWallet } from '../../../../modules/walletProviders/hooks/useWallet';
+import { useWallet } from '../../../../modules/wallet-providers/hooks/useWallet';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import COLORS from '@/assets/colors';
 

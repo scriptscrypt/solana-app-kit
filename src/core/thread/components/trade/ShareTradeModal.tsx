@@ -20,23 +20,23 @@ import {
   ThreadSectionType,
   ThreadPost
 } from '../thread.types';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import {
   addPostLocally,
   createRootPostAsync,
 } from '@/shared/state/thread/reducer';
 import styles from './ShareTradeModal.style';
 import PastSwapItem from './PastSwapItem';
-import { SwapTransaction, TokenMetadata } from '@/modules/dataModule/services/swapTransactions';
+import { SwapTransaction, TokenMetadata } from '@/modules/data-module/services/swapTransactions';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
-import { TokenInfo } from '@/modules/dataModule/types/tokenTypes';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
+import { TokenInfo } from '@/modules/data-module/types/tokenTypes';
 import {
   DEFAULT_SOL_TOKEN,
   DEFAULT_USDC_TOKEN,
   estimateTokenUsdValue,
   ensureCompleteTokenInfo
-} from '../../../../modules/dataModule';
+} from '../../../../modules/data-module';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import COLORS from '../../../../assets/colors';
 // Import Birdeye API key

@@ -1,8 +1,8 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { View, Text, ImageSourcePropType, StyleSheet } from 'react-native';
 import { ThreadUser, TradeData } from '../thread.types';
-import { DEFAULT_IMAGES } from '@/config/constants';
-import { TradeCard } from '@/core/sharedUI/TradeCard';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
+import { TradeCard } from '@/core/shared-ui/TradeCard';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 

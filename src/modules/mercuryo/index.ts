@@ -1,3 +1,3 @@
-import MercuroScreen from './screens/MercuroScreen';
+import MercuroScreen from './screens/MercuryoScreen';
 
 export { MercuroScreen }; 

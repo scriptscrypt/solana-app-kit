@@ -1,8 +1,8 @@
 // FILE: src/modules/nft/hooks/useFetchNFTs.ts
 import { useState, useEffect } from 'react';
-import { fetchWithRetries } from '../../dataModule/utils/fetch';
+import { fetchWithRetries } from '../../data-module/utils/fetch';
 import { TENSOR_API_KEY } from '@env';
-import { ENDPOINTS } from '../../../config/constants';
+import { ENDPOINTS } from '@/shared/config/constants';
 import { NftItem, FetchNFTsOptions } from '../types';
 import { fixImageUrl } from '../utils/imageUtils';
 
