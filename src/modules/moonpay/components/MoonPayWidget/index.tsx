@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text, Platform, Animated, Easing, TouchableOpacity } from 'react-native';
 import { useMoonPaySdk } from '@moonpay/react-native-moonpay-sdk';
 import COLORS from '@/assets/colors';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import 'react-native-url-polyfill/auto';
 
 import { MoonPayWidgetProps } from '../../types';

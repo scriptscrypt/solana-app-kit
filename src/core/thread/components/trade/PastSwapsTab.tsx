@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '../../../../modules/dataModule/services/swapTransactions';
+import { SwapTransaction, fetchRecentSwaps, enrichSwapTransactions } from '../../../../modules/data-module/services/swapTransactions';
 import PastSwapItem from './PastSwapItem';
 
 const { height } = Dimensions.get('window');

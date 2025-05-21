@@ -8,7 +8,7 @@ import {
   fetchTokenPrice,
   fetchTokenMetadata,
   ensureCompleteTokenInfo,
-} from '@/modules/dataModule';
+} from '@/modules/data-module';
 import { TradeService, SwapProvider } from '@/modules/swap/services/tradeService';
 
 // Time after which to assume PumpSwap transactions have succeeded (in milliseconds)

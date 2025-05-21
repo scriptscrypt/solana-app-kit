@@ -20,7 +20,7 @@ import {
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
-import { TokenInfo, useTokenSearch } from '@/modules/dataModule';
+import { TokenInfo, useTokenSearch } from '@/modules/data-module';
 
 const { height } = Dimensions.get('window');
 

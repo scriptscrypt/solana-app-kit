@@ -1,4 +1,4 @@
-import { DEFAULT_IMAGES } from '@/config/constants';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Image, Platform, ImageProps, View, Text } from 'react-native';
 import COLORS from '@/assets/colors';

@@ -4,7 +4,6 @@ import COLORS from '@/assets/colors';
 
 const { width } = Dimensions.get('window');
 
-// Re-usable SkeletonElement with shimmer effect
 const SkeletonElement = ({ style }: { style: any }) => {
     const shimmerAnimatedValue = useRef(new Animated.Value(0)).current;
 
@@ -39,58 +38,47 @@ const SkeletonElement = ({ style }: { style: any }) => {
     );
 };
 
-// Skeleton for a single feed item
-const FeedItemSkeleton = () => (
-    <View style={styles.feedItemContainer}>
-        <View style={styles.feedItemHeader}>
-            <SkeletonElement style={styles.avatar} />
-            <View style={styles.userInfoContainer}>
-                <SkeletonElement style={[styles.textLine, { width: '50%', height: 16 }]} />
-                <SkeletonElement style={[styles.textLine, { width: '30%', height: 12, marginTop: 6 }]} />
-            </View>
-        </View>
-        <SkeletonElement style={[styles.textLine, { width: '95%', height: 14, marginTop: 12 }]} />
-        <SkeletonElement style={[styles.textLine, { width: '90%', height: 14, marginTop: 6 }]} />
-        <SkeletonElement style={[styles.textLine, { width: '70%', height: 14, marginTop: 6 }]} />
-        <SkeletonElement style={styles.imagePlaceholder} />
-    </View>
-);
-
-// Main FeedSkeleton component - renders a few feed item skeletons
-const FeedSkeleton = ({ itemCount = 3 }: { itemCount?: number }) => {
+const FeedItemSkeleton = () => {
     return (
         <View style={styles.container}>
-            {Array.from({ length: itemCount }).map((_, index) => (
-                <FeedItemSkeleton key={index} />
-            ))}
+            {/* Avatar and User Info Skeleton */}
+            <View style={styles.headerContainer}>
+                <SkeletonElement style={styles.avatar} />
+                <View style={styles.userInfoContainer}>
+                    <SkeletonElement style={[styles.textLine, { width: '50%' }]} />
+                    <SkeletonElement style={[styles.textLine, { width: '30%', marginTop: 6 }]} />
+                </View>
+            </View>
+
+            {/* Post Content Skeleton */}
+            <SkeletonElement style={[styles.contentLine, { width: '90%', marginTop: 12 }]} />
+            <SkeletonElement style={[styles.contentLine, { width: '70%', marginTop: 8 }]} />
+            <SkeletonElement style={[styles.contentLine, { width: '80%', marginTop: 8 }]} />
+
+            {/* Optional: Actions or Image Placeholder Skeleton */}
+            <SkeletonElement style={[styles.imagePlaceholder, { height: 150, marginTop: 12 }]} />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        padding: 10, // Consistent with feed padding
+        padding: 16,
         backgroundColor: COLORS.background,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.lighterBackground,
+        marginBottom: 8,
     },
     skeletonElement: {
-        backgroundColor: COLORS.greyDark, // Using established color
+        backgroundColor: COLORS.lighterBackground,
         borderRadius: 4,
         overflow: 'hidden',
     },
     shimmer: {
-        backgroundColor: COLORS.greyMid, // Using established color
+        backgroundColor: COLORS.darkerBackground,
         opacity: 0.6,
     },
-    feedItemContainer: {
-        backgroundColor: COLORS.background, // Matching thread item background
-        padding: 12,
-        marginBottom: 10,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: COLORS.greyDark, // Subtle border for item separation
-    },
-    feedItemHeader: {
+    headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -100,17 +88,22 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     userInfoContainer: {
-        marginLeft: 10,
+        marginLeft: 12,
+        flex: 1,
     },
     textLine: {
-        borderRadius: 3,
+        height: 14,
+        borderRadius: 4,
+    },
+    contentLine: {
+        height: 12,
+        borderRadius: 4,
+        alignSelf: 'flex-start',
     },
     imagePlaceholder: {
         width: '100%',
-        height: 200,
-        borderRadius: 6,
-        marginTop: 12,
+        borderRadius: 8,
     },
 });
 
-export default FeedSkeleton; 
+export default FeedItemSkeleton; 
