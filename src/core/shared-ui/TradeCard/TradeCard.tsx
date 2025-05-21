@@ -473,7 +473,10 @@ function TradeCard({
 
   // Handle loading states
   const isLoading = loadingMeta || loadingOHLC || loadingPrices;
-  
+
+  // More specific loading state for the graph data
+  const isGraphDataLoading = loadingOHLC || (showGraphForOutputToken && (!graphData || graphData.length === 0) && !coinError);
+
   // --------------------------------------------------
   // Render main TradeCard component
   // --------------------------------------------------
@@ -481,7 +484,7 @@ function TradeCard({
     <>
       <View style={styles.tradeCardContainer}>
         {/* Token Header Section - Always displayed even during loading */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
           onPress={handleOpenOutputTokenDetails}
           activeOpacity={0.7}
@@ -506,7 +509,7 @@ function TradeCard({
               </View>
             </View>
           </View>
-          
+
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.positiveValue}>
               {quantityDiff}
@@ -526,7 +529,7 @@ function TradeCard({
             executionTimestamp={executionTimestamp}
             timestamps={timestamps}
             userAvatar={userAvatar}
-            isLoading={isLoading}
+            isLoading={isGraphDataLoading}
           />
         </View>
 

@@ -12,8 +12,12 @@ import TYPOGRAPHY from '@/assets/typography';
 import AnimatedTabIcon from './AnimatedTabIcon';
 import FeedScreen from '@/screens/sample-ui/Threads/feed-screen/FeedScreen';
 import SwapScreen from '@/modules/swap/screens/SwapScreen';
-import ModuleScreen from '@/screens/common/launch-modules-screen/LaunchModules';
+
 import { ChatListScreen } from '@/screens/sample-ui/chat';
+import ModuleScreen from '@/screens/common/launch-modules-screen/LaunchModules';
+
+
+
 
 // Platform icons matching PlatformSelectionScreen
 const platformIcons = {

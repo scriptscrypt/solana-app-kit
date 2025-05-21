@@ -8,7 +8,6 @@
 
 ![Solana App Kit - Cover](https://github.com/user-attachments/assets/202830af-1638-4fa1-b40f-7faac03a1cef)
 
-
 [![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/releases)
 [![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/network/members)
 [![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/blob/main/LICENSE)
@@ -37,7 +36,7 @@
    [SendAI](https://sendai.fun/) for AI chat integration to take Solana actions
 
 7. **On/Off-Ramps:**  
-   Buy/sell crypto using cards or Apple Pay with [MoonPay](https://www.moonpay.com/) and [Mercuryo](https://mercuryo.io/)
+   Buy/sell crypto using cards or Apple Pay with [MoonPay](https://www.moonpay.com/)
 
 8. **Miscellaneous Tools:**  
    [Jito Bundles](https://www.jito.network/) and [Helius](https://www.helius.dev/) for transaction landing
@@ -71,12 +70,12 @@
 
 ## 📱 App Features
 
-| Feature | Description |
-|---------|-------------|
-| 👛 **Wallet Integration** | • Multiple wallet connection methods<br>• Embedded wallet support via Privy, Dynamic, and Turnkey<br>• External wallet connections via Solana Mobile MWA<br>• Transaction signing and management<br>
-| 👥 **Social Features** | • User profiles and following system<br>• Social feed with posts and interactions<br>• Community engagement features<br>• NFT display and management<br>• IPFS storage for metadata |
-| 🎨 **UI/UX** | • Modern, responsive design<br>• Tab-based navigation<br>• Interactive charts and visualizations<br>• Elegant loading states and error handling<br>• Platform-specific optimizations |
-| 🖥️ **Backend Features** | • RESTful API for token operations<br>• Social data storage and retrieval<br>• Token market creation and management<br>• Token swapping via Jupiter and PumpSwap<br>• Token launching via different launchpads like Pump, Raydium, and Meteora <br>• Image upload and storage |
+| Feature                   | Description                                                                                                                                                                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 👛 **Wallet Integration** | • Multiple wallet connection methods<br>• Embedded wallet support via Privy, Dynamic, and Turnkey<br>• External wallet connections via Solana Mobile MWA<br>• Transaction signing and management<br>                                                                          |
+| 👥 **Social Features**    | • User profiles and following system<br>• Social feed with posts and interactions<br>• Community engagement features<br>• NFT display and management<br>• IPFS storage for metadata                                                                                           |
+| 🎨 **UI/UX**              | • Modern, responsive design<br>• Tab-based navigation<br>• Interactive charts and visualizations<br>• Elegant loading states and error handling<br>• Platform-specific optimizations                                                                                          |
+| 🖥️ **Backend Features**   | • RESTful API for token operations<br>• Social data storage and retrieval<br>• Token market creation and management<br>• Token swapping via Jupiter and PumpSwap<br>• Token launching via different launchpads like Pump, Raydium, and Meteora <br>• Image upload and storage |
 
 ---
 
@@ -172,14 +171,14 @@ pnpm start --dev --clear
 
 When running the Expo development server:
 
-| Key | Action |
-|-----|--------|
-| `i` | Open on iOS simulator |
+| Key | Action                   |
+| --- | ------------------------ |
+| `i` | Open on iOS simulator    |
 | `a` | Open on Android emulator |
-| `w` | Open in web browser |
-| `r` | Reload the app |
-| `m` | Toggle the menu |
-| `d` | Open developer tools |
+| `w` | Open in web browser      |
+| `r` | Reload the app           |
+| `m` | Toggle the menu          |
+| `d` | Open developer tools     |
 
 ---
 
@@ -242,6 +241,8 @@ This project consists of two main parts:
    COINGECKO_API_KEY=your_coingecko_api_key
    BIRDEYE_API_KEY=your_birdeye_api_key
    COIN_MARKE_CAPAPI_KEY=your_coinmarketcap_api_key
+   OPENAI_API_KEY=your_openai_api_key
+   COMMISSION_WALLET=your_commission_wallet_address
    ```
 
 ### Server Installation
@@ -272,6 +273,7 @@ This project consists of two main parts:
    TOKEN_MILL_PROGRAMID=your_token_mill_program_id
    TOKEN_MILL_CONFIG_PDA=your_token_mill_config_pda
    SWAP_AUTHORITY_KEY=your_swap_authority_key
+   COMMISSION_WALLET=your_commission_wallet_address
 
    # Pinata for IPFS
    PINATA_JWT=your_pinata_jwt
@@ -289,6 +291,10 @@ This project consists of two main parts:
    TURNKEY_ORGANIZATION_ID=your_turnkey_organization_id
    TURNKEY_API_PUBLIC_KEY=your_turnkey_api_public_key
    TURNKEY_API_PRIVATE_KEY=your_turnkey_api_private_key
+
+   # Supabase
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
 4. Start the development server:
@@ -363,29 +369,52 @@ npm run android
 solana-app-kit/
 ├── src/                # Mobile app source code
 │   ├── assets/         # Images, icons, and other static assets
-│   ├── config/         # Configuration files and settings
-│   ├── context/        # React context providers
+│   │   ├── images/     # Image assets for the app
+│   │   ├── svgs/       # SVG graphic files
+│   │   ├── colors.ts   # Color definitions
+│   │   └── typography.ts # Typography definitions
 │   ├── core/           # Core application components
-│   │   ├── devMode/    # Development mode utilities
+│   │   ├── chat/       # Chat functionality components
+│   │   ├── dev-mode/   # Development mode utilities
 │   │   ├── profile/    # User profile related components
-│   │   ├── shared-ui/   # Common UI components
+│   │   ├── shared-ui/  # Common UI components
 │   │   └── thread/     # Thread-related components
 │   ├── modules/        # Feature modules (core functionality)
-│   │   ├── dataModule/ # Data management module
-│   │   ├── mercuro/    # Advanced financial utilities
+│   │   ├── data-module/ # Data management module
+│   │   ├── meteora/    # Meteora integration
+│   │   ├── moonpay/    # Moonpay integration
 │   │   ├── nft/        # NFT display and management
-│   │   ├── pumpFun/    # Pump.fun integration
-│   │   ├── tokenMill/  # Token creation and management
-│   │   └── walletProviders/ # Wallet connection adapters
+│   │   ├── pump-fun/   # Pump.fun integration
+│   │   ├── raydium/    # Raydium integration
+│   │   ├── solana-agent-kit/ # Solana agent kit integration
+│   │   ├── swap/       # Swap functionality
+│   │   ├── token-mill/ # Token creation and management
+│   │   └── wallet-providers/ # Wallet connection adapters
 │   ├── screens/        # App screens and UI flows
-│   ├── services/       # API integrations and business logic
-│   ├── shared/         # Shared utilities and components
-│   │   ├── hooks/      # Custom React hooks
-│   │   ├── mocks/      # Mock data for testing
-│   │   ├── navigation/ # Navigation configuration
-│   │   ├── state/      # Redux store and slices
-│   │   ├── types/      # TypeScript type definitions
-│   │   └── utils/      # Utility functions and helpers
+│   │   ├── common/     # Common screen components
+│   │   ├── sample-ui/  # Sample UI screens
+│   │   └── index.ts    # Screen exports
+│   ├── server/         # Server-related functionality
+│   │   └── meteora/    # Meteora server integration
+│   └── shared/         # Shared utilities and components
+│       ├── config/     # Configuration files
+│       ├── context/    # React context providers
+│       ├── hooks/      # Custom React hooks
+│       ├── mocks/      # Mock data for testing
+│       ├── navigation/ # Navigation configuration
+│       ├── services/   # API integrations and business logic
+│       ├── state/      # Redux store and slices
+│       │   ├── auth/   # Authentication state management
+│       │   ├── chat/   # Chat state management
+│       │   ├── notification/ # Notification state management
+│       │   ├── profile/ # Profile state management
+│       │   ├── thread/ # Thread state management
+│       │   ├── transaction/ # Transaction state management
+│       │   ├── users/  # User state management
+│       │   └── store.ts # Redux store configuration
+│       ├── types/      # TypeScript type definitions
+│       └── utils/      # Utility functions and helpers
+│           └── common/ # Common utility functions
 ├── server/             # Backend server code
 │   ├── src/            # Server source code
 │   │   ├── controllers/ # Controller functions
@@ -415,15 +444,18 @@ solana-app-kit/
 
 The Solana App Kit provides several modular features that can be used independently:
 
-| Module | Capabilities |
-|--------|-------------|
-| 🔐 **walletProviders** | • Multiple wallet connection methods (Privy, Dynamic, Mobile Wallet Adapter)<br>• Standardized wallet interface<br>• Transaction handling across providers<br>• Support for embedded wallets, social login, and external wallets |
-| 🪙 **tokenMill** | • Token creation with configurable parameters<br>• Bonding curve configuration for token pricing<br>• Token swapping (buy/sell) functionality<br>• Staking tokens for rewards<br>• Creating and releasing vesting plans<br>• Fund management for users and markets |
-| 📊 **onChainData** | • Fetching on-chain data with optimized RPC calls<br>• Token balance tracking<br>• Transaction history display<br>• Real-time data synchronization |
-| 🖼️ **nft** | • NFT display, management, and trading<br>• Collection viewing with floor prices<br>• Compressed NFT support<br>• Integration with threads and posts |
-| 💱 **pumpSwap** | • Token swapping using PumpSwap SDK<br>• Liquidity pool creation with custom token pairs<br>• Liquidity management (add and remove liquidity)<br>• Pool creation with custom parameters<br>• Real-time quotes and price impact estimates<br>• Transaction status monitoring |
-| 🚀 **pumpFun** | • Integration with the Pump.fun ecosystem<br>• Meme token creation and management<br>• Community engagement tools |
-| 💸 **Moonpay** | • Advanced financial transaction utilities<br>• Custom financial operations |
+| Module                  | Capabilities                                                                                                                                                                                                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔐 **wallet-providers** | • Multiple wallet connection methods (Privy, Dynamic, Mobile Wallet Adapter)<br>• Standardized wallet interface<br>• Transaction handling across providers<br>• Support for embedded wallets, social login, and external wallets                                                 |
+| 🪙 **token-mill**       | • Token creation with configurable parameters<br>• Bonding curve configuration for token pricing<br>• Token swapping (buy/sell) functionality<br>• Staking tokens for rewards<br>• Creating and releasing vesting plans<br>• Fund management for users and markets               |
+| 📊 **data-module**      | • Fetching on-chain data with optimized RPC calls<br>• Token balance tracking<br>• Transaction history display<br>• Real-time data synchronization                                                                                                                               |
+| 🖼️ **nft**              | • NFT display, management, and trading<br>• Collection viewing with floor prices<br>• Compressed NFT support<br>• Integration with threads and posts                                                                                                                             |
+| 💱 **swap**             | • Token swapping using multiple DEX SDKs<br>• Liquidity pool creation with custom token pairs<br>• Liquidity management (add and remove liquidity)<br>• Pool creation with custom parameters<br>• Real-time quotes and price impact estimates<br>• Transaction status monitoring |
+| 🚀 **pump-fun**         | • Integration with the Pump.fun ecosystem<br>• Meme token creation and management<br>• Community engagement tools                                                                                                                                                                |
+| 💹 **raydium**          | • Raydium DEX integration<br>• Token launching and trading<br>• Pool creation and management                                                                                                                                                                                     |
+| 🌊 **meteora**          | • Meteora protocol integration<br>• Token launching capabilities<br>• Pool and liquidity management                                                                                                                                                                              |
+| 💸 **moonpay**          | • Fiat on-ramp integration<br>• Buy crypto with credit cards and Apple Pay<br>• Seamless payment flow                                                                                                                                                                            |
+| 🤖 **solana-agent-kit** | • AI agent integration for Solana interactions<br>• Automated workflows and actions<br>• Enhanced user assistance                                                                                                                                                                |
 
 ---
 
@@ -453,11 +485,11 @@ This toolkit handles transaction generation, signing and sending, using provided
 
 Common issues and their solutions:
 
-| Issue | Solution |
-|-------|----------|
-| **Expo build errors** | Clear your cache with `expo start --clear` |
+| Issue                        | Solution                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| **Expo build errors**        | Clear your cache with `expo start --clear`                                                  |
 | **Wallet connection issues** | Ensure you're using the correct provider and have properly configured environment variables |
-| **iOS simulator issues** | Try resetting the simulator or running `pod install` in the iOS directory |
+| **iOS simulator issues**     | Try resetting the simulator or running `pod install` in the iOS directory                   |
 
 ---
 

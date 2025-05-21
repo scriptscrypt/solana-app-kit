@@ -14,7 +14,6 @@ import {
   PanResponder,
   StyleSheet,
   Text,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
@@ -27,10 +26,11 @@ import {
   Rect,
   G,
   Text as SvgText,
-  LinearGradient,
+  LinearGradient as SvgLinearGradient,
   Stop,
   Polygon,
 } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 
@@ -44,6 +44,63 @@ interface LineGraphProps {
   userAvatar?: any;
   isLoading?: boolean;
 }
+
+const LineGraphSkeleton: React.FC<{ width: number; height: number }> = React.memo(({ width, height }) => {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const gradientWidth = width * 0.6; // Width of the shimmer gradient
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1200, // Duration for one shimmer cycle
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      })
+    );
+    animation.start();
+    return () => {
+      animation.stop();
+    };
+  }, [shimmerAnim]);
+
+  const translateX = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    // Move from off-screen left to off-screen right
+    outputRange: [-gradientWidth, width + gradientWidth],
+  });
+
+  const baseColor = COLORS.borderDarkColor; // Base color of the skeleton
+  const highlightColor = COLORS.lightBackground; // Color of the shimmer highlight
+
+  return (
+    <View
+      style={{
+        width,
+        height,
+        backgroundColor: baseColor,
+        overflow: 'hidden', // Important to clip the gradient
+        borderRadius: 0,
+      }}
+    >
+      <Animated.View
+        style={{
+          width: gradientWidth,
+          height: '100%',
+          position: 'absolute',
+          transform: [{ translateX }],
+        }}
+      >
+        <LinearGradient
+          colors={['transparent', highlightColor, 'transparent']}
+          style={{ flex: 1 }}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+        />
+      </Animated.View>
+    </View>
+  );
+});
 
 /**
  * A line chart that handles its own hover tooltip
@@ -67,7 +124,7 @@ const LineGraph: React.FC<LineGraphProps> = ({
 
   // Adjusted padding to ensure rightmost points are visible
   const HORIZONTAL_PADDING = 16;
-  const usableChartWidth = containerWidth ;
+  const usableChartWidth = containerWidth;
 
   // We'll animate data changes
   const animatedData = useRef(new Animated.Value(0)).current;
@@ -186,7 +243,8 @@ const LineGraph: React.FC<LineGraphProps> = ({
     // Linear interpolation for the displayed data
     const id = animatedData.addListener(({ value }) => {
       const newData = data.map((target, i) => {
-        const start = prevData[i] ?? target;
+        // If prevData didn't have this point, animate from the bottom of the new data range
+        const start = prevData[i] ?? dataRange.min;
         return start + (target - start) * value;
       });
       setDisplayData(newData);
@@ -398,10 +456,10 @@ const LineGraph: React.FC<LineGraphProps> = ({
           {/* tooltip rect + text */}
           <G>
             <Defs>
-              <LinearGradient id="tooltipBg" x1="0" y1="0" x2="0" y2="1">
+              <SvgLinearGradient id="tooltipBg" x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor={COLORS.lighterBackground} stopOpacity={1} />
                 <Stop offset="1" stopColor={COLORS.lighterBackground} stopOpacity={1} />
-              </LinearGradient>
+              </SvgLinearGradient>
             </Defs>
 
             <Rect
@@ -550,10 +608,10 @@ const LineGraph: React.FC<LineGraphProps> = ({
     return (
       <G>
         <Defs>
-          <LinearGradient id="hoverFillGradient" x1="0" y1="0" x2="0" y2="1">
+          <SvgLinearGradient id="hoverFillGradient" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={COLORS.brandBlue} stopOpacity={0.2} />
             <Stop offset="1" stopColor={COLORS.brandBlue} stopOpacity={0} />
-          </LinearGradient>
+          </SvgLinearGradient>
         </Defs>
         <Polygon fill="url(#hoverFillGradient)" points={fillPoints.trim()} />
       </G>
@@ -562,42 +620,42 @@ const LineGraph: React.FC<LineGraphProps> = ({
 
   return (
     <View style={styles.container}>
-      <LineChart
-        data={chartData}
-        width={containerWidth}
-        height={chartHeight}
-        chartConfig={chartConfig}
-        bezier
-        withDots
-        withHorizontalLines={false}
-        withVerticalLines={false}
-        withHorizontalLabels={false}
-        withVerticalLabels={false}
-        withShadow={false}
-        style={{
-          borderRadius: 0,
-          paddingRight: 0,
-          paddingLeft: 0,
-          paddingTop: 0,
-          paddingBottom: 0,
-          margin: 0,
-          backgroundColor: COLORS.lightBackground,
-          opacity: isLoading ? 0.5 : 1, // Dim the chart during loading
-        }}
-        renderDotContent={!isLoading ? renderDotContent : undefined}
-        decorator={!isLoading ? renderHoverFill : undefined}
-      />
-
-      {/* Loading overlay */}
-      {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={COLORS.brandBlue} />
+      {isLoading ? (
+        <LineGraphSkeleton width={containerWidth} height={chartHeight} />
+      ) : !data || data.length < 2 ? (
+        <View style={styles.noDataContainer}>
+          <Text style={styles.noDataText}>No chart data available</Text>
         </View>
-      )}
+      ) : (
+        <>
+          <LineChart
+            data={chartData}
+            width={containerWidth}
+            height={chartHeight}
+            chartConfig={chartConfig}
+            bezier
+            withDots
+            withHorizontalLines={false}
+            withVerticalLines={false}
+            withHorizontalLabels={false}
+            withVerticalLabels={false}
+            withShadow={false}
+            style={{
+              borderRadius: 0,
+              paddingRight: 0,
+              paddingLeft: 0,
+              paddingTop: 0,
+              paddingBottom: 0,
+              margin: 0,
+              backgroundColor: COLORS.lightBackground,
+            }}
+            renderDotContent={renderDotContent}
+            decorator={renderHoverFill}
+          />
 
-      {/* Transparent overlay that captures all pointer events */}
-      {!isLoading && (
-        <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers} />
+          {/* Transparent overlay that captures all pointer events */}
+          <View style={StyleSheet.absoluteFill} {...panResponder.panHandlers} />
+        </>
       )}
     </View>
   );
@@ -613,22 +671,16 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightBackground,
     overflow: 'hidden',
   },
-  loaderContainer: {
-    height: 130,
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.lightBackground,
+    height: '100%',
   },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  noDataText: {
+    color: COLORS.accessoryDarkColor,
+    fontSize: TYPOGRAPHY.size.sm,
   },
 });
 
