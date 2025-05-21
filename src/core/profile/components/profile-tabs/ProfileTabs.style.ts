@@ -43,7 +43,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 4,
     marginBottom: 6,
     borderRadius: 6,
-    backgroundColor: '#F5F9FF', // Consider adding this to colors.ts
+    backgroundColor: COLORS.darkerBackground, // Consider adding this to colors.ts
     color: '#2B8EF0', // Consider adding this to colors.ts
     fontSize: 12,
     fontWeight: '600',
