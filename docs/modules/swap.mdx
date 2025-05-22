@@ -8,13 +8,8 @@ icon: "arrow-right-arrow-left"
 
 The Swap Module provides a comprehensive token swapping solution that integrates multiple DEX providers into a unified interface for the Solana blockchain. It automatically finds the best routes and prices across different protocols to maximize trading efficiency.
 
-<Card>
-  <CardHeader>
-    <CardTitle>🔄 Unified Multi-DEX Trading</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Seamlessly swap tokens across Jupiter, Raydium, and PumpSwap with intelligent routing, optimal pricing, and best-in-class user experience
-  </CardContent>
+<Card title="🔄 Unified Multi-DEX Trading">
+  Seamlessly swap tokens across Jupiter, Raydium, and PumpSwap with intelligent routing, optimal pricing, and best-in-class user experience
 </Card>
 
 ## Core Features
@@ -379,92 +374,99 @@ function CustomSwapImplementation() {
 
 Provider-agnostic service for executing swaps:
 
-<Accordion>
-  <AccordionItem title="Basic Swap Execution">
+<ResponseField name="basic_swap_execution" type="object">
+<Expandable title="Basic Swap Execution">
+
+```typescript
+import { TradeService } from '@/modules/swap';
+
+// Simple swap execution
+const swapResult = await TradeService.executeSwap(
+  inputToken,        // Token mint address or symbol
+  outputToken,       // Token mint address or symbol
+  amount,           // Amount in token's base units
+  walletPublicKey,  // User's wallet public key
+  sendTransaction   // Wallet's send transaction function
+);
+
+console.log('Swap completed:', swapResult);
+// {
+//   signature: 'transaction_signature',
+//   inputAmount: 1000000000,
+//   outputAmount: 995000000,
+//   provider: 'jupiter',
+//   priceImpact: 0.12,
+//   fees: { total: 5000, breakdown: {...} }
+// }
+```
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="advanced_swap_options" type="object">
+<Expandable title="Advanced Swap Options">
+
+```typescript
+// Advanced swap with custom options
+const advancedSwap = await TradeService.executeSwap(
+  inputToken,
+  outputToken,
+  amount,
+  walletPublicKey,
+  sendTransaction,
+  {
+    // Provider selection
+    provider: 'jupiter', // 'jupiter', 'raydium', 'pumpswap'
     
-    ```typescript
-    import { TradeService } from '@/modules/swap';
+    // Slippage control
+    slippageBps: 100, // 1% slippage
     
-    // Simple swap execution
-    const swapResult = await TradeService.executeSwap(
-      inputToken,        // Token mint address or symbol
-      outputToken,       // Token mint address or symbol
-      amount,           // Amount in token's base units
-      walletPublicKey,  // User's wallet public key
-      sendTransaction   // Wallet's send transaction function
-    );
+    // PumpSwap specific
+    poolAddress: 'custom_pool_address',
     
-    console.log('Swap completed:', swapResult);
-    // {
-    //   signature: 'transaction_signature',
-    //   inputAmount: 1000000000,
-    //   outputAmount: 995000000,
-    //   provider: 'jupiter',
-    //   priceImpact: 0.12,
-    //   fees: { total: 5000, breakdown: {...} }
-    // }
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="Advanced Swap Options">
+    // Fee configuration
+    priorityFee: 0.001,
     
-    ```typescript
-    // Advanced swap with custom options
-    const advancedSwap = await TradeService.executeSwap(
-      inputToken,
-      outputToken,
-      amount,
-      walletPublicKey,
-      sendTransaction,
-      {
-        // Provider selection
-        provider: 'jupiter', // 'jupiter', 'raydium', 'pumpswap'
-        
-        // Slippage control
-        slippageBps: 100, // 1% slippage
-        
-        // PumpSwap specific
-        poolAddress: 'custom_pool_address',
-        
-        // Fee configuration
-        priorityFee: 0.001,
-        
-        // Status callbacks
-        onStatusUpdate: (status) => {
-          console.log('Swap status:', status);
-        },
-        
-        // Error handling
-        onError: (error) => {
-          console.error('Swap error:', error);
-        }
-      }
-    );
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="Fee Calculation">
+    // Status callbacks
+    onStatusUpdate: (status) => {
+      console.log('Swap status:', status);
+    },
     
-    ```typescript
-    // Calculate fees before execution
-    const feeEstimate = await TradeService.calculateFees(
-      inputToken,
-      outputToken,
-      amount,
-      selectedProvider
-    );
-    
-    console.log('Fee breakdown:', feeEstimate);
-    // {
-    //   platformFee: 1000000,
-    //   networkFee: 5000,
-    //   providerFee: 2000,
-    //   total: 1007000,
-    //   totalInSOL: 0.001007
-    // }
-    ```
-  </AccordionItem>
-</Accordion>
+    // Error handling
+    onError: (error) => {
+      console.error('Swap error:', error);
+    }
+  }
+);
+```
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="fee_calculation" type="object">
+<Expandable title="Fee Calculation">
+
+```typescript
+// Calculate fees before execution
+const feeEstimate = await TradeService.calculateFees(
+  inputToken,
+  outputToken,
+  amount,
+  selectedProvider
+);
+
+console.log('Fee breakdown:', feeEstimate);
+// {
+//   platformFee: 1000000,
+//   networkFee: 5000,
+//   providerFee: 2000,
+//   total: 1007000,
+//   totalInSOL: 0.001007
+// }
+```
+
+</Expandable>
+</ResponseField>
 
 ## Quick Start Examples
 
@@ -788,31 +790,31 @@ function useMultiRouteComparison(inputToken, outputToken, amount) {
 
 ## Error Handling & Recovery
 
-<AccordionGroup>
-  <Accordion title="Common Swap Errors">
-    
-    **Insufficient Balance**
-    - Check user's token balance before swap
-    - Account for transaction fees
-    - Provide clear balance information
-    
-    **Slippage Exceeded**
-    - Automatic slippage adjustment
-    - Market volatility warnings
-    - Retry with higher slippage options
-    
-    **Network Issues**
-    - RPC connection failures
-    - Transaction timeout handling
-    - Automatic retry mechanisms
-    
-    **Provider Unavailability**
-    - Fallback to alternative DEXs
-    - Provider health monitoring
-    - User notification of issues
-    
-  </Accordion>
-</AccordionGroup>
+<ResponseField name="common_swap_errors" type="object">
+<Expandable title="Common Swap Errors">
+
+**Insufficient Balance**
+- Check user's token balance before swap
+- Account for transaction fees
+- Provide clear balance information
+
+**Slippage Exceeded**
+- Automatic slippage adjustment
+- Market volatility warnings
+- Retry with higher slippage options
+
+**Network Issues**
+- RPC connection failures
+- Transaction timeout handling
+- Automatic retry mechanisms
+
+**Provider Unavailability**
+- Fallback to alternative DEXs
+- Provider health monitoring
+- User notification of issues
+
+</Expandable>
+</ResponseField>
 
 ```typescript
 function RobustSwapExecution() {

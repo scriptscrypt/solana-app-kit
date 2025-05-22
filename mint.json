@@ -57,6 +57,12 @@
       ]
     },
     {
+      "group": "Server",
+      "pages": [
+        "docs/server/overview"
+      ]
+    },
+    {
       "group": "Reference",
       "pages": [
         "docs/references",
