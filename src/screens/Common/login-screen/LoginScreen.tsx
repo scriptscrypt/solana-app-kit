@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Animated, Text, Dimensions, Alert, Platform, ActivityIndicator } from 'react-native';
+import { View, Animated, Text, Dimensions, Alert, Platform, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import * as Linking from 'expo-linking';
 import Icons from '@/assets/svgs/index';
-import styles from './LoginScreen.styles';
+import styles from '@/screens/Common/login-screen/LoginScreen.styles';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 import EmbeddedWalletAuth from '@/modules/wallet-providers/components/wallet/EmbeddedWallet';
@@ -17,6 +17,8 @@ import { useCustomization } from '@/shared/config/CustomizationProvider';
 import axios from 'axios';
 import { SERVER_URL } from '@env';
 import COLORS from '@/assets/colors';
+import { useEnvError } from '@/shared/context/EnvErrorContext';
+import { useDevMode } from '@/shared/context/DevModeContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -96,12 +98,18 @@ export default function LoginScreen() {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const { auth: authConfig } = useCustomization();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const { isDevMode } = useDevMode();
+  const { hasMissingEnvVars, missingEnvVars } = useEnvError();
+  const [showWarning, setShowWarning] = useState(true);
 
   // State for app info that needs to be loaded asynchronously
   const [appInfo, setAppInfo] = useState({
     bundleId: 'Loading...',
     urlScheme: 'Loading...'
   });
+
+  // Check if we should show the warning banner
+  const shouldShowWarning = !isDevMode && hasMissingEnvVars && showWarning;
 
   // Load app info on component mount
   useEffect(() => {
@@ -158,6 +166,28 @@ export default function LoginScreen() {
     loadAppInfo();
   }, []);
 
+  // Debug missing env vars
+  useEffect(() => {
+    console.log('[LoginScreen] Environment Status:', {
+      isDevMode,
+      hasMissingEnvVars,
+      missingEnvVarsCount: missingEnvVars?.length || 0,
+      shouldShowWarning,
+      showWarning
+    });
+    
+    if (hasMissingEnvVars) {
+      console.log('[LoginScreen] Missing ENV variables found:', missingEnvVars?.slice(0, 5));
+      
+      // Force the warning to show after a small delay if conditions are met
+      if (!isDevMode) {
+        setTimeout(() => {
+          setShowWarning(true);
+        }, 500);
+      }
+    }
+  }, [isDevMode, hasMissingEnvVars, missingEnvVars, shouldShowWarning, showWarning]);
+
   // Animation values for SVG elements
   const circleAnim = useRef(new Animated.Value(0)).current;
   const leftStartAnim = useRef(new Animated.Value(0)).current;
@@ -189,6 +219,24 @@ export default function LoginScreen() {
       });
     }, 0);
   }
+
+  // Debug the warning banner visibility on mount
+  useEffect(() => {
+    console.log('[LoginScreen] Mounting with warning banner status:', {
+      isDevMode,
+      hasMissingEnvVars,
+      showWarning,
+      shouldShowWarning: !isDevMode && hasMissingEnvVars && showWarning,
+    });
+
+    // If we have env errors but the banner isn't showing, force it to show after a delay
+    if (hasMissingEnvVars && !isDevMode && !shouldShowWarning) {
+      console.log('[LoginScreen] Forcing warning banner to show');
+      setTimeout(() => {
+        setShowWarning(true);
+      }, 800);
+    }
+  }, []);
 
   useEffect(() => {
     // Start animations

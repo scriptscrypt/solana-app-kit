@@ -1,7 +1,7 @@
+import { useDevMode } from '@/shared/context/DevModeContext';
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Platform, Text, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useDevMode } from '../../context/DevModeContext';
 import Svg, { Rect, LinearGradient, Stop, Defs } from 'react-native-svg';
 
 const DevModeTrigger = () => {

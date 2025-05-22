@@ -140,7 +140,19 @@ npx start-solana-app
    pnpm install
    ```
 
-3. Run on a specific platform:
+3. Create a `.env.local` file with your environment variables (see Environment Variables section)
+
+4. Run the app in development mode with dev tools enabled:
+
+   ```sh
+   # Run with development tools enabled
+   pnpm dev
+   
+   # Or with the standard npm command
+   npm run dev
+   ```
+
+5. Run on a specific platform:
 
    ```sh
    # For iOS
@@ -154,6 +166,23 @@ To run in development mode with cache clearing:
 
 ```sh
 pnpm start --dev --clear
+```
+
+### Development vs Standard Mode
+
+Solana App Kit supports two running modes:
+
+- **Standard Mode**: Default production-like experience
+- **Development Mode**: Enhanced with developer tools, navigation helpers, and error handling
+
+To run in development mode, use the `--dev` flag or the `dev` script:
+
+```sh
+# Using npm script
+npm run dev
+
+# Or with the start script flag
+npm start --dev
 ```
 
 ---
@@ -228,7 +257,6 @@ This project consists of two main parts:
    HELIUS_STAKED_API_KEY=your_helius_staked_api_key
    SERVER_URL=your_server_url
    TENSOR_API_KEY=your_tensor_api_key
-   PARA_API_KEY=your_para_api_key
    COINGECKO_API_KEY=your_coingecko_api_key
    BIRDEYE_API_KEY=your_birdeye_api_key
    COIN_MARKE_CAPAPI_KEY=your_coinmarketcap_api_key
@@ -310,15 +338,50 @@ The configuration in `eas.json` specifies the `.env.local` file for each build p
 
 ### Running the Mobile App
 
-#### Start Metro Bundler
+#### Standard vs Development Mode
+
+The app can run in two modes:
+
+1. **Standard Mode** (Default):
+   - Regular production-like environment
+   - Missing environment variables will show warnings but limit functionality
+
+2. **Development Mode**:
+   - Enhanced developer tools and diagnostics
+   - Visual indicator showing "DEV MODE" at the bottom of the screen
+   - Access to developer drawer with navigation shortcuts and environment variable status
+   - Ability to bypass authentication for testing
+   - Missing environment variables are clearly displayed with options to fix
+
+#### Starting the App
+
+To start the app:
 
 ```sh
+# Standard mode
 pnpm start
 # or
-yarn start
-# or
 npm start
+
+# Development mode
+pnpm dev
+# or
+npm run dev
+# or
+pnpm start --dev
 ```
+
+#### Missing Environment Variables
+
+If you're missing environment variables:
+- In standard mode: A warning banner will appear on the login screen alerting you
+- In dev mode: A detailed drawer will show all missing variables, and you can bypass authentication
+
+To enable dev mode from standard mode when env vars are missing:
+1. A warning will appear with an "Enable Dev Mode" button
+2. After enabling, restart the app
+3. You'll see a green "DEV MODE" indicator at the bottom of the screen
+4. Tap it to access developer tools
 
 #### iOS
 

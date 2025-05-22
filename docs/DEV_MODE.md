@@ -4,15 +4,21 @@ This document explains how to use the development mode features in the app, whic
 
 ## Enabling Dev Mode
 
-Dev mode can be enabled by:
+Dev mode can be enabled in several ways:
 
-Use the `--dev` flag when starting the app (recommended):
+1. **During startup** - Use the `--dev` flag when starting the app (recommended):
 
    ```bash
    # For development with dev mode enabled
    yarn start --dev
+   # or
+   npm run dev
    ```
 
+2. **From within the app** - If you're running in standard mode and see a warning about missing environment variables, you can enable dev mode directly from the warning banner:
+   - Tap the "Enable Dev Mode" button on the warning banner
+   - Restart the app when prompted
+   - The app will start in dev mode with the green indicator at the bottom of the screen
 
 ### Recommended: Clear Cache When Switching Dev Mode
 
@@ -22,6 +28,42 @@ When switching between normal mode and dev mode, it's recommended to clear the c
 # Start with dev mode and clear cache
 yarn start --dev --clear
 ```
+
+## Understanding Environment Variable Warnings
+
+### In Standard Mode:
+When running in standard mode with missing environment variables:
+- A warning banner will appear on the login screen
+- The banner will highlight that some functionality may be limited
+- You'll have options to:
+  - Enable dev mode (recommended for development)
+  - Dismiss the warning (functionality will still be limited)
+
+### In Dev Mode:
+When running in dev mode with missing environment variables:
+- A "DEV MODE" indicator appears at the bottom of the screen
+- Tapping this indicator opens the developer drawer with:
+  - A complete list of all missing environment variables
+  - Navigation shortcuts to all screens
+  - Developer information
+  - Authentication bypass options
+
+## Switching Between Modes
+
+### From Standard Mode to Dev Mode:
+1. Tap the "Enable Dev Mode" button on the warning banner
+2. Restart the app when prompted
+3. You'll see the green "DEV MODE" indicator at the bottom of the screen
+
+### From Dev Mode to Standard Mode:
+1. Stop the app
+2. Restart without the `--dev` flag:
+   ```bash
+   yarn start
+   # or
+   npm start
+   ```
+3. The "DEV MODE" indicator will no longer be present
 
 ## Troubleshooting Dev Mode
 
@@ -48,15 +90,17 @@ When dev mode is enabled:
 3. A dev tools drawer is accessible by tapping the indicator
 4. Features requiring missing environment variables will show warnings instead of crashing
 5. Mock data is used when possible for features requiring missing environment variables
+6. Authentication can be bypassed for testing purposes
 
 ## Dev Mode Drawer
 
 The dev mode drawer provides several useful utilities:
 
-1. **Missing Environment Variables**: Shows a list of all missing environment variables that might be needed for full app functionality.
-2. **App Navigation**: Allows direct navigation to any screen in the app without following normal navigation flows.
-3. **Developer Info**: Shows environment, app version, and login status information.
-4. **Force Login**: Allows bypassing authentication for testing protected features.
+1. **Server Status**: Shows if your backend server is connected and responsive
+2. **Missing Environment Variables**: Shows a list of all missing environment variables that might be needed for full app functionality
+3. **App Navigation**: Allows direct navigation to any screen in the app without following normal navigation flows
+4. **Developer Info**: Shows environment, app version, and login status information
+5. **Force Login**: Allows bypassing authentication for testing protected features
 
 ## Environment Variable Handling
 
@@ -66,6 +110,11 @@ In dev mode, when the app encounters a missing environment variable:
 2. The app continues to run with mock data where possible
 3. A warning is logged to the console
 4. The missing variable is displayed in the dev drawer
+
+In standard mode:
+1. A warning banner appears on the login screen
+2. The app continues with limited functionality
+3. Features requiring the missing variables may not work correctly
 
 ## Implementing Dev Mode in Your Code
 
