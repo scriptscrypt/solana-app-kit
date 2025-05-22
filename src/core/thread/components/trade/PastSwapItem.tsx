@@ -3,7 +3,6 @@ import {
   View,
   Text,
   Image,
-  TouchableOpacity,
   StyleSheet,
   Platform,
   Dimensions,
@@ -35,34 +34,7 @@ interface PastSwapItemProps {
   hopCount?: number; // Number of hops in the transaction
 }
 
-/**
- * Get token image URL from token metadata
- * This handles both the standard 'image' property and any custom 'logoURI' property
- * that might be added during enrichment
- */
-function getTokenImageUrl(token: TokenMetadata): string | undefined {
-  // Use type assertion to access possible runtime properties
-  const tokenAny = token as any;
 
-  // For debugging
-  console.log('[PastSwapItem] getTokenImageUrl token:', {
-    mint: token.mint,
-    symbol: token.symbol,
-    image: token.image,
-    logoURI: tokenAny.logoURI,
-  });
-
-  // Try all possible image sources
-  const imageUrl = token.image || tokenAny.logoURI;
-
-  if (imageUrl) {
-    console.log('[PastSwapItem] Using image URL:', imageUrl);
-  } else {
-    console.log('[PastSwapItem] No image found for token:', token.symbol);
-  }
-
-  return imageUrl;
-}
 
 /**
  * Format token amount with proper decimals
@@ -97,13 +69,11 @@ function formatDate(timestamp: number): string {
 
     // Ensure the date is valid
     if (isNaN(date.getTime())) {
-      console.error(`Invalid timestamp: ${timestamp}`);
       return 'Invalid date';
     }
 
     return format(date, 'MMM d, h:mm a');
   } catch (error) {
-    console.error(`Error formatting date with timestamp ${timestamp}:`, error);
     return 'Unknown date';
   }
 }
@@ -134,26 +104,17 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
 
   // Determine image sources with clean fallbacks
   const inputImageSource =
-    inputTokenLogoURI || inputToken.logoURI || inputToken.image;
+    inputTokenLogoURI || inputToken?.logoURI || inputToken?.image;
   const outputImageSource =
-    outputTokenLogoURI || outputToken.logoURI || outputToken.image;
+    outputTokenLogoURI || outputToken?.logoURI || outputToken?.image;
 
-  // Debug
-  console.log('[PastSwapItem] Image sources:', {
-    inputImageSource,
-    outputImageSource,
-    inputToken: `${inputToken.symbol} (${inputToken.mint?.substring(0, 6)}...)`,
-    outputToken: `${outputToken.symbol} (${outputToken.mint?.substring(
-      0,
-      6,
-    )}...)`,
-  });
+  // Ensure we have valid token data
+  if (!inputToken || !outputToken || !swap?.signature) {
+    return null;
+  }
 
   return (
-    <TouchableOpacity
-      style={[styles.swapItem, selected && styles.selectedSwapItem]}
-      onPress={() => onSelect(swap)}
-      activeOpacity={0.7}>
+    <View style={[styles.swapItem, selected && styles.selectedSwapItem]}>
       <View style={styles.swapHeader}>
         <Text style={styles.dateText}>{formatDate(timestamp)}</Text>
 
@@ -250,42 +211,24 @@ const PastSwapItem: React.FC<PastSwapItemProps> = ({
           </View>
         </View>
       </View>
-
-      {/* Selection indicator */}
-      {selected && (
-        <View style={styles.selectedIndicator}>
-          <FontAwesome5 name="check" size={10} color="#FFFFFF" />
         </View>
-      )}
-    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   swapItem: {
-    backgroundColor: COLORS.lighterBackground,
-    borderRadius: 12,
-    marginVertical: 6,
-    padding: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: 'rgba(0,0,0,0.2)',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    marginVertical: 0,
+    padding: 0,
     position: 'relative',
-    borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   selectedSwapItem: {
-    borderWidth: 2,
-    borderColor: COLORS.brandBlue,
-    backgroundColor: 'rgba(0, 171, 228, 0.1)',
+    borderWidth: 0,
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
   },
   swapHeader: {
     flexDirection: 'row',
@@ -314,7 +257,7 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
   },
   multiHopBadge: {
-    backgroundColor: COLORS.brandBlue + '30', // 30% opacity
+    backgroundColor: COLORS.brandBlue + '30',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -378,15 +321,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
   },
   selectedIndicator: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: COLORS.brandBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
+    display: 'none',
   },
 });
 

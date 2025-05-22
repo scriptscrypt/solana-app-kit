@@ -274,4 +274,70 @@ export const modalOverlayStyles = StyleSheet.create({
     fontSize: TYPOGRAPHY.size.xs,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
+  tokenSelectorButton: {
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    borderRadius: 8,
+    backgroundColor: COLORS.lighterBackground,
+    padding: 12,
+  },
+  tokenSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tokenIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 12,
+  },
+  tokenIconPlaceholder: {
+    backgroundColor: COLORS.lightGrey,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tokenIconText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+  },
+  tokenInfo: {
+    flex: 1,
+  },
+  tokenSymbol: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    marginBottom: 2,
+  },
+  tokenName: {
+    color: COLORS.greyMid,
+    fontSize: TYPOGRAPHY.size.sm,
+    marginBottom: 2,
+  },
+  tokenBalance: {
+    color: COLORS.greyMid,
+    fontSize: TYPOGRAPHY.size.xs,
+  },
+  tokenRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.lightGrey,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+  },
+  changeTokenButton: {
+    backgroundColor: COLORS.brandBlue,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  changeTokenText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.xs,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+  },
 });
