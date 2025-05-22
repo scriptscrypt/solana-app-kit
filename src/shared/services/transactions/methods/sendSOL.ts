@@ -5,7 +5,7 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import { TransactionService } from '@/modules/walletProviders/services/transaction/transactionService';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
 import {
   SendSOLParams,
   calculateTransferAmountAfterCommission,

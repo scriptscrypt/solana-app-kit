@@ -70,21 +70,21 @@ import { PrivyProvider, PrivyElements } from '@privy-io/expo';
 import { TurnkeyProvider } from '@turnkey/sdk-react-native';
 
 // Dynamic client initialization
-import { CustomizationProvider } from './src/config/CustomizationProvider';
-import { DefaultCustomizationConfig } from './src/config';
 import {
   getDynamicClient,
   initDynamicClient,
-} from './src/modules/walletProviders/services/walletProviders/dynamic';
-import TransactionNotification from './src/core/sharedUI/TransactionNotification';
+} from './src/modules/wallet-providers/services/walletProviders/dynamic';
+import TransactionNotification from './src/core/shared-ui/TransactionNotification';
 
 // Import DevMode components
-import { DevModeProvider, useDevMode } from './src/context/DevModeContext';
-import DevDrawer from './src/core/devMode/DevDrawer';
+import DevDrawer from './src/core/dev-mode/DevDrawer';
 
 // Import Environment Error provider and new components
-import { EnvErrorProvider } from './src/context/EnvErrorContext';
-import DevModeStatusBar from './src/core/devMode/DevModeStatusBar';
+import DevModeStatusBar from './src/core/dev-mode/DevModeStatusBar';
+import { DevModeProvider, useDevMode } from '@/shared/context/DevModeContext';
+import { DefaultCustomizationConfig } from '@/shared/config';
+import { CustomizationProvider } from '@/shared/config/CustomizationProvider';
+import { EnvErrorProvider } from '@/shared/context/EnvErrorContext';
 
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {

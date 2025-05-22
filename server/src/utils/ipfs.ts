@@ -159,11 +159,25 @@ export async function uploadToPinata(
     
     console.log('Uploading metadata to Pinata...');
     
-    // Upload the metadata JSON
-    const metadataUpload = await pinata.upload.public.json(metadataObject);
-    console.log('metadataUpload', metadataUpload);
+    // Upload the metadata JSON using direct API call instead of the SDK
+    // This avoids the "File is not defined" error in the Node.js environment
+    const jsonResponse = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.PINATA_JWT}`
+      },
+      body: JSON.stringify(metadataObject)
+    });
+    
+    if (!jsonResponse.ok) {
+      throw new Error(`Failed to upload metadata to Pinata: ${jsonResponse.statusText}`);
+    }
+    
+    const jsonData = await jsonResponse.json() as { IpfsHash: string };
+    
     // Return the IPFS link to the metadata
-    const metadataUri = `https://${process.env.PINATA_GATEWAY}/ipfs/${metadataUpload.cid}`;
+    const metadataUri = `https://${process.env.PINATA_GATEWAY}/ipfs/${jsonData.IpfsHash}`;
     
     console.log('Metadata uploaded to Pinata, URI:', metadataUri);
     return metadataUri;

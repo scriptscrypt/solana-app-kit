@@ -3,7 +3,7 @@
  */
 
 // Import needed types
-import { AssetItem, PortfolioData } from '@/modules/dataModule';
+import { AssetItem, PortfolioData } from '@/modules/data-module';
 import { StyleProp, ViewStyle } from 'react-native';
 import { ThreadPost } from '../../thread/types';
 import { NftItem } from '@/modules/nft';

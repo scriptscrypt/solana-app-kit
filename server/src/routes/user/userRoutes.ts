@@ -13,7 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import knex from '../../db/knex';
-import {uploadToIpfs} from '../../utils/ipfs';
+import {uploadToIpfs, uploadToPinata} from '../../utils/ipfs';
 // import fetch from 'node-fetch';
 
 // Assuming userController and requireAuth are structured like this
@@ -36,74 +36,108 @@ profileImageRouter.post(
   upload.single('profilePic'),
   async (req: any, res: any) => {
     try {
+      console.log('[Profile Upload] Route handler started');
       const userId = req.body.userId;
+      console.log(`[Profile Upload] Request received for userId: ${userId}`);
+      
       if (!userId) {
+        console.error('[Profile Upload] Error: Missing userId in request');
         return res.status(400).json({success: false, error: 'Missing userId'});
       }
       if (!req.file) {
+        console.error('[Profile Upload] Error: No file uploaded');
         return res
           .status(400)
           .json({success: false, error: 'No file uploaded'});
       }
 
+      console.log(`[Profile Upload] Processing image for userId: ${userId}. Original size: ${req.file.size} bytes`);
+      
       // 1) Compress the image using sharp
+      console.log('[Profile Upload] Step 1: Compressing image with sharp');
       const outputFormat = 'jpeg';
       const compressedBuffer = await sharp(req.file.buffer)
         .resize({width: 1024, withoutEnlargement: true})
         .toFormat(outputFormat, {quality: 80})
         .toBuffer();
+      console.log(`[Profile Upload] Image compressed successfully. New size: ${compressedBuffer.length} bytes (${Math.round((compressedBuffer.length / req.file.size) * 100)}% of original)`);
 
       // 2) Write to a temp file
+      console.log('[Profile Upload] Step 2: Writing compressed image to temp file');
       const tempFileName = `profile-${userId}-${Date.now()}.${outputFormat}`;
       const tempFilePath = path.join(os.tmpdir(), tempFileName);
       await fs.promises.writeFile(tempFilePath, compressedBuffer);
+      console.log(`[Profile Upload] Temp file created at: ${tempFilePath}`);
 
       // 3) Prepare IPFS metadata
+      console.log('[Profile Upload] Step 3: Preparing IPFS metadata');
       const metadata = {
         name: 'Profile Picture',
         symbol: 'PFP',
         description: `Profile picture for user ${userId}`,
         showName: false,
       };
+      console.log(`[Profile Upload] Metadata prepared: ${JSON.stringify(metadata)}`);
 
-      // 4) Upload image to IPFS
-      const ipfsResult = await uploadToIpfs(tempFilePath, metadata);
+      // 4) Upload image and metadata to Pinata
+      console.log('[Profile Upload] Step 4: Uploading to Pinata IPFS');
+      const pinataResult = await uploadToPinata(tempFilePath, metadata);
+      console.log(`[Profile Upload] Pinata upload successful. Metadata URI: ${pinataResult}`);
 
       // 5) Clean up temp file
+      console.log('[Profile Upload] Step 5: Cleaning up temp file');
       await fs.promises.unlink(tempFilePath);
+      console.log(`[Profile Upload] Temp file removed: ${tempFilePath}`);
 
-      // 6) Attempt to fetch the returned metadata JSON
-      let ipfsImageUrl = ipfsResult;
+      // 6) Attempt to fetch the image URL from the returned Pinata metadata JSON
+      console.log('[Profile Upload] Step 6: Fetching image URL from Pinata metadata');
+      let imageUrl = pinataResult; // Default to metadata URI if image extraction fails
       const {default: fetch} = await import('node-fetch');
-      const metadataResponse = await fetch(ipfsResult);
+      console.log(`[Profile Upload] Fetching metadata from: ${pinataResult}`);
+      const metadataResponse = await fetch(pinataResult); // Fetch the metadata from Pinata
+      
       if (metadataResponse.ok) {
+        console.log(`[Profile Upload] Metadata fetch successful. Status: ${metadataResponse.status}`);
         const metadataJson: any = await metadataResponse.json();
+        console.log(`[Profile Upload] Metadata parsed: ${JSON.stringify(metadataJson)}`);
         if (metadataJson.image) {
-          ipfsImageUrl = metadataJson.image;
+          imageUrl = metadataJson.image; // Extract the direct image URL
+          console.log(`[Profile Upload] Extracted image URL: ${imageUrl}`);
+        } else {
+          console.warn('[Profile Upload] Image URL not found in metadata, using metadata URI instead');
         }
+      } else {
+        console.error(`[Profile Upload] Failed to fetch metadata. Status: ${metadataResponse.status}`);
       }
 
       // 7) Upsert user in "users" table, setting profile_picture_url
+      console.log('[Profile Upload] Step 7: Updating user record in database');
       const existingUser = await knex('users').where({id: userId}).first();
       if (!existingUser) {
+        console.log(`[Profile Upload] User ${userId} not found, creating new record`);
         await knex('users').insert({
           id: userId,
           username: userId, // default
           handle: '@' + userId.slice(0, 6),
-          profile_picture_url: ipfsImageUrl,
+          profile_picture_url: imageUrl, // Use the extracted image URL
           created_at: new Date(),
           updated_at: new Date(),
         });
+        console.log(`[Profile Upload] New user record created for ${userId}`);
       } else {
+        console.log(`[Profile Upload] Updating existing user ${userId} with new profile image`);
         await knex('users').where({id: userId}).update({
-          profile_picture_url: ipfsImageUrl,
+          profile_picture_url: imageUrl, // Use the extracted image URL
           updated_at: new Date(),
         });
+        console.log(`[Profile Upload] User record updated successfully`);
       }
 
-      return res.json({success: true, url: ipfsImageUrl});
+      console.log(`[Profile Upload] Process completed successfully for userId: ${userId}`);
+      return res.json({success: true, url: imageUrl}); // Return the direct image URL
     } catch (error: any) {
-      console.error('[Profile upload error]', error);
+      console.error('[Profile Upload] Error:', error);
+      console.error('[Profile Upload] Error stack:', error.stack);
       return res.status(500).json({success: false, error: error.message});
     }
   },

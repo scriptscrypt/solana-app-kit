@@ -81,6 +81,9 @@ import RightBoomerang from './login-elements-right/boomerang-right.svg';
 import RightGrid from './login-elements-right/grid-right.svg';
 import RightZigzag from './login-elements-right/zigzag-right.svg';
 import RightEllipse from './login-elements-right/ellipse-right.svg';
+import EditIcon from './EditIcon';
+import GalleryIcon from './GalleryIcon';
+import NftIcon from './NftIcon';
 
 export default {
   SolanaDot,
@@ -165,5 +168,8 @@ export default {
   RightBoomerang,
   RightGrid,
   RightZigzag,
-  RightEllipse
+  RightEllipse,
+  EditIcon,
+  GalleryIcon,
+  NftIcon,
 };

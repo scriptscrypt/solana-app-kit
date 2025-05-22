@@ -21,7 +21,7 @@ import {
   updatePostAsync,
 } from '@/shared/state/thread/reducer';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
-import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
+import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
 import retweetModalStyles from './RetweetModal.styles';
 import { nanoid } from '@reduxjs/toolkit';
 
