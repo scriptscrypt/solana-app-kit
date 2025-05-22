@@ -4,6 +4,10 @@ import TYPOGRAPHY from '@/assets/typography';
 
 const { width, height } = Dimensions.get('window');
 
+// Define explicit colors without checking COLORS
+const SUCCESS_GREEN = '#27AE60';
+const ERROR_RED = '#EB5757';
+
 export const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -516,51 +520,123 @@ export const styles = StyleSheet.create({
     color: COLORS.greyMid, // Or a lighter shade for inactive state
   },
   
-  // Upload progress overlay
+  // Upload progress overlay - enhanced styles
   uploadProgressOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 999,
   },
   uploadProgressContainer: {
-    width: '80%',
-    backgroundColor: COLORS.lighterBackground,
-    borderRadius: 16,
-    padding: 20,
+    width: '85%',
+    backgroundColor: COLORS.darkerBackground,
+    borderRadius: 18,
+    padding: 24,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.borderDarkColor,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 15,
+    maxWidth: 400,
+  },
+  uploadProgressHeader: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
   },
   uploadProgressTitle: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.lg,
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     fontFamily: TYPOGRAPHY.fontFamily,
-    marginBottom: 16,
+  },
+  uploadProgressPercentage: {
+    color: COLORS.brandPrimary,
+    fontSize: TYPOGRAPHY.size.lg,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   uploadProgressBarContainer: {
     width: '100%',
-    height: 8,
+    height: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 18,
+    position: 'relative',
   },
   uploadProgressBar: {
     height: '100%',
     backgroundColor: COLORS.brandPrimary,
-    borderRadius: 4,
+    borderRadius: 5,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+  },
+  uploadProgressBarShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
   },
   uploadProgressText: {
     color: COLORS.accessoryDarkColor,
     fontSize: TYPOGRAPHY.size.md,
     fontFamily: TYPOGRAPHY.fontFamily,
+    textAlign: 'center',
+  },
+  uploadSuccessContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    width: '100%',
+  },
+  uploadSuccessText: {
+    color: SUCCESS_GREEN,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    fontFamily: TYPOGRAPHY.fontFamily,
+    marginLeft: 8,
+  },
+  uploadErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(235, 87, 87, 0.1)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    width: '100%',
+  },
+  uploadErrorText: {
+    color: ERROR_RED,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    fontFamily: TYPOGRAPHY.fontFamily,
+    marginLeft: 8,
+    flexShrink: 1,
   },
   
   // New styles for previously inline styles

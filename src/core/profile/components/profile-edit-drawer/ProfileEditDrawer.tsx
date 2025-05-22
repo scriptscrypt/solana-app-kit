@@ -16,6 +16,7 @@ import {
     StyleSheet,
     Platform,
     KeyboardAvoidingView,
+    Animated,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppDispatch, useAppSelector } from '@/shared/hooks/useReduxHooks';
@@ -58,6 +59,10 @@ enum DrawerView {
 
 const LOG_TAG = "[ProfileEditDrawer]";
 
+// Define fallback colors if they don't exist in COLORS
+const SUCCESS_GREEN = '#27AE60';
+const ERROR_RED = '#EB5757';
+
 const ProfileEditDrawer = ({
     visible,
     onClose,
@@ -93,6 +98,8 @@ const ProfileEditDrawer = ({
     const [showAvatarOptions, setShowAvatarOptions] = useState(false);
     const [showUploadProgress, setShowUploadProgress] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const progressAnim = useRef(new Animated.Value(0)).current;
 
     // Memoize profileData to prevent unnecessary re-renders
     const memoizedProfileData = useMemo(() => profileData, [
@@ -223,35 +230,48 @@ const ProfileEditDrawer = ({
 
         setIsUploading(true);
         setIsProcessing(true);
+        setUploadError(null);
 
         // Show progress bar overlay
         setShowUploadProgress(true);
         setUploadProgress(0);
+        progressAnim.setValue(0);
 
-        // Simulate upload progress (in real implementation you'd get actual progress from the upload)
-        const progressInterval = setInterval(() => {
-            if (isMounted.current) {
-                setUploadProgress(prev => {
-                    const newProgress = prev + (10 + Math.random() * 20);
-                    return newProgress > 90 ? 90 : newProgress; // Cap at 90% until complete
-                });
-            } else {
-                clearInterval(progressInterval);
-            }
-        }, 500);
+        // Create realistic animated progress
+        const animateProgress = () => {
+            // Animate to 90% with a natural easing, saving the last 10% for completion
+            Animated.timing(progressAnim, {
+                toValue: 90,
+                duration: 15000, // 15 seconds to reach 90%
+                useNativeDriver: false,
+            }).start();
+        };
+
+        // Start the animation
+        animateProgress();
+        
+        // Subscribe to animated value for updating state
+        const progressListener = progressAnim.addListener(({value}) => {
+            setUploadProgress(value);
+        });
 
         try {
             const newUrl = await uploadProfileAvatar(profileData.userId, useImageUri);
 
-            // Clear interval and set to 100% when complete
-            clearInterval(progressInterval);
-            if (isMounted.current) {
-                setUploadProgress(100);
-                // Wait a moment before hiding progress
-                setTimeout(() => {
-                    if (isMounted.current) setShowUploadProgress(false);
-                }, 500);
-            }
+            // Animate to 100% quickly upon success
+            Animated.timing(progressAnim, {
+                toValue: 100,
+                duration: 500,
+                useNativeDriver: false,
+            }).start();
+
+            // Wait a moment before hiding progress
+            setTimeout(() => {
+                if (isMounted.current) {
+                    setShowUploadProgress(false);
+                    progressAnim.removeListener(progressListener);
+                }
+            }, 1000);
 
             if (!isMounted.current) {
                 return;
@@ -271,6 +291,12 @@ const ProfileEditDrawer = ({
             setSelectedSource(null);
             setCurrentView(DrawerView.PROFILE_EDIT);
         } catch (err: any) {
+            // Handle error - stop animation and hide progress
+            progressAnim.removeListener(progressListener);
+            progressAnim.setValue(0);
+            setUploadError(err.message || 'Failed to upload image');
+            setShowUploadProgress(false);
+            
             Alert.alert('Upload Error', err.message || 'Failed to upload image');
             setCurrentView(DrawerView.PROFILE_EDIT);
         } finally {
@@ -279,7 +305,7 @@ const ProfileEditDrawer = ({
                 setIsProcessing(false);
             }
         }
-    }, [dispatch, profileData.userId, localImageUri, selectedSource, isUploading, onProfileUpdated, setCurrentView]);
+    }, [dispatch, profileData.userId, localImageUri, selectedSource, isUploading, onProfileUpdated, setCurrentView, progressAnim]);
 
     // Toggle Avatar Options visibility
     const handleToggleAvatarOptions = useCallback(() => {
@@ -915,18 +941,44 @@ const ProfileEditDrawer = ({
                 {showUploadProgress && (
                     <View style={styles.uploadProgressOverlay}>
                         <View style={styles.uploadProgressContainer}>
-                            <Text style={styles.uploadProgressTitle}>Uploading Image</Text>
+                            <View style={styles.uploadProgressHeader}>
+                                <Text style={styles.uploadProgressTitle}>Uploading Image</Text>
+                                {uploadProgress < 100 && (
+                                    <Text style={styles.uploadProgressPercentage}>
+                                        {Math.round(uploadProgress)}%
+                                    </Text>
+                                )}
+                            </View>
+                            
                             <View style={styles.uploadProgressBarContainer}>
-                                <View
+                                <Animated.View
                                     style={[
                                         styles.uploadProgressBar,
-                                        { width: `${uploadProgress}%` }
+                                        { width: progressAnim.interpolate({
+                                            inputRange: [0, 100],
+                                            outputRange: ['0%', '100%']
+                                          })
+                                        }
                                     ]}
                                 />
+                                <View style={styles.uploadProgressBarShine} />
                             </View>
-                            <Text style={styles.uploadProgressText}>
-                                {uploadProgress.toFixed(0)}%
-                            </Text>
+                            
+                            {uploadProgress >= 100 ? (
+                                <View style={styles.uploadSuccessContainer}>
+                                    <Text style={{color: SUCCESS_GREEN, fontSize: 20}}>✓</Text>
+                                    <Text style={styles.uploadSuccessText}>Upload complete!</Text>
+                                </View>
+                            ) : uploadError ? (
+                                <View style={styles.uploadErrorContainer}>
+                                    <Text style={{color: ERROR_RED, fontSize: 20}}>✗</Text>
+                                    <Text style={styles.uploadErrorText}>{uploadError}</Text>
+                                </View>
+                            ) : (
+                                <Text style={styles.uploadProgressText}>
+                                    Please wait while we upload your image...
+                                </Text>
+                            )}
                         </View>
                     </View>
                 )}

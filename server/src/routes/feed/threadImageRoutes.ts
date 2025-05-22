@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import knex from '../../db/knex';
-import {uploadToIpfs} from '../../utils/ipfs';
+import {uploadToPinata} from '../../utils/ipfs';
 
 const threadImageRouter = Router();
 const upload = multer({storage: multer.memoryStorage()});
@@ -54,8 +54,8 @@ threadImageRouter.post(
         showName: false,
       };
 
-      // 4) Upload image to IPFS
-      const ipfsResult = await uploadToIpfs(tempFilePath, metadata);
+      // 4) Upload image to Pinata IPFS
+      const ipfsResult = await uploadToPinata(tempFilePath, metadata);
 
       // 5) Clean up temp file
       await fs.promises.unlink(tempFilePath);
