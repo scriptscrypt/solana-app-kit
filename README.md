@@ -10,10 +10,12 @@
 
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SendArcade/solana-app-kit)
-[![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/releases)
-[![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/network/members)
-[![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/blob/main/LICENSE)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/sendarcadefun)
+![NPM Downloads](https://img.shields.io/npm/dm/start-solana-app)
+![GitHub forks](https://img.shields.io/github/forks/sendarcade/solana-app-kit)
+
+![GitHub License](https://img.shields.io/github/license/sendarcade/solana-app-kit)
+![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)
+
 
 <p> Anyone — whether a seasoned React Native developer or a Solana developer — can build mobile apps faster with 10+ protocol integrations. </div>
 
@@ -83,7 +85,7 @@
 
 ## 📚 Documentation
 
-You can view the full documentation of the kit at: [https://docs.1doma.in/docs/introduction](https://docs.1doma.in/docs/introduction)
+You can view the full documentation of the kit at: [http://docs.solanaappkit.com/](http://docs.solanaappkit.com/)
 
 ---
 
@@ -486,49 +488,18 @@ Common issues and their solutions:
 
 Join our community to get help, share your projects, and contribute:
 
-[![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/sendarcade)
-[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://x.com/sendarcadefun)
+[![telegram_badge]][telegram_link]
+
+[telegram_badge]: https://img.shields.io/badge/telegram-❤️-252850?style=plastic&logo=telegram
+[telegram_link]: https://t.me/solanaappkit
+![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)
+
 
 ---
 
 ## 📄 License
 
 This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Birdeye API Integration
-
-The application now uses Birdeye APIs for token listing and searching, providing users with accurate market data:
-
-### Features
-
-- Token listing sorted by market cap (high to low)
-- Debounced token search functionality
-- Real-time price and 24h price change data
-- Pagination support for token lists
-- Zero fallbacks or hardcoded token data
-
-### Setup
-
-To use the Birdeye API, you need to add your API key to the environment variables:
-
-```
-BIRDEYE_API_KEY=your_api_key_here
-```
-
-### API Endpoints Used
-
-- Token List: `https://public-api.birdeye.so/defi/v3/token/list`
-- Token Search: `https://public-api.birdeye.so/defi/v3/search`
-- Token Metadata: `https://public-api.birdeye.so/defi/v3/token/meta-data/single`
-- Token Market Data: `https://public-api.birdeye.so/defi/v3/token/market-data`
-
-### Hooks
-
-Custom hooks for using the Birdeye API:
-
-- `useTokenSearch`: Provides debounced search functionality for tokens
 
 ---
 
