@@ -1,0 +1,837 @@
+---
+title: "Raydium Module"
+description: "Professional token launching and swapping with Raydium's advanced Launchpad and AMM platform"
+icon: "waves"
+---
+
+# Raydium Module
+
+The Raydium module provides comprehensive integration with Raydium's platform, featuring professional token launching through their Launchpad and sophisticated swapping capabilities via their AMM infrastructure.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🌊 Professional Token Launching</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Launch tokens with advanced configurations including bonding curves, vesting schedules, and pool migration options on Solana's premier DEX
+  </CardContent>
+</Card>
+
+## Core Functionalities
+
+<CardGroup cols={2}>
+  <Card title="JustSendIt Mode" icon="zap">
+    Simplified token launch with pre-configured settings for quick deployment with industry standards
+  </Card>
+  
+  <Card title="LaunchLab Mode" icon="flask">
+    Advanced token configuration with custom bonding curves, vesting schedules, and pool parameters
+  </Card>
+  
+  <Card title="Token Swapping" icon="arrow-right-arrow-left">
+    Execute efficient token swaps via Raydium's advanced AMM with optimal price discovery
+  </Card>
+  
+  <Card title="Pool Migration" icon="share">
+    Automated migration from bonding curves to AMM or CPMM pools with configurable parameters
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="Backend Service">
+    Ensure your backend server is running for Raydium SDK operations:
+    ```bash
+    SERVER_URL=http://localhost:8080/api
+    ```
+  </Step>
+  
+  <Step title="Environment Configuration">
+    Configure Raydium-specific settings in `.env.local`:
+    ```bash
+    SERVER_URL=your_backend_server_url
+    HELIUS_STAKED_URL=your_rpc_endpoint
+    CLUSTER=mainnet-beta
+    ```
+  </Step>
+  
+  <Step title="Import Module">
+    Import the components and services you need:
+    ```typescript
+    import { 
+      LaunchlabsScreen,
+      LaunchlabsLaunchSection,
+      AdvancedOptionsSection,
+      raydiumService 
+    } from '@/modules/raydium';
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  **Backend Dependency**: This module requires a backend service that implements Raydium SDK operations for token creation and swapping.
+</Warning>
+
+## Module Architecture
+
+```
+src/modules/raydium/
+├── components/             # UI components for token launching
+├── screens/               # Complete screen implementations
+├── services/              # Raydium API integration
+├── utils/                 # Advanced configuration utilities
+└── index.ts              # Public API exports
+```
+
+## Core Components
+
+<Tabs>
+  <Tab title="Launchlabs Screen">
+    **`LaunchlabsScreen`** - Complete token launching interface
+    
+    ```typescript
+    import { LaunchlabsScreen } from '@/modules/raydium';
+    
+    function TokenLaunchPlatform() {
+      const handleTokenLaunched = (result) => {
+        console.log('Token launched:', result);
+        // Handle success (navigation, notifications, etc.)
+      };
+      
+      return (
+        <LaunchlabsScreen
+          onTokenLaunched={handleTokenLaunched}
+          enableAdvancedMode={true}
+          showPreviewMode={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Two-step launch process (basic info → advanced config)
+    - Mode selection (JustSendIt vs LaunchLab)
+    - Real-time validation and preview
+    - Integrated metadata upload
+  </Tab>
+  
+  <Tab title="Launch Section">
+    **`LaunchlabsLaunchSection`** - Token information input interface
+    
+    ```typescript
+    import { LaunchlabsLaunchSection } from '@/modules/raydium';
+    
+    function TokenInfoStep() {
+      const handleInfoComplete = (tokenData) => {
+        console.log('Token info completed:', tokenData);
+        // Move to next step
+      };
+      
+      return (
+        <LaunchlabsLaunchSection
+          onComplete={handleInfoComplete}
+          onModeSelect={handleModeSelection}
+          enableSocialLinks={true}
+          validateTokenInfo={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Token metadata input (name, symbol, description)
+    - Image upload with preview
+    - Social media links configuration
+    - Launch mode selection
+    - Form validation and error handling
+  </Tab>
+  
+  <Tab title="Advanced Options">
+    **`AdvancedOptionsSection`** - Comprehensive launch configuration
+    
+    ```typescript
+    import { AdvancedOptionsSection } from '@/modules/raydium';
+    
+    function AdvancedConfigStep({ tokenData }) {
+      const handleConfigComplete = (config) => {
+        console.log('Advanced config completed:', config);
+        // Execute token launch
+      };
+      
+      return (
+        <AdvancedOptionsSection
+          tokenData={tokenData}
+          onComplete={handleConfigComplete}
+          showBondingCurveGraph={true}
+          enablePoolMigration={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Quote token selection (SOL, USDC, etc.)
+    - Supply and pricing configuration
+    - Bonding curve percentage (51%-80%)
+    - Vesting schedules (0%-30%)
+    - Pool migration settings (AMM vs CPMM)
+    - Fee sharing configuration
+    - Real-time bonding curve visualization
+  </Tab>
+</Tabs>
+
+## Launch Modes
+
+<Tabs>
+  <Tab title="JustSendIt Mode">
+    **Quick Launch** - Pre-configured for immediate deployment
+    
+    ```typescript
+    const justSendItConfig = {
+      mode: 'JustSendIt',
+      supply: 1000000000, // 1B tokens
+      ammThreshold: 85, // 85 SOL
+      bondingCurvePercentage: 51, // 51% on bonding curve
+      vestingPercentage: 0, // No vesting
+      quoteToken: 'SOL',
+      poolType: 'AMM',
+      slippage: 0.5
+    };
+    
+    const result = await raydiumService.createAndLaunchToken({
+      ...tokenData,
+      config: justSendItConfig
+    });
+    ```
+    
+    **Standard Configuration:**
+    - 1 Billion token supply
+    - 85 SOL AMM threshold
+    - 51% on bonding curve
+    - No vesting period
+    - SOL as quote token
+    - AMM pool migration
+  </Tab>
+  
+  <Tab title="LaunchLab Mode">
+    **Advanced Configuration** - Full customization control
+    
+    ```typescript
+    const launchLabConfig = {
+      mode: 'LaunchLab',
+      quoteToken: 'USDC',
+      supply: 500000000,
+      solToBeRaised: 100,
+      bondingCurvePercentage: 65,
+      vestingPercentage: 20,
+      vestingSchedule: {
+        duration: 12,
+        cliff: 3,
+        timeUnit: 'months'
+      },
+      poolType: 'CPMM',
+      feeSharing: true,
+      slippage: 1.0,
+      enableInitialBuy: true,
+      initialBuyAmount: 5
+    };
+    
+    const result = await raydiumService.createAndLaunchToken({
+      ...tokenData,
+      config: launchLabConfig
+    });
+    ```
+    
+    **Customizable Options:**
+    - Quote token selection
+    - Custom token supply
+    - SOL fundraising target
+    - Bonding curve percentage (51%-80%)
+    - Vesting percentage (0%-30%)
+    - Flexible vesting schedules
+    - Pool migration type selection
+    - Fee sharing for CPMM pools
+    - Initial buy configuration
+  </Tab>
+</Tabs>
+
+## Raydium Services
+
+The `raydiumService.ts` provides comprehensive Raydium platform integration:
+
+<Accordion>
+  <AccordionItem title="Token Launching">
+    
+    ```typescript
+    import { raydiumService } from '@/modules/raydium';
+    
+    // Upload token metadata to IPFS
+    const metadataUri = await raydiumService.uploadTokenMetadata({
+      name: 'My Token',
+      symbol: 'MTK',
+      description: 'A professional token built on Raydium',
+      image: imageFile,
+      website: 'https://mytoken.com',
+      twitter: '@mytoken',
+      telegram: 't.me/mytoken'
+    });
+    
+    // Launch token with full configuration
+    const launchResult = await raydiumService.createAndLaunchToken({
+      // Basic token data
+      name: 'My Token',
+      symbol: 'MTK',
+      description: 'A professional token built on Raydium',
+      image: imageFile,
+      metadataUri: metadataUri,
+      
+      // Advanced configuration
+      config: {
+        mode: 'LaunchLab',
+        quoteToken: 'SOL',
+        supply: 1000000000,
+        solToBeRaised: 200,
+        bondingCurvePercentage: 70,
+        vestingPercentage: 15,
+        vestingSchedule: {
+          duration: 6,
+          cliff: 1,
+          timeUnit: 'months'
+        },
+        poolType: 'CPMM',
+        feeSharing: true,
+        slippage: 0.5,
+        enableInitialBuy: true,
+        initialBuyAmount: 10
+      }
+    });
+    ```
+    
+    **Available Functions:**
+    - `uploadTokenMetadata()` - Upload metadata to IPFS
+    - `createAndLaunchToken()` - Complete token launch process
+    - Status callbacks for real-time updates
+    - Error handling and validation
+    
+  </AccordionItem>
+  
+  <AccordionItem title="Token Swapping">
+    
+    ```typescript
+    // Execute token swap via Raydium
+    const swapResult = await raydiumService.executeSwap({
+      inputToken: 'So11111111111111111111111111111111111111112', // SOL
+      outputToken: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+      amount: 1.0,
+      slippage: 0.5,
+      userPublicKey: wallet.publicKey
+    });
+    
+    console.log('Swap completed:', swapResult);
+    ```
+    
+    **Swap Features:**
+    - Optimal routing through Raydium pools
+    - Slippage protection
+    - Real-time quotes
+    - Transaction status tracking
+    
+  </AccordionItem>
+</Accordion>
+
+## Quick Start Examples
+
+<CodeGroup>
+```typescript Simple Token Launch (JustSendIt)
+import { LaunchlabsScreen } from '@/modules/raydium';
+import { useWallet } from '@/modules/wallet-providers';
+
+function QuickTokenLaunch() {
+  const { wallet } = useWallet();
+  const [launching, setLaunching] = useState(false);
+
+  const handleQuickLaunch = async (tokenData) => {
+    if (!wallet) return;
+    
+    setLaunching(true);
+    try {
+      // Use JustSendIt mode for quick launch
+      const result = await raydiumService.createAndLaunchToken({
+        ...tokenData,
+        config: {
+          mode: 'JustSendIt',
+          enableInitialBuy: true,
+          initialBuyAmount: 1 // 1 SOL initial buy
+        }
+      });
+      
+      Alert.alert(
+        'Token Launched!',
+        `${tokenData.name} successfully launched on Raydium!\nMint: ${result.mint}`
+      );
+      
+    } catch (error) {
+      Alert.alert('Launch Failed', error.message);
+    } finally {
+      setLaunching(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Quick Token Launch</Text>
+      <Text style={styles.subtitle}>
+        Launch with industry-standard settings
+      </Text>
+      
+      <LaunchlabsScreen
+        mode="JustSendIt"
+        onTokenLaunched={handleQuickLaunch}
+        loading={launching}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Advanced Token Launch (LaunchLab)
+import { 
+  LaunchlabsLaunchSection, 
+  AdvancedOptionsSection 
+} from '@/modules/raydium';
+
+function AdvancedTokenLaunch() {
+  const [step, setStep] = useState(1);
+  const [tokenData, setTokenData] = useState(null);
+  const [config, setConfig] = useState(null);
+
+  const handleBasicInfoComplete = (data) => {
+    setTokenData(data);
+    setStep(2);
+  };
+
+  const handleAdvancedConfigComplete = async (advancedConfig) => {
+    setConfig(advancedConfig);
+    
+    try {
+      const result = await raydiumService.createAndLaunchToken({
+        ...tokenData,
+        config: advancedConfig
+      });
+      
+      console.log('Advanced token launched:', result);
+      
+      Alert.alert(
+        'Professional Launch Complete!',
+        `${tokenData.name} launched with custom configuration`
+      );
+      
+    } catch (error) {
+      Alert.alert('Launch Failed', error.message);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {step === 1 ? (
+        <LaunchlabsLaunchSection
+          onComplete={handleBasicInfoComplete}
+          onModeSelect={(mode) => {
+            if (mode === 'JustSendIt') {
+              // Handle quick launch
+            }
+          }}
+        />
+      ) : (
+        <AdvancedOptionsSection
+          tokenData={tokenData}
+          onComplete={handleAdvancedConfigComplete}
+          onBack={() => setStep(1)}
+        />
+      )}
+    </View>
+  );
+}
+```
+
+```typescript Token Swapping
+import { raydiumService } from '@/modules/raydium';
+import { useWallet } from '@/modules/wallet-providers';
+
+function RaydiumSwapInterface() {
+  const { wallet } = useWallet();
+  const [inputToken, setInputToken] = useState('SOL');
+  const [outputToken, setOutputToken] = useState('USDC');
+  const [amount, setAmount] = useState('');
+  const [quote, setQuote] = useState(null);
+  const [swapping, setSwapping] = useState(false);
+
+  useEffect(() => {
+    if (amount && parseFloat(amount) > 0) {
+      fetchQuote();
+    }
+  }, [inputToken, outputToken, amount]);
+
+  const fetchQuote = async () => {
+    try {
+      // This would typically involve calling a quote endpoint
+      const quoteData = await getSwapQuote(inputToken, outputToken, amount);
+      setQuote(quoteData);
+    } catch (error) {
+      console.error('Quote failed:', error);
+    }
+  };
+
+  const handleSwap = async () => {
+    if (!wallet || !quote) return;
+    
+    setSwapping(true);
+    try {
+      const result = await raydiumService.executeSwap({
+        inputToken: inputToken,
+        outputToken: outputToken,
+        amount: parseFloat(amount),
+        slippage: 0.5,
+        userPublicKey: wallet.publicKey
+      });
+      
+      Alert.alert(
+        'Swap Successful!',
+        `Swapped ${amount} ${inputToken} for ${result.outputAmount} ${outputToken}`
+      );
+      
+    } catch (error) {
+      Alert.alert('Swap Failed', error.message);
+    } finally {
+      setSwapping(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Raydium Swap</Text>
+      
+      <TokenSelector
+        selectedToken={inputToken}
+        onTokenSelect={setInputToken}
+        label="From"
+      />
+      
+      <TextInput
+        value={amount}
+        onChangeText={setAmount}
+        placeholder="Amount"
+        keyboardType="numeric"
+        style={styles.amountInput}
+      />
+      
+      <TokenSelector
+        selectedToken={outputToken}
+        onTokenSelect={setOutputToken}
+        label="To"
+      />
+      
+      {quote && (
+        <View style={styles.quoteContainer}>
+          <Text>You'll receive: ~{quote.outputAmount} {outputToken}</Text>
+          <Text>Rate: 1 {inputToken} = {quote.rate} {outputToken}</Text>
+          <Text>Price Impact: {quote.priceImpact}%</Text>
+        </View>
+      )}
+      
+      <Button
+        title={swapping ? "Swapping..." : "Swap"}
+        onPress={handleSwap}
+        disabled={swapping || !quote || !wallet}
+      />
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## Advanced Configuration Utilities
+
+The `AdvancedOptionsSectionUtils.tsx` provides comprehensive utilities for token launch configuration:
+
+<Accordion>
+  <AccordionItem title="Validation Functions">
+    
+    ```typescript
+    import { 
+      validateBondingCurvePercentage,
+      validateVestingPercentage,
+      validateSolRaised,
+      calculatePoolMigrationPercentage
+    } from '@/modules/raydium/utils';
+    
+    // Validate bonding curve percentage (51%-80%)
+    const isValidBondingCurve = validateBondingCurvePercentage(65);
+    
+    // Validate vesting percentage (0%-30%)
+    const isValidVesting = validateVestingPercentage(20);
+    
+    // Validate SOL to be raised
+    const isValidSolRaised = validateSolRaised(100);
+    
+    // Calculate pool migration percentage
+    const poolMigration = calculatePoolMigrationPercentage(65, 20);
+    // Returns: 15% (100% - 65% bonding - 20% vesting)
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Calculation Functions">
+    
+    ```typescript
+    import { 
+      calculateGraphData,
+      convertVestingPeriodToSeconds,
+      formatNumber,
+      parseNumericString
+    } from '@/modules/raydium/utils';
+    
+    // Generate bonding curve graph data
+    const graphData = calculateGraphData({
+      supply: 1000000000,
+      solRaised: 100,
+      bondingCurvePercentage: 65
+    });
+    
+    // Convert vesting period to seconds
+    const vestingSeconds = convertVestingPeriodToSeconds(6, 'months');
+    
+    // Format numbers for display
+    const formatted = formatNumber(1000000); // Returns: "1,000,000"
+    
+    // Parse numeric strings
+    const parsed = parseNumericString('1,000.50'); // Returns: 1000.5
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Constants & Options">
+    
+    ```typescript
+    import { 
+      TOKEN_SUPPLY_OPTIONS,
+      TIME_UNIT_OPTIONS,
+      SAMPLE_TOKENS
+    } from '@/modules/raydium/utils';
+    
+    // Predefined supply options
+    console.log(TOKEN_SUPPLY_OPTIONS);
+    // [100000000, 500000000, 1000000000, 5000000000, 10000000000]
+    
+    // Time unit options for vesting
+    console.log(TIME_UNIT_OPTIONS);
+    // ['days', 'weeks', 'months', 'years']
+    
+    // Sample tokens for testing/demo
+    console.log(SAMPLE_TOKENS);
+    // Array of sample token configurations
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Bonding Curve Visualization
+
+The module includes real-time bonding curve visualization:
+
+```typescript
+function BondingCurvePreview({ config }) {
+  const [graphData, setGraphData] = useState([]);
+
+  useEffect(() => {
+    const data = calculateGraphData({
+      supply: config.supply,
+      solRaised: config.solRaised,
+      bondingCurvePercentage: config.bondingCurvePercentage
+    });
+    setGraphData(data);
+  }, [config]);
+
+  return (
+    <View style={styles.graphContainer}>
+      <Text style={styles.graphTitle}>Bonding Curve Preview</Text>
+      
+      <LineChart
+        data={graphData}
+        width={300}
+        height={200}
+        chartConfig={{
+          backgroundColor: '#1e1e1e',
+          backgroundGradientFrom: '#2a2a2a',
+          backgroundGradientTo: '#1e1e1e',
+          decimalPlaces: 4,
+          color: (opacity = 1) => `rgba(25, 255, 146, ${opacity})`,
+        }}
+      />
+      
+      <View style={styles.graphStats}>
+        <Text>Starting Price: {graphData[0]?.price || 0} SOL</Text>
+        <Text>Migration Price: {graphData[graphData.length - 1]?.price || 0} SOL</Text>
+        <Text>Tokens on Curve: {config.bondingCurvePercentage}%</Text>
+      </View>
+    </View>
+  );
+}
+```
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" href="/docs/modules/wallet-providers">
+    Transaction signing and wallet management for token operations
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Real-time token data and portfolio tracking integration
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    Social sharing of professional token launches
+  </Card>
+  
+  <Card title="Swap Module" href="/docs/modules/swap">
+    Cross-DEX arbitrage and trading opportunities
+  </Card>
+</CardGroup>
+
+### Professional Launch Workflow
+
+```typescript
+import { useWallet } from '@/modules/wallet-providers';
+import { useFetchTokens } from '@/modules/data-module';
+import { useThread } from '@/core/thread';
+import { raydiumService } from '@/modules/raydium';
+
+function ProfessionalTokenPlatform() {
+  const { wallet } = useWallet();
+  const { refetch: refetchTokens } = useFetchTokens(wallet?.address);
+  const { createPost } = useThread();
+
+  const handleProfessionalLaunch = async (tokenData, config) => {
+    try {
+      // Launch token with advanced configuration
+      const result = await raydiumService.createAndLaunchToken({
+        ...tokenData,
+        config
+      });
+      
+      // Refresh user's portfolio
+      await refetchTokens();
+      
+      // Create professional announcement
+      await createPost({
+        content: `🏗️ Just launched ${tokenData.name} on @RaydiumProtocol with professional-grade tokenomics!\n\n📊 Bonding Curve: ${config.bondingCurvePercentage}%\n⏰ Vesting: ${config.vestingPercentage}% over ${config.vestingSchedule.duration} ${config.vestingSchedule.timeUnit}\n💰 Target: ${config.solRaised} SOL`,
+        type: 'professional_launch',
+        sections: [
+          {
+            type: 'trade',
+            data: {
+              tokenAddress: result.mint,
+              action: 'buy',
+              platform: 'raydium',
+              launchType: 'professional'
+            }
+          }
+        ]
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Professional launch failed:', error);
+      throw error;
+    }
+  };
+
+  return <AdvancedLaunchInterface onLaunch={handleProfessionalLaunch} />;
+}
+```
+
+## Error Handling & Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **Backend Connection Issues**
+    - Verify `SERVER_URL` is correctly configured
+    - Ensure Raydium backend service is running
+    - Check network connectivity and firewall settings
+    
+    **Token Launch Failures**
+    - Invalid bonding curve parameters (must be 51%-80%)
+    - Vesting percentage too high (max 30%)
+    - Insufficient SOL for transaction fees
+    - Metadata upload failures
+    
+    **Configuration Errors**
+    - Pool migration percentage calculation errors
+    - Invalid vesting schedule parameters
+    - Quote token not supported
+    - AMM vs CPMM pool type mismatch
+    
+    **Swap Failures**
+    - Insufficient liquidity for large swaps
+    - Slippage tolerance too low
+    - Token not available on Raydium
+    - Network congestion issues
+    
+  </Accordion>
+</AccordionGroup>
+
+```typescript
+function RobustRaydiumOperations() {
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  const safeRaydiumOperation = async (operation, params) => {
+    try {
+      return await operation(params);
+    } catch (error) {
+      console.error('Raydium operation failed:', error);
+      
+      if (retryCount < maxRetries && error.message.includes('network')) {
+        setRetryCount(prev => prev + 1);
+        const delay = 1000 * Math.pow(2, retryCount); // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return safeRaydiumOperation(operation, params);
+      }
+      
+      // Handle specific Raydium errors
+      if (error.message.includes('bonding curve')) {
+        throw new Error('Invalid bonding curve configuration. Please adjust parameters.');
+      }
+      
+      if (error.message.includes('vesting')) {
+        throw new Error('Vesting percentage must be between 0% and 30%.');
+      }
+      
+      throw error;
+    }
+  };
+
+  return { safeRaydiumOperation };
+}
+```
+
+## Performance Considerations
+
+<Tip>
+  **Configuration Validation**: Use the provided validation functions to ensure parameters are valid before launching to avoid transaction failures.
+</Tip>
+
+<Warning>
+  **Backend Optimization**: Complex token launches involve multiple transactions. Ensure your backend can handle the load and has proper error recovery.
+</Warning>
+
+## API Reference
+
+For detailed API documentation, see:
+- [Raydium Components Reference](/docs/references/modules/raydium/components)
+- [Services Reference](/docs/references/modules/raydium/services)
+- [Utils Reference](/docs/references/modules/raydium/utils)
+
+---
+
+The Raydium module provides professional-grade token launching capabilities with sophisticated configuration options, making it ideal for serious projects requiring advanced tokenomics and institutional-quality infrastructure.

@@ -1,0 +1,857 @@
+---
+title: "Solana Agent Kit"
+description: "AI-powered Solana interactions with intelligent chat interfaces and automated blockchain operations"
+icon: "robot"
+---
+
+# Solana Agent Kit Module
+
+The Solana Agent Kit module provides a comprehensive AI-powered toolkit that enables natural language interactions with the Solana blockchain. Users can chat with an AI agent that understands Solana operations and can execute transactions, check balances, and perform complex DeFi operations through conversational interfaces.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🤖 AI-Powered Blockchain Interactions</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Revolutionary chat interface that transforms complex blockchain operations into simple conversations, powered by advanced AI models and the Solana Agent Kit
+  </CardContent>
+</Card>
+
+## Core Functionalities
+
+<CardGroup cols={2}>
+  <Card title="AI Chat Interface" icon="message">
+    Advanced chat system with streaming responses, message persistence, and context management
+  </Card>
+  
+  <Card title="Solana Integration" icon="link">
+    Direct blockchain interactions through AI commands including transactions, transfers, and DeFi operations
+  </Card>
+  
+  <Card title="Plugin Ecosystem" icon="puzzle-piece">
+    Extensible plugin system for adding custom Solana functionality and third-party integrations
+  </Card>
+  
+  <Card title="Smart Automation" icon="wand-magic-sparkles">
+    Intelligent automation of complex multi-step Solana operations through natural language commands
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="API Configuration">
+    Configure your OpenAI API key for AI model access:
+    ```bash
+    OPENAI_API_KEY=your_openai_api_key_here
+    ```
+  </Step>
+  
+  <Step title="Solana Configuration">
+    Set up Solana RPC and backend endpoints:
+    ```bash
+    HELIUS_STAKED_URL=your_solana_rpc_endpoint
+    SERVER_URL=your_backend_server_url
+    ```
+  </Step>
+  
+  <Step title="Import Module">
+    Import the chat hook and utilities:
+    ```typescript
+    import { 
+      useChat,
+      myProvider,
+      generateUUID 
+    } from '@/modules/solana-agent-kit';
+    ```
+  </Step>
+  
+  <Step title="Wallet Integration">
+    Ensure wallet providers are configured:
+    ```typescript
+    import { useWallet } from '@/modules/wallet-providers';
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  **AI Model Access**: This module requires an OpenAI API key for full functionality. The system gracefully handles missing keys but AI features will be disabled.
+</Note>
+
+## Module Architecture
+
+```
+src/modules/solana-agent-kit/
+├── hooks/                  # React hooks for chat management
+│   └── useChat.ts         # Core chat functionality
+├── lib/                   # AI and utility libraries
+│   ├── ai/
+│   │   └── providers.ts   # AI model configuration
+│   └── utils.ts          # Persistence and utility functions
+└── index.ts              # Public API exports
+```
+
+## Core Hook: useChat
+
+The primary interface for AI-powered Solana interactions:
+
+```typescript
+import { useChat } from '@/modules/solana-agent-kit';
+import { useWallet } from '@/modules/wallet-providers';
+
+function AIAssistantChat() {
+  const { connected } = useWallet();
+  const { 
+    messages, 
+    input, 
+    handleInputChange, 
+    handleSubmit, 
+    isLoading, 
+    error,
+    currentOperation,
+    append,
+    reload,
+    stop
+  } = useChat({
+    id: 'unique-chat-id',
+    initialMessages: [],
+    onFinish: (message) => {
+      console.log('AI response completed:', message);
+    },
+    onError: (error) => {
+      console.error('Chat error:', error);
+    }
+  });
+
+  if (!connected) {
+    return (
+      <View style={styles.connectPrompt}>
+        <Text>Please connect your wallet to use the AI Agent</Text>
+        <ConnectWalletButton />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.chatContainer}>
+      <ChatMessages messages={messages} />
+      <ChatInput 
+        value={input}
+        onChange={handleInputChange}
+        onSubmit={handleSubmit}
+        loading={isLoading}
+        currentOperation={currentOperation}
+      />
+    </View>
+  );
+}
+```
+
+**Hook Parameters:**
+- `id` - Unique chat session identifier
+- `initialMessages` - Pre-existing message history
+- `onFinish` - Callback when AI completes response
+- `onError` - Error handling callback
+
+**Hook Returns:**
+- `messages` - Array of chat messages
+- `input` - Current input text
+- `handleInputChange` - Input change handler
+- `handleSubmit` - Message submission function
+- `isLoading` - Loading state
+- `error` - Error message if any
+- `currentOperation` - Current AI operation status
+- `append` - Add message programmatically
+- `reload` - Regenerate last AI response
+- `stop` - Stop current AI generation
+
+## AI Model Configuration
+
+The module uses advanced AI models through custom providers:
+
+<Tabs>
+  <Tab title="Language Models">
+    **Chat and Reasoning Models**
+    
+    ```typescript
+    import { myProvider } from '@/modules/solana-agent-kit';
+    
+    // Available language models
+    const models = {
+      chat: 'gpt-4o',           // Main chat model
+      title: 'gpt-3.5-turbo',  // Title generation
+      reasoning: 'gpt-4o',     // Complex reasoning
+      fallback: 'gpt-3.5-turbo' // Backup model
+    };
+    
+    // Custom provider configuration
+    const provider = myProvider({
+      apiKey: process.env.OPENAI_API_KEY,
+      models: models
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Model Features">
+    **Advanced AI Capabilities**
+    
+    - **Streaming Responses**: Real-time message generation
+    - **Context Awareness**: Maintains conversation history
+    - **Reasoning Middleware**: Enhanced decision-making
+    - **Function Calling**: Direct integration with Solana tools
+    - **Error Recovery**: Automatic retry and fallback mechanisms
+    - **Multi-model Support**: Different models for different tasks
+  </Tab>
+</Tabs>
+
+## Solana Agent Capabilities
+
+The AI agent can perform various Solana operations through natural language:
+
+<Accordion>
+  <AccordionItem title="Transaction Operations">
+    
+    ```typescript
+    // Example user queries the AI can handle:
+    
+    "Send 0.5 SOL to 9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+    "Check my SOL balance"
+    "What tokens do I own?"
+    "Swap 1 SOL for USDC"
+    "Show me my transaction history"
+    
+    // The AI automatically:
+    // 1. Parses the user intent
+    // 2. Constructs appropriate transactions
+    // 3. Requests user approval
+    // 4. Executes the operation
+    // 5. Provides confirmation and details
+    ```
+    
+    **Available Operations:**
+    - Send SOL and SPL tokens
+    - Check balances and portfolios
+    - View transaction history
+    - Sign messages and transactions
+    - Multi-transaction operations
+    
+  </AccordionItem>
+  
+  <AccordionItem title="DeFi Operations">
+    
+    ```typescript
+    // Advanced DeFi queries:
+    
+    "Create a new token with 1M supply"
+    "Add liquidity to SOL/USDC pool"
+    "Stake my SOL for rewards"
+    "Check my DeFi positions"
+    "Find the best swap rate for 100 USDC to SOL"
+    
+    // Integration with other modules:
+    // - Token creation via Pump.fun or Raydium
+    // - Liquidity operations via Meteora
+    // - NFT operations via Tensor
+    // - Cross-DEX arbitrage opportunities
+    ```
+    
+    **DeFi Capabilities:**
+    - Token creation and management
+    - Liquidity provision and farming
+    - Staking and delegation
+    - Cross-protocol interactions
+    - Yield optimization suggestions
+    
+  </AccordionItem>
+  
+  <AccordionItem title="Portfolio Management">
+    
+    ```typescript
+    // Portfolio analysis queries:
+    
+    "Analyze my portfolio performance"
+    "What's my total portfolio value?"
+    "Show me my biggest gains and losses"
+    "Suggest portfolio rebalancing"
+    "Track my token allocations"
+    
+    // AI provides:
+    // - Real-time portfolio valuation
+    // - Performance analytics
+    // - Risk assessment
+    // - Rebalancing suggestions
+    // - Tax optimization tips
+    ```
+    
+    **Portfolio Features:**
+    - Real-time valuation tracking
+    - Performance analytics
+    - Risk assessment and management
+    - Automated rebalancing suggestions
+    - Tax optimization strategies
+    
+  </AccordionItem>
+</Accordion>
+
+## Quick Start Examples
+
+<CodeGroup>
+```typescript Basic AI Chat Interface
+import { useChat } from '@/modules/solana-agent-kit';
+import { useWallet } from '@/modules/wallet-providers';
+
+function SolanaAIAssistant() {
+  const { connected } = useWallet();
+  const { 
+    messages, 
+    input, 
+    handleInputChange, 
+    handleSubmit, 
+    isLoading, 
+    currentOperation 
+  } = useChat({
+    id: 'main-chat',
+    onFinish: (message) => {
+      // Handle completion
+      console.log('AI completed:', message.content);
+    }
+  });
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Solana AI Assistant</Text>
+      
+      {!connected && (
+        <View style={styles.walletPrompt}>
+          <Text>Connect your wallet to start chatting with the AI</Text>
+          <ConnectWalletButton />
+        </View>
+      )}
+      
+      <FlatList
+        data={messages}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <MessageBubble 
+            message={item}
+            isUser={item.role === 'user'}
+          />
+        )}
+        style={styles.messagesList}
+      />
+      
+      {currentOperation && (
+        <View style={styles.operationStatus}>
+          <ActivityIndicator size="small" />
+          <Text style={styles.operationText}>{currentOperation}</Text>
+        </View>
+      )}
+      
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.textInput}
+          value={input}
+          onChangeText={handleInputChange}
+          placeholder="Ask me about Solana operations..."
+          multiline
+          editable={!isLoading && connected}
+        />
+        <TouchableOpacity 
+          style={[styles.sendButton, (!connected || isLoading) && styles.disabled]}
+          onPress={handleSubmit}
+          disabled={!connected || isLoading}
+        >
+          <Text style={styles.sendButtonText}>
+            {isLoading ? "..." : "Send"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+```
+
+```typescript Advanced Chat with Persistence
+import { useChat, generateUUID, saveChat } from '@/modules/solana-agent-kit';
+
+function PersistentChatInterface() {
+  const [chatId] = useState(() => generateUUID());
+  const { 
+    messages, 
+    input, 
+    handleInputChange, 
+    handleSubmit, 
+    isLoading 
+  } = useChat({
+    id: chatId,
+    onFinish: async (message) => {
+      // Auto-save important conversations
+      if (messages.length > 10) {
+        await saveChat({
+          id: chatId,
+          title: generateChatTitle(messages),
+          messages: messages,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+  });
+
+  const generateChatTitle = (messages) => {
+    const firstUserMessage = messages.find(m => m.role === 'user');
+    return firstUserMessage?.content.slice(0, 50) + '...' || 'New Chat';
+  };
+
+  const handleSaveChat = async () => {
+    try {
+      const title = await generateTitleFromUserMessage(messages[0]?.content || 'Saved Chat');
+      await saveChat({
+        id: chatId,
+        title,
+        messages,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      Alert.alert('Success', 'Chat saved successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save chat');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>AI Assistant</Text>
+        <TouchableOpacity onPress={handleSaveChat} style={styles.saveButton}>
+          <Text style={styles.saveText}>Save Chat</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <ChatInterface 
+        messages={messages}
+        input={input}
+        onInputChange={handleInputChange}
+        onSubmit={handleSubmit}
+        loading={isLoading}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Custom AI Operations
+import { useChat } from '@/modules/solana-agent-kit';
+import { useWallet } from '@/modules/wallet-providers';
+
+function CustomSolanaOperations() {
+  const { wallet, signTransaction, sendTransaction } = useWallet();
+  const { append, messages } = useChat({
+    id: 'custom-operations',
+    onToolCall: async (toolCall) => {
+      // Custom handling for specific AI tool calls
+      console.log('AI wants to use tool:', toolCall.toolName);
+      
+      if (toolCall.toolName === 'signTransaction') {
+        // Custom transaction confirmation UI
+        const confirmed = await showTransactionConfirmation(toolCall.args);
+        if (!confirmed) {
+          throw new Error('User cancelled transaction');
+        }
+      }
+    }
+  });
+
+  const handlePresetOperation = async (operation) => {
+    const presetQueries = {
+      portfolio: "Show me my complete portfolio with current values",
+      balance: "What's my SOL balance?",
+      history: "Show my recent transaction history",
+      defi: "What DeFi positions do I have?",
+      optimize: "Suggest ways to optimize my portfolio"
+    };
+    
+    await append({
+      role: 'user',
+      content: presetQueries[operation]
+    });
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.presetButtons}>
+        <Button title="Portfolio" onPress={() => handlePresetOperation('portfolio')} />
+        <Button title="Balance" onPress={() => handlePresetOperation('balance')} />
+        <Button title="History" onPress={() => handlePresetOperation('history')} />
+        <Button title="DeFi" onPress={() => handlePresetOperation('defi')} />
+        <Button title="Optimize" onPress={() => handlePresetOperation('optimize')} />
+      </View>
+      
+      <ChatDisplay messages={messages} />
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## Chat Persistence & Management
+
+The module provides comprehensive chat management capabilities:
+
+<Accordion>
+  <AccordionItem title="Chat Persistence">
+    
+    ```typescript
+    import { 
+      saveChat, 
+      fetchChat, 
+      fetchChats, 
+      deleteChat 
+    } from '@/modules/solana-agent-kit';
+    
+    // Save chat to backend
+    const chatData = {
+      id: generateUUID(),
+      title: 'Portfolio Analysis Session',
+      messages: messages,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await saveChat(chatData);
+    
+    // Fetch specific chat
+    const chat = await fetchChat(chatId);
+    
+    // Fetch all user chats
+    const userChats = await fetchChats();
+    
+    // Delete chat
+    await deleteChat(chatId);
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Message Management">
+    
+    ```typescript
+    import { 
+      saveMessages, 
+      fetchMessages, 
+      standardizeMessageFormat 
+    } from '@/modules/solana-agent-kit';
+    
+    // Save messages with standardized format
+    const formattedMessages = messages.map(standardizeMessageFormat);
+    await saveMessages(chatId, formattedMessages);
+    
+    // Fetch messages for a chat
+    const chatMessages = await fetchMessages(chatId);
+    
+    // Convert for UI display
+    const uiMessages = convertToUIMessages(chatMessages);
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="User Management">
+    
+    ```typescript
+    import { createOrUpdateUser } from '@/modules/solana-agent-kit';
+    
+    // Create or update user profile
+    await createOrUpdateUser({
+      walletAddress: wallet.address,
+      preferences: {
+        aiModel: 'gpt-4o',
+        language: 'en',
+        notifications: true
+      },
+      lastActive: new Date().toISOString()
+    });
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Advanced AI Features
+
+### Custom Tool Integration
+
+```typescript
+function useCustomSolanaTools() {
+  const { wallet } = useWallet();
+  
+  const customTools = useMemo(() => {
+    if (!wallet) return [];
+    
+    return createVercelAITools({
+      // Custom portfolio analysis tool
+      analyzePortfolio: {
+        description: 'Analyze user portfolio performance and provide insights',
+        parameters: z.object({
+          timeframe: z.enum(['1d', '7d', '30d', '90d', '1y']),
+          includeNFTs: z.boolean().default(false)
+        }),
+        execute: async ({ timeframe, includeNFTs }) => {
+          const analysis = await performPortfolioAnalysis(wallet.address, timeframe, includeNFTs);
+          return {
+            totalValue: analysis.totalValue,
+            gainLoss: analysis.gainLoss,
+            topPerformers: analysis.topPerformers,
+            recommendations: analysis.recommendations
+          };
+        }
+      },
+      
+      // Custom yield farming finder
+      findYieldOpportunities: {
+        description: 'Find the best yield farming opportunities for user tokens',
+        parameters: z.object({
+          minAPY: z.number().default(5),
+          riskLevel: z.enum(['low', 'medium', 'high']).default('medium')
+        }),
+        execute: async ({ minAPY, riskLevel }) => {
+          const opportunities = await findYieldFarmingOpps(wallet.address, minAPY, riskLevel);
+          return opportunities;
+        }
+      }
+    });
+  }, [wallet]);
+  
+  return customTools;
+}
+```
+
+### Intelligent Transaction Batching
+
+```typescript
+function useIntelligentBatching() {
+  const { wallet, sendTransaction } = useWallet();
+  
+  const batchTransactions = async (operations) => {
+    try {
+      // AI analyzes operations and optimizes batching
+      const optimizedBatches = await optimizeTransactionBatching(operations);
+      
+      const results = [];
+      for (const batch of optimizedBatches) {
+        const batchResult = await executeTransactionBatch(batch);
+        results.push(batchResult);
+      }
+      
+      return {
+        success: true,
+        results,
+        totalGasSaved: calculateGasSavings(operations, optimizedBatches)
+      };
+    } catch (error) {
+      console.error('Batch execution failed:', error);
+      throw error;
+    }
+  };
+  
+  return { batchTransactions };
+}
+```
+
+### Smart Risk Assessment
+
+```typescript
+function useRiskAssessment() {
+  const assessTransactionRisk = async (transaction) => {
+    try {
+      const analysis = await analyzeTransactionRisk(transaction);
+      
+      return {
+        riskLevel: analysis.riskLevel, // 'low', 'medium', 'high'
+        factors: analysis.riskFactors,
+        recommendations: analysis.recommendations,
+        shouldProceed: analysis.riskLevel !== 'high'
+      };
+    } catch (error) {
+      console.error('Risk assessment failed:', error);
+      return { riskLevel: 'unknown', shouldProceed: false };
+    }
+  };
+  
+  return { assessTransactionRisk };
+}
+```
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" href="/docs/modules/wallet-providers">
+    Essential for transaction signing and wallet state management
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Real-time portfolio data and market information for AI analysis
+  </Card>
+  
+  <Card title="All Trading Modules" href="/docs/modules/swap">
+    AI can execute operations across Pump.fun, Raydium, Meteora, and more
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    AI can create posts about transactions and share insights
+  </Card>
+</CardGroup>
+
+### Unified AI Trading Assistant
+
+```typescript
+import { useWallet } from '@/modules/wallet-providers';
+import { useFetchTokens } from '@/modules/data-module';
+import { useSwap } from '@/modules/swap';
+import { usePumpFun } from '@/modules/pump-fun';
+import { useChat } from '@/modules/solana-agent-kit';
+
+function UnifiedTradingAssistant() {
+  const { wallet } = useWallet();
+  const { tokens, refetch } = useFetchTokens(wallet?.address);
+  const { executeSwap } = useSwap();
+  const { launchToken } = usePumpFun();
+
+  const { messages, handleSubmit, input, handleInputChange } = useChat({
+    id: 'trading-assistant',
+    onToolCall: async (toolCall) => {
+      switch (toolCall.toolName) {
+        case 'executeSwap':
+          const swapResult = await executeSwap(toolCall.args);
+          await refetch(); // Refresh portfolio
+          return swapResult;
+          
+        case 'launchToken':
+          const launchResult = await launchToken(toolCall.args);
+          await refetch(); // Refresh portfolio
+          return launchResult;
+          
+        case 'getPortfolio':
+          return tokens;
+          
+        default:
+          throw new Error(`Unknown tool: ${toolCall.toolName}`);
+      }
+    }
+  });
+
+  return (
+    <View style={styles.tradingAssistant}>
+      <Text style={styles.title}>AI Trading Assistant</Text>
+      <Text style={styles.subtitle}>
+        Ask me to analyze your portfolio, execute trades, or launch tokens
+      </Text>
+      
+      <ChatInterface 
+        messages={messages}
+        input={input}
+        onInputChange={handleInputChange}
+        onSubmit={handleSubmit}
+        placeholder="Ask: 'What should I do with my portfolio?' or 'Swap 1 SOL for USDC'"
+      />
+    </View>
+  );
+}
+```
+
+## Security & Best Practices
+
+<Warning>
+  **Transaction Approval**: Always implement clear user confirmation for AI-initiated transactions. Never auto-execute without explicit user consent.
+</Warning>
+
+<Tip>
+  **Context Management**: The AI maintains conversation context, but be mindful of sensitive information in chat history.
+</Tip>
+
+```typescript
+function SecureAITransactions() {
+  const { wallet } = useWallet();
+  
+  const confirmTransaction = async (transaction) => {
+    return new Promise((resolve) => {
+      Alert.alert(
+        'Confirm Transaction',
+        `The AI wants to execute a transaction:\n\n${formatTransactionDetails(transaction)}\n\nDo you approve?`,
+        [
+          { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
+          { text: 'Approve', onPress: () => resolve(true) }
+        ]
+      );
+    });
+  };
+  
+  const secureExecute = async (operation) => {
+    try {
+      // Risk assessment
+      const riskAssessment = await assessOperationRisk(operation);
+      
+      if (riskAssessment.riskLevel === 'high') {
+        Alert.alert('High Risk Operation', riskAssessment.warning);
+        return;
+      }
+      
+      // User confirmation
+      const confirmed = await confirmTransaction(operation.transaction);
+      if (!confirmed) {
+        throw new Error('User cancelled operation');
+      }
+      
+      // Execute with monitoring
+      return await executeWithMonitoring(operation);
+    } catch (error) {
+      console.error('Secure execution failed:', error);
+      throw error;
+    }
+  };
+  
+  return { secureExecute };
+}
+```
+
+## Error Handling & Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **OpenAI API Issues**
+    - Invalid or missing API key
+    - Rate limit exceeded
+    - Model availability problems
+    
+    **Wallet Connection Issues**
+    - Wallet not connected when AI tries to execute
+    - Transaction signing failures
+    - Network connectivity problems
+    
+    **Backend Communication**
+    - Chat persistence server unreachable
+    - Message formatting errors
+    - Authentication failures
+    
+    **AI Understanding Issues**
+    - Ambiguous user queries
+    - Unsupported operations
+    - Context confusion in long conversations
+    
+  </Accordion>
+</AccordionGroup>
+
+## Performance Considerations
+
+<Tip>
+  **Streaming Optimization**: The AI uses streaming responses for better user experience. Ensure your UI handles partial updates smoothly.
+</Tip>
+
+<Warning>
+  **Context Limits**: Long conversations may hit AI context limits. Implement conversation summarization for extended chats.
+</Warning>
+
+## API Reference
+
+For detailed API documentation, see:
+- [Solana Agent Kit Hooks Reference](/docs/references/modules/solana-agent-kit/hooks)
+- [AI Providers Reference](/docs/references/modules/solana-agent-kit/lib)
+- [Utils Reference](/docs/references/modules/solana-agent-kit/utils)
+
+---
+
+The Solana Agent Kit module transforms complex blockchain interactions into natural conversations, making Solana accessible to users of all technical levels while providing powerful automation capabilities for advanced users.

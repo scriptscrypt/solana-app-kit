@@ -1,0 +1,964 @@
+---
+title: "Wallet Providers"
+description: "Unified wallet integration supporting Privy, Dynamic, Turnkey, and Mobile Wallet Adapter with comprehensive transaction management"
+icon: "wallet"
+---
+
+# Wallet Providers Module
+
+The Wallet Providers module provides a comprehensive, unified interface for multiple wallet solutions in React Native Solana applications. It abstracts away the complexity of different wallet providers while maintaining their unique features and security standards.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🔐 Universal Wallet Integration</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Seamlessly integrate multiple wallet providers with a single, consistent API while preserving each provider's unique security and feature advantages
+  </CardContent>
+</Card>
+
+## Core Features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Provider Support" icon="network-wired">
+    Unified interface for Privy, Dynamic, Turnkey, and Mobile Wallet Adapter integration
+  </Card>
+  
+  <Card title="Transaction Management" icon="file-signature">
+    Complete transaction lifecycle management with signing, simulation, and status tracking
+  </Card>
+  
+  <Card title="Authentication & Security" icon="shield-check">
+    Robust authentication flows with social login, biometrics, and institutional-grade security
+  </Card>
+  
+  <Card title="Developer Experience" icon="code">
+    Simple, consistent APIs that work across all wallet providers with minimal configuration
+  </Card>
+</CardGroup>
+
+## Supported Wallet Providers
+
+<Tabs>
+  <Tab title="Privy">
+    **Social Login & Embedded Wallets** - Perfect for mainstream user adoption
+    
+    ```typescript
+    import { EmbeddedWalletAuth } from '@/modules/wallet-providers';
+    
+    function PrivyWalletIntegration() {
+      return (
+        <EmbeddedWalletAuth
+          config={{
+            appId: process.env.PRIVY_APP_ID,
+            clientId: process.env.PRIVY_CLIENT_ID,
+            loginMethods: ['email', 'google', 'apple', 'twitter'],
+            appearance: {
+              theme: 'dark',
+              accentColor: '#9945FF',
+              logo: 'https://your-logo.png'
+            }
+          }}
+          onConnect={(wallet) => {
+            console.log('Privy wallet connected:', wallet.address);
+          }}
+          onDisconnect={() => {
+            console.log('Privy wallet disconnected');
+          }}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - OAuth authentication (Google, Apple, Twitter, Discord)
+    - Email/password login with verification
+    - Phone number authentication
+    - Custodial and non-custodial wallet options
+    - Cross-app wallet recovery
+    - Embedded wallet creation for users without existing wallets
+  </Tab>
+  
+  <Tab title="Dynamic">
+    **Advanced Embedded Wallets** - Feature-rich with multi-chain support
+    
+    ```typescript
+    import { useDynamicWalletLogic } from '@/modules/wallet-providers';
+    
+    function DynamicWalletIntegration() {
+      const { 
+        connectWallet, 
+        switchChain, 
+        getBalance,
+        supportedChains 
+      } = useDynamicWalletLogic();
+      
+      const handleConnect = async () => {
+        try {
+          await connectWallet({
+            chain: 'solana',
+            walletBook: 'all', // Show all supported wallets
+            displayMode: 'modal'
+          });
+        } catch (error) {
+          console.error('Dynamic connection failed:', error);
+        }
+      };
+      
+      return (
+        <View>
+          <Button title="Connect Dynamic Wallet" onPress={handleConnect} />
+          <Text>Supported chains: {supportedChains.length}</Text>
+        </View>
+      );
+    }
+    ```
+    
+    **Features:**
+    - Multi-chain wallet support (Solana, Ethereum, Polygon, etc.)
+    - Customizable wallet selection UI
+    - Advanced authentication flows
+    - Chain switching capabilities
+    - Real-time balance tracking
+    - Wallet book integration with 300+ wallets
+  </Tab>
+  
+  <Tab title="Turnkey">
+    **Institutional-Grade Security** - MPC-based wallets for enterprise use
+    
+    ```typescript
+    import { TurnkeyWalletAuth, useTurnkeyWalletLogic } from '@/modules/wallet-providers';
+    
+    function TurnkeyWalletIntegration() {
+      const { createWallet, signTransaction } = useTurnkeyWalletLogic();
+      
+      return (
+        <TurnkeyWalletAuth
+          config={{
+            apiKey: process.env.TURNKEY_API_PUBLIC_KEY,
+            organizationId: process.env.TURNKEY_ORGANIZATION_ID,
+            rpId: process.env.TURNKEY_RP_ID,
+            rpName: process.env.TURNKEY_RP_NAME
+          }}
+          onConnect={(wallet) => {
+            console.log('Turnkey wallet connected:', wallet);
+          }}
+          authMode="passkey" // or "api"
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Multi-Party Computation (MPC) based security
+    - Hardware Security Module (HSM) integration
+    - Passkey authentication support
+    - Custom authentication flows
+    - Enterprise-grade compliance
+    - Advanced key management policies
+  </Tab>
+  
+  <Tab title="Mobile Wallet Adapter">
+    **Native Mobile Integration** - Direct connection to mobile wallets
+    
+    ```typescript
+    import { MobileWalletAdapter } from '@/modules/wallet-providers';
+    
+    function MWAIntegration() {
+      const [availableWallets, setAvailableWallets] = useState([]);
+      
+      useEffect(() => {
+        // Detect installed wallets on device
+        const detectWallets = async () => {
+          const wallets = await MobileWalletAdapter.getInstalledWallets();
+          setAvailableWallets(wallets);
+        };
+        
+        detectWallets();
+      }, []);
+      
+      const connectMobileWallet = async (walletName) => {
+        try {
+          await MobileWalletAdapter.connect(walletName);
+        } catch (error) {
+          console.error('MWA connection failed:', error);
+        }
+      };
+      
+      return (
+        <View>
+          <Text>Available Mobile Wallets:</Text>
+          {availableWallets.map((wallet) => (
+            <TouchableOpacity
+              key={wallet.name}
+              onPress={() => connectMobileWallet(wallet.name)}
+              style={styles.walletOption}
+            >
+              <Image source={{ uri: wallet.icon }} style={styles.walletIcon} />
+              <Text>{wallet.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      );
+    }
+    ```
+    
+    **Features:**
+    - Native Android wallet integration
+    - QR code connection support
+    - Deep linking capabilities
+    - Automatic wallet detection
+    - Secure transaction signing
+    - Connection persistence
+  </Tab>
+</Tabs>
+
+## Core Hooks
+
+### useWallet - Universal Wallet Interface
+
+The primary hook for wallet interactions across all providers:
+
+```typescript
+import { useWallet } from '@/modules/wallet-providers';
+
+function UniversalWalletComponent() {
+  const {
+    // Connection state
+    wallet,
+    connected,
+    connecting,
+    publicKey,
+    
+    // Provider information
+    provider,
+    providerName,
+    
+    // Transaction functions
+    sendTransaction,
+    signTransaction,
+    signAllTransactions,
+    signMessage,
+    
+    // Connection management
+    connect,
+    disconnect,
+    
+    // Utility functions
+    getBalance,
+    requestAirdrop, // devnet only
+    
+    // Error handling
+    error,
+    clearError
+  } = useWallet();
+
+  const handleSendTransaction = async (transaction) => {
+    try {
+      clearError();
+      const signature = await sendTransaction(transaction, connection, {
+        simulate: true,
+        commitment: 'confirmed',
+        skipPreflight: false
+      });
+      
+      console.log('Transaction sent:', signature);
+      return signature;
+    } catch (error) {
+      console.error('Transaction failed:', error);
+      throw error;
+    }
+  };
+
+  if (!connected) {
+    return (
+      <View style={styles.connectPrompt}>
+        <Text style={styles.title}>Connect Your Wallet</Text>
+        <Button title="Connect" onPress={connect} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.walletInfo}>
+      <Text style={styles.provider}>Provider: {providerName}</Text>
+      <Text style={styles.address}>
+        Address: {publicKey?.toString().slice(0, 8)}...{publicKey?.toString().slice(-8)}
+      </Text>
+      <Button title="Disconnect" onPress={disconnect} />
+    </View>
+  );
+}
+```
+
+### useAuth - Authentication Management
+
+Unified authentication interface across all providers:
+
+```typescript
+import { useAuth } from '@/modules/wallet-providers';
+
+function AuthenticationComponent() {
+  const {
+    // Authentication state
+    isAuthenticated,
+    user,
+    loading,
+    error,
+    
+    // Authentication actions
+    login,
+    logout,
+    
+    // User management
+    updateProfile,
+    linkAccount,
+    unlinkAccount,
+    
+    // Session management
+    refreshSession,
+    getSession
+  } = useAuth();
+
+  const handleSocialLogin = async (provider) => {
+    try {
+      await login({
+        provider, // 'google', 'apple', 'twitter', etc.
+        redirectUrl: 'your-app://auth-callback',
+        scopes: ['email', 'profile']
+      });
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  const handleEmailLogin = async (email, password) => {
+    try {
+      await login({
+        provider: 'email',
+        email,
+        password
+      });
+    } catch (error) {
+      console.error('Email login failed:', error);
+    }
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.loginContainer}>
+        <Text style={styles.title}>Sign In</Text>
+        
+        <SocialLoginButtons onLogin={handleSocialLogin} />
+        
+        <EmailLoginForm onLogin={handleEmailLogin} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.userProfile}>
+      <Text style={styles.welcome}>Welcome, {user?.email || user?.name}!</Text>
+      <Button title="Logout" onPress={logout} />
+    </View>
+  );
+}
+```
+
+## Transaction Management
+
+### TransactionService - Comprehensive Transaction Handling
+
+```typescript
+import { TransactionService } from '@/modules/wallet-providers';
+
+// Send transaction with full configuration
+const sendAdvancedTransaction = async (transaction, options = {}) => {
+  try {
+    const result = await TransactionService.sendTransaction(
+      transaction,
+      connection,
+      {
+        // Simulation options
+        simulate: true,
+        simulationCommitment: 'processed',
+        
+        // Execution options
+        commitment: 'confirmed',
+        skipPreflight: false,
+        maxRetries: 3,
+        
+        // Fee configuration
+        priorityFee: 0.001, // SOL
+        
+        // Callbacks
+        statusCallback: (status) => {
+          console.log('Transaction status:', status);
+          // Update UI with progress
+        },
+        
+        confirmationCallback: (signature) => {
+          console.log('Transaction confirmed:', signature);
+          TransactionService.showSuccess(signature);
+        },
+        
+        errorCallback: (error) => {
+          console.error('Transaction error:', error);
+          TransactionService.showError(error.message);
+        }
+      }
+    );
+    
+    return result;
+  } catch (error) {
+    TransactionService.showError('Transaction failed: ' + error.message);
+    throw error;
+  }
+};
+
+// Batch transaction sending
+const sendBatchTransactions = async (transactions) => {
+  try {
+    const results = await TransactionService.sendBatch(
+      transactions,
+      connection,
+      {
+        concurrent: false, // Send sequentially
+        stopOnError: true,
+        batchSize: 5
+      }
+    );
+    
+    console.log('Batch completed:', results);
+    return results;
+  } catch (error) {
+    console.error('Batch failed:', error);
+    throw error;
+  }
+};
+```
+
+### Provider Initialization
+
+```typescript
+import { 
+  initDynamicClient,
+  initPrivyClient,
+  initTurnkeyClient,
+  getDynamicClient 
+} from '@/modules/wallet-providers';
+
+// Initialize all providers at app startup
+const initializeWalletProviders = async () => {
+  try {
+    // Initialize Dynamic
+    if (process.env.DYNAMIC_ENVIRONMENT_ID) {
+      await initDynamicClient({
+        environmentId: process.env.DYNAMIC_ENVIRONMENT_ID,
+        walletConnectors: ['solana'],
+        options: {
+          initialAuthenticationMode: 'connect-only'
+        }
+      });
+    }
+    
+    // Initialize Privy
+    if (process.env.PRIVY_APP_ID) {
+      await initPrivyClient({
+        appId: process.env.PRIVY_APP_ID,
+        clientId: process.env.PRIVY_CLIENT_ID,
+        config: {
+          loginMethods: ['email', 'google', 'apple'],
+          appearance: {
+            theme: 'dark',
+            accentColor: '#9945FF'
+          }
+        }
+      });
+    }
+    
+    // Initialize Turnkey
+    if (process.env.TURNKEY_ORGANIZATION_ID) {
+      await initTurnkeyClient({
+        apiKey: process.env.TURNKEY_API_PUBLIC_KEY,
+        organizationId: process.env.TURNKEY_ORGANIZATION_ID,
+        rpId: process.env.TURNKEY_RP_ID,
+        rpName: process.env.TURNKEY_RP_NAME
+      });
+    }
+    
+    console.log('All wallet providers initialized');
+  } catch (error) {
+    console.error('Provider initialization failed:', error);
+  }
+};
+```
+
+## Quick Start Examples
+
+<CodeGroup>
+```typescript Basic Multi-Wallet Setup
+import { WalletProvider, useWallet } from '@/modules/wallet-providers';
+
+function App() {
+  return (
+    <WalletProvider
+      config={{
+        autoConnect: true,
+        providers: ['privy', 'dynamic', 'turnkey', 'mwa'],
+        defaultProvider: 'privy'
+      }}
+    >
+      <MainApp />
+    </WalletProvider>
+  );
+}
+
+function MainApp() {
+  const { connected, connect, disconnect } = useWallet();
+  
+  return (
+    <View style={styles.container}>
+      {connected ? (
+        <ConnectedView />
+      ) : (
+        <WalletSelectionScreen />
+      )}
+    </View>
+  );
+}
+
+function WalletSelectionScreen() {
+  const { connect } = useWallet();
+  
+  const walletOptions = [
+    { name: 'Privy', provider: 'privy', icon: '🔐', description: 'Social login' },
+    { name: 'Dynamic', provider: 'dynamic', icon: '⚡', description: 'Multi-chain' },
+    { name: 'Turnkey', provider: 'turnkey', icon: '🏛️', description: 'Institutional' },
+    { name: 'Mobile Wallet', provider: 'mwa', icon: '📱', description: 'Native wallets' }
+  ];
+  
+  return (
+    <View style={styles.walletSelection}>
+      <Text style={styles.title}>Choose Your Wallet</Text>
+      {walletOptions.map((option) => (
+        <TouchableOpacity
+          key={option.provider}
+          style={styles.walletOption}
+          onPress={() => connect(option.provider)}
+        >
+          <Text style={styles.walletIcon}>{option.icon}</Text>
+          <View style={styles.walletInfo}>
+            <Text style={styles.walletName}>{option.name}</Text>
+            <Text style={styles.walletDescription}>{option.description}</Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+```
+
+```typescript Advanced Transaction Handling
+import { useWallet, TransactionService } from '@/modules/wallet-providers';
+
+function AdvancedTransactionComponent() {
+  const { 
+    wallet, 
+    sendTransaction, 
+    signTransaction,
+    publicKey 
+  } = useWallet();
+  const [txHistory, setTxHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const executeComplexTransaction = async () => {
+    if (!wallet || !publicKey) return;
+    
+    setLoading(true);
+    try {
+      // Create a complex transaction
+      const transaction = new Transaction();
+      
+      // Add multiple instructions
+      transaction.add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: new PublicKey('destination_address'),
+          lamports: 1000000 // 0.001 SOL
+        })
+      );
+      
+      // Send with advanced options
+      const signature = await TransactionService.sendTransaction(
+        transaction,
+        connection,
+        {
+          simulate: true,
+          commitment: 'confirmed',
+          priorityFee: 0.001,
+          statusCallback: (status) => {
+            console.log('Transaction status:', status);
+            // Update UI with real-time status
+          },
+          confirmationCallback: (sig) => {
+            // Add to transaction history
+            setTxHistory(prev => [{
+              signature: sig,
+              timestamp: Date.now(),
+              status: 'confirmed',
+              type: 'transfer'
+            }, ...prev]);
+            
+            TransactionService.showSuccess(sig);
+          }
+        }
+      );
+      
+      console.log('Transaction sent:', signature);
+    } catch (error) {
+      console.error('Transaction failed:', error);
+      TransactionService.showError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signMultipleTransactions = async (transactions) => {
+    try {
+      const signedTxs = await wallet.signAllTransactions(transactions);
+      console.log('All transactions signed:', signedTxs.length);
+      return signedTxs;
+    } catch (error) {
+      console.error('Multi-sign failed:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Button
+        title={loading ? "Processing..." : "Send Transaction"}
+        onPress={executeComplexTransaction}
+        disabled={loading || !wallet}
+      />
+      
+      <View style={styles.history}>
+        <Text style={styles.historyTitle}>Transaction History</Text>
+        {txHistory.map((tx, index) => (
+          <TransactionHistoryItem key={index} transaction={tx} />
+        ))}
+      </View>
+    </View>
+  );
+}
+```
+
+```typescript Provider-Specific Features
+import { 
+  useAuth, 
+  useDynamicWalletLogic, 
+  useTurnkeyWalletLogic 
+} from '@/modules/wallet-providers';
+
+function ProviderSpecificFeatures() {
+  const { user, linkAccount } = useAuth();
+  const { switchChain, supportedChains } = useDynamicWalletLogic();
+  const { createSubOrganization } = useTurnkeyWalletLogic();
+
+  // Privy-specific: Link additional accounts
+  const handleLinkSocialAccount = async (provider) => {
+    try {
+      await linkAccount({
+        type: 'oauth',
+        provider // 'google', 'twitter', 'discord'
+      });
+      console.log('Account linked successfully');
+    } catch (error) {
+      console.error('Account linking failed:', error);
+    }
+  };
+
+  // Dynamic-specific: Chain switching
+  const handleChainSwitch = async (chainId) => {
+    try {
+      await switchChain(chainId);
+      console.log('Switched to chain:', chainId);
+    } catch (error) {
+      console.error('Chain switch failed:', error);
+    }
+  };
+
+  // Turnkey-specific: Create sub-organization
+  const handleCreateSubOrg = async (orgName) => {
+    try {
+      const subOrg = await createSubOrganization({
+        organizationName: orgName,
+        rootUsers: [user.id]
+      });
+      console.log('Sub-organization created:', subOrg);
+    } catch (error) {
+      console.error('Sub-org creation failed:', error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Account Management</Text>
+        <Button
+          title="Link Google Account"
+          onPress={() => handleLinkSocialAccount('google')}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Chain Management</Text>
+        <Text>Supported chains: {supportedChains.length}</Text>
+        <Button
+          title="Switch to Ethereum"
+          onPress={() => handleChainSwitch('eip155:1')}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Organization Management</Text>
+        <Button
+          title="Create Sub-Organization"
+          onPress={() => handleCreateSubOrg('My Sub Org')}
+        />
+      </View>
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## Error Handling & Recovery
+
+<AccordionGroup>
+  <Accordion title="Common Wallet Issues">
+    
+    **Connection Failures**
+    - Network connectivity issues
+    - Provider service unavailability
+    - User cancellation during connection
+    - Invalid configuration parameters
+    
+    **Transaction Errors**
+    - Insufficient balance for fees
+    - Transaction simulation failures
+    - Network congestion and timeouts
+    - User rejection of transaction signing
+    
+    **Authentication Issues**
+    - OAuth provider failures
+    - Session expiration
+    - Invalid credentials
+    - Biometric authentication failures
+    
+  </Accordion>
+</AccordionGroup>
+
+```typescript
+function RobustWalletErrorHandling() {
+  const { connect, sendTransaction } = useWallet();
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  const connectWithRetry = async (provider) => {
+    try {
+      await connect(provider);
+      setRetryCount(0); // Reset on success
+    } catch (error) {
+      console.error('Connection attempt failed:', error);
+      
+      if (retryCount < maxRetries) {
+        setRetryCount(prev => prev + 1);
+        const delay = 1000 * Math.pow(2, retryCount); // Exponential backoff
+        setTimeout(() => connectWithRetry(provider), delay);
+      } else {
+        // Show user-friendly error
+        Alert.alert(
+          'Connection Failed',
+          'Unable to connect to wallet. Please check your internet connection and try again.',
+          [
+            { text: 'OK', onPress: () => setRetryCount(0) }
+          ]
+        );
+      }
+    }
+  };
+
+  const sendTransactionWithFallback = async (transaction) => {
+    try {
+      // Try with simulation first
+      return await sendTransaction(transaction, connection, {
+        simulate: true,
+        commitment: 'confirmed'
+      });
+    } catch (simulationError) {
+      // If simulation fails, try without simulation
+      console.warn('Simulation failed, trying without:', simulationError);
+      
+      try {
+        return await sendTransaction(transaction, connection, {
+          simulate: false,
+          skipPreflight: true,
+          commitment: 'confirmed'
+        });
+      } catch (executionError) {
+        // Provide specific error handling based on error type
+        if (executionError.message.includes('insufficient funds')) {
+          throw new Error('Insufficient SOL balance for transaction fees');
+        } else if (executionError.message.includes('blockhash')) {
+          throw new Error('Transaction expired. Please try again.');
+        } else {
+          throw new Error('Transaction failed: ' + executionError.message);
+        }
+      }
+    }
+  };
+
+  return { connectWithRetry, sendTransactionWithFallback };
+}
+```
+
+## Security Best Practices
+
+<Warning>
+  **Private Key Security**: Never store or transmit private keys. All providers handle key management securely.
+</Warning>
+
+<Tip>
+  **Transaction Validation**: Always simulate transactions before execution to catch errors early.
+</Tip>
+
+```typescript
+function SecureWalletOperations() {
+  const { signMessage, sendTransaction } = useWallet();
+
+  const secureSignMessage = async (message) => {
+    try {
+      // Always show user what they're signing
+      const confirmed = await showSigningConfirmation(message);
+      if (!confirmed) {
+        throw new Error('User cancelled signing');
+      }
+
+      const signature = await signMessage(new TextEncoder().encode(message));
+      return signature;
+    } catch (error) {
+      console.error('Secure signing failed:', error);
+      throw error;
+    }
+  };
+
+  const secureTransactionExecution = async (transaction) => {
+    try {
+      // Validate transaction contents
+      const validation = await validateTransactionSecurity(transaction);
+      if (!validation.safe) {
+        throw new Error('Transaction failed security validation: ' + validation.reason);
+      }
+
+      // Show user transaction details
+      const confirmed = await showTransactionConfirmation(transaction);
+      if (!confirmed) {
+        throw new Error('User cancelled transaction');
+      }
+
+      // Execute with monitoring
+      return await sendTransaction(transaction, connection, {
+        simulate: true,
+        commitment: 'confirmed'
+      });
+    } catch (error) {
+      console.error('Secure transaction failed:', error);
+      throw error;
+    }
+  };
+
+  return { secureSignMessage, secureTransactionExecution };
+}
+```
+
+## Performance Optimization
+
+<Tip>
+  **Provider Lazy Loading**: Load wallet provider SDKs only when needed to reduce initial bundle size.
+</Tip>
+
+```typescript
+function useOptimizedWalletLoading() {
+  const [loadedProviders, setLoadedProviders] = useState(new Set());
+
+  const lazyLoadProvider = async (provider) => {
+    if (loadedProviders.has(provider)) {
+      return;
+    }
+
+    try {
+      switch (provider) {
+        case 'privy':
+          const { initPrivyClient } = await import('@/modules/wallet-providers/services/privy');
+          await initPrivyClient(privyConfig);
+          break;
+        
+        case 'dynamic':
+          const { initDynamicClient } = await import('@/modules/wallet-providers/services/dynamic');
+          await initDynamicClient(dynamicConfig);
+          break;
+        
+        case 'turnkey':
+          const { initTurnkeyClient } = await import('@/modules/wallet-providers/services/turnkey');
+          await initTurnkeyClient(turnkeyConfig);
+          break;
+      }
+
+      setLoadedProviders(prev => new Set(prev.add(provider)));
+    } catch (error) {
+      console.error(`Failed to load ${provider} provider:`, error);
+      throw error;
+    }
+  };
+
+  return { lazyLoadProvider, loadedProviders };
+}
+```
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="All Trading Modules" href="/docs/modules/swap">
+    Essential for transaction signing across all DeFi operations
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Wallet address integration for portfolio and balance tracking
+  </Card>
+  
+  <Card title="AI Agent Kit" href="/docs/modules/solana-agent-kit">
+    Wallet integration for AI-powered transaction execution
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    User authentication and wallet-based identity for social features
+  </Card>
+</CardGroup>
+
+## API Reference
+
+For detailed API documentation, see:
+- [Wallet Functions Reference](/docs/functions/wallet) - Complete wallet function documentation
+- [Wallet Components Reference](/docs/references/modules/wallet-providers/components)
+- [Services Reference](/docs/references/modules/wallet-providers/services)
+- [Types Reference](/docs/references/modules/wallet-providers/types)
+
+---
+
+The Wallet Providers module serves as the foundation for all blockchain interactions in your Solana application, providing secure, user-friendly wallet integration that scales from mainstream users to institutional clients.

@@ -1,19 +1,326 @@
 ---
-title: 'Quickstart Guide'
-description: 'Get started with Solana App Kit in minutes'
+title: "Introduction"
+description: "Open-source React Native scaffold for building iOS and Android crypto mobile apps with seamless Solana protocol integrations"
+icon: "rocket"
 ---
 
-# Introduction to Solana App Kit
+# Introduction
 
-Solana App Kit is a React Native library providing ready-to-use components, services, and utilities for building Solana-based web3 applications. It offers modular, customizable implementations for authentication, social features, token transactions, and NFT management.
+Welcome to **Solana App Kit** - an open-source React Native scaffold for building iOS and Android crypto mobile apps with seamless Solana protocol integrations.
 
-The library is designed to be easily integrated into new or existing React Native applications, with flexible configuration options to adapt to your specific needs.
+<Card>
+  <CardHeader>
+    <CardTitle>🚀 From Idea to App Store in Minutes</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Build production-ready Solana mobile applications with 10+ protocol integrations, enterprise-grade wallets, and AI-powered features
+  </CardContent>
+</Card>
 
-This guide will help you get up and running with Solana App Kit quickly.
+## What is Solana App Kit?
 
-## Installation
+Solana App Kit is a comprehensive mobile app development framework that provides everything you need to build production-ready Solana applications. Whether you're a seasoned React Native developer or a Solana developer looking to enter mobile development, this kit enables you to build feature-rich apps in under 15 minutes.
 
-```bash
-npx install solana-app-kit
-```
+<Note>
+  **Quick Start**: Get your first Solana mobile app running with just `npx start-solana-app`
+</Note>
 
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="🚀 Quick Start" icon="zap">
+    Complete mobile app scaffold with iOS and Android support, production-ready codebase, and minimal configuration
+  </Card>
+  
+  <Card title="🔗 Protocol Integrations" icon="link">
+    Ready-to-use integrations with 10+ major Solana protocols including Jupiter, Raydium, Pump.fun, and more
+  </Card>
+  
+  <Card title="🏗️ Modular Architecture" icon="cubes">
+    Independent modules that allow you to use only what you need while maintaining clean code separation
+  </Card>
+  
+  <Card title="📱 Mobile-First Design" icon="mobile">
+    Built specifically for mobile with native performance, responsive UI, and touch-optimized interactions
+  </Card>
+</CardGroup>
+
+## Protocol Integrations
+
+The kit includes ready-to-use integrations with major Solana protocols:
+
+<Tabs>
+  <Tab title="Trading & Swaps">
+    <CardGroup cols={1}>
+      <Card title="Jupiter" icon="arrows-rotate" href="/docs/modules/swap">
+        **Best-in-class DEX aggregator** for optimal swap prices across all Solana DEXs
+      </Card>
+      <Card title="Pump.fun" icon="rocket" href="/docs/modules/pump-fun">
+        **Native AMM integration** for meme token creation and viral trading
+      </Card>
+      <Card title="Raydium" icon="waves" href="/docs/modules/raydium">
+        **Direct integration** with Raydium's concentrated liquidity pools
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Token Launchpads">
+    <CardGroup cols={1}>
+      <Card title="Pump.fun" icon="rocket" href="/docs/modules/pump-fun">
+        **Meme token creation** and community-driven trading platform
+      </Card>
+      <Card title="Raydium" icon="waves" href="/docs/modules/raydium">
+        **Professional token launching** with advanced liquidity management
+      </Card>
+      <Card title="Meteora" icon="meteor" href="/docs/modules/meteora">
+        **Advanced DeFi token launches** with dynamic liquidity markets
+      </Card>
+      <Card title="Token Mill" icon="gear" href="/docs/modules/token-mill">
+        **Custom token creation** with configurable bonding curves and tokenomics
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Wallet Solutions">
+    <CardGroup cols={1}>
+      <Card title="Privy" icon="lock" href="/docs/modules/wallet-providers">
+        **Embedded wallets** with social login (Google, Apple, Twitter)
+      </Card>
+      <Card title="Dynamic" icon="bolt" href="/docs/modules/wallet-providers">
+        **Multi-chain wallet connections** with 300+ wallet support
+      </Card>
+      <Card title="Turnkey" icon="shield" href="/docs/modules/wallet-providers">
+        **Enterprise-grade wallet infrastructure** with MPC security
+      </Card>
+      <Card title="Mobile Wallet Adapter" icon="mobile" href="/docs/modules/wallet-providers">
+        **Native Solana Mobile** wallet support with deep linking
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Data & Analytics">
+    <CardGroup cols={1}>
+      <Card title="Helius" icon="server" href="/docs/modules/data-module">
+        **Enhanced RPC** and transaction data with better reliability
+      </Card>
+      <Card title="Birdeye" icon="eye" href="/docs/modules/data-module">
+        **Real-time token prices** and comprehensive market analytics
+      </Card>
+      <Card title="CoinGecko" icon="globe" href="/docs/modules/data-module">
+        **Market data** and token information from the leading crypto data provider
+      </Card>
+      <Card title="Rugcheck" icon="shield-check" href="/docs/modules/data-module">
+        **Token safety analysis** and security scoring for user protection
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="NFTs & Digital Assets">
+    <CardGroup cols={1}>
+      <Card title="Metaplex" icon="image" href="/docs/modules/nft">
+        **NFT minting** and metadata management with industry standards
+      </Card>
+      <Card title="Tensor" icon="cube" href="/docs/modules/nft">
+        **NFT trading marketplace** integration with advanced analytics
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Additional Services">
+    <CardGroup cols={1}>
+      <Card title="SendAI" icon="robot" href="/docs/modules/solana-agent-kit">
+        **AI-powered Solana interactions** with natural language processing
+      </Card>
+      <Card title="MoonPay" icon="credit-card" href="/docs/modules/moonpay">
+        **Fiat on/off-ramps** with Apple Pay and credit card support
+      </Card>
+      <Card title="Jito" icon="shield" href="/docs/modules/swap">
+        **MEV protection** and optimized transaction landing
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+## Who Is This For?
+
+<CardGroup cols={3}>
+  <Card title="React Native Developers" icon="code">
+    Jump into Solana development without learning blockchain from scratch. Leverage familiar patterns and focus on user experience.
+  </Card>
+  
+  <Card title="Solana Developers" icon="link">
+    Extend your reach to mobile platforms using pre-built UI components without learning React Native from scratch.
+  </Card>
+  
+  <Card title="Entrepreneurs & Startups" icon="rocket">
+    Rapidly prototype and launch Solana-based mobile apps, reducing development time from months to weeks.
+  </Card>
+</CardGroup>
+
+## What Can You Build?
+
+<Accordion>
+  <AccordionItem title="🏦 DeFi Trading Apps">
+    **Multi-DEX trading platforms** with optimal routing, real-time prices, and advanced order types. Perfect for building the next generation of mobile trading experiences.
+    
+    *Example features: Cross-DEX arbitrage, automated trading strategies, portfolio analytics*
+  </AccordionItem>
+  
+  <AccordionItem title="🚀 Meme Token Platforms">
+    **Community-driven token creation** and viral trading platforms. Build the infrastructure for the next big meme token ecosystem.
+    
+    *Example features: One-click token launches, viral sharing mechanisms, community governance*
+  </AccordionItem>
+  
+  <AccordionItem title="💬 Social Trading Apps">
+    **Combine social features with token interactions** for community-driven investing and shared trading experiences.
+    
+    *Example features: Trading feeds, copy trading, social sentiment analysis*
+  </AccordionItem>
+  
+  <AccordionItem title="🎨 NFT Marketplaces">
+    **Create, trade, and showcase digital collectibles** with advanced marketplace features and collection management.
+    
+    *Example features: NFT creation tools, marketplace integration, collection analytics*
+  </AccordionItem>
+  
+  <AccordionItem title="👛 Wallet Applications">
+    **Full-featured mobile wallets** with multiple provider support and advanced security features.
+    
+    *Example features: Multi-wallet support, transaction history, security settings*
+  </AccordionItem>
+  
+  <AccordionItem title="🤖 AI-Powered Apps">
+    **Integrate AI agents** for automated Solana interactions and intelligent trading assistance.
+    
+    *Example features: Natural language trading, portfolio optimization, market analysis*
+  </AccordionItem>
+  
+  <AccordionItem title="💳 Payment Apps">
+    **Fiat on-ramps and crypto payment solutions** for mainstream adoption and easy onboarding.
+    
+    *Example features: Apple Pay integration, merchant payments, multi-currency support*
+  </AccordionItem>
+</Accordion>
+
+## Architecture Overview
+
+The kit consists of two main components that work together seamlessly:
+
+<Tabs>
+  <Tab title="Mobile Application">
+    <CardGroup cols={2}>
+      <Card title="React Native + Expo" icon="mobile">
+        **Cross-platform mobile framework** for iOS and Android with native performance
+      </Card>
+      <Card title="TypeScript" icon="code">
+        **Full type safety** and enhanced developer experience with intelligent autocompletion
+      </Card>
+      <Card title="Redux" icon="database">
+        **Predictable state management** with time-travel debugging and persistence
+      </Card>
+      <Card title="React Navigation" icon="route">
+        **Smooth navigation** between screens with gesture support and deep linking
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Backend Server">
+    <CardGroup cols={2}>
+      <Card title="Express.js" icon="server">
+        **RESTful API server** with middleware support and robust routing
+      </Card>
+      <Card title="PostgreSQL" icon="database">
+        **Reliable data persistence** with ACID compliance and scalability
+      </Card>
+      <Card title="Cloud Integration" icon="cloud">
+        **Google Cloud Storage and IPFS** support for decentralized file storage
+      </Card>
+      <Card title="Real-time Features" icon="bolt">
+        **WebSocket support** for live updates and real-time collaboration
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+## Getting Started
+
+<Steps>
+  <Step title="Quick Start">
+    The fastest way to get started is with our CLI tool:
+    ```bash
+    npx start-solana-app
+    ```
+  </Step>
+  
+  <Step title="Automatic Setup">
+    This command will:
+    - Clone the repository
+    - Install all dependencies  
+    - Set up your development environment
+    - Launch the app on your device or simulator
+  </Step>
+  
+  <Step title="Detailed Setup">
+    For detailed setup instructions, continue to the [Setup Guide](/docs/setup)
+  </Step>
+</Steps>
+
+<Tip>
+  **Pro Tip**: The entire setup process takes less than 5 minutes on most machines!
+</Tip>
+
+## Community & Support
+
+Join our growing community of Solana mobile developers:
+
+<CardGroup cols={3}>
+  <Card title="Telegram" icon="paper-plane" href="https://t.me/solanaappkit">
+    **@solanaappkit** - Get real-time help and connect with other developers
+  </Card>
+  
+  <Card title="Twitter" icon="twitter" href="https://twitter.com/solanaappkit">
+    **@solanaappkit** - Latest updates, tips, and community highlights
+  </Card>
+  
+  <Card title="GitHub" icon="github" href="https://github.com/SendArcade/solana-app-kit">
+    **SendArcade/solana-app-kit** - Contribute, report issues, and explore the code
+  </Card>
+</CardGroup>
+
+## What's Next?
+
+Ready to start building? Here's your roadmap:
+
+<CardGroup cols={2}>
+  <Card title="Setup Guide" icon="gear" href="/docs/setup">
+    **Install and configure** your development environment with step-by-step instructions
+  </Card>
+  
+  <Card title="Project Structure" icon="folder-tree" href="/docs/structure/repo">
+    **Understand the codebase** organization and learn how everything fits together
+  </Card>
+  
+  <Card title="Modules Overview" icon="cubes" href="/docs/modules/overview">
+    **Explore available modules** and discover what you can build with each integration
+  </Card>
+  
+  <Card title="Usage Examples" icon="lightbulb" href="/docs/use">
+    **See practical examples** and common patterns for building real applications
+  </Card>
+</CardGroup>
+
+<Note>
+  **New to Solana?** Don't worry! The kit is designed to be beginner-friendly while remaining powerful for experienced developers.
+</Note>
+
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>Built with ❤️ for the Solana ecosystem</CardTitle>
+  </CardHeader>
+  <CardContent>
+    **Created by SendAI and Send Arcade** - Empowering developers to build the future of mobile-first Web3 applications
+  </CardContent>
+</Card>

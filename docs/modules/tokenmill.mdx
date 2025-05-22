@@ -1,0 +1,812 @@
+---
+title: "TokenMill Module"
+description: "Comprehensive token creation and lifecycle management with advanced bonding curves, staking, and vesting capabilities"
+icon: "gear"
+---
+
+# TokenMill Module
+
+The TokenMill module provides a complete suite of tools for professional token creation and lifecycle management on Solana. It offers advanced bonding curve configurations, comprehensive market management, and sophisticated tokenomics features including staking and vesting.
+
+<Card>
+  <CardHeader>
+    <CardTitle>⚙️ Professional Token Engineering</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Create and manage tokens with advanced bonding curves, automated market making, staking rewards, and flexible vesting schedules for sophisticated tokenomics
+  </CardContent>
+</Card>
+
+## Core Features
+
+<CardGroup cols={2}>
+  <Card title="Market Creation" icon="plus-circle">
+    Create new token markets with customizable parameters, metadata, and distribution settings
+  </Card>
+  
+  <Card title="Bonding Curves" icon="chart-line">
+    Advanced curve configuration with multiple types: linear, power, exponential, and logarithmic
+  </Card>
+  
+  <Card title="Token Operations" icon="arrow-right-arrow-left">
+    Complete trading suite with buy/sell functionality, real-time pricing, and slippage protection
+  </Card>
+  
+  <Card title="Staking & Vesting" icon="clock">
+    Sophisticated staking rewards and flexible vesting schedules for long-term token distribution
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="Import Module">
+    Import the components and services you need:
+    ```typescript
+    import { 
+      TokenMillScreen,
+      MarketCreationCard,
+      BondingCurveConfigurator,
+      createMarket,
+      setBondingCurve 
+    } from '@/modules/token-mill';
+    ```
+  </Step>
+  
+  <Step title="Environment Configuration">
+    Configure TokenMill settings in `.env.local`:
+    ```bash
+    TOKEN_MILL_CONFIG_PDA=your_config_pda
+    TOKEN_MILL_PROGRAMID=your_program_id
+    ```
+  </Step>
+  
+  <Step title="Wallet Integration">
+    Ensure wallet providers are configured:
+    ```typescript
+    import { useWallet } from '@/modules/wallet-providers';
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  **Advanced Tokenomics**: TokenMill is designed for sophisticated token engineering. Review the [TokenMill Functions](/docs/functions/tokenmill) documentation for detailed API information.
+</Note>
+
+## Module Architecture
+
+The TokenMill module is structured around professional token lifecycle management:
+
+```
+src/modules/token-mill/
+├── components/             # UI components for token operations
+│   ├── MarketCreationCard.tsx
+│   ├── BondingCurveCard.tsx
+│   ├── BondingCurveConfigurator.tsx
+│   ├── SwapCard.tsx
+│   ├── StakingCard.tsx
+│   ├── VestingCard.tsx
+│   └── FundMarketCard.tsx
+├── screens/               # Complete screen implementations
+├── services/              # TokenMill service integration
+└── types/                 # TypeScript definitions
+```
+
+## Core Components
+
+<Tabs>
+  <Tab title="Market Creation">
+    **`MarketCreationCard`** - Professional token market creation interface
+    
+    ```typescript
+    import { MarketCreationCard } from '@/modules/token-mill';
+    import { useWallet, useConnection } from '@/modules/wallet-providers';
+    
+    function TokenCreationInterface() {
+      const { publicKey, wallet } = useWallet();
+      const { connection } = useConnection();
+      const [loading, setLoading] = useState(false);
+      
+      const handleMarketCreated = (marketData) => {
+        console.log('New market created:', marketData);
+        // Handle success (navigation, notifications, etc.)
+      };
+      
+      return (
+        <MarketCreationCard
+          connection={connection}
+          publicKey={publicKey}
+          solanaWallet={wallet}
+          setLoading={setLoading}
+          onMarketCreated={handleMarketCreated}
+          initialData={{
+            tokenName: '',
+            tokenSymbol: '',
+            totalSupply: 1000000,
+            creatorFee: 2.5,
+            stakingFee: 1.0
+          }}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Token metadata configuration (name, symbol, URI)
+    - Total supply and distribution settings
+    - Creator and staking fee configuration
+    - Real-time validation and preview
+    - Integrated metadata upload
+  </Tab>
+  
+  <Tab title="Bonding Curves">
+    **`BondingCurveConfigurator`** - Advanced curve design interface
+    
+    ```typescript
+    import { BondingCurveConfigurator } from '@/modules/token-mill';
+    
+    function CurveDesignInterface() {
+      const [curveConfig, setCurveConfig] = useState({
+        type: 'power',
+        basePrice: 0.001,
+        topPrice: 1.0,
+        points: 100,
+        feePercentage: 2.0,
+        powerFactor: 2.0
+      });
+      
+      const handleCurveChange = (pricePoints, parameters) => {
+        console.log('Curve updated:', { pricePoints, parameters });
+        setCurveConfig(parameters);
+      };
+      
+      return (
+        <BondingCurveConfigurator
+          onCurveChange={handleCurveChange}
+          initialConfig={curveConfig}
+          disabled={false}
+          showPreview={true}
+          styleOverrides={{
+            container: { margin: 20, borderRadius: 12 }
+          }}
+        />
+      );
+    }
+    ```
+    
+    **Curve Types:**
+    - **Linear**: Constant price increase
+    - **Power**: Exponential growth with configurable power
+    - **Exponential**: Natural exponential curve
+    - **Logarithmic**: Diminishing returns curve
+    
+    **Features:**
+    - Real-time curve visualization
+    - Interactive price point editing
+    - Parameter validation
+    - Visual feedback for changes
+    - Export curve data for analysis
+  </Tab>
+  
+  <Tab title="Trading Interface">
+    **`SwapCard`** - Professional token trading interface
+    
+    ```typescript
+    import { SwapCard } from '@/modules/token-mill';
+    
+    function TokenTradingInterface() {
+      const [selectedMarket, setSelectedMarket] = useState(null);
+      
+      const handleSwapComplete = (result) => {
+        console.log('Swap completed:', result);
+        // Update portfolio, show confirmation, etc.
+      };
+      
+      return (
+        <SwapCard
+          marketAddress={selectedMarket?.address}
+          connection={connection}
+          publicKey={publicKey}
+          solanaWallet={wallet}
+          onSwapComplete={handleSwapComplete}
+          swapType="buy" // or "sell"
+          enableSlippageControl={true}
+          showPriceChart={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Buy tokens using SOL
+    - Sell tokens for SOL
+    - Real-time price calculations
+    - Slippage protection
+    - Price impact visualization
+    - Transaction cost estimation
+  </Tab>
+  
+  <Tab title="Staking & Vesting">
+    **`StakingCard`** & **`VestingCard`** - Advanced token distribution
+    
+    ```typescript
+    import { StakingCard, VestingCard } from '@/modules/token-mill';
+    
+    function TokenDistributionInterface() {
+      const handleStakingComplete = (result) => {
+        console.log('Staking operation:', result);
+      };
+      
+      const handleVestingComplete = (result) => {
+        console.log('Vesting operation:', result);
+      };
+      
+      return (
+        <View>
+          <StakingCard
+            tokenAddress={tokenAddress}
+            connection={connection}
+            publicKey={publicKey}
+            solanaWallet={wallet}
+            onStakingComplete={handleStakingComplete}
+            stakingPeriods={[30, 90, 180, 365]} // days
+            rewardRates={[5, 12, 25, 50]} // APY percentages
+          />
+          
+          <VestingCard
+            tokenAddress={tokenAddress}
+            connection={connection}
+            publicKey={publicKey}
+            solanaWallet={wallet}
+            onVestingComplete={handleVestingComplete}
+            beneficiaries={beneficiaryList}
+            vestingSchedules={scheduleTemplates}
+          />
+        </View>
+      );
+    }
+    ```
+    
+    **Staking Features:**
+    - Configurable staking periods
+    - Dynamic reward rates
+    - Compound interest options
+    - Early withdrawal penalties
+    
+    **Vesting Features:**
+    - Flexible vesting schedules
+    - Multiple beneficiaries
+    - Cliff periods
+    - Linear and step-based release
+  </Tab>
+</Tabs>
+
+## TokenMill Service Integration
+
+For detailed service functions, see the [TokenMill Functions documentation](/docs/functions/tokenmill). Here's a quick overview:
+
+<Accordion>
+  <AccordionItem title="Market Operations">
+    
+    ```typescript
+    import { createMarket, fundMarket } from '@/modules/token-mill';
+    
+    // Create professional token market
+    const market = await createMarket({
+      tokenName: 'Professional Token',
+      tokenSymbol: 'PROF',
+      metadataUri: 'https://metadata.example.com/prof.json',
+      totalSupply: 10_000_000,
+      creatorFee: 2.5,
+      stakingFee: 1.0,
+      userPublicKey: publicKey,
+      connection,
+      solanaWallet: wallet,
+      onStatusUpdate: (status) => {
+        console.log('Creation status:', status);
+      }
+    });
+    
+    // Fund market with initial liquidity
+    await fundMarket({
+      marketAddress: market.address,
+      amount: 100, // SOL
+      userPublicKey: publicKey,
+      connection,
+      solanaWallet: wallet
+    });
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Bonding Curve Configuration">
+    
+    ```typescript
+    import { setBondingCurve } from '@/modules/token-mill';
+    
+    // Configure advanced bonding curve
+    await setBondingCurve({
+      marketAddress: marketAddress,
+      askPrices: generateCurvePrices('power', {
+        basePrice: 0.001,
+        topPrice: 1.0,
+        points: 100,
+        powerFactor: 2.0
+      }),
+      bidPrices: generateCurvePrices('power', {
+        basePrice: 0.0009, // Slight spread
+        topPrice: 0.99,
+        points: 100,
+        powerFactor: 2.0
+      }),
+      userPublicKey: publicKey,
+      connection,
+      solanaWallet: wallet
+    });
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Token Operations">
+    
+    ```typescript
+    import { swapTokens, stakeTokens, createVesting } from '@/modules/token-mill';
+    
+    // Execute token swap
+    const swapResult = await swapTokens({
+      marketAddress,
+      amount: 1000,
+      direction: 'buy', // or 'sell'
+      slippage: 0.5,
+      userPublicKey: publicKey,
+      connection,
+      solanaWallet: wallet
+    });
+    
+    // Stake tokens for rewards
+    const stakeResult = await stakeTokens({
+      tokenAddress,
+      amount: 5000,
+      stakingPeriod: 90, // days
+      userPublicKey: publicKey,
+      connection,
+      solanaWallet: wallet
+    });
+    
+    // Create vesting schedule
+    const vestingResult = await createVesting({
+      tokenAddress,
+      beneficiary: beneficiaryPublicKey,
+      totalAmount: 100000,
+      vestingPeriod: 365, // days
+      cliffPeriod: 90, // days
+      userPublicKey: publicKey,
+      connection,
+      solanaWallet: wallet
+    });
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Quick Start Examples
+
+<CodeGroup>
+```typescript Complete Token Launch Platform
+import { TokenMillScreen } from '@/modules/token-mill';
+import { useWallet } from '@/modules/wallet-providers';
+
+function TokenLaunchPlatform() {
+  const { connected, publicKey, wallet } = useWallet();
+  
+  if (!connected) {
+    return (
+      <View style={styles.connectPrompt}>
+        <Text style={styles.title}>Professional Token Creation</Text>
+        <Text style={styles.subtitle}>
+          Connect your wallet to access advanced token engineering tools
+        </Text>
+        <ConnectWalletButton />
+      </View>
+    );
+  }
+  
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>TokenMill Platform</Text>
+      <Text style={styles.subtitle}>
+        Create, manage, and optimize professional-grade tokens
+      </Text>
+      
+      <TokenMillScreen
+        userPublicKey={publicKey}
+        wallet={wallet}
+        theme="dark"
+        enableAdvancedFeatures={true}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Custom Market Creation
+import { MarketCreationCard, BondingCurveConfigurator } from '@/modules/token-mill';
+
+function CustomTokenCreation() {
+  const { publicKey, wallet } = useWallet();
+  const { connection } = useConnection();
+  const [step, setStep] = useState(1);
+  const [marketData, setMarketData] = useState(null);
+  const [curveConfig, setCurveConfig] = useState(null);
+
+  const handleMarketCreated = (market) => {
+    setMarketData(market);
+    setStep(2);
+  };
+
+  const handleCurveConfigured = async (pricePoints, parameters) => {
+    try {
+      await setBondingCurve({
+        marketAddress: marketData.address,
+        askPrices: pricePoints.ask,
+        bidPrices: pricePoints.bid,
+        userPublicKey: publicKey,
+        connection,
+        solanaWallet: wallet
+      });
+      
+      Alert.alert(
+        'Token Launch Complete!',
+        `${marketData.name} is now live with custom bonding curve`
+      );
+      
+    } catch (error) {
+      Alert.alert('Configuration Failed', error.message);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {step === 1 ? (
+        <View>
+          <Text style={styles.stepTitle}>Step 1: Create Market</Text>
+          <MarketCreationCard
+            connection={connection}
+            publicKey={publicKey}
+            solanaWallet={wallet}
+            onMarketCreated={handleMarketCreated}
+          />
+        </View>
+      ) : (
+        <View>
+          <Text style={styles.stepTitle}>Step 2: Configure Bonding Curve</Text>
+          <BondingCurveConfigurator
+            marketAddress={marketData.address}
+            onCurveChange={handleCurveConfigured}
+            showPreview={true}
+          />
+        </View>
+      )}
+    </View>
+  );
+}
+```
+
+```typescript Advanced Trading Dashboard
+import { 
+  SwapCard, 
+  StakingCard, 
+  BondingCurveCard 
+} from '@/modules/token-mill';
+
+function AdvancedTradingDashboard() {
+  const [selectedMarket, setSelectedMarket] = useState(null);
+  const [activeTab, setActiveTab] = useState('trade');
+  const [portfolio, setPortfolio] = useState([]);
+
+  const refreshPortfolio = async () => {
+    // Refresh user's token holdings and staking positions
+    const holdings = await fetchUserHoldings(publicKey);
+    setPortfolio(holdings);
+  };
+
+  return (
+    <View style={styles.dashboard}>
+      <View style={styles.header}>
+        <Text style={styles.title}>TokenMill Trading</Text>
+        <MarketSelector
+          selectedMarket={selectedMarket}
+          onMarketSelect={setSelectedMarket}
+        />
+      </View>
+
+      <View style={styles.tabContainer}>
+        {['trade', 'stake', 'curve'].map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={styles.tabText}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={styles.content}>
+        {activeTab === 'trade' && (
+          <SwapCard
+            marketAddress={selectedMarket?.address}
+            connection={connection}
+            publicKey={publicKey}
+            solanaWallet={wallet}
+            onSwapComplete={refreshPortfolio}
+          />
+        )}
+        
+        {activeTab === 'stake' && (
+          <StakingCard
+            tokenAddress={selectedMarket?.tokenAddress}
+            connection={connection}
+            publicKey={publicKey}
+            solanaWallet={wallet}
+            onStakingComplete={refreshPortfolio}
+          />
+        )}
+        
+        {activeTab === 'curve' && (
+          <BondingCurveCard
+            marketAddress={selectedMarket?.address}
+            connection={connection}
+            publicKey={publicKey}
+            solanaWallet={wallet}
+            readOnly={!selectedMarket?.isCreator}
+          />
+        )}
+      </View>
+
+      <PortfolioSummary 
+        holdings={portfolio}
+        onRefresh={refreshPortfolio}
+      />
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## Advanced Features
+
+### Curve Visualization and Analysis
+
+```typescript
+function useBondingCurveAnalysis(marketAddress) {
+  const [curveData, setCurveData] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+
+  useEffect(() => {
+    if (!marketAddress) return;
+
+    const analyzeCurve = async () => {
+      try {
+        const curve = await fetchBondingCurve(marketAddress);
+        setCurveData(curve);
+        
+        // Calculate curve analytics
+        const analysis = {
+          totalLiquidity: calculateTotalLiquidity(curve),
+          priceVolatility: calculateVolatility(curve.pricePoints),
+          optimalBuyZone: findOptimalBuyZone(curve),
+          resistanceLevels: findResistanceLevels(curve),
+          supportLevels: findSupportLevels(curve)
+        };
+        
+        setAnalytics(analysis);
+      } catch (error) {
+        console.error('Curve analysis failed:', error);
+      }
+    };
+
+    analyzeCurve();
+  }, [marketAddress]);
+
+  return { curveData, analytics };
+}
+```
+
+### Automated Market Making
+
+```typescript
+function useAutomatedMarketMaking(marketAddress) {
+  const [ammStrategy, setAmmStrategy] = useState(null);
+
+  const createAMMStrategy = async (config) => {
+    try {
+      const strategy = await configureAMM({
+        marketAddress,
+        strategy: config.type, // 'conservative', 'balanced', 'aggressive'
+        parameters: {
+          liquidityRange: config.liquidityRange,
+          rebalanceThreshold: config.rebalanceThreshold,
+          feeCapture: config.feeCapture
+        }
+      });
+      
+      setAmmStrategy(strategy);
+      return strategy;
+    } catch (error) {
+      console.error('AMM strategy creation failed:', error);
+      throw error;
+    }
+  };
+
+  const monitorStrategy = async () => {
+    if (!ammStrategy) return;
+    
+    const performance = await getAMMPerformance(ammStrategy.id);
+    
+    if (performance.shouldRebalance) {
+      await rebalanceAMM(ammStrategy.id);
+    }
+  };
+
+  return { 
+    ammStrategy, 
+    createAMMStrategy, 
+    monitorStrategy 
+  };
+}
+```
+
+### Portfolio Optimization
+
+```typescript
+function usePortfolioOptimization() {
+  const optimizeStakingRewards = async (holdings) => {
+    const optimizations = [];
+    
+    for (const holding of holdings) {
+      const analysis = await analyzeStakingOpportunity(holding);
+      
+      if (analysis.shouldStake) {
+        optimizations.push({
+          token: holding.token,
+          action: 'stake',
+          amount: analysis.optimalAmount,
+          period: analysis.optimalPeriod,
+          expectedReturn: analysis.expectedReturn
+        });
+      }
+    }
+    
+    return optimizations;
+  };
+
+  const optimizeVestingSchedule = async (distribution) => {
+    const schedule = calculateOptimalVesting({
+      totalAmount: distribution.amount,
+      beneficiaries: distribution.beneficiaries,
+      timeHorizon: distribution.timeHorizon,
+      marketConditions: await getMarketConditions()
+    });
+    
+    return schedule;
+  };
+
+  return { 
+    optimizeStakingRewards, 
+    optimizeVestingSchedule 
+  };
+}
+```
+
+## Error Handling & Best Practices
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **Market Creation Failures**
+    - Insufficient SOL for market creation
+    - Invalid token metadata
+    - Duplicate token symbols
+    - Network connectivity issues
+    
+    **Bonding Curve Configuration**
+    - Invalid price point sequences
+    - Curve parameter validation errors
+    - Mathematical constraint violations
+    - Price impact too high
+    
+    **Staking and Vesting Issues**
+    - Insufficient token balance for staking
+    - Invalid vesting schedule parameters
+    - Beneficiary address validation errors
+    - Time period constraint violations
+    
+  </Accordion>
+</AccordionGroup>
+
+### Performance Optimization
+
+<Tip>
+  **Curve Calculations**: Use web workers for heavy bonding curve calculations to avoid blocking the main thread.
+</Tip>
+
+<Warning>
+  **Network Calls**: Minimize RPC calls by batching operations and caching curve data locally.
+</Warning>
+
+```typescript
+function useOptimizedTokenMill() {
+  const [curveCache, setCurveCache] = useState(new Map());
+  const workerRef = useRef(null);
+
+  useEffect(() => {
+    // Initialize web worker for curve calculations
+    workerRef.current = new Worker(new URL('../workers/curveCalculator.js', import.meta.url));
+    
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, []);
+
+  const calculateCurveOptimized = useCallback(async (parameters) => {
+    const cacheKey = JSON.stringify(parameters);
+    
+    if (curveCache.has(cacheKey)) {
+      return curveCache.get(cacheKey);
+    }
+
+    return new Promise((resolve) => {
+      workerRef.current.postMessage({ type: 'CALCULATE_CURVE', parameters });
+      
+      workerRef.current.onmessage = (event) => {
+        const result = event.data.result;
+        setCurveCache(prev => new Map(prev.set(cacheKey, result)));
+        resolve(result);
+      };
+    });
+  }, [curveCache]);
+
+  return { calculateCurveOptimized };
+}
+```
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" href="/docs/modules/wallet-providers">
+    Essential for transaction signing and wallet state management
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Real-time token data and portfolio tracking for created tokens
+  </Card>
+  
+  <Card title="Swap Module" href="/docs/modules/swap">
+    Integration with broader DEX ecosystem for token trading
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    Social sharing of professional token launches and achievements
+  </Card>
+</CardGroup>
+
+## Security Considerations
+
+<Warning>
+  **Parameter Validation**: Always validate bonding curve parameters to prevent economic exploits or mathematical errors.
+</Warning>
+
+<Tip>
+  **Test Networks**: Use devnet for testing complex tokenomics before mainnet deployment.
+</Tip>
+
+## API Reference
+
+For detailed API documentation, see:
+- [TokenMill Functions Reference](/docs/functions/tokenmill) - Complete service function documentation
+- [TokenMill Components Reference](/docs/references/modules/token-mill/components)
+- [Types Reference](/docs/references/modules/token-mill/types)
+
+---
+
+The TokenMill module provides professional-grade token engineering capabilities, enabling the creation of sophisticated tokenomics with advanced bonding curves, automated market making, and comprehensive lifecycle management tools.

@@ -1,0 +1,676 @@
+---
+title: "MoonPay Module"
+description: "Seamless fiat on-ramp integration for purchasing cryptocurrency with credit cards and Apple Pay"
+icon: "credit-card"
+---
+
+# MoonPay Module
+
+The MoonPay module provides seamless cryptocurrency purchasing capabilities directly within your app. Users can buy crypto using credit cards, debit cards, Apple Pay, and other payment methods through MoonPay's trusted platform.
+
+<Card>
+  <CardHeader>
+    <CardTitle>💳 Fiat-to-Crypto Bridge</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Integrate MoonPay's robust payment infrastructure to let users easily convert fiat currency into cryptocurrency with a few taps
+  </CardContent>
+</Card>
+
+## Core Functionalities
+
+<CardGroup cols={2}>
+  <Card title="Crypto On-Ramp" icon="arrow-up">
+    Purchase cryptocurrencies directly using various payment methods with automatic wallet integration
+  </Card>
+  
+  <Card title="Wallet Integration" icon="wallet">
+    Automatically populates the user's connected wallet address as the destination for purchases
+  </Card>
+  
+  <Card title="Customizable Widget" icon="gear">
+    Configurable MoonPay widget supporting both sandbox and production environments
+  </Card>
+  
+  <Card title="Balance Management" icon="chart-line">
+    View wallet balances and seamlessly navigate to purchase flows when funds are needed
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="Install MoonPay SDK">
+    The module uses the official MoonPay React Native SDK:
+    ```bash
+    npm install @moonpay/react-native-moonpay-sdk
+    ```
+  </Step>
+  
+  <Step title="Configure API Key">
+    Add your MoonPay API key to `.env.local`:
+    ```bash
+    MOONPAY_API_KEY=pk_test_your_api_key_here
+    # For production: pk_live_your_production_key
+    ```
+  </Step>
+  
+  <Step title="Import Components">
+    Import the components you need:
+    ```typescript
+    import { 
+      MoonPayWidget, 
+      OnrampScreen,
+      WalletScreen 
+    } from '@/modules/moonpay';
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  **API Keys**: Use `pk_test_` prefixed keys for testing and `pk_live_` for production. The module automatically detects the environment.
+</Note>
+
+## Module Architecture
+
+```
+src/modules/moonpay/
+├── components/             # UI components
+│   └── MoonPayWidget/     # Core MoonPay WebView wrapper
+├── screens/               # Complete screen implementations
+├── services/              # MoonPay configuration and utilities
+├── types/                 # TypeScript definitions
+└── utils/                 # Helper functions
+```
+
+## Core Components
+
+<Tabs>
+  <Tab title="MoonPay Widget">
+    **`MoonPayWidget`** - Core component that embeds MoonPay's purchase flow
+    
+    ```typescript
+    import { MoonPayWidget } from '@/modules/moonpay';
+    
+    function PurchaseCrypto() {
+      const handleWidgetOpen = () => {
+        console.log('MoonPay widget opened');
+      };
+      
+      const handleError = (error) => {
+        console.error('MoonPay error:', error);
+      };
+      
+      return (
+        <MoonPayWidget
+          apiKey={process.env.MOONPAY_API_KEY}
+          environment="sandbox" // or "production"
+          height={600}
+          onOpen={handleWidgetOpen}
+          onError={handleError}
+          onRetry={() => console.log('Retrying...')}
+        />
+      );
+    }
+    ```
+    
+    **Props:**
+    - `apiKey` - Your MoonPay API key
+    - `environment` - 'sandbox' or 'production'
+    - `height` - Widget height in pixels
+    - `onOpen` - Callback when widget loads
+    - `onError` - Error handling callback
+    - `onRetry` - Retry mechanism callback
+  </Tab>
+  
+  <Tab title="Onramp Screen">
+    **`OnrampScreen`** - Complete purchase screen with navigation and wallet integration
+    
+    ```typescript
+    import { OnrampScreen } from '@/modules/moonpay';
+    
+    function AppNavigator() {
+      return (
+        <Stack.Navigator>
+          <Stack.Screen 
+            name="OnrampScreen" 
+            component={OnrampScreen}
+            options={{ 
+              title: 'Buy Crypto',
+              headerShown: true 
+            }}
+          />
+        </Stack.Navigator>
+      );
+    }
+    ```
+    
+    **Features:**
+    - Automatic wallet address detection
+    - Loading and error states
+    - Navigation header integration
+    - Informational content about the purchase process
+  </Tab>
+  
+  <Tab title="Wallet Screen">
+    **`WalletScreen`** - Wallet balance display with on-ramp entry point
+    
+    ```typescript
+    import { WalletScreen } from '@/modules/moonpay';
+    import { useNavigation } from '@react-navigation/native';
+    
+    function WalletTab() {
+      const navigation = useNavigation();
+      
+      return (
+        <WalletScreen
+          onAddFunds={() => navigation.navigate('OnrampScreen')}
+          showBalance={true}
+          showAddFundsButton={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - SOL balance display
+    - Wallet address with copy functionality
+    - Add funds button integration
+    - Balance refresh capability
+  </Tab>
+</Tabs>
+
+## Quick Start Example
+
+<CodeGroup>
+```typescript Basic Integration
+import { OnrampScreen } from '@/modules/moonpay';
+import { useWallet } from '@/modules/wallet-providers';
+
+function BuyCryptoFlow() {
+  const { wallet } = useWallet();
+  
+  if (!wallet) {
+    return (
+      <View style={styles.container}>
+        <Text>Please connect your wallet first</Text>
+      </View>
+    );
+  }
+  
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Buy Cryptocurrency</Text>
+      <Text style={styles.subtitle}>
+        Funds will be sent to: {wallet.address}
+      </Text>
+      <OnrampScreen />
+    </View>
+  );
+}
+```
+
+```typescript Custom Widget Implementation
+import { MoonPayWidget } from '@/modules/moonpay';
+import { useWallet } from '@/modules/wallet-providers';
+import { useState } from 'react';
+
+function CustomPurchaseScreen() {
+  const { wallet } = useWallet();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const handleWidgetLoad = () => {
+    setLoading(false);
+    console.log('MoonPay widget loaded successfully');
+  };
+
+  const handleWidgetError = (err) => {
+    setLoading(false);
+    setError(err.message);
+    console.error('MoonPay error:', err);
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Purchase Crypto</Text>
+        <Text style={styles.walletInfo}>
+          Destination: {formatWalletAddress(wallet?.address)}
+        </Text>
+      </View>
+      
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+          <Text>Loading MoonPay...</Text>
+        </View>
+      )}
+      
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Button title="Retry" onPress={handleRetry} />
+        </View>
+      )}
+      
+      <MoonPayWidget
+        apiKey={process.env.MOONPAY_API_KEY}
+        environment={__DEV__ ? 'sandbox' : 'production'}
+        height={500}
+        onOpen={handleWidgetLoad}
+        onError={handleWidgetError}
+        onRetry={handleRetry}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Navigation Integration
+import { useNavigation } from '@react-navigation/native';
+import { WalletScreen } from '@/modules/moonpay';
+
+function MainWalletTab() {
+  const navigation = useNavigation();
+
+  const handleAddFunds = () => {
+    navigation.navigate('OnrampScreen');
+  };
+
+  const handleViewTransactions = () => {
+    navigation.navigate('TransactionHistory');
+  };
+
+  return (
+    <View style={styles.container}>
+      <WalletScreen
+        onAddFunds={handleAddFunds}
+        onViewTransactions={handleViewTransactions}
+        showBalance={true}
+        showAddFundsButton={true}
+        customActions={[
+          {
+            title: 'Swap Tokens',
+            onPress: () => navigation.navigate('SwapScreen')
+          }
+        ]}
+      />
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## MoonPay Service Configuration
+
+The `moonpayService.ts` provides configuration and validation utilities:
+
+```typescript
+import { createMoonPayService } from '@/modules/moonpay';
+
+// Create MoonPay service instance
+const moonPayService = createMoonPayService({
+  apiKey: process.env.MOONPAY_API_KEY,
+  environment: 'sandbox', // or 'production'
+});
+
+// Validate configuration
+const isValid = moonPayService.validateConfig();
+if (!isValid) {
+  console.error('MoonPay configuration is invalid');
+}
+
+// Get widget URL (if needed for custom implementations)
+const widgetUrl = moonPayService.getWidgetUrl({
+  walletAddress: userWallet.address,
+  currencyCode: 'SOL',
+  baseCurrencyCode: 'USD',
+});
+```
+
+## Utility Functions
+
+<Accordion>
+  <AccordionItem title="Address Formatting">
+    **`formatWalletAddress(address)`** - Shortens wallet addresses for display
+    
+    ```typescript
+    import { formatWalletAddress } from '@/modules/moonpay/utils';
+    
+    const address = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
+    const formatted = formatWalletAddress(address);
+    // Returns: "9WzD...AWWM"
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Error Handling">
+    **`parseErrorMessage(error)`** - Converts raw errors to user-friendly messages
+    
+    ```typescript
+    import { parseErrorMessage } from '@/modules/moonpay/utils';
+    
+    try {
+      // MoonPay operation
+    } catch (error) {
+      const userMessage = parseErrorMessage(error);
+      Alert.alert('Purchase Failed', userMessage);
+    }
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Environment Detection">
+    **`getEnvironmentFromConfig(apiKey)`** - Automatically detects sandbox vs production
+    
+    ```typescript
+    import { getEnvironmentFromConfig } from '@/modules/moonpay/utils';
+    
+    const environment = getEnvironmentFromConfig(process.env.MOONPAY_API_KEY);
+    // Returns: 'sandbox' for pk_test_ keys, 'production' for pk_live_ keys
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Advanced Usage Patterns
+
+### Custom Purchase Flow
+
+```typescript
+function CustomPurchaseFlow() {
+  const { wallet } = useWallet();
+  const [purchaseAmount, setPurchaseAmount] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState('SOL');
+
+  const initiateCustomPurchase = () => {
+    // Custom logic before showing MoonPay widget
+    analytics.track('purchase_initiated', {
+      amount: purchaseAmount,
+      currency: selectedCurrency,
+      wallet: wallet.address
+    });
+    
+    // Show MoonPay widget with pre-filled values
+    navigation.navigate('OnrampScreen', {
+      defaultAmount: purchaseAmount,
+      defaultCurrency: selectedCurrency
+    });
+  };
+
+  return (
+    <View>
+      <TextInput
+        value={purchaseAmount}
+        onChangeText={setPurchaseAmount}
+        placeholder="Amount to purchase"
+        keyboardType="numeric"
+      />
+      
+      <Picker
+        selectedValue={selectedCurrency}
+        onValueChange={setSelectedCurrency}
+      >
+        <Picker.Item label="Solana (SOL)" value="SOL" />
+        <Picker.Item label="USD Coin (USDC)" value="USDC" />
+      </Picker>
+      
+      <Button
+        title="Buy Crypto"
+        onPress={initiateCustomPurchase}
+      />
+    </View>
+  );
+}
+```
+
+### Transaction Status Tracking
+
+```typescript
+function useMoonPayTransactionStatus() {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const trackTransaction = async (transactionId) => {
+    setLoading(true);
+    try {
+      // Note: This would require backend integration with MoonPay's API
+      const status = await fetch(`/api/moonpay/transaction/${transactionId}`);
+      const data = await status.json();
+      
+      setTransactions(prev => 
+        prev.map(tx => 
+          tx.id === transactionId 
+            ? { ...tx, status: data.status }
+            : tx
+        )
+      );
+    } catch (error) {
+      console.error('Failed to track transaction:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { transactions, trackTransaction, loading };
+}
+```
+
+### Balance-Based Recommendations
+
+```typescript
+function BalanceBasedOnramp() {
+  const { wallet } = useWallet();
+  const { balance } = useBalance(wallet?.address);
+  const [showRecommendation, setShowRecommendation] = useState(false);
+
+  useEffect(() => {
+    // Show purchase recommendation if balance is low
+    if (balance < 0.1) { // Less than 0.1 SOL
+      setShowRecommendation(true);
+    }
+  }, [balance]);
+
+  if (!showRecommendation) return null;
+
+  return (
+    <Card style={styles.recommendationCard}>
+      <Text style={styles.recommendationTitle}>Low Balance Detected</Text>
+      <Text style={styles.recommendationText}>
+        Your SOL balance is low ({balance.toFixed(4)} SOL). 
+        Consider adding funds to cover transaction fees.
+      </Text>
+      <Button
+        title="Add Funds"
+        onPress={() => navigation.navigate('OnrampScreen')}
+      />
+      <TouchableOpacity onPress={() => setShowRecommendation(false)}>
+        <Text style={styles.dismissText}>Dismiss</Text>
+      </TouchableOpacity>
+    </Card>
+  );
+}
+```
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" href="/docs/modules/wallet-providers">
+    Automatic wallet address detection and integration
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Real-time balance updates and transaction history
+  </Card>
+  
+  <Card title="Swap Module" href="/docs/modules/swap">
+    Purchase crypto then immediately swap to desired tokens
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    Share purchase milestones and achievements
+  </Card>
+</CardGroup>
+
+### Combined Workflow Example
+
+```typescript
+import { useWallet } from '@/modules/wallet-providers';
+import { useFetchTokens } from '@/modules/data-module';
+import { useSwap } from '@/modules/swap';
+import { MoonPayWidget } from '@/modules/moonpay';
+
+function BuyAndSwapFlow() {
+  const { wallet } = useWallet();
+  const { refetch: refetchBalance } = useFetchTokens(wallet?.address);
+  const { executeSwap } = useSwap();
+  const [purchaseComplete, setPurchaseComplete] = useState(false);
+
+  const handlePurchaseComplete = async () => {
+    setPurchaseComplete(true);
+    
+    // Refresh balance after purchase
+    await refetchBalance();
+    
+    // Optional: Auto-swap purchased SOL to another token
+    const shouldSwap = await askUserForSwap();
+    if (shouldSwap) {
+      navigation.navigate('SwapScreen', {
+        inputToken: 'SOL',
+        outputToken: 'USDC'
+      });
+    }
+  };
+
+  return (
+    <View>
+      {!purchaseComplete ? (
+        <MoonPayWidget
+          apiKey={process.env.MOONPAY_API_KEY}
+          environment="production"
+          onOpen={handlePurchaseComplete}
+        />
+      ) : (
+        <PurchaseSuccessScreen onContinue={() => navigation.goBack()} />
+      )}
+    </View>
+  );
+}
+```
+
+## Environment Configuration
+
+<Tabs>
+  <Tab title="Development">
+    ```bash
+    # .env.local for development
+    MOONPAY_API_KEY=pk_test_your_sandbox_key_here
+    ```
+    
+    - Uses sandbox environment automatically
+    - Test transactions don't involve real money
+    - Full widget functionality for testing
+  </Tab>
+  
+  <Tab title="Production">
+    ```bash
+    # .env.local for production
+    MOONPAY_API_KEY=pk_live_your_production_key_here
+    ```
+    
+    - Uses live MoonPay environment
+    - Real transactions with actual payment processing
+    - Requires KYC compliance and full verification
+  </Tab>
+</Tabs>
+
+## Error Handling & Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **Widget Not Loading**
+    - Verify `MOONPAY_API_KEY` is correctly set
+    - Check internet connectivity
+    - Ensure API key has proper permissions
+    
+    **Payment Failures**
+    - Card verification issues
+    - Insufficient funds
+    - Geographic restrictions
+    - KYC requirements not met
+    
+    **Network Errors**
+    - Backend connectivity issues
+    - Solana network congestion
+    - Invalid wallet addresses
+    
+  </Accordion>
+</AccordionGroup>
+
+```typescript
+function RobustMoonPayWidget() {
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  const handleError = (err) => {
+    console.error('MoonPay error:', err);
+    setError(parseErrorMessage(err));
+  };
+
+  const handleRetry = () => {
+    if (retryCount < maxRetries) {
+      setRetryCount(prev => prev + 1);
+      setError(null);
+    } else {
+      Alert.alert(
+        'Connection Failed',
+        'Please check your internet connection and try again later.'
+      );
+    }
+  };
+
+  return (
+    <View>
+      {error ? (
+        <ErrorDisplay 
+          message={error}
+          onRetry={retryCount < maxRetries ? handleRetry : null}
+        />
+      ) : (
+        <MoonPayWidget
+          apiKey={process.env.MOONPAY_API_KEY}
+          environment="production"
+          onError={handleError}
+          onRetry={handleRetry}
+        />
+      )}
+    </View>
+  );
+}
+```
+
+## Security Considerations
+
+<Warning>
+  **API Key Security**: Never expose production API keys in client-side code. Consider using a backend proxy for additional security.
+</Warning>
+
+<Tip>
+  **User Verification**: MoonPay handles KYC/AML compliance, but ensure your app provides clear information about verification requirements.
+</Tip>
+
+## API Reference
+
+For detailed API documentation, see:
+- [MoonPay Components Reference](/docs/references/modules/moonpay/components)
+- [Services Reference](/docs/references/modules/moonpay/services)
+- [Types Reference](/docs/references/modules/moonpay/types)
+
+---
+
+The MoonPay module provides a seamless bridge between traditional finance and crypto, enabling users to easily onboard into the Solana ecosystem with familiar payment methods.

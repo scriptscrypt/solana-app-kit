@@ -271,4 +271,4 @@ For feature requests, please include:
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
 
-If you have any questions or need clarification, please open an issue or reach out to the maintainers. We appreciate every effort to improve Solana Social Starter and look forward to building a robust community library together!
+If you have any questions or need clarification, please open an issue or reach out to the maintainers. We appreciate every effort to improve Solana App Kit and look forward to building a robust community library together!

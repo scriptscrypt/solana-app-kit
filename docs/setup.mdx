@@ -1,35 +1,528 @@
-# Setup & Installation
+---
+title: "Setup Guide"
+description: "Complete installation and configuration guide for setting up your Solana App Kit development environment"
+icon: "gear"
+---
 
-* **Install Xcode from the App Store**
-* **Clone the directory**
-  ```
-  git clone ...
-  cd solana-app-kit
-  ```
-* **Install dependencies**
-  ```
-  yarn install
-  ```
-* **Put your .env in both root and server folders (.env.local for client code)**
-* **Start Metro**
-  ```
-  yarn start --clear
-  ```
-  Or just
-  ```
-  yarn start
-  ```
-  Note: `--clear` removes caches—avoid running it too often to prevent slow builds.
+# Setup Guide
 
-## If You Still Face Issues
+This guide will walk you through setting up your development environment and getting your first Solana mobile app running in minutes.
 
-* In a normal terminal:
-  ```
-  sudo gem install cocoapods
-  pod --version
-  ```
-* Then navigate to the ios folder:
-  ```
-  cd ios
-  pod install
-  ```
+<Card>
+  <CardHeader>
+    <CardTitle>⚡ Quick Setup Promise</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Get your Solana mobile app running in under 5 minutes with our automated setup process
+  </CardContent>
+</Card>
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+<Tabs>
+  <Tab title="Required Software">
+    <CardGroup cols={1}>
+      <Card title="Node.js >= 18.0.0" icon="node-js">
+        Download from [nodejs.org](https://nodejs.org/) - LTS version recommended
+      </Card>
+      <Card title="Package Manager" icon="package">
+        **pnpm** (recommended), npm, or yarn - we recommend pnpm for better performance
+      </Card>
+      <Card title="Git" icon="git-branch">
+        Version control system - download from [git-scm.com](https://git-scm.com/)
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="iOS Development">
+    <Warning>
+      **macOS Required**: iOS development requires a Mac computer
+    </Warning>
+    
+    <CardGroup cols={1}>
+      <Card title="Xcode" icon="apple">
+        **Latest version from Mac App Store** - includes iOS Simulator and build tools
+      </Card>
+      <Card title="CocoaPods" icon="gem">
+        Install with: `sudo gem install cocoapods`
+      </Card>
+      <Card title="iOS Simulator" icon="mobile">
+        **Included with Xcode** - for testing on virtual devices
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Android Development">
+    <CardGroup cols={1}>
+      <Card title="Android Studio" icon="android">
+        **With Android SDK** - download from [developer.android.com](https://developer.android.com/studio)
+      </Card>
+      <Card title="Android Emulator" icon="mobile">
+        **Or physical Android device** - for testing your applications
+      </Card>
+      <Card title="Java Development Kit (JDK)" icon="coffee">
+        **Version 11 or newer** - required for Android builds
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Additional Tools">
+    <CardGroup cols={1}>
+      <Card title="Expo CLI" icon="terminal">
+        Install globally: `npm install -g @expo/cli`
+      </Card>
+      <Card title="EAS CLI" icon="cloud">
+        For building and deployment: `npm install -g eas-cli`
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+## Quick Start
+
+<Steps>
+  <Step title="One Command Setup">
+    The fastest way to get started is using our CLI tool:
+    ```bash
+    npx start-solana-app
+    ```
+  </Step>
+  
+  <Step title="Automatic Process">
+    This command will automatically:
+    - Clone the repository
+    - Install all dependencies
+    - Set up environment variables
+    - Launch the development server
+  </Step>
+  
+  <Step title="Ready to Go">
+    Your app will be running on iOS Simulator, Android Emulator, or web browser!
+  </Step>
+</Steps>
+
+<Tip>
+  **That's it!** Most developers can skip the manual installation section below.
+</Tip>
+
+## Manual Installation
+
+If you prefer to set up manually or need more control:
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/SendArcade/solana-app-kit.git
+    cd solana-app-kit
+    ```
+  </Step>
+  
+  <Step title="Install Dependencies">
+    <CodeGroup>
+    ```bash pnpm (Recommended)
+    pnpm install
+    ```
+    
+    ```bash npm
+    npm install
+    ```
+    
+    ```bash yarn
+    yarn install
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="iOS Dependencies (iOS only)">
+    ```bash
+    cd ios
+    pod install
+    cd ..
+    ```
+  </Step>
+</Steps>
+
+## Environment Configuration
+
+The app requires several environment variables for full functionality:
+
+<Steps>
+  <Step title="Create Environment File">
+    ```bash
+    cp .env.example .env.local
+    ```
+  </Step>
+  
+  <Step title="Configure Core Variables">
+    Add your API keys and configuration to `.env.local`:
+  </Step>
+</Steps>
+
+<Accordion>
+  <AccordionItem title="🔧 Core Environment Variables">
+    ```env
+    # Blockchain Configuration
+    CLUSTER=mainnet-beta
+    RPC_URL=https://api.mainnet-beta.solana.com
+
+    # Wallet Providers
+    PRIVY_APP_ID=your_privy_app_id
+    PRIVY_CLIENT_ID=your_privy_client_id
+    DYNAMIC_ENVIRONMENT_ID=your_dynamic_env_id
+    DYNAMIC_API_KEY=your_dynamic_api_key
+
+    # Turnkey Wallet Configuration
+    TURNKEY_BASE_URL=https://api.turnkey.com
+    TURNKEY_RP_ID=host.exp.exponent
+    TURNKEY_RP_NAME=your_app_name
+    TURNKEY_ORGANIZATION_ID=your_turnkey_organization_id
+    TURNKEY_API_PUBLIC_KEY=your_turnkey_public_key
+    TURNKEY_API_PRIVATE_KEY=your_turnkey_private_key
+
+    # API Services
+    HELIUS_API_KEY=your_helius_api_key
+    TENSOR_API_KEY=your_tensor_api_key
+    COINGECKO_API_KEY=your_coingecko_api_key
+    BIRDEYE_API_KEY=your_birdeye_api_key
+    OPENAI_API_KEY=your_openai_api_key
+
+    # Backend Server
+    SERVER_URL=http://localhost:3000
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Getting API Keys
+
+<Tabs>
+  <Tab title="Required APIs">
+    **Essential for core functionality:**
+    
+    <CardGroup cols={1}>
+      <Card title="Helius" icon="server" href="https://helius.dev">
+        **Enhanced Solana RPC** - Sign up for better reliability and faster responses
+      </Card>
+      <Card title="Privy" icon="lock" href="https://privy.io">
+        **Embedded Wallets** - Get credentials for social login and wallet creation
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="Optional APIs">
+    **For enhanced features:**
+    
+    <CardGroup cols={2}>
+      <Card title="Dynamic" icon="bolt" href="https://dynamic.xyz">
+        **Multi-chain Wallets** - Register for 300+ wallet support
+      </Card>
+      <Card title="Turnkey" icon="shield" href="https://turnkey.com">
+        **Enterprise Wallets** - Apply for institutional-grade security
+      </Card>
+      <Card title="Tensor" icon="cube" href="https://tensor.trade">
+        **NFT Data** - Get API access for NFT marketplace features
+      </Card>
+      <Card title="CoinGecko" icon="globe" href="https://coingecko.com/en/api">
+        **Market Data** - Free API for token prices and market info
+      </Card>
+      <Card title="Birdeye" icon="eye" href="https://birdeye.so">
+        **Token Analytics** - Sign up for advanced token data
+      </Card>
+      <Card title="OpenAI" icon="robot" href="https://openai.com">
+        **AI Features** - Get API key for AI-powered interactions
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
+
+## Backend Server Setup
+
+The kit includes a powerful backend server for enhanced functionality:
+
+<Steps>
+  <Step title="Navigate to Server Directory">
+    ```bash
+    cd server
+    ```
+  </Step>
+  
+  <Step title="Install Server Dependencies">
+    ```bash
+    pnpm install
+    ```
+  </Step>
+  
+  <Step title="Configure Server Environment">
+    ```bash
+    cp .env.example .env
+    ```
+  </Step>
+  
+  <Step title="Set Up Database">
+    ```bash
+    # Create database
+    createdb solana_app_kit
+
+    # Run migrations
+    pnpm run migrate
+    ```
+  </Step>
+  
+  <Step title="Start Backend Server">
+    ```bash
+    pnpm dev
+    ```
+    
+    Server will be available at `http://localhost:3000`
+  </Step>
+</Steps>
+
+<Accordion>
+  <AccordionItem title="🗄️ Required Server Environment Variables">
+    ```env
+    # Blockchain
+    WALLET_PRIVATE_KEY=your_wallet_private_key
+    RPC_URL=your_helius_rpc_url
+    TOKEN_MILL_PROGRAMID=your_token_mill_program_id
+    TOKEN_MILL_CONFIG_PDA=your_token_mill_config_pda
+
+    # Database
+    DATABASE_URL=postgresql://username:password@localhost:5432/solana_app_kit
+
+    # IPFS Storage
+    PINATA_JWT=your_pinata_jwt
+    PINATA_GATEWAY=your_pinata_gateway
+    PINATA_SECRET=your_pinata_secret
+    PINATA_API_KEY=your_pinata_api_key
+
+    # Cloud Storage
+    GCS_BUCKET_NAME=your_gcs_bucket_name
+    SERVICE_ACCOUNT_EMAIL=your_service_account_email
+
+    # Supabase (optional)
+    SUPABASE_URL=your_supabase_url
+    SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Running the Mobile App
+
+<Steps>
+  <Step title="Start Development Server">
+    From the root directory:
+    ```bash
+    pnpm start
+    ```
+  </Step>
+  
+  <Step title="Choose Your Platform">
+    <Tabs>
+      <Tab title="iOS">
+        ```bash
+        # Using Expo CLI
+        pnpm ios
+
+        # Or using Expo development build
+        expo run:ios
+        ```
+      </Tab>
+      
+      <Tab title="Android">
+        ```bash
+        # Using Expo CLI
+        pnpm android
+
+        # Or using Expo development build
+        expo run:android
+        ```
+      </Tab>
+      
+      <Tab title="Web Browser">
+        ```bash
+        # Open in web browser
+        pnpm web
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+### Development Server Commands
+
+When the Expo server is running, use these keyboard shortcuts:
+
+<CardGroup cols={3}>
+  <Card title="iOS Simulator" icon="mobile">
+    Press **`i`** to open iOS simulator
+  </Card>
+  <Card title="Android Emulator" icon="android">
+    Press **`a`** to open Android emulator
+  </Card>
+  <Card title="Web Browser" icon="globe">
+    Press **`w`** to open in web browser
+  </Card>
+  <Card title="Reload App" icon="arrow-rotate-right">
+    Press **`r`** to reload the app
+  </Card>
+  <Card title="Toggle Menu" icon="bars">
+    Press **`m`** to toggle the menu
+  </Card>
+  <Card title="Developer Tools" icon="screwdriver-wrench">
+    Press **`d`** to open developer tools
+  </Card>
+</CardGroup>
+
+## Verification
+
+<Steps>
+  <Step title="Check Mobile App">
+    ✅ You should see the intro screen with wallet connection options
+  </Step>
+  
+  <Step title="Verify Backend">
+    ✅ Check `http://localhost:3000/health` returns 200 status
+  </Step>
+  
+  <Step title="Test Wallet Connection">
+    ✅ Try connecting with any configured wallet provider
+  </Step>
+  
+  <Step title="Navigate Features">
+    ✅ Navigate through the app's main features
+  </Step>
+</Steps>
+
+## Development Mode
+
+The app includes a special development mode for easier debugging:
+
+<Accordion>
+  <AccordionItem title="🔧 Enabling Dev Mode">
+    1. **Shake your device** or press `Cmd+D` (iOS) / `Cmd+M` (Android)
+    2. **Select "Dev Mode"** from the developer menu
+    3. **Access debugging tools** and mock data
+  </AccordionItem>
+  
+  <AccordionItem title="🛠️ Dev Mode Features">
+    - **Mock wallet connections** for testing without real wallets
+    - **Sample data** for UI development and testing
+    - **Network request logging** for debugging API calls
+    - **State inspection tools** for Redux state debugging
+  </AccordionItem>
+</Accordion>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="🔄 Metro Bundler Issues">
+    **Clear cache and restart:**
+    ```bash
+    pnpm start --reset-cache
+    # or
+    expo start --clear
+    ```
+  </Accordion>
+  
+  <Accordion title="🍎 iOS Build Issues">
+    **Update iOS dependencies:**
+    ```bash
+    cd ios
+    pod install --repo-update
+    cd ..
+    ```
+    
+    **Common fixes:**
+    - Ensure Xcode is updated to latest version
+    - Clear Xcode derived data
+    - Reset iOS Simulator
+  </Accordion>
+  
+  <Accordion title="🤖 Android Build Issues">
+    **Clean Android build:**
+    ```bash
+    cd android
+    ./gradlew clean
+    cd ..
+    ```
+    
+    **Common fixes:**
+    - Update Android Studio and SDK tools
+    - Check Java version (should be 11+)
+    - Clear Android cache and data
+  </Accordion>
+  
+  <Accordion title="🔑 Environment Variable Issues">
+    **Checklist:**
+    - ✅ Ensure `.env.local` file exists in root directory
+    - ✅ Restart development server after changing variables
+    - ✅ Check that all required variables are set
+    - ✅ Verify API key format and permissions
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  **Need Help?** Join our [Telegram community](https://t.me/solanaappkit) for real-time support from developers and maintainers.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Explore the UI" icon="eye" href="/docs/structure/repo">
+    **Navigate through screens** and discover the app's features and capabilities
+  </Card>
+  
+  <Card title="Review the Code" icon="code" href="/docs/structure/repo">
+    **Understand the structure** with our comprehensive project organization guide
+  </Card>
+  
+  <Card title="Try Features" icon="play" href="/docs/modules/overview">
+    **Test wallet connections** and explore token swaps, NFTs, and other functionality
+  </Card>
+  
+  <Card title="Start Customizing" icon="paintbrush" href="/docs/use">
+    **Modify the app** for your specific use case with practical examples
+  </Card>
+</CardGroup>
+
+## Production Deployment
+
+Ready to ship your app? Deploy to app stores with EAS Build:
+
+<Tabs>
+  <Tab title="iOS App Store">
+    ```bash
+    # Build for iOS
+    eas build --platform ios --profile production
+    
+    # Submit to App Store
+    eas submit --platform ios
+    ```
+  </Tab>
+  
+  <Tab title="Google Play Store">
+    ```bash
+    # Build for Android
+    eas build --platform android --profile production
+    
+    # Submit to Play Store
+    eas submit --platform android
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  **Learn More**: Check out the [EAS Build documentation](https://docs.expo.dev/build/introduction/) for detailed deployment instructions.
+</Tip>
+
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>🎉 Congratulations!</CardTitle>
+  </CardHeader>
+  <CardContent>
+    You now have a fully functional Solana mobile app running. Continue to the [Project Structure](/docs/structure/repo) guide to understand how everything works together.
+  </CardContent>
+</Card>

@@ -1,0 +1,212 @@
+---
+title: "Modules Overview"
+description: "Complete guide to all available modules in the Solana App Kit"
+icon: "puzzle-piece"
+---
+
+# Modules Overview
+
+The Solana App Kit is built with a modular architecture, allowing you to use only the features you need while maintaining clean separation of concerns. Each module encapsulates a specific protocol or functionality.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🧩 Modular by Design</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Every protocol integration is self-contained with its own components, hooks, services, and types. Pick and choose what you need for your app.
+  </CardContent>
+</Card>
+
+## Available Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" icon="wallet" href="/docs/modules/wallet-providers">
+    Multi-provider wallet integration with Privy, Dynamic, Turnkey, and Mobile Wallet Adapter support
+  </Card>
+  
+  <Card title="Swap" icon="arrow-right-arrow-left" href="/docs/modules/swap">
+    Token swapping via Jupiter aggregator with best price routing across all DEXs
+  </Card>
+  
+  <Card title="Pump.fun" icon="rocket" href="/docs/modules/pump-fun">
+    Meme token creation, trading, and community features with Pump.fun integration
+  </Card>
+  
+  <Card title="Raydium" icon="waves" href="/docs/modules/raydium">
+    Advanced AMM and concentrated liquidity features via Raydium protocol
+  </Card>
+  
+  <Card title="Meteora" icon="meteor" href="/docs/modules/meteora">
+    Dynamic liquidity pools and yield farming with Meteora protocol
+  </Card>
+  
+  <Card title="TokenMill" icon="gear" href="/docs/modules/token-mill">
+    Custom token creation with bonding curves, staking, and vesting features
+  </Card>
+  
+  <Card title="NFT" icon="image" href="/docs/modules/nft">
+    NFT minting, trading, and display with Metaplex and Tensor integration
+  </Card>
+  
+  <Card title="Data Module" icon="database" href="/docs/modules/data-module">
+    Blockchain data fetching, token prices, and market analytics
+  </Card>
+  
+  <Card title="MoonPay" icon="credit-card" href="/docs/modules/moonpay">
+    Fiat on-ramp integration for buying crypto with cards and Apple Pay
+  </Card>
+  
+  <Card title="Solana Agent Kit" icon="robot" href="/docs/modules/solana-agent-kit">
+    AI-powered Solana interactions and automated trading assistance
+  </Card>
+</CardGroup>
+
+## Module Categories
+
+### 🔐 Wallet & Authentication
+- **[Wallet Providers](/docs/modules/wallet-providers)**: Multi-provider wallet connection and management
+
+### 💱 Trading & DeFi
+- **[Swap](/docs/modules/swap)**: Token swapping and DEX aggregation
+- **[Pump.fun](/docs/modules/pump-fun)**: Meme token ecosystem
+- **[Raydium](/docs/modules/raydium)**: Advanced AMM features
+- **[Meteora](/docs/modules/meteora)**: Dynamic liquidity protocols
+- **[TokenMill](/docs/modules/token-mill)**: Custom token creation
+
+### 🎨 Assets & Media
+- **[NFT](/docs/modules/nft)**: Non-fungible token functionality
+
+### 📊 Data & Analytics
+- **[Data Module](/docs/modules/data-module)**: Blockchain data and analytics
+
+### 💳 Payments
+- **[MoonPay](/docs/modules/moonpay)**: Fiat payment processing
+
+### 🤖 AI & Automation
+- **[Solana Agent Kit](/docs/modules/solana-agent-kit)**: AI-powered interactions
+
+## Module Architecture
+
+Each module follows a consistent structure:
+
+```
+module-name/
+├── components/     # React Native UI components
+├── hooks/          # Custom React hooks
+├── services/       # API and blockchain services
+├── screens/        # Module-specific screens
+├── types/          # TypeScript type definitions
+├── utils/          # Utility functions
+├── index.ts        # Public API exports
+└── README.md       # Module documentation
+```
+
+## Integration Patterns
+
+### Independent Usage
+```typescript
+// Use individual modules
+import { useSwap } from '@/modules/swap';
+import { useNFT } from '@/modules/nft';
+
+function MyComponent() {
+  const { executeSwap } = useSwap();
+  const { mintNFT } = useNFT();
+  
+  // Use module functionality
+}
+```
+
+### Combined Functionality
+```typescript
+// Combine multiple modules
+import { useWallet } from '@/modules/wallet-providers';
+import { useSwap } from '@/modules/swap';
+import { useThread } from '@/core/thread';
+
+function TradingPost() {
+  const { wallet } = useWallet();
+  const { executeSwap } = useSwap();
+  const { createPost } = useThread();
+  
+  // Create trading posts that execute swaps
+}
+```
+
+### Module Dependencies
+
+<Tabs>
+  <Tab title="Core Dependencies">
+    Most modules depend on:
+    - **Wallet Providers**: For transaction signing
+    - **Data Module**: For token information
+  </Tab>
+  
+  <Tab title="Optional Dependencies">
+    Some modules can enhance others:
+    - **Thread + Trading**: Social trading posts
+    - **NFT + Swap**: NFT marketplace features
+    - **AI + Any Module**: Automated interactions
+  </Tab>
+</Tabs>
+
+## Getting Started with Modules
+
+<Steps>
+  <Step title="Choose Your Modules">
+    Identify which protocols and features your app needs
+  </Step>
+  
+  <Step title="Install Dependencies">
+    Each module lists its specific dependencies and setup requirements
+  </Step>
+  
+  <Step title="Configure Environment">
+    Set up API keys and environment variables for chosen modules
+  </Step>
+  
+  <Step title="Initialize Modules">
+    Import and configure modules in your app
+  </Step>
+</Steps>
+
+## Module Comparison
+
+| Module | Complexity | Setup Time | Key Use Cases |
+|--------|------------|------------|---------------|
+| Wallet Providers | Medium | 15 min | User authentication, transaction signing |
+| Swap | Low | 5 min | Token trading, price discovery |
+| Pump.fun | Low | 10 min | Meme tokens, viral trading |
+| Raydium | High | 30 min | Advanced DeFi, liquidity provision |
+| Meteora | High | 30 min | Yield farming, dynamic pools |
+| TokenMill | High | 45 min | Custom tokenomics, advanced features |
+| NFT | Medium | 20 min | Digital collectibles, marketplace |
+| Data Module | Low | 5 min | Market data, analytics |
+| MoonPay | Medium | 20 min | Fiat payments, onboarding |
+| Solana Agent Kit | Medium | 25 min | AI trading, automation |
+
+## Best Practices
+
+<Warning>
+  **Start Small**: Begin with 2-3 core modules and add others as needed
+</Warning>
+
+<Tip>
+  **Wallet First**: Always set up wallet providers before other modules
+</Tip>
+
+<Note>
+  **Environment Variables**: Each module requires specific API keys and configuration
+</Note>
+
+## Module Roadmap
+
+Future modules in development:
+- **Governance**: DAO and voting functionality
+- **Lending**: DeFi lending protocols
+- **Options**: Derivatives trading
+- **Social**: Enhanced social features
+
+---
+
+Ready to dive into a specific module? Choose from the cards above or explore the detailed documentation for each integration.

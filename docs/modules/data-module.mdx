@@ -1,0 +1,594 @@
+---
+title: "Data Module"
+description: "Comprehensive blockchain data fetching and management for Solana assets, tokens, NFTs, and market information"
+icon: "database"
+---
+
+# Data Module
+
+The Data Module is your central hub for fetching, processing, and managing on-chain and off-chain data related to Solana assets. It provides seamless integration with multiple data sources including Helius, Birdeye, and CoinGecko.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🎯 What This Module Provides</CardTitle>
+  </CardHeader>
+  <CardContent>
+    A unified interface for accessing token metadata, NFT portfolios, market data, and trading history across the Solana ecosystem
+  </CardContent>
+</Card>
+
+## Core Functionalities
+
+<CardGroup cols={2}>
+  <Card title="Token Data" icon="coins">
+    Fetch token metadata, balances, prices, and historical price data from multiple sources
+  </Card>
+  
+  <Card title="NFT & Portfolio Assets" icon="image">
+    Retrieve user portfolio assets including NFTs and compressed NFTs (cNFTs)
+  </Card>
+  
+  <Card title="Market Information" icon="chart-line">
+    Access comprehensive market data from CoinGecko including OHLC and market details
+  </Card>
+  
+  <Card title="Transaction History" icon="clock-rotate-left">
+    Fetch and process user swap transaction history with enriched metadata
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="Environment Variables">
+    Configure your API keys in `.env.local`:
+    ```bash
+    HELIUS_API_KEY=your_helius_api_key
+    BIRDEYE_API_KEY=your_birdeye_api_key
+    COINGECKO_API_KEY=your_coingecko_api_key
+    ```
+  </Step>
+  
+  <Step title="Import Module">
+    Import the hooks and services you need:
+    ```typescript
+    import { 
+      useFetchTokens, 
+      useTokenDetails, 
+      useCoingecko 
+    } from '@/modules/data-module';
+    ```
+  </Step>
+  
+  <Step title="Start Fetching">
+    Use the hooks in your components to fetch data
+  </Step>
+</Steps>
+
+## Module Architecture
+
+```
+src/modules/data-module/
+├── services/               # Core API integration logic
+├── hooks/                  # React hooks for UI integration
+├── types/                  # TypeScript definitions
+├── utils/                  # Helper functions
+└── index.ts               # Public API exports
+```
+
+## Core Services
+
+<Tabs>
+  <Tab title="Token Service">
+    **`tokenService.ts`** - Core token data operations
+    
+    ```typescript
+    // Key functions available
+    fetchTokenBalance(walletPublicKey, tokenInfo)
+    fetchTokenPrice(tokenInfo) 
+    ensureCompleteTokenInfo(token)
+    estimateTokenUsdValue(amount, decimals, mint, symbol)
+    fetchTokenList(params)
+    searchTokens(params)
+    ```
+  </Tab>
+  
+  <Tab title="CoinGecko Service">
+    **`coingeckoService.ts`** - Market data from CoinGecko
+    
+    ```typescript
+    // Available functions
+    getCoinList()
+    getCoinMarkets(coinId)
+    getCoinOHLC(coinId, days)
+    getBatchCoinMarkets(coinIds)
+    ```
+  </Tab>
+  
+  <Tab title="Token Details Service">
+    **`tokenDetailsService.ts`** - Comprehensive token information
+    
+    ```typescript
+    // Birdeye integration
+    fetchPriceHistory(tokenAddress, timeframe)
+    fetchTokenOverview(tokenAddress)
+    fetchTokenSecurity(tokenAddress)
+    fetchMarketData(tokenAddress)
+    fetchTradeData(tokenAddress)
+    ```
+  </Tab>
+  
+  <Tab title="Swap Transactions">
+    **`swapTransactions.ts`** - Transaction history
+    
+    ```typescript
+    // Helius integration
+    fetchRecentSwaps(walletAddress)
+    enrichSwapTransactions(swaps)
+    ```
+  </Tab>
+</Tabs>
+
+## Essential Hooks
+
+### useFetchTokens()
+
+Fetches all fungible tokens in a user's wallet with portfolio data.
+
+```typescript
+import { useFetchTokens } from '@/modules/data-module';
+
+function UserTokenList() {
+  const { tokens, loading, error, refetch } = useFetchTokens(walletAddress);
+  
+  if (loading) return <Text>Loading tokens...</Text>;
+  if (error) return <Text>Error: {error}</Text>;
+  
+  return (
+    <FlatList
+      data={tokens}
+      renderItem={({ item }) => (
+        <TokenItem token={item} />
+      )}
+      onRefresh={refetch}
+    />
+  );
+}
+```
+
+**Returns:**
+- `tokens` - Array of user's tokens
+- `loading` - Loading state
+- `error` - Error message if any
+- `refetch` - Function to refresh data
+
+### useTokenDetails()
+
+Comprehensive token information for detail views.
+
+```typescript
+import { useTokenDetails } from '@/modules/data-module';
+
+function TokenDetailScreen({ tokenAddress }) {
+  const { 
+    priceHistory, 
+    metadata, 
+    tokenOverview, 
+    loading,
+    selectedTimeframe,
+    handleTimeframeChange 
+  } = useTokenDetails({ 
+    tokenAddress, 
+    visible: true 
+  });
+  
+  return (
+    <View>
+      <TokenChart data={priceHistory} />
+      <TokenInfo metadata={metadata} />
+      <TokenOverview data={tokenOverview} />
+    </View>
+  );
+}
+```
+
+**Parameters:**
+- `tokenAddress` - Token mint address
+- `visible` - Whether to actively fetch data
+
+**Returns:**
+- `priceHistory` - Historical price data
+- `metadata` - Token metadata
+- `tokenOverview` - Overview information
+- `loading` - Loading states
+- `selectedTimeframe` - Current timeframe
+- `handleTimeframeChange` - Timeframe selector
+
+### useCoingecko()
+
+Access CoinGecko market data with caching.
+
+```typescript
+import { useCoingecko } from '@/modules/data-module';
+
+function MarketDataComponent() {
+  const { 
+    coinList, 
+    searchCoins, 
+    searchResults, 
+    fetchCoinData,
+    loadingCoinList 
+  } = useCoingecko();
+  
+  const handleSearch = (query) => {
+    searchCoins(query);
+  };
+  
+  return (
+    <View>
+      <SearchInput onSearch={handleSearch} />
+      <CoinList data={searchResults} />
+    </View>
+  );
+}
+```
+
+### useTokenSearch()
+
+Debounced token search with pagination.
+
+```typescript
+import { useTokenSearch } from '@/modules/data-module';
+
+function TokenSearchComponent() {
+  const { 
+    tokens, 
+    loading, 
+    searchQuery, 
+    setSearchQuery, 
+    loadMore,
+    refresh 
+  } = useTokenSearch('', 300); // 300ms debounce
+  
+  return (
+    <View>
+      <TextInput 
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search tokens..."
+      />
+      <FlatList
+        data={tokens}
+        onEndReached={loadMore}
+        onRefresh={refresh}
+        renderItem={({ item }) => <TokenSearchResult token={item} />}
+      />
+    </View>
+  );
+}
+```
+
+## Quick Start Example
+
+<CodeGroup>
+```typescript Basic Token Display
+import { useFetchTokens, TokenInfo } from '@/modules/data-module';
+import { useWallet } from '@/modules/wallet-providers';
+
+function UserTokenPortfolio() {
+  const { wallet } = useWallet();
+  const { tokens, loading, error, refetch } = useFetchTokens(wallet?.address);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error} />;
+
+  return (
+    <View>
+      <Button title="Refresh Portfolio" onPress={refetch} />
+      <FlatList
+        data={tokens}
+        keyExtractor={(item: TokenInfo) => item.address}
+        renderItem={({ item }) => (
+          <View style={styles.tokenItem}>
+            <Image source={{ uri: item.logoURI }} style={styles.tokenLogo} />
+            <View>
+              <Text style={styles.tokenName}>{item.name}</Text>
+              <Text style={styles.tokenSymbol}>{item.symbol}</Text>
+            </View>
+            <Text style={styles.tokenBalance}>{item.balance}</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Market Data Integration
+import { useCoingecko } from '@/modules/data-module';
+
+function MarketOverview() {
+  const { 
+    coinList, 
+    fetchCoinData, 
+    marketCap, 
+    loadingCoinList 
+  } = useCoingecko();
+
+  useEffect(() => {
+    fetchCoinData(['solana', 'bitcoin', 'ethereum']);
+  }, []);
+
+  return (
+    <View>
+      <Text>Total Market Cap: ${marketCap}</Text>
+      {loadingCoinList ? (
+        <LoadingSpinner />
+      ) : (
+        <CoinGrid data={coinList} />
+      )}
+    </View>
+  );
+}
+```
+
+```typescript Token Details View
+import { useTokenDetails } from '@/modules/data-module';
+
+function TokenDetailModal({ tokenAddress, visible }) {
+  const { 
+    priceHistory, 
+    metadata, 
+    tokenOverview,
+    selectedTimeframe,
+    handleTimeframeChange,
+    loading 
+  } = useTokenDetails({ tokenAddress, visible });
+
+  return (
+    <Modal visible={visible}>
+      <View>
+        <TokenHeader metadata={metadata} />
+        
+        <TimeframeSelector 
+          selected={selectedTimeframe}
+          onChange={handleTimeframeChange}
+        />
+        
+        <PriceChart 
+          data={priceHistory} 
+          loading={loading.priceHistory}
+        />
+        
+        <TokenStats overview={tokenOverview} />
+      </View>
+    </Modal>
+  );
+}
+```
+</CodeGroup>
+
+## Utility Functions
+
+<Accordion>
+  <AccordionItem title="Token Utilities">
+    **`tokenUtils.ts`** - Token formatting and display helpers
+    
+    ```typescript
+    formatTokenAmount(amount, decimals)
+    getTokenLogo(tokenAddress)
+    formatUsdValue(value)
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Fetch Utilities">
+    **`fetch.ts`** - Robust API calling with retry logic
+    
+    ```typescript
+    fetchWithRetries(url, options, retries)
+    fetchUserAssets(walletAddress)
+    fetchSolBalance(walletAddress)
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Display Formatters">
+    **`tokenDetailsFormatters.ts`** - UI formatting functions
+    
+    ```typescript
+    formatPrice(price)
+    formatPriceChange(change)
+    formatNumber(number)
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Data Sources Integration
+
+<CardGroup cols={3}>
+  <Card title="Helius" icon="server">
+    **Primary Use**: RPC calls, transaction history, asset fetching
+    
+    - Enhanced Solana RPC
+    - Transaction parsing
+    - Asset metadata
+  </Card>
+  
+  <Card title="Birdeye" icon="eye">
+    **Primary Use**: Token prices, security analysis, market data
+    
+    - Real-time prices
+    - Security scoring
+    - Trade data
+    - Price history
+  </Card>
+  
+  <Card title="CoinGecko" icon="globe">
+    **Primary Use**: Market information, coin listings
+    
+    - Coin directories
+    - Market cap data
+    - OHLC data
+    - Global statistics
+  </Card>
+</CardGroup>
+
+## Advanced Usage Patterns
+
+### Custom Data Fetching
+
+```typescript
+import { tokenService } from '@/modules/data-module';
+
+// Custom token price fetching with fallback
+async function getTokenPriceWithFallback(tokenInfo) {
+  try {
+    // Try Birdeye first
+    const price = await tokenService.fetchTokenPrice(tokenInfo);
+    return price;
+  } catch (error) {
+    // Fallback to Jupiter
+    return await fetchJupiterPrice(tokenInfo.address);
+  }
+}
+```
+
+### Batch Data Operations
+
+```typescript
+import { coingeckoService } from '@/modules/data-module';
+
+// Fetch multiple coin data efficiently
+async function fetchPortfolioMarketData(tokenAddresses) {
+  const coinIds = await mapAddressesToCoinIds(tokenAddresses);
+  const marketData = await coingeckoService.getBatchCoinMarkets(coinIds);
+  return marketData;
+}
+```
+
+### Real-time Price Updates
+
+```typescript
+function useRealTimeTokenPrice(tokenAddress) {
+  const [price, setPrice] = useState(null);
+  
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const newPrice = await tokenService.fetchTokenPrice({ address: tokenAddress });
+      setPrice(newPrice);
+    }, 10000); // Update every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [tokenAddress]);
+  
+  return price;
+}
+```
+
+## Error Handling
+
+<Warning>
+  **API Rate Limits**: Be mindful of rate limits when making frequent requests. The module includes retry logic but respect provider limits.
+</Warning>
+
+```typescript
+function TokenDataWithErrorHandling() {
+  const { tokens, loading, error } = useFetchTokens(walletAddress);
+  
+  if (error) {
+    // Handle different error types
+    if (error.includes('rate limit')) {
+      return <RateLimitError onRetry={refetch} />;
+    }
+    if (error.includes('network')) {
+      return <NetworkError onRetry={refetch} />;
+    }
+    return <GenericError message={error} />;
+  }
+  
+  return <TokenList tokens={tokens} loading={loading} />;
+}
+```
+
+## Performance Optimization
+
+<Tip>
+  **Caching**: The module implements intelligent caching for CoinGecko data and token metadata to reduce API calls.
+</Tip>
+
+```typescript
+// Use debounced search to avoid excessive API calls
+const { tokens, setSearchQuery } = useTokenSearch('', 500); // 500ms debounce
+
+// Implement virtual scrolling for large token lists
+<VirtualizedList
+  data={tokens}
+  getItem={(data, index) => data[index]}
+  getItemCount={(data) => data.length}
+  renderItem={({ item }) => <TokenItem token={item} />}
+/>
+```
+
+## Integration with Other Modules
+
+### With Wallet Providers
+```typescript
+import { useWallet } from '@/modules/wallet-providers';
+import { useFetchTokens } from '@/modules/data-module';
+
+function ConnectedTokenList() {
+  const { wallet } = useWallet();
+  const { tokens } = useFetchTokens(wallet?.address);
+  
+  return <TokenPortfolio tokens={tokens} />;
+}
+```
+
+### With Swap Module
+```typescript
+import { useSwap } from '@/modules/swap';
+import { useTokenSearch } from '@/modules/data-module';
+
+function TokenSwapInterface() {
+  const { executeSwap } = useSwap();
+  const { tokens, setSearchQuery } = useTokenSearch();
+  
+  return (
+    <SwapCard 
+      availableTokens={tokens}
+      onTokenSearch={setSearchQuery}
+      onSwap={executeSwap}
+    />
+  );
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **API Key Issues**
+    - Ensure all required API keys are set in environment variables
+    - Check API key permissions and rate limits
+    
+    **Network Timeouts**
+    - The module includes retry logic, but network issues may still occur
+    - Implement proper loading states and error boundaries
+    
+    **Token Not Found**
+    - Some tokens may not be available in all data sources
+    - Implement fallback mechanisms when token data is unavailable
+    
+  </Accordion>
+</AccordionGroup>
+
+## API Reference
+
+For detailed API documentation, see:
+- [Token Service Reference](/docs/references/modules/data-module/services)
+- [Hooks Reference](/docs/references/modules/data-module/hooks)
+- [Types Reference](/docs/references/modules/data-module/types)
+
+---
+
+The Data Module serves as the foundation for all blockchain data needs in your Solana application, providing reliable, cached, and efficiently formatted data from multiple sources.

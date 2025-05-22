@@ -1,0 +1,877 @@
+---
+title: "Pump.fun Module"
+description: "Complete meme token ecosystem with token launching, trading, and automated market making via Pump.fun and PumpSwap"
+icon: "rocket"
+---
+
+# Pump.fun & PumpSwap Module
+
+The Pump.fun module provides comprehensive integration with the Pump.fun platform and PumpSwap AMM, enabling users to launch meme tokens, trade on bonding curves, and participate in automated market making.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🚀 Meme Token Ecosystem</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Complete toolkit for meme token creation, trading, and community building with integrated bonding curves and AMM functionality
+  </CardContent>
+</Card>
+
+## Core Functionalities
+
+<CardGroup cols={2}>
+  <Card title="Token Launching" icon="plus-circle">
+    Create and launch new tokens on Pump.fun with metadata upload, social links, and initial liquidity
+  </Card>
+  
+  <Card title="Bonding Curve Trading" icon="chart-line">
+    Buy and sell tokens using Pump.fun's bonding curve mechanism with automatic Raydium migration
+  </Card>
+  
+  <Card title="AMM Operations" icon="arrows-rotate">
+    Full PumpSwap AMM integration with swapping, liquidity management, and pool creation
+  </Card>
+  
+  <Card title="RugCheck Integration" icon="shield-check">
+    Automatic token verification submission to RugCheck for community safety
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="Backend Configuration">
+    Ensure your backend server is running for metadata uploads and PumpSwap SDK:
+    ```bash
+    SERVER_URL=http://localhost:8080/api
+    ```
+  </Step>
+  
+  <Step title="Environment Variables">
+    Configure required environment variables in `.env.local`:
+    ```bash
+    SERVER_URL=your_backend_server_url
+    HELIUS_STAKED_URL=your_helius_rpc_endpoint
+    COMMISSION_WALLET=your_commission_wallet_address
+    ```
+  </Step>
+  
+  <Step title="Import Module">
+    Import the components and services you need:
+    ```typescript
+    import { 
+      PumpfunLaunchSection,
+      PumpfunBuySection,
+      PumpSwapScreen,
+      usePumpFun 
+    } from '@/modules/pump-fun';
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  **Backend Dependency**: This module requires a backend service for metadata uploads and PumpSwap SDK interactions. Ensure proper server configuration.
+</Warning>
+
+## Module Architecture
+
+```
+src/modules/pump-fun/
+├── components/             # UI components for both platforms
+│   ├── pump-swap/         # PumpSwap AMM specific components
+│   ├── PumpfunBuySection.tsx
+│   ├── PumpfunLaunchSection.tsx
+│   └── PumpfunSellSection.tsx
+├── hooks/                 # React hooks for interactions
+├── navigation/            # PumpSwap navigation setup
+├── screens/               # Complete screen implementations
+├── services/              # API integration and business logic
+├── types/                 # TypeScript definitions
+└── utils/                 # Helper functions and utilities
+```
+
+## Core Components
+
+<Tabs>
+  <Tab title="Token Launch">
+    **`PumpfunLaunchSection`** - Complete token creation interface
+    
+    ```typescript
+    import { PumpfunLaunchSection } from '@/modules/pump-fun';
+    
+    function TokenLaunchScreen() {
+      const handleTokenLaunched = (tokenData) => {
+        console.log('Token launched:', tokenData);
+        // Handle success (navigation, notifications, etc.)
+      };
+      
+      return (
+        <PumpfunLaunchSection
+          onTokenLaunched={handleTokenLaunched}
+          containerStyle={styles.launchContainer}
+          enableSocialLinks={true}
+          enableRugCheckSubmission={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Token metadata input (name, symbol, description)
+    - Image upload and processing
+    - Social media links integration
+    - Initial buy amount configuration
+    - Automatic metadata upload to IPFS
+    - RugCheck verification submission
+  </Tab>
+  
+  <Tab title="Token Trading">
+    **`PumpfunBuySection`** & **`PumpfunSellSection`** - Trading interfaces
+    
+    ```typescript
+    import { PumpfunBuySection, PumpfunSellSection } from '@/modules/pump-fun';
+    
+    function TradingInterface() {
+      const handleTradeComplete = (result) => {
+        console.log('Trade completed:', result);
+      };
+      
+      return (
+        <View>
+          <PumpfunBuySection
+            onTradeComplete={handleTradeComplete}
+            showBondingCurve={true}
+            enableRaydiumFallback={true}
+          />
+          
+          <PumpfunSellSection
+            onTradeComplete={handleTradeComplete}
+            showPortfolio={true}
+          />
+        </View>
+      );
+    }
+    ```
+    
+    **Features:**
+    - Intelligent routing (Pump.fun → Raydium)
+    - Bonding curve visualization
+    - Portfolio integration
+    - Slippage configuration
+    - Real-time price updates
+  </Tab>
+  
+  <Tab title="PumpSwap AMM">
+    **`PumpSwapScreen`** - Complete AMM interface with tabs
+    
+    ```typescript
+    import { PumpSwapScreen } from '@/modules/pump-fun';
+    
+    function AMMInterface() {
+      return (
+        <PumpSwapScreen
+          defaultTab="swap"
+          enablePoolCreation={true}
+          enableLiquidityManagement={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Multi-tab interface (Swap, Add/Remove Liquidity, Create Pool)
+    - Real-time quotes and pricing
+    - Liquidity position management
+    - Pool analytics and stats
+    - Transaction status tracking
+  </Tab>
+  
+  <Tab title="Individual AMM Components">
+    Granular control with individual AMM components
+    
+    ```typescript
+    import { 
+      SwapSection,
+      LiquidityAddSection,
+      PoolCreationSection 
+    } from '@/modules/pump-fun/components/pump-swap';
+    
+    function CustomAMMInterface() {
+      return (
+        <View>
+          <SwapSection onSwapComplete={handleSwap} />
+          <LiquidityAddSection onLiquidityAdded={handleLiquidity} />
+          <PoolCreationSection onPoolCreated={handlePool} />
+        </View>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Core Hook: usePumpFun
+
+The primary hook for Pump.fun interactions:
+
+```typescript
+import { usePumpFun } from '@/modules/pump-fun';
+import { useWallet } from '@/modules/wallet-providers';
+
+function PumpfunTradingComponent() {
+  const { wallet } = useWallet();
+  const { 
+    launchToken, 
+    buyToken, 
+    sellToken, 
+    submitTokenForVerification,
+    loading,
+    error 
+  } = usePumpFun();
+
+  const handleLaunchToken = async (tokenData) => {
+    try {
+      const result = await launchToken({
+        name: tokenData.name,
+        symbol: tokenData.symbol,
+        description: tokenData.description,
+        image: tokenData.image,
+        socialLinks: tokenData.socialLinks,
+        initialBuy: tokenData.initialBuy
+      });
+      
+      console.log('Token launched:', result);
+      
+      // Automatically submit for verification
+      await submitTokenForVerification(result.mint);
+    } catch (error) {
+      console.error('Launch failed:', error);
+    }
+  };
+
+  const handleBuyToken = async (mint, amount) => {
+    try {
+      const result = await buyToken(mint, amount);
+      console.log('Purchase successful:', result);
+    } catch (error) {
+      console.error('Buy failed:', error);
+    }
+  };
+
+  return (
+    <View>
+      <TokenLaunchForm onSubmit={handleLaunchToken} />
+      <TokenTradingInterface onBuy={handleBuyToken} />
+    </View>
+  );
+}
+```
+
+**Hook Functions:**
+- `launchToken(params)` - Create and launch new token
+- `buyToken(mint, amount)` - Purchase tokens
+- `sellToken(mint, amount)` - Sell tokens
+- `submitTokenForVerification(mint)` - Submit to RugCheck
+
+## Services Overview
+
+<Accordion>
+  <AccordionItem title="Pump.fun Service">
+    **`pumpfunService.ts`** - Direct Pump.fun platform integration
+    
+    ```typescript
+    import { pumpfunService } from '@/modules/pump-fun';
+    
+    // Create and buy token in one transaction
+    const launchResult = await pumpfunService.createAndBuyTokenViaPumpfun({
+      name: 'My Meme Token',
+      symbol: 'MMT',
+      description: 'The best meme token ever!',
+      image: imageFile,
+      website: 'https://example.com',
+      twitter: '@mymemetoken',
+      telegram: 't.me/mymemetoken',
+      initialBuy: 0.1 // SOL amount
+    });
+    
+    // Buy existing token (auto-detects Pump.fun vs Raydium)
+    const buyResult = await pumpfunService.buyTokenViaPumpfun(
+      tokenMint,
+      amountSol,
+      wallet,
+      onStatusUpdate
+    );
+    
+    // Sell tokens
+    const sellResult = await pumpfunService.sellTokenViaPumpfun(
+      tokenMint,
+      tokenAmount,
+      wallet,
+      onStatusUpdate
+    );
+    ```
+    
+    **Key Features:**
+    - Metadata upload to IPFS via backend
+    - Intelligent routing between Pump.fun and Raydium
+    - Bonding curve interaction
+    - Commission handling
+    - Status update callbacks
+  </AccordionItem>
+  
+  <AccordionItem title="PumpSwap Service">
+    **`pumpSwapService.ts`** - AMM operations via backend SDK wrapper
+    
+    ```typescript
+    import { pumpSwapService } from '@/modules/pump-fun';
+    
+    // Create new liquidity pool
+    const pool = await pumpSwapService.createPool({
+      tokenA: 'So11111111111111111111111111111111111111112', // SOL
+      tokenB: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+      initialLiquidityA: 1.0,
+      initialLiquidityB: 100.0,
+      feeBps: 30 // 0.3%
+    });
+    
+    // Add liquidity to existing pool
+    const addResult = await pumpSwapService.addLiquidity({
+      poolAddress: poolAddress,
+      tokenAAmount: 0.5,
+      tokenBAmount: 50.0,
+      slippageBps: 100 // 1%
+    });
+    
+    // Execute token swap
+    const swapResult = await pumpSwapService.swapTokens({
+      poolAddress: poolAddress,
+      inputToken: tokenA,
+      outputToken: tokenB,
+      amount: 1.0,
+      slippageBps: 50
+    });
+    
+    // Get swap quote
+    const quote = await pumpSwapService.getSwapQuoteFromBase({
+      poolAddress: poolAddress,
+      baseAmount: 1.0
+    });
+    ```
+    
+    **Key Features:**
+    - Pool creation and management
+    - Liquidity provision and removal
+    - Token swapping with quotes
+    - Real-time pricing data
+    - Slippage protection
+  </AccordionItem>
+</Accordion>
+
+## Quick Start Examples
+
+<CodeGroup>
+```typescript Complete Token Launch
+import { usePumpFun } from '@/modules/pump-fun';
+import { useWallet } from '@/modules/wallet-providers';
+
+function MemeLaunchPlatform() {
+  const { wallet } = useWallet();
+  const { launchToken, submitTokenForVerification } = usePumpFun();
+  const [launching, setLaunching] = useState(false);
+
+  const handleLaunchMeme = async (formData) => {
+    if (!wallet) return;
+    
+    setLaunching(true);
+    try {
+      // Launch the token
+      const result = await launchToken({
+        name: formData.name,
+        symbol: formData.symbol,
+        description: formData.description,
+        image: formData.image,
+        website: formData.website,
+        twitter: formData.twitter,
+        telegram: formData.telegram,
+        initialBuy: formData.initialBuy || 0.1
+      });
+      
+      console.log('🚀 Token launched:', result);
+      
+      // Submit for RugCheck verification
+      await submitTokenForVerification(result.mint);
+      
+      Alert.alert(
+        'Success!', 
+        `${formData.name} launched successfully!\nMint: ${result.mint}`
+      );
+      
+    } catch (error) {
+      Alert.alert('Launch Failed', error.message);
+    } finally {
+      setLaunching(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Launch Your Meme Token</Text>
+      
+      <TokenLaunchForm
+        onSubmit={handleLaunchMeme}
+        loading={launching}
+        disabled={!wallet}
+      />
+      
+      {!wallet && (
+        <ConnectWalletPrompt message="Connect wallet to launch tokens" />
+      )}
+    </View>
+  );
+}
+```
+
+```typescript Trading Interface
+import { PumpfunBuySection, PumpfunSellSection } from '@/modules/pump-fun';
+
+function MemeTokenTrading() {
+  const [activeTab, setActiveTab] = useState('buy');
+  const [selectedToken, setSelectedToken] = useState(null);
+
+  const handleTradeSuccess = (result, type) => {
+    Alert.alert(
+      `${type} Successful!`,
+      `Transaction completed: ${result.signature}`
+    );
+    
+    // Refresh portfolio or price data
+    if (type === 'Buy') {
+      refetchPortfolio();
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'buy' && styles.activeTab]}
+          onPress={() => setActiveTab('buy')}
+        >
+          <Text style={styles.tabText}>Buy</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'sell' && styles.activeTab]}
+          onPress={() => setActiveTab('sell')}
+        >
+          <Text style={styles.tabText}>Sell</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {activeTab === 'buy' ? (
+        <PumpfunBuySection
+          selectedToken={selectedToken}
+          onTokenSelect={setSelectedToken}
+          onTradeComplete={(result) => handleTradeSuccess(result, 'Buy')}
+          showBondingCurve={true}
+        />
+      ) : (
+        <PumpfunSellSection
+          onTradeComplete={(result) => handleTradeSuccess(result, 'Sell')}
+          showPortfolio={true}
+        />
+      )}
+    </View>
+  );
+}
+```
+
+```typescript PumpSwap AMM Usage
+import { PumpSwapScreen } from '@/modules/pump-fun';
+import { useWallet } from '@/modules/wallet-providers';
+
+function AMMPlatform() {
+  const { wallet } = useWallet();
+  const [pools, setPools] = useState([]);
+
+  useEffect(() => {
+    loadUserPools();
+  }, [wallet?.address]);
+
+  const loadUserPools = async () => {
+    if (!wallet) return;
+    
+    try {
+      // Load user's liquidity positions
+      const userPools = await pumpSwapService.getUserLiquidityPositions(
+        wallet.address
+      );
+      setPools(userPools);
+    } catch (error) {
+      console.error('Failed to load pools:', error);
+    }
+  };
+
+  const handleSwapComplete = (result) => {
+    console.log('Swap completed:', result);
+    loadUserPools(); // Refresh positions
+  };
+
+  const handleLiquidityAdded = (result) => {
+    console.log('Liquidity added:', result);
+    loadUserPools(); // Refresh positions
+  };
+
+  const handlePoolCreated = (result) => {
+    console.log('Pool created:', result);
+    loadUserPools(); // Refresh positions
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>PumpSwap AMM</Text>
+      
+      <PumpSwapScreen
+        defaultTab="swap"
+        onSwapComplete={handleSwapComplete}
+        onLiquidityAdded={handleLiquidityAdded}
+        onPoolCreated={handlePoolCreated}
+      />
+      
+      {pools.length > 0 && (
+        <View style={styles.poolsSection}>
+          <Text style={styles.sectionTitle}>Your Liquidity Positions</Text>
+          {pools.map((pool, index) => (
+            <PoolCard key={index} pool={pool} />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## Advanced Features
+
+### Intelligent Token Routing
+
+The module automatically detects whether tokens are on Pump.fun bonding curves or have migrated to Raydium:
+
+```typescript
+function useIntelligentTrading() {
+  const { buyToken } = usePumpFun();
+
+  const smartBuy = async (tokenMint, amount) => {
+    try {
+      // Service automatically checks:
+      // 1. Is token still on Pump.fun bonding curve?
+      // 2. Has it migrated to Raydium?
+      // 3. Routes to appropriate platform
+      
+      const result = await buyToken(tokenMint, amount);
+      
+      console.log(`Purchased via ${result.platform}:`, result);
+      return result;
+    } catch (error) {
+      console.error('Smart buy failed:', error);
+      throw error;
+    }
+  };
+
+  return { smartBuy };
+}
+```
+
+### Bonding Curve Visualization
+
+```typescript
+function BondingCurveChart({ tokenMint }) {
+  const [curveData, setCurveData] = useState(null);
+
+  useEffect(() => {
+    loadBondingCurveData();
+  }, [tokenMint]);
+
+  const loadBondingCurveData = async () => {
+    try {
+      const data = await pumpfunService.getBondingCurveData(tokenMint);
+      setCurveData(data);
+    } catch (error) {
+      console.error('Failed to load bonding curve:', error);
+    }
+  };
+
+  return (
+    <View style={styles.chartContainer}>
+      <Text style={styles.chartTitle}>Bonding Curve Progress</Text>
+      
+      {curveData && (
+        <View>
+          <ProgressBar 
+            progress={curveData.progress} 
+            style={styles.progressBar}
+          />
+          <Text style={styles.progressText}>
+            {(curveData.progress * 100).toFixed(1)}% to Raydium migration
+          </Text>
+          <Text style={styles.priceText}>
+            Current Price: {curveData.currentPrice} SOL
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+```
+
+### Social Integration & Verification
+
+```typescript
+function useSocialTokenLaunch() {
+  const { launchToken, submitTokenForVerification } = usePumpFun();
+  const { createPost } = useThread();
+
+  const launchAndAnnounce = async (tokenData) => {
+    try {
+      // Launch the token
+      const result = await launchToken(tokenData);
+      
+      // Submit for verification
+      await submitTokenForVerification(result.mint);
+      
+      // Create social post
+      await createPost({
+        content: `🚀 Just launched ${tokenData.name} ($${tokenData.symbol})!\n\n${tokenData.description}`,
+        type: 'token_launch',
+        attachments: [
+          {
+            type: 'token',
+            mint: result.mint,
+            name: tokenData.name,
+            symbol: tokenData.symbol,
+            image: tokenData.image
+          }
+        ]
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Launch and announce failed:', error);
+      throw error;
+    }
+  };
+
+  return { launchAndAnnounce };
+}
+```
+
+## Utility Functions
+
+<Accordion>
+  <AccordionItem title="Pump.fun Utilities">
+    **`pumpfunUtils.ts`** - Pump.fun specific helpers
+    
+    ```typescript
+    import { 
+      checkIfTokenIsOnRaydium,
+      buildPumpFunBuyTransaction,
+      getSwapQuote 
+    } from '@/modules/pump-fun/utils';
+    
+    // Check if token has migrated to Raydium
+    const isOnRaydium = await checkIfTokenIsOnRaydium(tokenMint);
+    
+    // Build Pump.fun transaction
+    const transaction = await buildPumpFunBuyTransaction({
+      mint: tokenMint,
+      amount: amountSol,
+      slippage: 0.5
+    });
+    
+    // Get swap quote
+    const quote = await getSwapQuote(inputToken, outputToken, amount);
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="PumpSwap Utilities">
+    **`pumpSwapUtils.ts`** - AMM calculations and formatting
+    
+    ```typescript
+    import { 
+      calculateSlippage,
+      formatTokenAmount,
+      calculateFees 
+    } from '@/modules/pump-fun/utils';
+    
+    // Calculate slippage impact
+    const slippageImpact = calculateSlippage(inputAmount, outputAmount, marketPrice);
+    
+    // Format token amounts for display
+    const formatted = formatTokenAmount(amount, decimals);
+    
+    // Calculate pool fees
+    const fees = calculateFees(amount, feeBps);
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Mobile Wallet Patch">
+    **`anchorMobilePatch.ts`** - React Native wallet compatibility
+    
+    ```typescript
+    import { MobileWallet } from '@/modules/pump-fun/utils';
+    
+    // Use instead of NodeWallet for React Native compatibility
+    const mobileWallet = new MobileWallet(wallet);
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" href="/docs/modules/wallet-providers">
+    Transaction signing and wallet management for token operations
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Real-time token prices and portfolio tracking
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    Social sharing of token launches and trading activity
+  </Card>
+  
+  <Card title="NFT Module" href="/docs/modules/nft">
+    Token-gated NFT access and community rewards
+  </Card>
+</CardGroup>
+
+### Combined Workflow Example
+
+```typescript
+import { useWallet } from '@/modules/wallet-providers';
+import { useFetchTokens } from '@/modules/data-module';
+import { useThread } from '@/core/thread';
+import { usePumpFun } from '@/modules/pump-fun';
+
+function IntegratedMemeplatform() {
+  const { wallet } = useWallet();
+  const { refetch: refetchTokens } = useFetchTokens(wallet?.address);
+  const { createPost } = useThread();
+  const { launchToken, submitTokenForVerification } = usePumpFun();
+
+  const handleMemeLaunch = async (tokenData) => {
+    try {
+      // Launch token
+      const result = await launchToken(tokenData);
+      
+      // Refresh user's portfolio
+      await refetchTokens();
+      
+      // Submit for verification
+      await submitTokenForVerification(result.mint);
+      
+      // Create announcement post
+      await createPost({
+        content: `🚀 Just launched my meme token ${tokenData.name}! Who's ready to pump it? 📈`,
+        type: 'token_launch',
+        sections: [
+          {
+            type: 'trade',
+            data: {
+              tokenAddress: result.mint,
+              action: 'buy',
+              platform: 'pump.fun'
+            }
+          }
+        ]
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Integrated launch failed:', error);
+      throw error;
+    }
+  };
+
+  return <MemeLaunchInterface onLaunch={handleMemeLaunch} />;
+}
+```
+
+## Error Handling & Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **Backend Connection Failures**
+    - Verify `SERVER_URL` is correctly configured
+    - Ensure backend service is running
+    - Check network connectivity
+    
+    **Transaction Failures**
+    - Insufficient SOL for transaction fees
+    - Slippage tolerance too low
+    - Network congestion
+    - Wallet connection issues
+    
+    **Token Launch Issues**
+    - Image upload failures
+    - Metadata formatting errors
+    - Invalid social media links
+    - Commission wallet configuration
+    
+    **AMM Operation Failures**
+    - Pool doesn't exist
+    - Insufficient liquidity
+    - Price impact too high
+    - Invalid token addresses
+    
+  </Accordion>
+</AccordionGroup>
+
+```typescript
+function RobustPumpfunOperations() {
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  const safeOperation = async (operation, params) => {
+    try {
+      return await operation(params);
+    } catch (error) {
+      console.error('Operation failed:', error);
+      
+      if (retryCount < maxRetries && error.message.includes('network')) {
+        setRetryCount(prev => prev + 1);
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        return safeOperation(operation, params);
+      }
+      
+      throw error;
+    }
+  };
+
+  return { safeOperation };
+}
+```
+
+## Performance Considerations
+
+<Tip>
+  **Backend Optimization**: Use backend services for heavy SDK operations to improve mobile app performance and reduce bundle size.
+</Tip>
+
+<Warning>
+  **Rate Limits**: Be mindful of API rate limits when making frequent price updates or metadata requests.
+</Warning>
+
+## API Reference
+
+For detailed API documentation, see:
+- [Pump.fun Components Reference](/docs/references/modules/pump-fun/components)
+- [Services Reference](/docs/references/modules/pump-fun/services)
+- [Hooks Reference](/docs/references/modules/pump-fun/hooks)
+- [Types Reference](/docs/references/modules/pump-fun/types)
+
+---
+
+The Pump.fun module provides everything needed to build a complete meme token ecosystem, from viral token launches to sophisticated AMM trading, all with built-in social features and community verification.

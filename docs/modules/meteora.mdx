@@ -1,0 +1,731 @@
+---
+title: "Meteora Module"
+description: "Dynamic Liquidity Markets (DLMM) integration with token creation, swapping, and liquidity management"
+icon: "meteor"
+---
+
+# Meteora Module
+
+The Meteora module integrates Meteora's Dynamic Liquidity Markets (DLMM) and advanced token creation functionalities. It provides sophisticated tools for token swapping, liquidity management, and creating tokens with customizable bonding curves.
+
+<Card>
+  <CardHeader>
+    <CardTitle>⚡ Dynamic Liquidity Markets</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Meteora's DLMM technology provides efficient price discovery and capital utilization through dynamic bonding curves and concentrated liquidity
+  </CardContent>
+</Card>
+
+## Core Functionalities
+
+<CardGroup cols={2}>
+  <Card title="Token Swapping" icon="arrow-right-arrow-left">
+    Execute efficient swaps using Meteora's advanced liquidity pools with optimal price discovery
+  </Card>
+  
+  <Card title="Liquidity Management" icon="droplet">
+    Add, view, and manage liquidity positions in Meteora pools with real-time analytics
+  </Card>
+  
+  <Card title="Token Creation" icon="plus-circle">
+    Create SPL or Token-2022 tokens with dynamic bonding curves and customizable parameters
+  </Card>
+  
+  <Card title="Bonding Curve Visualization" icon="chart-line">
+    Real-time visualization of token price curves based on creation parameters
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="Backend Service">
+    Ensure your backend server is running and accessible:
+    ```bash
+    SERVER_URL=http://localhost:8080/api
+    ```
+  </Step>
+  
+  <Step title="Environment Configuration">
+    Configure Meteora-specific settings in `.env.local`:
+    ```bash
+    SERVER_URL=your_meteora_backend_url
+    METEORA_PROGRAM_ID=your_program_id
+    ```
+  </Step>
+  
+  <Step title="Import Module">
+    Import components and services:
+    ```typescript
+    import { 
+      MeteoraScreen, 
+      TokenCreationForm,
+      meteoraService 
+    } from '@/modules/meteora';
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  **Backend Dependency**: This module requires a backend service that implements the Meteora SDK for blockchain interactions.
+</Warning>
+
+## Module Architecture
+
+```
+src/modules/meteora/
+├── components/             # UI components for Meteora features
+├── screens/               # Top-level screen components  
+├── services/              # Backend API integration
+├── types/                 # TypeScript definitions
+└── index.ts              # Public API exports
+```
+
+## Core Components
+
+<Tabs>
+  <Tab title="Token Creation">
+    **`TokenCreationForm`** - Multi-step token creation wizard
+    
+    ```typescript
+    import { TokenCreationForm } from '@/modules/meteora';
+    
+    function CreateTokenScreen() {
+      const handleTokenCreated = (tokenData) => {
+        console.log('Token created:', tokenData);
+        // Handle success (navigation, notifications, etc.)
+      };
+      
+      return (
+        <TokenCreationForm
+          onTokenCreated={handleTokenCreated}
+          onCancel={() => navigation.goBack()}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Basic token information (name, symbol, description, image)
+    - Bonding curve parameters configuration
+    - Optional immediate token purchase
+    - Advanced fee settings
+    - Metadata upload to IPFS
+  </Tab>
+  
+  <Tab title="Swapping">
+    **`SwapForm`** - Token swapping interface
+    
+    ```typescript
+    import { SwapForm } from '@/modules/meteora';
+    
+    function MeteoraBased() {
+      const handleSwapComplete = (result) => {
+        console.log('Swap completed:', result);
+      };
+      
+      return (
+        <SwapForm
+          onSwapComplete={handleSwapComplete}
+          availablePools={pools}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Token selection with search
+    - Real-time quote updates
+    - Slippage configuration
+    - Transaction execution
+  </Tab>
+  
+  <Tab title="Liquidity">
+    **`LiquidityPanel`** - Liquidity position management
+    
+    ```typescript
+    import { LiquidityPanel } from '@/modules/meteora';
+    
+    function LiquidityManagement() {
+      const handleLiquidityAdded = (position) => {
+        console.log('Liquidity added:', position);
+      };
+      
+      return (
+        <LiquidityPanel
+          walletAddress={wallet.address}
+          onLiquidityAdded={handleLiquidityAdded}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - View current positions
+    - Add new liquidity
+    - Position analytics
+    - Pool discovery
+  </Tab>
+  
+  <Tab title="Visualization">
+    **`BondingCurveVisualizer`** - Dynamic price curve charts
+    
+    ```typescript
+    import { BondingCurveVisualizer } from '@/modules/meteora';
+    
+    function CurvePreview({ tokenParams }) {
+      return (
+        <BondingCurveVisualizer
+          initialMarketCap={tokenParams.initialMarketCap}
+          migrationMarketCap={tokenParams.migrationMarketCap}
+          totalSupply={tokenParams.totalSupply}
+          style={styles.curveChart}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Real-time curve updates
+    - Interactive price points
+    - Market cap visualization
+    - Supply distribution
+  </Tab>
+</Tabs>
+
+## Meteora Services
+
+The `meteoraService.ts` provides a complete API client for Meteora backend operations:
+
+<Accordion>
+  <AccordionItem title="Token Creation & Configuration">
+    
+    ```typescript
+    import { meteoraService } from '@/modules/meteora';
+    
+    // Create token configuration
+    const config = await meteoraService.createConfig(
+      configParams, 
+      connection, 
+      wallet, 
+      onStatusUpdate
+    );
+    
+    // Build bonding curve by market cap
+    const curve = await meteoraService.buildCurveByMarketCap(
+      curveParams, 
+      connection, 
+      wallet, 
+      onStatusUpdate
+    );
+    
+    // Complete token creation with curve
+    const token = await meteoraService.createTokenWithCurve(
+      tokenParams, 
+      connection, 
+      wallet, 
+      onStatusUpdate
+    );
+    ```
+    
+    **Available Functions:**
+    - `createConfig()` - Create DBC configuration
+    - `buildCurveByMarketCap()` - Build bonding curve
+    - `createPool()` - Create liquidity pool
+    - `uploadTokenMetadata()` - Upload to IPFS
+    - `createTokenWithCurve()` - Complete token launch
+    - `createPoolAndBuy()` - Create pool + initial purchase
+    
+  </AccordionItem>
+  
+  <AccordionItem title="Swapping & Trading">
+    
+    ```typescript
+    // Get swap quote
+    const quote = await meteoraService.fetchSwapQuote(
+      inputToken,
+      outputToken,
+      amount,
+      slippage,
+      poolAddress
+    );
+    
+    // Execute trade
+    const result = await meteoraService.executeTrade(
+      tradeParams,
+      poolAddress,
+      wallet,
+      onStatusUpdate
+    );
+    ```
+    
+    **Available Functions:**
+    - `fetchSwapQuote()` - Get trading quotes
+    - `executeTrade()` - Execute swaps
+    - `fetchMeteoraPools()` - Get available pools
+    
+  </AccordionItem>
+  
+  <AccordionItem title="Liquidity Management">
+    
+    ```typescript
+    // Fetch user positions
+    const positions = await meteoraService.fetchUserLiquidityPositions(
+      walletAddress
+    );
+    
+    // Add liquidity
+    const result = await meteoraService.addLiquidity(
+      poolAddress,
+      tokenAAmount,
+      tokenBAmount,
+      slippage,
+      connection,
+      wallet,
+      onStatusUpdate
+    );
+    
+    // Remove liquidity
+    const removal = await meteoraService.removeLiquidity(
+      positionId,
+      percentage,
+      connection,
+      wallet,
+      onStatusUpdate
+    );
+    ```
+    
+    **Available Functions:**
+    - `fetchUserLiquidityPositions()` - Get user positions
+    - `addLiquidity()` - Add to pools
+    - `removeLiquidity()` - Remove from pools
+    
+  </AccordionItem>
+</Accordion>
+
+## Quick Start Example
+
+<CodeGroup>
+```typescript Complete Token Creation
+import { meteoraService } from '@/modules/meteora';
+import { useWallet, useConnection } from '@/modules/wallet-providers';
+
+function CreateMeteoraBased() {
+  const { wallet } = useWallet();
+  const { connection } = useConnection();
+  const [creating, setCreating] = useState(false);
+
+  const handleCreateToken = async () => {
+    setCreating(true);
+    
+    try {
+      // Step 1: Upload metadata
+      const metadata = await meteoraService.uploadTokenMetadata({
+        name: 'My Token',
+        symbol: 'MTK',
+        description: 'A token created with Meteora',
+        image: imageFile
+      });
+      
+      // Step 2: Create token with bonding curve
+      const result = await meteoraService.createTokenWithCurve(
+        {
+          tokenName: 'My Token',
+          tokenSymbol: 'MTK',
+          tokenDecimals: 9,
+          totalSupply: 1000000,
+          initialMarketCap: 10000,
+          migrationMarketCap: 100000,
+          metadataUri: metadata.uri
+        },
+        connection,
+        wallet,
+        (status) => console.log('Status:', status)
+      );
+      
+      console.log('Token created successfully:', result);
+    } catch (error) {
+      console.error('Token creation failed:', error);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <View>
+      <Button 
+        title={creating ? "Creating..." : "Create Token"}
+        onPress={handleCreateToken}
+        disabled={creating}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Token Swapping
+import { SwapForm } from '@/modules/meteora';
+
+function MeteoraTradingInterface() {
+  const [selectedPool, setSelectedPool] = useState(null);
+  const [pools, setPools] = useState([]);
+
+  useEffect(() => {
+    loadPools();
+  }, []);
+
+  const loadPools = async () => {
+    try {
+      const availablePools = await meteoraService.fetchMeteoraPools();
+      setPools(availablePools);
+    } catch (error) {
+      console.error('Failed to load pools:', error);
+    }
+  };
+
+  const handleSwapComplete = (result) => {
+    console.log('Swap completed:', result);
+    // Update UI, show success message, etc.
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Meteora Swap</Text>
+      
+      <SwapForm
+        availablePools={pools}
+        selectedPool={selectedPool}
+        onPoolSelect={setSelectedPool}
+        onSwapComplete={handleSwapComplete}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Liquidity Management
+import { LiquidityPanel } from '@/modules/meteora';
+import { useWallet } from '@/modules/wallet-providers';
+
+function LiquidityDashboard() {
+  const { wallet } = useWallet();
+  const [positions, setPositions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (wallet?.address) {
+      loadLiquidityPositions();
+    }
+  }, [wallet?.address]);
+
+  const loadLiquidityPositions = async () => {
+    try {
+      const userPositions = await meteoraService.fetchUserLiquidityPositions(
+        wallet.address
+      );
+      setPositions(userPositions);
+    } catch (error) {
+      console.error('Failed to load positions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLiquidityAdded = (newPosition) => {
+    setPositions(prev => [...prev, newPosition]);
+  };
+
+  return (
+    <View>
+      <Text style={styles.title}>Your Liquidity Positions</Text>
+      
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <LiquidityPanel
+          walletAddress={wallet?.address}
+          positions={positions}
+          onLiquidityAdded={handleLiquidityAdded}
+          onRefresh={loadLiquidityPositions}
+        />
+      )}
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## TypeScript Definitions
+
+The module provides comprehensive type definitions for all Meteora operations:
+
+```typescript
+// Core types
+interface MeteoraTrade {
+  inputToken: string;
+  outputToken: string;
+  amount: number;
+  slippage: number;
+  poolAddress?: string;
+}
+
+interface LiquidityPosition {
+  id: string;
+  poolAddress: string;
+  tokenA: string;
+  tokenB: string;
+  amountA: number;
+  amountB: number;
+  share: number;
+}
+
+interface CreateConfigParams {
+  tokenName: string;
+  tokenSymbol: string;
+  tokenDecimals: number;
+  totalSupply: number;
+  initialMarketCap: number;
+  migrationMarketCap: number;
+  metadataUri?: string;
+}
+
+// Enums
+enum TokenType {
+  SPL = 'spl',
+  TOKEN_2022 = 'token2022'
+}
+
+enum FeeSchedulerMode {
+  FIXED = 'fixed',
+  DYNAMIC = 'dynamic'
+}
+```
+
+## Advanced Features
+
+### Custom Bonding Curves
+
+<Tabs>
+  <Tab title="Market Cap Based">
+    Create bonding curves based on target market capitalizations:
+    
+    ```typescript
+    const curveParams = {
+      initialMarketCap: 50000,    // Starting market cap
+      migrationMarketCap: 500000, // Target for migration
+      totalSupply: 1000000,       // Total token supply
+      curveSteepness: 2.5,       // Curve aggressiveness
+    };
+    
+    const curve = await meteoraService.buildCurveByMarketCap(
+      curveParams,
+      connection,
+      wallet,
+      statusCallback
+    );
+    ```
+  </Tab>
+  
+  <Tab title="Custom Parameters">
+    Fine-tune bonding curve behavior:
+    
+    ```typescript
+    const advancedParams = {
+      activationType: ActivationType.TIMESTAMP,
+      migrationOption: MigrationOption.BURN_LP,
+      feeSchedulerMode: FeeSchedulerMode.DYNAMIC,
+      collectFeeMode: CollectFeeMode.PROTOCOL_FEE,
+      lpDistribution: {
+        creator: 0.7,    // 70% to creator
+        protocol: 0.2,   // 20% to protocol
+        community: 0.1   // 10% to community
+      }
+    };
+    ```
+  </Tab>
+</Tabs>
+
+### Real-time Monitoring
+
+```typescript
+function useMeteoraBased(tokenAddress) {
+  const [priceData, setPriceData] = useState(null);
+  const [liquidityData, setLiquidityData] = useState(null);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        // Fetch real-time price data
+        const price = await meteoraService.fetchTokenPrice(tokenAddress);
+        setPriceData(price);
+        
+        // Fetch liquidity data
+        const liquidity = await meteoraService.fetchPoolLiquidity(tokenAddress);
+        setLiquidityData(liquidity);
+      } catch (error) {
+        console.error('Failed to fetch real-time data:', error);
+      }
+    }, 10000); // Update every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [tokenAddress]);
+
+  return { priceData, liquidityData };
+}
+```
+
+## Integration Patterns
+
+### With Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Integration" href="/docs/modules/wallet-providers">
+    Seamless transaction signing and wallet management
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Real-time price feeds and market data
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    Social trading and token launch announcements
+  </Card>
+  
+  <Card title="NFT Module" href="/docs/modules/nft">
+    Token-gated NFT access and rewards
+  </Card>
+</CardGroup>
+
+### Combined Usage Example
+
+```typescript
+import { useWallet } from '@/modules/wallet-providers';
+import { useFetchTokens } from '@/modules/data-module';
+import { useThread } from '@/core/thread';
+import { meteoraService } from '@/modules/meteora';
+
+function IntegratedTokenLaunch() {
+  const { wallet } = useWallet();
+  const { refetch: refetchTokens } = useFetchTokens(wallet?.address);
+  const { createPost } = useThread();
+
+  const handleTokenLaunch = async (tokenData) => {
+    try {
+      // Create token with Meteora
+      const result = await meteoraService.createTokenWithCurve(
+        tokenData,
+        connection,
+        wallet,
+        statusUpdate
+      );
+
+      // Refresh user's token list
+      await refetchTokens();
+
+      // Create social post about the launch
+      await createPost({
+        content: `🚀 Just launched ${tokenData.tokenName} with Meteora DLMM!`,
+        type: 'token_launch',
+        attachments: [result.tokenAddress]
+      });
+
+      console.log('Token launched and announced:', result);
+    } catch (error) {
+      console.error('Token launch failed:', error);
+    }
+  };
+
+  return <TokenCreationForm onTokenCreated={handleTokenLaunch} />;
+}
+```
+
+## Error Handling & Status Updates
+
+```typescript
+function MeteoraBased() {
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState(null);
+
+  const handleStatusUpdate = (update) => {
+    setStatus(update.message);
+    
+    if (update.error) {
+      setError(update.error);
+    }
+    
+    if (update.completed) {
+      setStatus('Transaction completed successfully!');
+      setTimeout(() => setStatus(''), 3000);
+    }
+  };
+
+  const createToken = async () => {
+    setError(null);
+    
+    try {
+      await meteoraService.createTokenWithCurve(
+        tokenParams,
+        connection,
+        wallet,
+        handleStatusUpdate
+      );
+    } catch (error) {
+      setError(error.message);
+      console.error('Meteora operation failed:', error);
+    }
+  };
+
+  return (
+    <View>
+      {status && <Text style={styles.status}>{status}</Text>}
+      {error && <Text style={styles.error}>{error}</Text>}
+      <Button title="Create Token" onPress={createToken} />
+    </View>
+  );
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **Backend Connection Issues**
+    - Verify `SERVER_URL` is correctly configured
+    - Ensure backend service is running and accessible
+    - Check network connectivity and firewall settings
+    
+    **Transaction Failures**
+    - Insufficient SOL for transaction fees
+    - Wallet connection issues
+    - Network congestion or RPC rate limits
+    
+    **Bonding Curve Configuration**
+    - Invalid market cap ratios (migration must be > initial)
+    - Supply parameters don't match curve expectations
+    - Fee configurations exceed maximum allowed values
+    
+  </Accordion>
+</AccordionGroup>
+
+## Performance Considerations
+
+<Tip>
+  **Batch Operations**: When possible, batch multiple operations to reduce transaction costs and improve user experience.
+</Tip>
+
+<Warning>
+  **Gas Optimization**: Meteora operations can be gas-intensive. Always provide clear fee estimates to users.
+</Warning>
+
+## API Reference
+
+For detailed API documentation, see:
+- [Meteora Service Reference](/docs/references/modules/meteora/services)
+- [Components Reference](/docs/references/modules/meteora/components)
+- [Types Reference](/docs/references/modules/meteora/types)
+
+---
+
+The Meteora module provides advanced DeFi capabilities with professional-grade bonding curves and liquidity management, perfect for sophisticated token economics and trading strategies.

@@ -1,0 +1,935 @@
+---
+title: "Swap Module"
+description: "Unified token swapping interface with multi-DEX integration for optimal trading on Solana"
+icon: "arrow-right-arrow-left"
+---
+
+# Swap Module
+
+The Swap Module provides a comprehensive token swapping solution that integrates multiple DEX providers into a unified interface for the Solana blockchain. It automatically finds the best routes and prices across different protocols to maximize trading efficiency.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🔄 Unified Multi-DEX Trading</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Seamlessly swap tokens across Jupiter, Raydium, and PumpSwap with intelligent routing, optimal pricing, and best-in-class user experience
+  </CardContent>
+</Card>
+
+## Core Features
+
+<CardGroup cols={2}>
+  <Card title="Multi-Provider Support" icon="network-wired">
+    Integrated support for Jupiter aggregation, Raydium pools, and PumpSwap custom routing
+  </Card>
+  
+  <Card title="Intelligent Routing" icon="route">
+    Automatic route optimization to find the best prices and lowest fees across all DEXs
+  </Card>
+  
+  <Card title="Real-time Pricing" icon="chart-line">
+    Live price updates, slippage calculations, and fee estimates for informed trading decisions
+  </Card>
+  
+  <Card title="Advanced Controls" icon="sliders">
+    Customizable slippage, provider selection, and transaction parameters for power users
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="Import Module">
+    Import the swap components and hooks:
+    ```typescript
+    import { 
+      SwapScreen,
+      useSwapLogic,
+      TradeService,
+      SelectTokenModal 
+    } from '@/modules/swap';
+    ```
+  </Step>
+  
+  <Step title="Wallet Integration">
+    Ensure wallet providers are configured:
+    ```typescript
+    import { useWallet } from '@/modules/wallet-providers';
+    ```
+  </Step>
+  
+  <Step title="DEX Configuration">
+    Configure DEX provider settings (optional):
+    ```typescript
+    const swapConfig = {
+      defaultProvider: 'jupiter',
+      slippageTolerance: 0.5,
+      enableCustomPools: true
+    };
+    ```
+  </Step>
+</Steps>
+
+## Module Architecture
+
+The swap module is built with a modular, provider-agnostic architecture:
+
+```
+src/modules/swap/
+├── components/             # UI components
+│   ├── SwapScreen.tsx     # Main swap interface
+│   ├── SelectTokenModal.tsx
+│   ├── SwapComponents/    # Specialized components
+│   │   ├── Shimmer.tsx
+│   │   ├── ProviderSelector.tsx
+│   │   ├── PumpSwapControls.tsx
+│   │   ├── SwapInfo.tsx
+│   │   ├── StatusDisplay.tsx
+│   │   └── Keypad.tsx
+├── hooks/                 # Custom React hooks
+│   └── useSwapLogic.ts
+├── services/              # DEX integrations
+│   ├── TradeService.ts
+│   └── JupiterService.ts
+└── index.ts              # Public API exports
+```
+
+## DEX Providers
+
+<Tabs>
+  <Tab title="Jupiter">
+    **Primary DEX Aggregator** - Best price discovery across all Solana DEXs
+    
+    ```typescript
+    import { JupiterService } from '@/modules/swap';
+    
+    // Get optimal swap quote
+    const quote = await JupiterService.getQuote({
+      inputMint: 'So11111111111111111111111111111111111111112', // SOL
+      outputMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+      amount: 1000000000, // 1 SOL in lamports
+      slippageBps: 50 // 0.5% slippage
+    });
+    
+    // Execute swap with Jupiter
+    const result = await JupiterService.executeSwap({
+      quote,
+      userPublicKey: wallet.publicKey,
+      sendTransaction
+    });
+    ```
+    
+    **Features:**
+    - Route optimization across 20+ DEXs
+    - Price impact calculation
+    - Multi-hop swaps
+    - Minimal slippage
+    - Best execution prices
+  </Tab>
+  
+  <Tab title="Raydium">
+    **Direct Pool Access** - Concentrated liquidity and direct pool swaps
+    
+    ```typescript
+    // Raydium integration through Jupiter or direct calls
+    const raydiumSwap = await TradeService.executeSwap(
+      inputToken,
+      outputToken,
+      amount,
+      userPublicKey,
+      sendTransaction,
+      { provider: 'raydium' }
+    );
+    ```
+    
+    **Features:**
+    - Concentrated liquidity pools
+    - Direct pool swaps
+    - Fee sharing options
+    - Advanced pool analytics
+    - Custom liquidity provision
+  </Tab>
+  
+  <Tab title="PumpSwap">
+    **Custom Pool Support** - Direct pool address specification with custom slippage
+    
+    ```typescript
+    // PumpSwap with custom pool
+    const pumpSwapResult = await TradeService.executeSwap(
+      inputToken,
+      outputToken,
+      amount,
+      userPublicKey,
+      sendTransaction,
+      { 
+        provider: 'pumpswap',
+        poolAddress: 'custom_pool_address',
+        slippageBps: 300 // 3% slippage
+      }
+    );
+    ```
+    
+    **Features:**
+    - Custom pool address input
+    - Configurable slippage (1-30%)
+    - High impact warnings
+    - Direct pool interaction
+    - Specialized token support
+  </Tab>
+</Tabs>
+
+## Core Components
+
+<Tabs>
+  <Tab title="Swap Screen">
+    **`SwapScreen`** - Complete swap interface with all features
+    
+    ```typescript
+    import { SwapScreen } from '@/modules/swap';
+    
+    function TradingInterface() {
+      return (
+        <SwapScreen
+          defaultInputToken="SOL"
+          defaultOutputToken="USDC"
+          theme="dark"
+          showProviderSelector={true}
+          enableCustomSlippage={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Token selection with search
+    - Real-time price updates
+    - Provider selection interface
+    - Slippage controls
+    - Transaction status tracking
+    - Error handling and recovery
+  </Tab>
+  
+  <Tab title="Token Selection">
+    **`SelectTokenModal`** - Advanced token selection interface
+    
+    ```typescript
+    import { SelectTokenModal } from '@/modules/swap';
+    
+    function CustomTokenSelector() {
+      const [showModal, setShowModal] = useState(false);
+      
+      return (
+        <View>
+          <Button title="Select Token" onPress={() => setShowModal(true)} />
+          
+          <SelectTokenModal
+            visible={showModal}
+            onClose={() => setShowModal(false)}
+            onTokenSelect={(token) => {
+              setSelectedToken(token);
+              setShowModal(false);
+            }}
+            showPopularTokens={true}
+            enableSearch={true}
+            showBalances={true}
+          />
+        </View>
+      );
+    }
+    ```
+    
+    **Features:**
+    - Search functionality with metadata
+    - Popular tokens list
+    - Real-time balance display
+    - Price information
+    - Custom token import
+    - Favorite tokens management
+  </Tab>
+  
+  <Tab title="Specialized Components">
+    **Granular UI Components** - Building blocks for custom interfaces
+    
+    ```typescript
+    import { 
+      ProviderSelector,
+      SwapInfo,
+      StatusDisplay,
+      Keypad 
+    } from '@/modules/swap/components/SwapComponents';
+    
+    function CustomSwapInterface() {
+      return (
+        <View>
+          <ProviderSelector
+            selectedProvider="jupiter"
+            onProviderChange={setProvider}
+            providers={['jupiter', 'raydium', 'pumpswap']}
+          />
+          
+          <SwapInfo
+            inputAmount={amount}
+            outputAmount={expectedOutput}
+            exchangeRate={rate}
+            priceImpact={impact}
+            fees={fees}
+          />
+          
+          <StatusDisplay
+            status={transactionStatus}
+            message={statusMessage}
+            progress={progress}
+          />
+          
+          <Keypad
+            value={inputAmount}
+            onValueChange={setInputAmount}
+            maxDecimals={9}
+          />
+        </View>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Core Hook: useSwapLogic
+
+The primary hook for swap functionality:
+
+```typescript
+import { useSwapLogic } from '@/modules/swap';
+import { useWallet } from '@/modules/wallet-providers';
+
+function CustomSwapImplementation() {
+  const { publicKey, connected, sendTransaction } = useWallet();
+  const routeParams = useRoute().params || {};
+  
+  const {
+    // Token state
+    inputToken,
+    outputToken,
+    setInputToken,
+    setOutputToken,
+    
+    // Amount and pricing
+    inputAmount,
+    setInputAmount,
+    outputAmount,
+    exchangeRate,
+    priceImpact,
+    
+    // Transaction state
+    isLoading,
+    transactionStatus,
+    error,
+    
+    // Actions
+    handleSwap,
+    handleTokenSwitch,
+    refreshPrices,
+    
+    // Provider state
+    selectedProvider,
+    setSelectedProvider,
+    availableProviders,
+    
+    // Advanced options
+    slippage,
+    setSlippage,
+    customPoolAddress,
+    setCustomPoolAddress
+  } = useSwapLogic(routeParams, publicKey, connected, sendTransaction);
+
+  return (
+    <View style={styles.container}>
+      <TokenPairSelector 
+        inputToken={inputToken}
+        outputToken={outputToken}
+        onInputTokenChange={setInputToken}
+        onOutputTokenChange={setOutputToken}
+        onSwitch={handleTokenSwitch}
+      />
+      
+      <AmountInput
+        value={inputAmount}
+        onChange={setInputAmount}
+        token={inputToken}
+      />
+      
+      <SwapDetails
+        outputAmount={outputAmount}
+        exchangeRate={exchangeRate}
+        priceImpact={priceImpact}
+        provider={selectedProvider}
+      />
+      
+      <SwapButton
+        onPress={handleSwap}
+        loading={isLoading}
+        disabled={!connected || !inputAmount}
+      />
+    </View>
+  );
+}
+```
+
+## TradeService Integration
+
+Provider-agnostic service for executing swaps:
+
+<Accordion>
+  <AccordionItem title="Basic Swap Execution">
+    
+    ```typescript
+    import { TradeService } from '@/modules/swap';
+    
+    // Simple swap execution
+    const swapResult = await TradeService.executeSwap(
+      inputToken,        // Token mint address or symbol
+      outputToken,       // Token mint address or symbol
+      amount,           // Amount in token's base units
+      walletPublicKey,  // User's wallet public key
+      sendTransaction   // Wallet's send transaction function
+    );
+    
+    console.log('Swap completed:', swapResult);
+    // {
+    //   signature: 'transaction_signature',
+    //   inputAmount: 1000000000,
+    //   outputAmount: 995000000,
+    //   provider: 'jupiter',
+    //   priceImpact: 0.12,
+    //   fees: { total: 5000, breakdown: {...} }
+    // }
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Advanced Swap Options">
+    
+    ```typescript
+    // Advanced swap with custom options
+    const advancedSwap = await TradeService.executeSwap(
+      inputToken,
+      outputToken,
+      amount,
+      walletPublicKey,
+      sendTransaction,
+      {
+        // Provider selection
+        provider: 'jupiter', // 'jupiter', 'raydium', 'pumpswap'
+        
+        // Slippage control
+        slippageBps: 100, // 1% slippage
+        
+        // PumpSwap specific
+        poolAddress: 'custom_pool_address',
+        
+        // Fee configuration
+        priorityFee: 0.001,
+        
+        // Status callbacks
+        onStatusUpdate: (status) => {
+          console.log('Swap status:', status);
+        },
+        
+        // Error handling
+        onError: (error) => {
+          console.error('Swap error:', error);
+        }
+      }
+    );
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="Fee Calculation">
+    
+    ```typescript
+    // Calculate fees before execution
+    const feeEstimate = await TradeService.calculateFees(
+      inputToken,
+      outputToken,
+      amount,
+      selectedProvider
+    );
+    
+    console.log('Fee breakdown:', feeEstimate);
+    // {
+    //   platformFee: 1000000,
+    //   networkFee: 5000,
+    //   providerFee: 2000,
+    //   total: 1007000,
+    //   totalInSOL: 0.001007
+    // }
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Quick Start Examples
+
+<CodeGroup>
+```typescript Basic Swap Interface
+import { SwapScreen } from '@/modules/swap';
+import { useWallet } from '@/modules/wallet-providers';
+
+function BasicTradingApp() {
+  const { connected } = useWallet();
+
+  if (!connected) {
+    return (
+      <View style={styles.connectPrompt}>
+        <Text style={styles.title}>Connect Wallet to Trade</Text>
+        <ConnectWalletButton />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Token Swap</Text>
+      <SwapScreen
+        defaultInputToken="SOL"
+        defaultOutputToken="USDC"
+        showProviderSelector={true}
+        enableCustomSlippage={true}
+        theme="dark"
+      />
+    </View>
+  );
+}
+```
+
+```typescript Custom Swap Implementation
+import { useSwapLogic } from '@/modules/swap';
+import { useWallet } from '@/modules/wallet-providers';
+
+function CustomSwapInterface() {
+  const { publicKey, connected, sendTransaction } = useWallet();
+  const {
+    inputToken,
+    outputToken,
+    inputAmount,
+    outputAmount,
+    handleSwap,
+    isLoading,
+    error,
+    setInputToken,
+    setOutputToken,
+    setInputAmount
+  } = useSwapLogic({}, publicKey, connected, sendTransaction);
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.tokenPair}>
+        <TokenSelector
+          selectedToken={inputToken}
+          onTokenSelect={setInputToken}
+          label="From"
+        />
+        
+        <TouchableOpacity 
+          style={styles.switchButton}
+          onPress={handleTokenSwitch}
+        >
+          <Text>⇅</Text>
+        </TouchableOpacity>
+        
+        <TokenSelector
+          selectedToken={outputToken}
+          onTokenSelect={setOutputToken}
+          label="To"
+        />
+      </View>
+
+      <View style={styles.amountSection}>
+        <TextInput
+          style={styles.amountInput}
+          value={inputAmount}
+          onChangeText={setInputAmount}
+          placeholder="0.00"
+          keyboardType="numeric"
+        />
+        <Text style={styles.outputAmount}>
+          ≈ {outputAmount} {outputToken?.symbol}
+        </Text>
+      </View>
+
+      <Button
+        title={isLoading ? "Swapping..." : "Swap"}
+        onPress={handleSwap}
+        disabled={!connected || isLoading || !inputAmount}
+        style={styles.swapButton}
+      />
+
+      {error && (
+        <Text style={styles.errorText}>{error}</Text>
+      )}
+    </View>
+  );
+}
+```
+
+```typescript Advanced Trading Dashboard
+import { 
+  SwapScreen, 
+  TradeService, 
+  useSwapLogic 
+} from '@/modules/swap';
+import { useFetchTokens } from '@/modules/data-module';
+
+function TradingDashboard() {
+  const { wallet } = useWallet();
+  const { tokens, refetch } = useFetchTokens(wallet?.address);
+  const [tradingHistory, setTradingHistory] = useState([]);
+  const [favorites, setFavorites] = useState(['SOL', 'USDC', 'BONK']);
+
+  const handleSwapComplete = async (result) => {
+    // Add to trading history
+    setTradingHistory(prev => [result, ...prev.slice(0, 9)]);
+    
+    // Refresh portfolio
+    await refetch();
+    
+    // Show success notification
+    Alert.alert(
+      'Swap Successful!', 
+      `Swapped ${result.inputAmount} ${result.inputToken} for ${result.outputAmount} ${result.outputToken}`
+    );
+  };
+
+  const getTopTokenPairs = () => {
+    return [
+      { input: 'SOL', output: 'USDC' },
+      { input: 'SOL', output: 'BONK' },
+      { input: 'USDC', output: 'SOL' },
+      { input: 'BONK', output: 'SOL' }
+    ];
+  };
+
+  return (
+    <ScrollView style={styles.dashboard}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Trading Dashboard</Text>
+        <View style={styles.portfolioValue}>
+          <Text style={styles.valueLabel}>Portfolio Value</Text>
+          <Text style={styles.valueAmount}>
+            ${tokens?.reduce((sum, token) => sum + (token.value || 0), 0).toFixed(2)}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.quickSwaps}>
+        <Text style={styles.sectionTitle}>Quick Swaps</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {getTopTokenPairs().map((pair, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.quickSwapCard}
+              onPress={() => navigateToSwap(pair)}
+            >
+              <Text style={styles.pairText}>
+                {pair.input} → {pair.output}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.mainSwap}>
+        <SwapScreen
+          onSwapComplete={handleSwapComplete}
+          favoriteTokens={favorites}
+          showAdvancedOptions={true}
+        />
+      </View>
+
+      <View style={styles.recentTrades}>
+        <Text style={styles.sectionTitle}>Recent Trades</Text>
+        {tradingHistory.map((trade, index) => (
+          <TradeHistoryItem key={index} trade={trade} />
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+```
+</CodeGroup>
+
+## Advanced Features
+
+### Real-time Price Monitoring
+
+```typescript
+function useRealTimePricing(inputToken, outputToken, amount) {
+  const [quote, setQuote] = useState(null);
+  const [priceHistory, setPriceHistory] = useState([]);
+
+  useEffect(() => {
+    if (!inputToken || !outputToken || !amount) return;
+
+    const fetchQuote = async () => {
+      try {
+        const newQuote = await TradeService.getQuote(inputToken, outputToken, amount);
+        setQuote(newQuote);
+        
+        // Track price history
+        setPriceHistory(prev => [
+          ...prev.slice(-29), // Keep last 30 prices
+          {
+            timestamp: Date.now(),
+            rate: newQuote.rate,
+            priceImpact: newQuote.priceImpact
+          }
+        ]);
+      } catch (error) {
+        console.error('Quote fetch failed:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchQuote();
+    
+    // Update every 10 seconds
+    const interval = setInterval(fetchQuote, 10000);
+    return () => clearInterval(interval);
+  }, [inputToken, outputToken, amount]);
+
+  return { quote, priceHistory };
+}
+```
+
+### Slippage Protection
+
+```typescript
+function useSlippageProtection() {
+  const [slippageSettings, setSlippageSettings] = useState({
+    auto: true,
+    custom: 0.5,
+    maxImpact: 5.0
+  });
+
+  const calculateOptimalSlippage = (priceImpact, volatility) => {
+    if (priceImpact < 0.1) return 0.1;
+    if (priceImpact < 0.5) return 0.3;
+    if (priceImpact < 1.0) return 0.5;
+    if (priceImpact < 3.0) return 1.0;
+    return Math.min(priceImpact * 1.5, 5.0);
+  };
+
+  const validateSlippage = (quote, slippage) => {
+    if (quote.priceImpact > slippageSettings.maxImpact) {
+      throw new Error(`Price impact (${quote.priceImpact}%) exceeds maximum allowed (${slippageSettings.maxImpact}%)`);
+    }
+    
+    if (slippage < quote.priceImpact) {
+      console.warn('Slippage tolerance may be too low for current market conditions');
+    }
+    
+    return true;
+  };
+
+  return {
+    slippageSettings,
+    setSlippageSettings,
+    calculateOptimalSlippage,
+    validateSlippage
+  };
+}
+```
+
+### Multi-Route Comparison
+
+```typescript
+function useMultiRouteComparison(inputToken, outputToken, amount) {
+  const [routes, setRoutes] = useState({});
+  const [bestRoute, setBestRoute] = useState(null);
+
+  useEffect(() => {
+    if (!inputToken || !outputToken || !amount) return;
+
+    const compareRoutes = async () => {
+      try {
+        const [jupiterQuote, raydiumQuote, pumpQuote] = await Promise.allSettled([
+          TradeService.getQuote(inputToken, outputToken, amount, { provider: 'jupiter' }),
+          TradeService.getQuote(inputToken, outputToken, amount, { provider: 'raydium' }),
+          TradeService.getQuote(inputToken, outputToken, amount, { provider: 'pumpswap' })
+        ]);
+
+        const routeResults = {
+          jupiter: jupiterQuote.status === 'fulfilled' ? jupiterQuote.value : null,
+          raydium: raydiumQuote.status === 'fulfilled' ? raydiumQuote.value : null,
+          pumpswap: pumpQuote.status === 'fulfilled' ? pumpQuote.value : null
+        };
+
+        setRoutes(routeResults);
+
+        // Find best route by output amount
+        const best = Object.entries(routeResults)
+          .filter(([_, quote]) => quote !== null)
+          .reduce((best, [provider, quote]) => 
+            !best || quote.outputAmount > best.quote.outputAmount 
+              ? { provider, quote } 
+              : best
+          , null);
+
+        setBestRoute(best);
+      } catch (error) {
+        console.error('Route comparison failed:', error);
+      }
+    };
+
+    compareRoutes();
+  }, [inputToken, outputToken, amount]);
+
+  return { routes, bestRoute };
+}
+```
+
+## Error Handling & Recovery
+
+<AccordionGroup>
+  <Accordion title="Common Swap Errors">
+    
+    **Insufficient Balance**
+    - Check user's token balance before swap
+    - Account for transaction fees
+    - Provide clear balance information
+    
+    **Slippage Exceeded**
+    - Automatic slippage adjustment
+    - Market volatility warnings
+    - Retry with higher slippage options
+    
+    **Network Issues**
+    - RPC connection failures
+    - Transaction timeout handling
+    - Automatic retry mechanisms
+    
+    **Provider Unavailability**
+    - Fallback to alternative DEXs
+    - Provider health monitoring
+    - User notification of issues
+    
+  </Accordion>
+</AccordionGroup>
+
+```typescript
+function RobustSwapExecution() {
+  const executeSwapWithRetry = async (swapParams, maxRetries = 3) => {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await TradeService.executeSwap(...swapParams);
+      } catch (error) {
+        lastError = error;
+        console.warn(`Swap attempt ${attempt} failed:`, error.message);
+        
+        if (attempt === maxRetries) break;
+        
+        // Handle specific errors
+        if (error.message.includes('slippage')) {
+          // Increase slippage and retry
+          swapParams[5] = { 
+            ...swapParams[5], 
+            slippageBps: (swapParams[5]?.slippageBps || 50) * 1.5 
+          };
+        } else if (error.message.includes('network')) {
+          // Wait before retry for network issues
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+    }
+    
+    throw lastError;
+  };
+
+  return { executeSwapWithRetry };
+}
+```
+
+## Performance Optimization
+
+<Tip>
+  **Quote Caching**: Implement intelligent quote caching to reduce API calls and improve response times.
+</Tip>
+
+<Warning>
+  **Rate Limiting**: Be mindful of DEX API rate limits when implementing real-time price updates.
+</Warning>
+
+```typescript
+function useOptimizedQuoting() {
+  const [quoteCache, setQuoteCache] = useState(new Map());
+  const [lastQuoteTime, setLastQuoteTime] = useState(0);
+  
+  const getCachedQuote = (inputToken, outputToken, amount) => {
+    const key = `${inputToken}-${outputToken}-${amount}`;
+    const cached = quoteCache.get(key);
+    
+    if (cached && Date.now() - cached.timestamp < 10000) { // 10 second cache
+      return cached.quote;
+    }
+    
+    return null;
+  };
+  
+  const fetchQuoteWithCache = async (inputToken, outputToken, amount) => {
+    // Check cache first
+    const cached = getCachedQuote(inputToken, outputToken, amount);
+    if (cached) return cached;
+    
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastQuoteTime < 1000) { // 1 second minimum between requests
+      await new Promise(resolve => setTimeout(resolve, 1000 - (now - lastQuoteTime)));
+    }
+    
+    const quote = await TradeService.getQuote(inputToken, outputToken, amount);
+    
+    // Cache result
+    const key = `${inputToken}-${outputToken}-${amount}`;
+    setQuoteCache(prev => new Map(prev.set(key, {
+      quote,
+      timestamp: Date.now()
+    })));
+    
+    setLastQuoteTime(Date.now());
+    return quote;
+  };
+  
+  return { fetchQuoteWithCache };
+}
+```
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" href="/docs/modules/wallet-providers">
+    Essential for transaction signing and balance checking
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Token metadata, prices, and portfolio integration
+  </Card>
+  
+  <Card title="All DEX Modules" href="/docs/modules/pump-fun">
+    Works alongside Pump.fun, Raydium, and Meteora modules
+  </Card>
+  
+  <Card title="AI Agent Kit" href="/docs/modules/solana-agent-kit">
+    AI can execute swaps through natural language commands
+  </Card>
+</CardGroup>
+
+## API Reference
+
+For detailed API documentation, see:
+- [Swap Components Reference](/docs/references/modules/swap/components)
+- [Services Reference](/docs/references/modules/swap/services)
+- [Hooks Reference](/docs/references/modules/swap/hooks)
+
+---
+
+The Swap Module provides the foundation for all token trading activities in your Solana app, offering users the best possible prices through intelligent multi-DEX routing while maintaining a simple and intuitive interface.

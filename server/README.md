@@ -1,4 +1,4 @@
-# 🚀 Solana Social Starter - Backend Server
+# 🚀 Solana App Kit - Backend Server
 
 <div align="center">
 
@@ -207,7 +207,7 @@ server/
 
 ## 👥 Contributing
 
-We welcome contributions to the Solana Social Starter backend server! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed information on how to contribute to this project.
+We welcome contributions to the Solana App Kit backend server! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed information on how to contribute to this project.
 
 ## 📄 License
 

@@ -1,0 +1,782 @@
+---
+title: "NFT Module"
+description: "Complete NFT functionality for buying, selling, and managing digital collectibles with Tensor integration"
+icon: "image"
+---
+
+# NFT Module
+
+The NFT module provides comprehensive functionality for interacting with Non-Fungible Tokens (NFTs) on the Solana blockchain. It integrates with the Tensor API for fetching NFT data, collection information, and performing buy/sell operations.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🎨 Complete NFT Marketplace</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Full-featured NFT trading platform with collection browsing, floor price discovery, and seamless buying/selling through Tensor integration
+  </CardContent>
+</Card>
+
+## Core Functionalities
+
+<CardGroup cols={2}>
+  <Card title="NFT Portfolio" icon="wallet">
+    View and manage all NFTs owned by a user with detailed metadata and pricing information
+  </Card>
+  
+  <Card title="Collection Discovery" icon="search">
+    Search and browse NFT collections with floor price tracking and collection analytics
+  </Card>
+  
+  <Card title="Buy NFTs" icon="shopping-cart">
+    Purchase individual NFTs or floor NFTs from collections with integrated Tensor trading
+  </Card>
+  
+  <Card title="Sell & List" icon="tag">
+    List owned NFTs for sale with custom pricing and duration settings
+  </Card>
+</CardGroup>
+
+## Installation & Setup
+
+<Steps>
+  <Step title="API Configuration">
+    Configure your Tensor API access in `.env.local`:
+    ```bash
+    TENSOR_API_KEY=your_tensor_api_key_here
+    HELIUS_API_KEY=your_helius_api_key_here  # Optional for compressed NFTs
+    ```
+  </Step>
+  
+  <Step title="Import Module">
+    Import the components and hooks you need:
+    ```typescript
+    import { 
+      NftScreen,
+      useFetchNFTs,
+      NftDetailsSection,
+      nftService 
+    } from '@/modules/nft';
+    ```
+  </Step>
+  
+  <Step title="Wallet Integration">
+    Ensure wallet providers are configured for transaction signing:
+    ```typescript
+    import { useWallet } from '@/modules/wallet-providers';
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  **Tensor API**: This module primarily uses Tensor's API for NFT data and trading. Ensure you have appropriate API access and rate limits configured.
+</Note>
+
+## Module Architecture
+
+```
+src/modules/nft/
+├── components/             # Reusable NFT UI components
+├── hooks/                  # Custom React hooks for NFT data
+├── screens/               # Complete NFT trading screens
+├── services/              # Tensor API integration
+├── types/                 # TypeScript definitions
+└── utils/                 # NFT-specific utilities
+```
+
+## Core Components
+
+<Tabs>
+  <Tab title="NFT Screen">
+    **`NftScreen`** - Main NFT trading interface with buy/sell tabs
+    
+    ```typescript
+    import { NftScreen } from '@/modules/nft';
+    
+    function NFTMarketplace() {
+      return (
+        <NftScreen
+          defaultTab="buy" // or "sell"
+          showHeader={true}
+          enableSearch={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Tabbed interface for buying and selling
+    - Collection search and discovery
+    - User's NFT portfolio display
+    - Integrated trading functionality
+  </Tab>
+  
+  <Tab title="Buy Section">
+    **`BuySection`** - NFT discovery and purchase interface
+    
+    ```typescript
+    import { BuySection } from '@/modules/nft';
+    
+    function NFTBuyInterface() {
+      const handlePurchaseComplete = (nft) => {
+        console.log('NFT purchased:', nft);
+        // Handle success (refresh portfolio, show confirmation, etc.)
+      };
+      
+      return (
+        <BuySection
+          onPurchaseComplete={handlePurchaseComplete}
+          showFloorPrices={true}
+          enableFiltering={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - Collection search by name
+    - Floor NFT discovery
+    - Price comparison tools
+    - One-click floor purchases
+  </Tab>
+  
+  <Tab title="Sell Section">
+    **`SellSection`** - NFT listing and management interface
+    
+    ```typescript
+    import { SellSection } from '@/modules/nft';
+    import { useWallet } from '@/modules/wallet-providers';
+    
+    function NFTSellInterface() {
+      const { wallet } = useWallet();
+      
+      const handleListingCreated = (listing) => {
+        console.log('NFT listed:', listing);
+      };
+      
+      return (
+        <SellSection
+          walletAddress={wallet?.address}
+          onListingCreated={handleListingCreated}
+          showActiveListings={true}
+        />
+      );
+    }
+    ```
+    
+    **Features:**
+    - User's NFT portfolio display
+    - Custom listing creation
+    - Active listing management
+    - Price and duration controls
+  </Tab>
+  
+  <Tab title="NFT Details">
+    **`NftDetailsSection`** - Detailed NFT information display
+    
+    ```typescript
+    import { NftDetailsSection } from '@/modules/nft';
+    
+    function NFTDetailModal({ nftMint, visible }) {
+      return (
+        <Modal visible={visible}>
+          <NftDetailsSection
+            mint={nftMint}
+            showTraits={true}
+            showPriceHistory={true}
+            enableSharing={true}
+          />
+        </Modal>
+      );
+    }
+    ```
+    
+    **Features:**
+    - Comprehensive metadata display
+    - Image rendering with fallbacks
+    - Price history and analytics
+    - Social sharing capabilities
+  </Tab>
+</Tabs>
+
+## Core Hook: useFetchNFTs
+
+The primary hook for fetching user's NFT portfolio:
+
+```typescript
+import { useFetchNFTs } from '@/modules/nft';
+import { useWallet } from '@/modules/wallet-providers';
+
+function UserNFTPortfolio() {
+  const { wallet } = useWallet();
+  const { nfts, loading, error, refetch } = useFetchNFTs(wallet?.address, {
+    includeCompressed: true,
+    includeMetadata: true,
+    sortBy: 'floorPrice'
+  });
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorDisplay message={error} onRetry={refetch} />;
+
+  return (
+    <View>
+      <Text style={styles.title}>Your NFTs ({nfts.length})</Text>
+      <FlatList
+        data={nfts}
+        keyExtractor={(item) => item.mint}
+        renderItem={({ item }) => (
+          <NFTCard 
+            nft={item} 
+            onPress={() => openNFTDetails(item)}
+          />
+        )}
+        onRefresh={refetch}
+        refreshing={loading}
+      />
+    </View>
+  );
+}
+```
+
+**Hook Parameters:**
+- `walletAddress` - User's wallet address
+- `options` - Configuration object with:
+  - `includeCompressed` - Include compressed NFTs
+  - `includeMetadata` - Fetch full metadata
+  - `sortBy` - Sort order preference
+
+**Returns:**
+- `nfts` - Array of NFT items
+- `loading` - Loading state
+- `error` - Error message if any
+- `refetch` - Function to refresh data
+
+## NFT Service Functions
+
+The `nftService.ts` provides comprehensive Tensor API integration:
+
+<Accordion>
+  <AccordionItem title="Data Fetching">
+    
+    ```typescript
+    import { nftService } from '@/modules/nft';
+    
+    // Fetch NFT metadata
+    const nftData = await nftService.fetchNftMetadata(mintAddress);
+    
+    // Fetch collection information
+    const collection = await nftService.fetchCollectionData(collectionId);
+    
+    // Get floor NFT for collection
+    const floorNFT = await nftService.fetchFloorNFTForCollection(collectionId);
+    
+    // Search collections
+    const results = await nftService.searchCollections('Okay Bears');
+    
+    // Fetch active listings for user
+    const listings = await nftService.fetchActiveListings(walletAddress);
+    ```
+    
+    **Available Functions:**
+    - `fetchNftMetadata(mint)` - Get detailed NFT metadata
+    - `fetchCollectionData(collId)` - Collection information and stats
+    - `fetchFloorNFTForCollection(collId)` - Current floor NFT details
+    - `searchCollections(query)` - Search collections by name
+    - `fetchActiveListings(walletAddress)` - User's active listings
+    
+  </AccordionItem>
+  
+  <AccordionItem title="NFT Trading">
+    
+    ```typescript
+    // Buy a specific NFT
+    const buyResult = await nftService.buyNft(
+      userPublicKey,
+      nftMint,
+      maxPriceSol,
+      currentOwner,
+      sendTransaction,
+      (status) => console.log('Buy status:', status)
+    );
+    
+    // Buy floor NFT from collection
+    const floorBuyResult = await nftService.buyCollectionFloor(
+      userPublicKey,
+      collectionId,
+      sendTransaction,
+      (status) => console.log('Floor buy status:', status)
+    );
+    
+    // List NFT for sale
+    const listResult = await nftService.listNftForSale(
+      userPublicKey,
+      nftMint,
+      priceSol,
+      userWallet,
+      (status) => console.log('List status:', status),
+      isCompressed,
+      compressedNftData
+    );
+    
+    // Delist NFT
+    const delistResult = await nftService.delistNft(
+      userPublicKey,
+      nftMint,
+      userWallet,
+      (status) => console.log('Delist status:', status)
+    );
+    ```
+    
+    **Transaction Functions:**
+    - `buyNft()` - Purchase specific NFT
+    - `buyCollectionFloor()` - Buy floor-priced NFT
+    - `listNftForSale()` - Create new listing
+    - `delistNft()` - Remove existing listing
+    
+  </AccordionItem>
+</Accordion>
+
+## Quick Start Examples
+
+<CodeGroup>
+```typescript Basic NFT Portfolio
+import { useFetchNFTs, NftDetailsSection } from '@/modules/nft';
+import { useWallet } from '@/modules/wallet-providers';
+
+function MyNFTCollection() {
+  const { wallet } = useWallet();
+  const { nfts, loading, error } = useFetchNFTs(wallet?.address);
+  const [selectedNFT, setSelectedNFT] = useState(null);
+
+  if (!wallet) {
+    return <ConnectWalletPrompt />;
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>My NFT Collection</Text>
+      
+      {loading && <LoadingSpinner />}
+      
+      {error && (
+        <ErrorCard 
+          message={error}
+          onRetry={() => window.location.reload()}
+        />
+      )}
+      
+      <FlatList
+        data={nfts}
+        numColumns={2}
+        keyExtractor={(item) => item.mint}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            style={styles.nftCard}
+            onPress={() => setSelectedNFT(item)}
+          >
+            <Image 
+              source={{ uri: item.image }} 
+              style={styles.nftImage}
+            />
+            <Text style={styles.nftName}>{item.name}</Text>
+            <Text style={styles.nftPrice}>
+              {item.price ? `${item.price} SOL` : 'Not Listed'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+      
+      {selectedNFT && (
+        <Modal visible={!!selectedNFT}>
+          <NftDetailsSection
+            mint={selectedNFT.mint}
+            onClose={() => setSelectedNFT(null)}
+          />
+        </Modal>
+      )}
+    </View>
+  );
+}
+```
+
+```typescript NFT Marketplace Interface
+import { NftScreen } from '@/modules/nft';
+import { useWallet } from '@/modules/wallet-providers';
+
+function NFTMarketplace() {
+  const { wallet, isAuthenticated } = useWallet();
+  const [activeTab, setActiveTab] = useState('buy');
+
+  const handleNFTPurchased = (nft) => {
+    Alert.alert(
+      'Purchase Successful!',
+      `You successfully purchased ${nft.name}`,
+      [{ text: 'OK', onPress: () => setActiveTab('sell') }]
+    );
+  };
+
+  const handleNFTListed = (listing) => {
+    Alert.alert(
+      'NFT Listed!',
+      `${listing.name} is now listed for ${listing.price} SOL`
+    );
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.connectPrompt}>
+        <Text style={styles.promptTitle}>Connect Your Wallet</Text>
+        <Text style={styles.promptText}>
+          Connect your wallet to browse and trade NFTs
+        </Text>
+        <ConnectWalletButton />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>NFT Marketplace</Text>
+      
+      <NftScreen
+        defaultTab={activeTab}
+        onPurchaseComplete={handleNFTPurchased}
+        onListingComplete={handleNFTListed}
+        walletAddress={wallet.address}
+      />
+    </View>
+  );
+}
+```
+
+```typescript Custom NFT Trading
+import { nftService } from '@/modules/nft';
+import { useWallet } from '@/modules/wallet-providers';
+
+function CustomNFTTrading() {
+  const { wallet, sendTransaction } = useWallet();
+  const [selectedCollection, setSelectedCollection] = useState(null);
+  const [floorNFT, setFloorNFT] = useState(null);
+  const [buying, setBuying] = useState(false);
+
+  const searchCollections = async (query) => {
+    try {
+      const results = await nftService.searchCollections(query);
+      return results;
+    } catch (error) {
+      console.error('Search failed:', error);
+      return [];
+    }
+  };
+
+  const loadFloorNFT = async (collectionId) => {
+    try {
+      const floor = await nftService.fetchFloorNFTForCollection(collectionId);
+      setFloorNFT(floor);
+    } catch (error) {
+      console.error('Failed to load floor NFT:', error);
+    }
+  };
+
+  const buyFloorNFT = async () => {
+    if (!floorNFT || !wallet) return;
+    
+    setBuying(true);
+    try {
+      const result = await nftService.buyCollectionFloor(
+        wallet.publicKey,
+        selectedCollection.id,
+        sendTransaction,
+        (status) => console.log('Purchase status:', status)
+      );
+      
+      Alert.alert('Success!', 'NFT purchased successfully');
+    } catch (error) {
+      Alert.alert('Purchase Failed', error.message);
+    } finally {
+      setBuying(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Quick Floor Purchases</Text>
+      
+      <CollectionSearch
+        onSearch={searchCollections}
+        onSelect={(collection) => {
+          setSelectedCollection(collection);
+          loadFloorNFT(collection.id);
+        }}
+      />
+      
+      {floorNFT && (
+        <View style={styles.floorCard}>
+          <Image source={{ uri: floorNFT.image }} style={styles.floorImage} />
+          <Text style={styles.floorName}>{floorNFT.name}</Text>
+          <Text style={styles.floorPrice}>{floorNFT.price} SOL</Text>
+          
+          <Button
+            title={buying ? "Purchasing..." : "Buy Floor NFT"}
+            onPress={buyFloorNFT}
+            disabled={buying}
+          />
+        </View>
+      )}
+    </View>
+  );
+}
+```
+</CodeGroup>
+
+## NFT Utilities
+
+The module includes specialized utilities for handling NFT data:
+
+<Accordion>
+  <AccordionItem title="Image Utilities">
+    **`imageUtils.ts`** - NFT image handling and formatting
+    
+    ```typescript
+    import { fixImageUrl, getNftImageSource, formatSolPrice } from '@/modules/nft/utils';
+    
+    // Fix various image URL formats (IPFS, Arweave, etc.)
+    const imageUrl = fixImageUrl('ipfs://QmYourImageHash');
+    // Returns: https://gateway.ipfs.io/ipfs/QmYourImageHash
+    
+    // Get React Native image source
+    const imageSource = getNftImageSource(nft.image, defaultImage);
+    
+    // Format SOL prices consistently
+    const formattedPrice = formatSolPrice(1500000000, true); // true = lamports
+    // Returns: "1.5 SOL"
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Advanced Features
+
+### NFT Sharing Integration
+
+```typescript
+import { NftListingModal } from '@/modules/nft';
+import { useThread } from '@/core/thread';
+
+function ShareNFTFeature() {
+  const { createPost } = useThread();
+  const [showNFTModal, setShowNFTModal] = useState(false);
+
+  const handleShareNFT = async (nftData) => {
+    try {
+      await createPost({
+        content: `Check out this amazing NFT! 🎨`,
+        type: 'nft_listing',
+        sections: [
+          {
+            type: 'nft_listing',
+            data: nftData
+          }
+        ]
+      });
+      
+      setShowNFTModal(false);
+      Alert.alert('Success', 'NFT shared to your feed!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to share NFT');
+    }
+  };
+
+  return (
+    <View>
+      <Button 
+        title="Share NFT" 
+        onPress={() => setShowNFTModal(true)} 
+      />
+      
+      <NftListingModal
+        visible={showNFTModal}
+        onClose={() => setShowNFTModal(false)}
+        onSelect={handleShareNFT}
+        selectionType="both" // 'nft', 'collection', or 'both'
+      />
+    </View>
+  );
+}
+```
+
+### Real-time Floor Price Tracking
+
+```typescript
+function useFloorPriceTracking(collectionId) {
+  const [floorPrice, setFloorPrice] = useState(null);
+  const [priceChange, setPriceChange] = useState(0);
+
+  useEffect(() => {
+    if (!collectionId) return;
+
+    const trackFloorPrice = async () => {
+      try {
+        const floorNFT = await nftService.fetchFloorNFTForCollection(collectionId);
+        const newPrice = floorNFT.price;
+        
+        if (floorPrice !== null) {
+          const change = ((newPrice - floorPrice) / floorPrice) * 100;
+          setPriceChange(change);
+        }
+        
+        setFloorPrice(newPrice);
+      } catch (error) {
+        console.error('Floor price tracking error:', error);
+      }
+    };
+
+    // Initial load
+    trackFloorPrice();
+    
+    // Update every 30 seconds
+    const interval = setInterval(trackFloorPrice, 30000);
+    return () => clearInterval(interval);
+  }, [collectionId, floorPrice]);
+
+  return { floorPrice, priceChange };
+}
+```
+
+### Batch NFT Operations
+
+```typescript
+function useBatchNFTOperations() {
+  const { wallet, sendTransaction } = useWallet();
+
+  const batchListNFTs = async (nfts, pricePerNFT) => {
+    const results = [];
+    
+    for (const nft of nfts) {
+      try {
+        const result = await nftService.listNftForSale(
+          wallet.publicKey,
+          nft.mint,
+          pricePerNFT,
+          wallet,
+          (status) => console.log(`${nft.name}: ${status}`)
+        );
+        results.push({ nft: nft.name, success: true, result });
+      } catch (error) {
+        results.push({ nft: nft.name, success: false, error: error.message });
+      }
+    }
+    
+    return results;
+  };
+
+  const batchBuyFloorNFTs = async (collectionIds) => {
+    const results = [];
+    
+    for (const collectionId of collectionIds) {
+      try {
+        const result = await nftService.buyCollectionFloor(
+          wallet.publicKey,
+          collectionId,
+          sendTransaction,
+          (status) => console.log(`Collection ${collectionId}: ${status}`)
+        );
+        results.push({ collection: collectionId, success: true, result });
+      } catch (error) {
+        results.push({ collection: collectionId, success: false, error: error.message });
+      }
+    }
+    
+    return results;
+  };
+
+  return { batchListNFTs, batchBuyFloorNFTs };
+}
+```
+
+## Integration with Other Modules
+
+<CardGroup cols={2}>
+  <Card title="Wallet Providers" href="/docs/modules/wallet-providers">
+    Transaction signing and wallet address management for NFT operations
+  </Card>
+  
+  <Card title="Data Module" href="/docs/modules/data-module">
+    Enhanced NFT metadata and portfolio value calculations
+  </Card>
+  
+  <Card title="Thread Module" href="/docs/functions/thread">
+    Social sharing of NFT listings and collection discoveries
+  </Card>
+  
+  <Card title="MoonPay" href="/docs/modules/moonpay">
+    Purchase SOL to fund NFT acquisitions
+  </Card>
+</CardGroup>
+
+## Error Handling & Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    
+    **NFT Images Not Loading**
+    - IPFS gateway timeouts or failures
+    - Malformed metadata URLs
+    - Network connectivity issues
+    
+    **Transaction Failures**
+    - Insufficient SOL for transaction fees
+    - NFT no longer available (sold by someone else)
+    - Wallet connection issues
+    
+    **API Rate Limits**
+    - Too many requests to Tensor API
+    - Missing or invalid API key
+    - Temporary service unavailability
+    
+  </Accordion>
+</AccordionGroup>
+
+```typescript
+function RobustNFTOperation() {
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  const safeNFTOperation = async (operation) => {
+    try {
+      return await operation();
+    } catch (error) {
+      if (retryCount < maxRetries && error.message.includes('rate limit')) {
+        setRetryCount(prev => prev + 1);
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        return safeNFTOperation(operation);
+      }
+      throw error;
+    }
+  };
+
+  return { safeNFTOperation };
+}
+```
+
+## Performance Considerations
+
+<Tip>
+  **Image Optimization**: Use image caching and lazy loading for better performance when displaying large NFT collections.
+</Tip>
+
+<Warning>
+  **API Limits**: Be mindful of Tensor API rate limits, especially when fetching large collections or making frequent requests.
+</Warning>
+
+## API Reference
+
+For detailed API documentation, see:
+- [NFT Components Reference](/docs/references/modules/nft/components)
+- [Services Reference](/docs/references/modules/nft/services)
+- [Hooks Reference](/docs/references/modules/nft/hooks)
+- [Types Reference](/docs/references/modules/nft/types)
+
+---
+
+The NFT module provides a complete digital collectibles trading platform, enabling users to discover, buy, sell, and manage NFTs with professional-grade tools and seamless Tensor integration.

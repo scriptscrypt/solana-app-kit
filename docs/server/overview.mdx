@@ -1,0 +1,276 @@
+---
+title: "Server Overview"
+description: "Comprehensive backend server for the Solana App Kit, providing token management, social features, and various API endpoints for interacting with the Solana blockchain."
+icon: "server"
+---
+
+<div className="flex items-center gap-2 mb-6">
+  <img src="https://img.shields.io/badge/Solana-black?style=for-the-badge&logo=solana" alt="Solana" />
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Express.js-404D59?style=for-the-badge" alt="Express.js" />
+  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+</div>
+
+## Overview
+
+This backend server is built with Express.js and TypeScript, offering a robust API for Solana blockchain interactions, social features, and token management. It serves as the backbone for the Solana App Kit, handling all server-side operations and blockchain interactions.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Token Management" icon="coins">
+    - Token creation via TokenMill
+    - Market creation and management
+    - Setting bonding curves
+    - Token swapping
+    - Staking and vesting
+  </Card>
+  
+  <Card title="Social Features" icon="users">
+    - Thread creation and management
+    - User profiles
+    - Image management
+    - Community interactions
+  </Card>
+  
+  <Card title="Storage Solutions" icon="database">
+    - IPFS integration via Pinata
+    - Google Cloud Storage integration
+    - Metadata management
+    - File upload handling
+  </Card>
+  
+  <Card title="Wallet & Security" icon="shield">
+    - Turnkey API integration
+    - Secure wallet management
+    - Transaction signing
+    - Authentication systems
+  </Card>
+</CardGroup>
+
+## Prerequisites
+
+<AccordionGroup>
+  <Accordion title="System Requirements">
+    - **Node.js**: v16 or higher
+    - **Package Manager**: Yarn (latest version)
+    - **Database**: PostgreSQL (latest version)
+  </Accordion>
+  
+  <Accordion title="Blockchain Requirements">
+    - **Solana Wallet**: With SOL for transactions
+    - **RPC Endpoint**: Access to Solana RPC
+  </Accordion>
+  
+  <Accordion title="External Services">
+    - **Google Cloud Storage**: Account with bucket setup
+    - **Pinata**: Account for IPFS storage
+    - **Turnkey**: API access for wallet management
+  </Accordion>
+</AccordionGroup>
+
+## Quick Start
+
+<Steps>
+  <Step title="Clone and Navigate">
+    ```bash
+    git clone https://github.com/SendArcade/solana-app-kit.git
+    cd solana-app-kit/server
+    ```
+  </Step>
+  
+  <Step title="Install Dependencies">
+    ```bash
+    yarn install
+    ```
+  </Step>
+  
+  <Step title="Environment Setup">
+    ```bash
+    cp .env.example .env
+    ```
+    
+    <Note>
+      Configure all required environment variables in your `.env` file. See the [Configuration](/docs/server/configuration) section for details.
+    </Note>
+  </Step>
+  
+  <Step title="Start Development Server">
+    ```bash
+    yarn dev
+    ```
+    
+    <Info>
+      The server will start on port 8080 (or the port specified in your environment variables).
+    </Info>
+  </Step>
+</Steps>
+
+## Architecture Overview
+
+The server follows a modular architecture with clear separation of concerns:
+
+```
+server/
+├── src/
+│   ├── controllers/     # Request handling logic
+│   ├── routes/         # API endpoint definitions
+│   ├── services/       # Business logic implementation
+│   ├── db/            # Database configuration
+│   ├── types/         # TypeScript definitions
+│   └── utils/         # Helper functions
+```
+
+## Core Services
+
+<Tabs>
+  <Tab title="TokenMill Service">
+    **Capabilities:**
+    - Token creation and market management
+    - Setting bonding curves for dynamic pricing
+    - Token swapping with optimal rates
+    - Staking mechanisms for rewards
+    - Vesting schedules for token distribution
+    - Market funding and liquidity management
+    
+    **Key Features:**
+    - Integration with Solana programs
+    - Real-time price calculations
+    - Transaction optimization
+  </Tab>
+  
+  <Tab title="Database Service">
+    **Technology Stack:**
+    - PostgreSQL with Knex.js ORM
+    - Migration management system
+    - Connection pooling
+    
+    **Data Management:**
+    - User profiles and authentication
+    - Thread and social content storage
+    - Transaction history tracking
+    - Relationship management
+  </Tab>
+  
+  <Tab title="Storage Service">
+    **IPFS Integration:**
+    - Metadata storage via Pinata
+    - Decentralized content hosting
+    - Gateway management
+    
+    **Cloud Storage:**
+    - Google Cloud Storage for images
+    - Scalable file management
+    - CDN integration
+  </Tab>
+  
+  <Tab title="Wallet Service">
+    **Turnkey Integration:**
+    - Secure key management
+    - Hardware-backed security
+    - Multi-signature support
+    
+    **Features:**
+    - Wallet creation and recovery
+    - Transaction signing
+    - Address management
+  </Tab>
+</Tabs>
+
+## API Endpoints Overview
+
+### TokenMill Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/config` | POST | Create TokenMill configuration |
+| `/api/markets` | POST | Create token market |
+| `/api/tokens` | POST | Create new token |
+| `/api/swap` | POST | Execute token swap |
+| `/api/stake` | POST | Create staking position |
+| `/api/vesting` | POST | Create vesting schedule |
+
+### Social Features
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/thread` | Various | Thread management |
+| `/api/profile` | Various | User profiles |
+| `/api/thread/images` | Various | Image handling |
+
+### Swap Integration
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/jupiter` | Various | Jupiter DEX integration |
+| `/api/pump-swap` | Various | PumpSwap functionality |
+| `/api/pumpfun` | Various | PumpFun launches |
+
+<Tip>
+  For detailed API documentation, see the [API Reference](/docs/server/endpoints/tokenmill) section.
+</Tip>
+
+## Security Measures
+
+<Warning>
+  **Important Security Considerations**
+  
+  - All transactions require proper signature verification
+  - Environment variables store sensitive credentials
+  - Database queries use parameterized statements
+  - Error messages are sanitized to prevent information leakage
+</Warning>
+
+## Development Workflow
+
+<CodeGroup>
+  ```bash Development
+  # Start with auto-reload
+  yarn dev
+  
+  # Run with specific port
+  PORT=3000 yarn dev
+  ```
+  
+  ```bash Production Build
+  # Build for production
+  yarn build
+  
+  # Start production server
+  yarn start
+  ```
+  
+  ```bash Database Operations
+  # Run migrations
+  yarn migrate
+  
+  # Seed database
+  yarn seed
+  ```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="download" href="/docs/server/installation">
+    Complete setup instructions with detailed environment configuration
+  </Card>
+  
+  <Card title="API Documentation" icon="api" href="/docs/server/endpoints/tokenmill">
+    Comprehensive API reference with examples and responses
+  </Card>
+  
+  <Card title="Deployment" icon="rocket" href="/docs/server/deployment">
+    Production deployment guides for various platforms
+  </Card>
+  
+  <Card title="Integration Examples" icon="code" href="/docs/examples/server-integration">
+    Real-world examples of client-server integration
+  </Card>
+</CardGroup>
+
+---
+
+<Info>
+  **Need Help?** Check out our [support channels](/docs/support) or open an issue in the [GitHub repository](https://github.com/SendArcade/solana-app-kit).
+</Info>

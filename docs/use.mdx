@@ -1,159 +1,911 @@
-# How Developers Use It
+---
+title: "Usage Guide"
+description: "Complete guide to integrating and using Solana App Kit in your React Native applications"
+icon: "code"
+---
+
+# Usage Guide
+
+This comprehensive guide shows you how to integrate and use Solana App Kit in your React Native applications. From installation to advanced customization, learn how to leverage the full power of the kit for your Solana mobile app development.
+
+<Card>
+  <CardHeader>
+    <CardTitle>🚀 Ready-to-Use Components & Services</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Integrate pre-built screens, components, and services with minimal configuration while maintaining full customization control
+  </CardContent>
+</Card>
 
 ## Integration Steps
 
-### 1. Installation
-Install the library in a React Native or Expo application:
-```bash
-yarn add solana-app-kit
-# or
-npm install solana-app-kit
-```
+Follow these steps to integrate Solana App Kit into your existing React Native or Expo application:
 
-### 2. Configuration
-Configure the authentication provider in your application:
+<Steps>
+  <Step title="Installation">
+    Install the library in your React Native or Expo application:
+    
+    <CodeGroup>
+    ```bash yarn
+    yarn add solana-app-kit
+    ```
+    
+    ```bash npm
+    npm install solana-app-kit
+    ```
+    
+    ```bash pnpm
+    pnpm add solana-app-kit
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Configuration">
+    Set up the authentication provider and configuration
+  </Step>
+  
+  <Step title="Component Integration">
+    Start using pre-built screens and components
+  </Step>
+  
+  <Step title="Customization">
+    Apply custom themes and styling
+  </Step>
+  
+  <Step title="Service Integration">
+    Utilize blockchain services and operations
+  </Step>
+  
+  <Step title="State Management">
+    Integrate with Redux store and state management
+  </Step>
+</Steps>
 
-```javascript
-// In your app's configuration
-import { CustomizationProvider } from 'solana-app-kit';
+## Configuration Setup
 
-const myConfig = {
-  auth: {
-    provider: 'privy', // or 'dynamic', 'turnkey'
-    // other auth settings...
-  },
-  // additional configuration...
-};
+<Tabs>
+  <Tab title="Basic Configuration">
+    Configure the authentication provider in your application:
+    
+    ```javascript
+    // In your app's configuration
+    import { CustomizationProvider } from 'solana-app-kit';
 
-// In your App.tsx or equivalent
-function App() {
-  return (
-    <CustomizationProvider config={myConfig}>
-      {/* Your app components */}
-    </CustomizationProvider>
-  );
-}
-```
+    const myConfig = {
+      auth: {
+        provider: 'privy', // or 'dynamic', 'turnkey'
+        apiKey: process.env.PRIVY_APP_ID,
+        clientId: process.env.PRIVY_CLIENT_ID,
+      },
+      wallet: {
+        autoConnect: true,
+        enabledProviders: ['privy', 'dynamic', 'mwa']
+      },
+      theme: {
+        mode: 'dark',
+        accentColor: '#9945FF'
+      }
+    };
 
-### 3. Component Usage
-Render the library's prebuilt screens and components:
+    // In your App.tsx or equivalent
+    function App() {
+      return (
+        <CustomizationProvider config={myConfig}>
+          <NavigationContainer>
+            {/* Your app components */}
+          </NavigationContainer>
+        </CustomizationProvider>
+      );
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Advanced Configuration">
+    For more complex setups with multiple providers:
+    
+    ```javascript
+    import { CustomizationProvider } from 'solana-app-kit';
 
-```javascript
+    const advancedConfig = {
+      auth: {
+        providers: {
+          privy: {
+            appId: process.env.PRIVY_APP_ID,
+            clientId: process.env.PRIVY_CLIENT_ID,
+            loginMethods: ['email', 'google', 'apple'],
+            appearance: {
+              theme: 'dark',
+              accentColor: '#9945FF'
+            }
+          },
+          dynamic: {
+            environmentId: process.env.DYNAMIC_ENVIRONMENT_ID,
+            walletConnectors: ['solana']
+          },
+          turnkey: {
+            organizationId: process.env.TURNKEY_ORGANIZATION_ID,
+            rpId: process.env.TURNKEY_RP_ID
+          }
+        }
+      },
+      modules: {
+        swap: {
+          defaultProvider: 'jupiter',
+          slippageTolerance: 0.5
+        },
+        nft: {
+          enableTensorIntegration: true
+        },
+        ai: {
+          openaiApiKey: process.env.OPENAI_API_KEY
+        }
+      }
+    };
+
+    function App() {
+      return (
+        <CustomizationProvider config={advancedConfig}>
+          <YourAppContent />
+        </CustomizationProvider>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Component Usage
+
+### Pre-built Screens
+
+Use complete, ready-to-deploy screens for common Solana operations:
+
+<CodeGroup>
+```javascript Social Feed
 import { Thread } from 'solana-app-kit';
 
 function MyFeedScreen() {
-  // Get user data from Redux or your application state
-  const currentUser = { /* ...user data... */ };
+  const currentUser = useSelector(state => state.auth.user);
+  const posts = useSelector(state => state.thread.posts);
   
   return (
     <Thread 
-      rootPosts={myPosts} 
-      currentUser={currentUser} 
+      rootPosts={posts} 
+      currentUser={currentUser}
+      onPostCreate={handlePostCreate}
+      onLike={handleLike}
+      onComment={handleComment}
     />
   );
 }
 ```
 
-### 4. Theme Customization
-Optionally override default theming or inject custom backgrounds:
+```javascript Token Trading
+import { SwapScreen, PumpfunScreen } from 'solana-app-kit';
 
-```javascript
-import { Thread } from 'solana-app-kit';
+function TradingTabNavigator() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen 
+        name="Swap" 
+        component={SwapScreen}
+        options={{ title: 'Token Swap' }}
+      />
+      <Tab.Screen 
+        name="PumpFun" 
+        component={PumpfunScreen}
+        options={{ title: 'Meme Tokens' }}
+      />
+    </Tab.Navigator>
+  );
+}
+```
 
-function MyCustomizedFeed() {
-  const themeOverrides = {
-    colors: {
-      primary: '#3498db',
-      background: '#f5f5f5',
-      // other color overrides...
-    },
-    spacing: {
-      // custom spacing values...
-    },
-    // other theme properties...
+```javascript NFT Marketplace
+import { NftScreen, WalletScreen } from 'solana-app-kit';
+
+function NFTMarketplace() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="NFTs" 
+        component={NftScreen}
+        options={{ title: 'NFT Collection' }}
+      />
+      <Stack.Screen 
+        name="Wallet" 
+        component={WalletScreen}
+        options={{ title: 'My Wallet' }}
+      />
+    </Stack.Navigator>
+  );
+}
+```
+
+```javascript AI Assistant
+import { SolanaAgentChat } from 'solana-app-kit';
+
+function AIAssistantScreen() {
+  const handleAIAction = (action, params) => {
+    console.log('AI wants to execute:', action, params);
+    // Handle AI-suggested actions
   };
   
   return (
-    <Thread 
-      rootPosts={myPosts} 
-      currentUser={currentUser}
-      themeOverrides={themeOverrides} 
+    <SolanaAgentChat
+      onActionRequest={handleAIAction}
+      enableVoice={true}
+      personality="helpful"
     />
   );
 }
 ```
+</CodeGroup>
 
-### 5. Service Utilization
-Use the included services for on-chain operations or built-in screens:
+### Individual Components
 
-```javascript
-import { pumpfunService, PumpfunScreen, NftScreen } from 'solana-app-kit';
+Use specific components for granular integration:
 
-// Using services directly
-async function buyToken() {
+<Accordion>
+  <AccordionItem title="🔄 Swap Components">
+    ```javascript
+    import { SwapCard, TokenSelector } from 'solana-app-kit';
+
+    function CustomSwapInterface() {
+      const [inputToken, setInputToken] = useState('SOL');
+      const [outputToken, setOutputToken] = useState('USDC');
+
+      return (
+        <View style={styles.container}>
+          <TokenSelector
+            selectedToken={inputToken}
+            onTokenSelect={setInputToken}
+            label="From"
+          />
+          
+          <SwapCard
+            inputToken={inputToken}
+            outputToken={outputToken}
+            onSwapComplete={handleSwapComplete}
+          />
+        </View>
+      );
+    }
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="👛 Wallet Components">
+    ```javascript
+    import { WalletButton, WalletInfo } from 'solana-app-kit';
+
+    function WalletSection() {
+      const { connected, wallet } = useWallet();
+
+      return (
+        <View>
+          {connected ? (
+            <WalletInfo 
+              wallet={wallet}
+              showBalance={true}
+              showDisconnect={true}
+            />
+          ) : (
+            <WalletButton
+              onConnect={handleConnect}
+              providers={['privy', 'dynamic']}
+            />
+          )}
+        </View>
+      );
+    }
+    ```
+  </AccordionItem>
+  
+  <AccordionItem title="🎨 NFT Components">
+    ```javascript
+    import { NFTCard, NFTGrid } from 'solana-app-kit';
+
+    function NFTGallery() {
+      const { nfts, loading } = useFetchNFTs(walletAddress);
+
+      return (
+        <NFTGrid
+          nfts={nfts}
+          loading={loading}
+          onNFTSelect={handleNFTSelect}
+          renderItem={(nft) => (
+            <NFTCard
+              nft={nft}
+              onTrade={handleTrade}
+              onView={handleView}
+            />
+          )}
+        />
+      );
+    }
+    ```
+  </AccordionItem>
+</Accordion>
+
+## Theme Customization
+
+<Tabs>
+  <Tab title="Basic Theming">
+    Override default theming with your brand colors:
+    
+    ```javascript
+    import { Thread } from 'solana-app-kit';
+
+    function MyCustomizedFeed() {
+      const themeOverrides = {
+        colors: {
+          primary: '#3498db',
+          secondary: '#e74c3c',
+          background: '#f5f5f5',
+          surface: '#ffffff',
+          text: '#2c3e50',
+          accent: '#9b59b6'
+        },
+        spacing: {
+          xs: 4,
+          sm: 8,
+          md: 16,
+          lg: 24,
+          xl: 32
+        },
+        borderRadius: {
+          small: 4,
+          medium: 8,
+          large: 16
+        }
+      };
+      
+      return (
+        <Thread 
+          rootPosts={myPosts} 
+          currentUser={currentUser}
+          themeOverrides={themeOverrides}
+        />
+      );
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Advanced Theming">
+    Create comprehensive theme systems:
+    
+    ```javascript
+    const customTheme = {
+      colors: {
+        // Brand colors
+        primary: '#9945FF',
+        primaryLight: '#B47EFF',
+        primaryDark: '#7D2CFF',
+        
+        // Semantic colors
+        success: '#00D4AA',
+        warning: '#FFB800',
+        error: '#FF4444',
+        info: '#4A90E2',
+        
+        // Surface colors
+        background: '#0E0E0E',
+        surface: '#1A1A1A',
+        card: '#2D2D2D',
+        
+        // Text colors
+        textPrimary: '#FFFFFF',
+        textSecondary: '#B0B0B0',
+        textMuted: '#6B6B6B'
+      },
+      typography: {
+        fontFamily: {
+          regular: 'Inter-Regular',
+          medium: 'Inter-Medium',
+          bold: 'Inter-Bold'
+        },
+        fontSize: {
+          xs: 12,
+          sm: 14,
+          md: 16,
+          lg: 18,
+          xl: 20,
+          xxl: 24
+        }
+      },
+      shadows: {
+        small: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 2
+        },
+        medium: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          elevation: 4
+        }
+      }
+    };
+
+    function ThemedApp() {
+      return (
+        <CustomizationProvider 
+          config={{ theme: customTheme }}
+        >
+          <AppContent />
+        </CustomizationProvider>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Service Utilization
+
+### Direct Service Usage
+
+Use blockchain services directly for custom implementations:
+
+<CodeGroup>
+```javascript Token Operations
+import { pumpfunService, swapService } from 'solana-app-kit';
+
+// Token creation and trading
+async function createAndBuyToken() {
   try {
-    const result = await pumpfunService.buyTokenViaPumpfun({
-      // transaction parameters...
+    // Create a new meme token
+    const tokenResult = await pumpfunService.createAndBuyTokenViaPumpfun({
+      name: 'My Meme Token',
+      symbol: 'MMT',
+      description: 'The next big meme!',
+      image: imageFile,
+      initialBuy: 0.1 // SOL
     });
-    // Handle result
+    
+    console.log('Token created:', tokenResult.mint);
+    
+    // Execute a swap
+    const swapResult = await swapService.executeSwap(
+      'SOL',
+      tokenResult.mint,
+      1.0, // 1 SOL
+      wallet.publicKey,
+      sendTransaction
+    );
+    
+    console.log('Swap completed:', swapResult.signature);
   } catch (error) {
-    // Handle error
+    console.error('Operation failed:', error);
+  }
+}
+```
+
+```javascript NFT Operations
+import { nftService } from 'solana-app-kit';
+
+async function buyNFT() {
+  try {
+    const result = await nftService.buyNft(
+      userPublicKey,
+      nftMint,
+      maxPrice,
+      currentOwner,
+      sendTransaction,
+      (status) => console.log('Status:', status)
+    );
+    
+    console.log('NFT purchased:', result);
+  } catch (error) {
+    console.error('Purchase failed:', error);
   }
 }
 
-// Or use pre-built screens
-function MyApp() {
+async function listNFT() {
+  try {
+    const result = await nftService.listNftForSale(
+      userPublicKey,
+      nftMint,
+      priceInSOL,
+      userWallet,
+      (status) => console.log('Status:', status)
+    );
+    
+    console.log('NFT listed:', result);
+  } catch (error) {
+    console.error('Listing failed:', error);
+  }
+}
+```
+
+```javascript AI Integration
+import { solanaAgentService } from 'solana-app-kit';
+
+async function executeAICommand() {
+  try {
+    const response = await solanaAgentService.processCommand(
+      "Swap 1 SOL for USDC and show me my portfolio",
+      {
+        walletAddress: wallet.address,
+        enableActions: true
+      }
+    );
+    
+    // Handle AI response and actions
+    if (response.actions) {
+      for (const action of response.actions) {
+        await executeAction(action);
+      }
+    }
+  } catch (error) {
+    console.error('AI command failed:', error);
+  }
+}
+```
+</CodeGroup>
+
+### Pre-built Screen Integration
+
+Or use complete pre-built screens for faster development:
+
+```javascript
+import { 
+  PumpfunScreen, 
+  NftScreen, 
+  TokenMillScreen,
+  RaydiumScreen 
+} from 'solana-app-kit';
+
+function MainAppNavigator() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="PumpFun" component={PumpfunScreen} />
-        <Stack.Screen name="NFTs" component={NftScreen} />
-        {/* Other screens */}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { backgroundColor: '#1A1A1A' }
+      }}
+    >
+      <Tab.Screen 
+        name="Trading" 
+        component={PumpfunScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="trending-up" size={size} color={color} />
+          )
+        }}
+      />
+      <Tab.Screen 
+        name="NFTs" 
+        component={NftScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="image" size={size} color={color} />
+          )
+        }}
+      />
+      <Tab.Screen 
+        name="Launch" 
+        component={TokenMillScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="rocket" size={size} color={color} />
+          )
+        }}
+      />
+      <Tab.Screen 
+        name="Professional" 
+        component={RaydiumScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="briefcase" size={size} color={color} />
+          )
+        }}
+      />
+    </Tab.Navigator>
   );
 }
 ```
 
-### 6. State Management Integration
-Extend the Redux store with our pre-built slices:
+## State Management Integration
+
+<Tabs>
+  <Tab title="Redux Store Setup">
+    Extend your Redux store with pre-built slices:
+    
+    ```javascript
+    import { combineReducers, configureStore } from '@reduxjs/toolkit';
+    import { 
+      authReducer, 
+      threadReducer, 
+      transactionReducer,
+      chatReducer,
+      profileReducer 
+    } from 'solana-app-kit';
+
+    // Combine with existing reducers
+    const rootReducer = combineReducers({
+      // Solana App Kit reducers
+      auth: authReducer,
+      thread: threadReducer,
+      transaction: transactionReducer,
+      chat: chatReducer,
+      profile: profileReducer,
+      
+      // Your custom reducers
+      myCustomFeature: myCustomReducer,
+      anotherFeature: anotherReducer,
+    });
+
+    // Create store with combined reducers
+    const store = configureStore({
+      reducer: rootReducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+          serializableCheck: {
+            ignoredActions: ['persist/PERSIST']
+          }
+        })
+    });
+
+    export type RootState = ReturnType<typeof store.getState>;
+    export type AppDispatch = typeof store.dispatch;
+    export default store;
+    ```
+  </Tab>
+  
+  <Tab title="Authentication Management">
+    Use authentication actions and selectors:
+    
+    ```javascript
+    import { 
+      loginSuccess, 
+      logoutSuccess, 
+      updateUsername, 
+      updateProfilePic,
+      fetchUserProfile 
+    } from 'solana-app-kit';
+    import { useAppDispatch, useAppSelector } from './hooks';
+
+    function UserProfile() {
+      const dispatch = useAppDispatch();
+      const { user, isAuthenticated, loading } = useAppSelector(state => state.auth);
+
+      const handleLogin = async (userData) => {
+        dispatch(loginSuccess(userData));
+      };
+
+      const handleUpdateProfile = async (updates) => {
+        if (updates.username) {
+          dispatch(updateUsername({ 
+            userId: user.id, 
+            newUsername: updates.username 
+          }));
+        }
+        
+        if (updates.profilePic) {
+          dispatch(updateProfilePic(updates.profilePic));
+        }
+      };
+
+      const handleLogout = () => {
+        dispatch(logoutSuccess());
+      };
+
+      return (
+        <View>
+          {isAuthenticated ? (
+            <UserProfileView 
+              user={user}
+              onUpdate={handleUpdateProfile}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <LoginComponent onLogin={handleLogin} />
+          )}
+        </View>
+      );
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Transaction State">
+    Manage transaction state and priority fees:
+    
+    ```javascript
+    import { 
+      setSelectedFeeTier, 
+      setTransactionMode,
+      selectFeeTier,
+      selectTransactionMode 
+    } from 'solana-app-kit';
+
+    function TransactionSettings() {
+      const dispatch = useAppDispatch();
+      const feeTier = useAppSelector(selectFeeTier);
+      const transactionMode = useAppSelector(selectTransactionMode);
+
+      const handleFeeTierChange = (tier) => {
+        dispatch(setSelectedFeeTier(tier));
+      };
+
+      const handleModeChange = (mode) => {
+        dispatch(setTransactionMode(mode));
+      };
+
+      return (
+        <View>
+          <FeeSelector 
+            selectedTier={feeTier}
+            onTierChange={handleFeeTierChange}
+          />
+          <ModeSelector
+            selectedMode={transactionMode}
+            onModeChange={handleModeChange}
+          />
+        </View>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Integration Patterns
+
+### Custom Hook Integration
+
+Create custom hooks that leverage Solana App Kit functionality:
 
 ```javascript
-import { combineReducers } from '@reduxjs/toolkit';
-import { authReducer, threadReducer, transactionReducer } from 'solana-app-kit';
+import { useWallet, useSwap, useFetchTokens } from 'solana-app-kit';
+import { useState, useEffect } from 'react';
 
-// Use existing reducers
-const rootReducer = combineReducers({
-  auth: authReducer,
-  thread: threadReducer,
-  transaction: transactionReducer,
-  // Add your own reducers
-  myCustomFeature: myCustomReducer,
-});
+function usePortfolioManagement() {
+  const { wallet, connected } = useWallet();
+  const { executeSwap } = useSwap();
+  const { tokens, loading, refetch } = useFetchTokens(wallet?.address);
+  const [totalValue, setTotalValue] = useState(0);
 
-// Create your store with the combined reducers
-const store = configureStore({
-  reducer: rootReducer,
-  // other store configuration...
-});
+  useEffect(() => {
+    if (tokens.length > 0) {
+      const value = tokens.reduce((sum, token) => sum + (token.value || 0), 0);
+      setTotalValue(value);
+    }
+  }, [tokens]);
+
+  const rebalancePortfolio = async (targetAllocations) => {
+    const results = [];
+    
+    for (const allocation of targetAllocations) {
+      try {
+        const result = await executeSwap(
+          allocation.from,
+          allocation.to,
+          allocation.amount
+        );
+        results.push(result);
+      } catch (error) {
+        console.error('Rebalance failed for', allocation, error);
+      }
+    }
+    
+    await refetch(); // Refresh portfolio
+    return results;
+  };
+
+  return {
+    tokens,
+    totalValue,
+    loading,
+    connected,
+    rebalancePortfolio,
+    refetch
+  };
+}
+
+// Usage in component
+function PortfolioScreen() {
+  const { 
+    tokens, 
+    totalValue, 
+    loading, 
+    rebalancePortfolio 
+  } = usePortfolioManagement();
+
+  return (
+    <View>
+      <Text>Portfolio Value: ${totalValue.toFixed(2)}</Text>
+      <TokenList tokens={tokens} loading={loading} />
+      <RebalanceButton onRebalance={rebalancePortfolio} />
+    </View>
+  );
+}
 ```
 
-### 7. Authentication State Management
+### Context Provider Pattern
 
-The auth reducer provides several functions for managing user authentication:
+Wrap your app with multiple providers for enhanced functionality:
 
 ```javascript
-import { loginSuccess, logoutSuccess, updateUsername, updateProfilePic } from 'solana-app-kit';
+import React from 'react';
+import { 
+  CustomizationProvider,
+  WalletProvider,
+  NotificationProvider 
+} from 'solana-app-kit';
 
-// Handle login success
-dispatch(loginSuccess(userData));
+function AppProviders({ children }) {
+  return (
+    <CustomizationProvider config={appConfig}>
+      <WalletProvider autoConnect={true}>
+        <NotificationProvider>
+          <Provider store={store}>
+            {children}
+          </Provider>
+        </NotificationProvider>
+      </WalletProvider>
+    </CustomizationProvider>
+  );
+}
 
-// Update user profile
-dispatch(updateUsername({ userId: 'user123', newUsername: 'newName' }));
-dispatch(updateProfilePic('https://example.com/new-profile-pic.jpg'));
-
-// Handle logout
-dispatch(logoutSuccess());
+function App() {
+  return (
+    <AppProviders>
+      <NavigationContainer>
+        <MainNavigator />
+      </NavigationContainer>
+    </AppProviders>
+  );
+}
 ```
 
-The library's state management modules offer typical patterns for storing user data, thread posts, transaction configurations, and other state management needs.
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Performance" icon="gauge-high">
+    **Optimize rendering** by using React.memo for expensive components and implementing proper key props for lists
+  </Card>
+  
+  <Card title="Error Handling" icon="triangle-exclamation">
+    **Implement error boundaries** around kit components and handle network failures gracefully
+  </Card>
+  
+  <Card title="State Management" icon="database">
+    **Use selectors efficiently** and avoid unnecessary re-renders by selecting only needed state slices
+  </Card>
+  
+  <Card title="Security" icon="shield">
+    **Validate transactions** before execution and implement proper user confirmation flows
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Explore Modules" icon="cubes" href="/docs/modules/overview">
+    **Dive deeper** into specific protocol integrations and advanced features
+  </Card>
+  
+  <Card title="Custom Components" icon="paintbrush" href="/docs/structure/components">
+    **Learn to build** custom components that integrate with the kit's architecture
+  </Card>
+  
+  <Card title="State Patterns" icon="sitemap" href="/docs/structure/state">
+    **Master advanced** state management patterns and optimization techniques
+  </Card>
+  
+  <Card title="Production Deploy" icon="rocket" href="/docs/setup#production-deployment">
+    **Deploy your app** to iOS App Store and Google Play Store
+  </Card>
+</CardGroup>
+
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>🎯 Ready to Build</CardTitle>
+  </CardHeader>
+  <CardContent>
+    You now have all the tools and knowledge needed to integrate Solana App Kit into your application. Start with the components that match your use case and gradually expand to leverage the full ecosystem.
+  </CardContent>
+</Card>

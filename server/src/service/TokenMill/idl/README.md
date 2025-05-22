@@ -1,6 +1,6 @@
 # IDL Directory
 
-This directory contains Interface Definition Language (IDL) files for Solana programs used by the Solana Social Starter backend.
+This directory contains Interface Definition Language (IDL) files for Solana programs used by the Solana App Kit backend.
 
 ## Overview
 

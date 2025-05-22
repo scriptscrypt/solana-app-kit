@@ -27,45 +27,34 @@
   },
   "navigation": [
     {
-      "group": "Getting Started",
+      "group": "Introduction",
       "pages": [
         "docs/introduction",
         "docs/setup"
       ]
     },
     {
-      "group": "Structure",
+      "group": "Getting Started",
       "pages": [
-        "docs/structure/repo",
-        "docs/structure/assets",
-        "docs/structure/components",
-        "docs/structure/config",
-        "docs/structure/hooks",
-        "docs/structure/mocks",
-        "docs/structure/navigation",
-        "docs/structure/screens",
-        "docs/structure/services",
-        "docs/structure/state",
-        "docs/structure/utils",
-        "docs/structure/roots"
-      ]
-    },
-    {
-      "group": "Functions",
-      "icon": "function",
-      "pages": [
-        "docs/functions/thread",
-        "docs/functions/pump",
-        "docs/functions/trade",
-        "docs/functions/tokenmill",
-        "docs/functions/wallet"
-      ]
-    },
-    {
-      "group": "Usage",
-      "icon": "cube",
-      "pages": [
+        "docs/setup",
+        "docs/structure",
         "docs/use"
+      ]
+    },
+    {
+      "group": "Modules",
+      "pages": [
+        "docs/modules/overview",
+        "docs/modules/data-module",
+        "docs/modules/meteora",
+        "docs/modules/pumpfun",
+        "docs/modules/moonpay",
+        "docs/modules/nft",
+        "docs/modules/raydium",
+        "docs/modules/solana-agent-kit",
+        "docs/modules/swap",
+        "docs/modules/tokenmill",
+        "docs/modules/wallet-providers"
       ]
     },
     {
