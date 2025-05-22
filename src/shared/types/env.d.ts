@@ -17,7 +17,6 @@ declare module '@env' {
   export const SERVER_URL: string;
   export const CLUSTER: string;
   export const COINGECKO_API_KEY: string;
-  export const PARA_API_KEY: string;
   export const HELIUS_RPC_CLUSTER: string;
   export const HELIUS_STAKED_URL: string;
   export const HELIUS_STAKED_API_KEY: string;
