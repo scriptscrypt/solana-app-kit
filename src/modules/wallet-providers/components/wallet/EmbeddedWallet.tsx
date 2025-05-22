@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, Platform, Image } from 'react-native';
 import Icons from '@/assets/svgs';
 import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
 import styles from '@/screens/Common/login-screen/LoginScreen.styles';
@@ -11,6 +11,9 @@ import COLORS from '@/assets/colors';
 
 import type { Web3MobileWallet } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
 import type { Cluster, PublicKey as SolanaPublicKey } from '@solana/web3.js';
+
+// Add Solana Mobile image import
+import SolanaMobileImage from '@/assets/images/solana-mobile.jpg';
 
 type TransactFunction = <T>(
   callback: (wallet: Web3MobileWallet) => Promise<T>
@@ -289,7 +292,10 @@ const EmbeddedWalletAuth: React.FC<EmbeddedWalletAuthProps> = ({
       {Platform.OS === 'android' && transact && PublicKey && Buffer && (
         <TouchableOpacity style={styles.loginButton} onPress={loginWithMWA}>
           <View style={styles.buttonContent}>
-            <Icons.Google width={24} height={24} />
+            <Image 
+              source={SolanaMobileImage} 
+              style={{ width: 24, height: 24, borderRadius: 12 }} 
+            />
             <Text style={styles.buttonText}>Continue with MWA</Text>
           </View>
           <ArrowIcon />
