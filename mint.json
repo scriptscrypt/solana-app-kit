@@ -25,6 +25,17 @@
     "thumbsRating": true,
     "suggestEdit": true
   },
+  "metadata": {
+    "og:image": "/docs/assets/dark.svg",
+    "og:type": "website",
+    "og:site_name": "Solana App Kit"
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/docs/introduction"
+    }
+  ],
   "navigation": [
     {
       "group": "Introduction",
