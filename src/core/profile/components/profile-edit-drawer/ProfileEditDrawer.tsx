@@ -280,11 +280,7 @@ const ProfileEditDrawer = ({
             dispatch(updateProfilePic(newUrl));
             if (onProfileUpdated) onProfileUpdated('image');
 
-            Alert.alert(
-                'Success',
-                'Profile picture updated successfully',
-                [{ text: 'OK' }]
-            );
+   
 
             setSelectedNft(null);
             setLocalImageUri(null);
@@ -489,7 +485,7 @@ const ProfileEditDrawer = ({
             }
 
             if (changesMade) {
-                Alert.alert('Profile Updated', 'Your profile has been updated successfully');
+                // Alert.alert('Profile Updated', 'Your profile has been updated successfully');
                 onClose();
             }
         } catch (err: any) {

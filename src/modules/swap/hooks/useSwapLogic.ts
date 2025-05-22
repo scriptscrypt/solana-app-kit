@@ -766,16 +766,7 @@ export function useSwapLogic(
             console.log('[SwapScreen] Checking if fee alert is visible...');
           }, 500);
 
-          Alert.alert(
-            'Swap Successful',
-            `Successfully swapped ${inputValue} ${inputToken.symbol} for approximately ${estimatedOutputAmount} ${outputToken.symbol}`,
-            [{
-              text: 'OK', onPress: () => {
-                setInputValue('0');
-                fetchBalance();
-              }
-            }]
-          );
+          
         }
       } else {
         console.log('[SwapScreen] Swap response not successful:', response);
