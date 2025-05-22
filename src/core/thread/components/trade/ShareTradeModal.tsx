@@ -868,16 +868,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
         setResultMsg('Trade shared successfully!');
 
         // Wait a brief moment so user can see success message before closing
-        setTimeout(() => {
-          // Show a success alert to confirm the action to the user
-          Alert.alert(
-            'Success',
-            'Your trade has been shared to the feed.',
-            [
-              { text: 'OK', onPress: handleClose }
-            ]
-          );
-        }, 500);
+
       }
     } catch (err: any) {
       console.error('[handleSharePastSwap] Error =>', err);
