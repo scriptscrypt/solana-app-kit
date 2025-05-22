@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import TradeCard, { TradeData } from '@/core/sharedUI/TradeCard/TradeCard';
+import TradeCard, { TradeData } from '@/core/shared-ui/TradeCard/TradeCard';
 import COLORS from '@/assets/colors';
 import TradeModal from '@/core/thread/components/trade/ShareTradeModal';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
-import { DEFAULT_IMAGES } from '@/config/constants';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import { ThreadUser } from '@/core/thread/components/thread.types';
 
 interface MessageTradeCardProps {

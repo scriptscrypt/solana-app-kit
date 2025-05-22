@@ -3,7 +3,7 @@ import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, Platform, Statu
 import BuySection from './BuySection';
 import SellSection from './SellSection';
 import { styles } from './styles';
-import { useAuth } from '@/modules/walletProviders/hooks/useAuth';
+import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
 
 

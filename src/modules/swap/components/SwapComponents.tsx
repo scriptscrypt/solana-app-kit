@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../screens/SwapScreen.styles';
 import COLORS from '@/assets/colors';
 import Icons from '@/assets/svgs';
-import { TokenInfo } from '@/modules/dataModule';
+import { TokenInfo } from '@/modules/data-module';
 import { SwapProvider } from '../services/tradeService';
 
 const { width } = Dimensions.get('window');

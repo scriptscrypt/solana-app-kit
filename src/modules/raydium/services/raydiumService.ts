@@ -4,10 +4,10 @@ import {
   VersionedTransaction,
   PublicKey,
 } from '@solana/web3.js';
-import {ENDPOINTS} from '../../../config/constants';
+import {ENDPOINTS} from '@/shared/config/constants';
 import {CLUSTER, HELIUS_STAKED_URL, SERVER_URL} from '@env';
-import {TransactionService} from '../../walletProviders/services/transaction/transactionService';
-import {TokenInfo} from '../../dataModule/types/tokenTypes';
+import {TransactionService} from '../../wallet-providers/services/transaction/transactionService';
+import {TokenInfo} from '../../data-module/types/tokenTypes';
 import {Buffer} from 'buffer';
 
 // Constants

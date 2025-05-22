@@ -4,31 +4,25 @@
  * This module centralizes all NFT-related functionality in the application.
  */
 
-// Export types
-export * from './types';
+// Components
+export { default as NftDetailsSection } from './components/NftDetailsSection';
+export { default as NftListingModal } from './components/NftListingModal';
 
-// Export hooks
+// Hooks
 export { useFetchNFTs } from './hooks/useFetchNFTs';
 
-// Export components
-export { default as NftListingModal } from './components/NftListingModal';
-export { default as NftDetailsSection } from './components/NftDetailsSection';
+// Screens
 export { default as NftScreen } from './screens/NftScreen';
+export { default as BuySection } from './screens/BuySection';
+export { default as SellSection } from './screens/SellSection';
 
-// Export services
-export { 
-  fetchNftMetadata,
-  fetchCollectionData, 
-  fetchFloorNFTForCollection,
-  searchCollections, 
-  fetchActiveListings,
-  buyNft,
-  buyCollectionFloor
-} from './services/nftService';
+// Services
+export * from './services/nftService';
 
-// Export utils
-export { 
-  fixImageUrl,
-  getNftImageSource,
-  formatSolPrice
-} from './utils/imageUtils';
+// Types
+export * from './types';
+
+// Utils
+export * from './utils/imageUtils';
+
+// This is the public API for the NFT module

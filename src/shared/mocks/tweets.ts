@@ -1,4 +1,4 @@
-import { DEFAULT_IMAGES } from "@/config/constants";
+import { DEFAULT_IMAGES } from "@/shared/config/constants";
 
 export const tweetsData = [
   {

@@ -28,9 +28,9 @@ import { mergeStyles } from '../../utils';
 import { ThreadSection, ThreadSectionType, ThreadUser, TradeData, ThreadPost } from '../../../thread/types';
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import TradeModal from '../../../thread/components/trade/ShareTradeModal';
-import { DEFAULT_IMAGES } from '@/config/constants';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import { NftListingModal, NftItem, NftListingData } from '@/modules/nft';
 import { uploadThreadImage } from '../../../thread/services/threadImageService';
 import {

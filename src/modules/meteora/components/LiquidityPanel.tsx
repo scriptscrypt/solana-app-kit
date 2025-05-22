@@ -14,7 +14,7 @@ import TYPOGRAPHY from '@/assets/typography';
 import { fetchUserLiquidityPositions, fetchMeteoraPools, addLiquidity } from '../services/meteoraService';
 import { LiquidityPosition, MeteoraPool } from '../types';
 import { Connection } from '@solana/web3.js';
-import { useWallet } from '@/modules/walletProviders/hooks/useWallet';
+import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 
 interface LiquidityPanelProps {
     walletAddress: string;

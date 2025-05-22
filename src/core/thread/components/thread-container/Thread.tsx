@@ -10,9 +10,9 @@ import { ThreadProps } from '../../types';
 import { ThreadItem } from '../thread-item/ThreadItem';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
 import { useAppSelector } from '@/shared/hooks/useReduxHooks';
-import { DEFAULT_IMAGES } from '@/config/constants';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import { Platform } from 'react-native';
-import SearchScreen from '@/screens/SampleUI/Threads/SearchScreen';
+import SearchScreen from '@/screens/sample-ui/Threads/SearchScreen';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 

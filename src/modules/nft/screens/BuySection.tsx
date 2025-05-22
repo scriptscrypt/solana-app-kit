@@ -15,8 +15,8 @@ import {
 import { Cluster, clusterApiUrl, Connection, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { buyStyles as styles } from './buySection.styles';
 import { CLUSTER, TENSOR_API_KEY } from '@env';
-import { ENDPOINTS } from '../../../config/constants';
-import { TransactionService } from '../../walletProviders/services/transaction/transactionService';
+import { ENDPOINTS } from '@/shared/config/constants';
+import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
 
 const SOL_TO_LAMPORTS = 1_000_000_000;
 

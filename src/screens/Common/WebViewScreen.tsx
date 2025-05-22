@@ -3,7 +3,7 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppHeader from '@/core/sharedUI/AppHeader';
+import AppHeader from '@/core/shared-ui/AppHeader';
 import COLORS from '@/assets/colors';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator'; // Assuming RootStackParamList is here
 

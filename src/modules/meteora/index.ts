@@ -1,13 +1,13 @@
-// Export screen
-export { default as MeteoraScreen } from './screens/MeteoraScreen';
-
-// Export components
+// Components
 export * from './components';
 
-// Export types
-export * from './types';
+// Screens
+export { default as MeteoraScreen } from './screens/MeteoraScreen';
 
-// Export services
+// Services
 export * from './services';
+
+// Types
+export * from './types';
 
 // This is the public API for the Meteora module 

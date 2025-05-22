@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 import { styles, portfolioStyles } from './collectibles.style';
 
-import { fixImageUrl, fetchNftMetadata } from '../../../../modules/nft';
+import { fixImageUrl, fetchNftMetadata } from '@/modules/nft';
 import { TENSOR_API_KEY } from '@env';
-import { NftItem } from '../../../../modules/nft/types';
-import TokenDetailsDrawer from '../../../sharedUI/TokenDetailsDrawer/TokenDetailsDrawer';
-import { AssetItem } from '@/modules/dataModule';
+import { NftItem } from '@/modules/nft/types';
+import TokenDetailsDrawer from '@/core/shared-ui/TokenDetailsDrawer/TokenDetailsDrawer';
+import { AssetItem } from '@/modules/data-module';
 import COLORS from '@/assets/colors';
 import { IPFSAwareImage, getValidImageSource, fixAllImageUrls } from '@/shared/utils/IPFSImage';
 

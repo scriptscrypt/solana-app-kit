@@ -15,8 +15,8 @@ import {NATIVE_MINT} from '@solana/spl-token';
 import * as FileSystem from 'expo-file-system';
 import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
 
-import {useAuth} from '../../walletProviders/hooks/useAuth';
-import {useWallet} from '../../walletProviders/hooks/useWallet';
+import {useAuth} from '../../wallet-providers/hooks/useAuth';
+import {useWallet} from '../../wallet-providers/hooks/useWallet';
 import {useAppSelector} from '@/shared/hooks/useReduxHooks';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
@@ -24,10 +24,10 @@ import LaunchlabsLaunchSection, {
   TokenData,
 } from '../components/LaunchlabsLaunchSection';
 import {AdvancedOptionsSection} from '../components/AdvancedOptionsSection';
-import {AppHeader} from '@/core/sharedUI';
+import {AppHeader} from '@/core/shared-ui';
 import {RaydiumService, LaunchpadConfigData, LaunchpadTokenData} from '../services/raydiumService';
 import {CLUSTER, HELIUS_STAKED_URL} from '@env';
-import {ENDPOINTS} from '@/config/constants';
+import {ENDPOINTS} from '@/shared/config/constants';
 
 export default function LaunchlabsScreen() {
   const {solanaWallet} = useAuth();
