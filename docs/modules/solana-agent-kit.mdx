@@ -208,90 +208,84 @@ The module uses advanced AI models through custom providers:
 
 The AI agent can perform various Solana operations through natural language:
 
-<Accordion>
-  <AccordionItem title="Transaction Operations">
-    
-    ```typescript
-    // Example user queries the AI can handle:
-    
-    "Send 0.5 SOL to 9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
-    "Check my SOL balance"
-    "What tokens do I own?"
-    "Swap 1 SOL for USDC"
-    "Show me my transaction history"
-    
-    // The AI automatically:
-    // 1. Parses the user intent
-    // 2. Constructs appropriate transactions
-    // 3. Requests user approval
-    // 4. Executes the operation
-    // 5. Provides confirmation and details
-    ```
-    
-    **Available Operations:**
-    - Send SOL and SPL tokens
-    - Check balances and portfolios
-    - View transaction history
-    - Sign messages and transactions
-    - Multi-transaction operations
-    
-  </AccordionItem>
-  
-  <AccordionItem title="DeFi Operations">
-    
-    ```typescript
-    // Advanced DeFi queries:
-    
-    "Create a new token with 1M supply"
-    "Add liquidity to SOL/USDC pool"
-    "Stake my SOL for rewards"
-    "Check my DeFi positions"
-    "Find the best swap rate for 100 USDC to SOL"
-    
-    // Integration with other modules:
-    // - Token creation via Pump.fun or Raydium
-    // - Liquidity operations via Meteora
-    // - NFT operations via Tensor
-    // - Cross-DEX arbitrage opportunities
-    ```
-    
-    **DeFi Capabilities:**
-    - Token creation and management
-    - Liquidity provision and farming
-    - Staking and delegation
-    - Cross-protocol interactions
-    - Yield optimization suggestions
-    
-  </AccordionItem>
-  
-  <AccordionItem title="Portfolio Management">
-    
-    ```typescript
-    // Portfolio analysis queries:
-    
-    "Analyze my portfolio performance"
-    "What's my total portfolio value?"
-    "Show me my biggest gains and losses"
-    "Suggest portfolio rebalancing"
-    "Track my token allocations"
-    
-    // AI provides:
-    // - Real-time portfolio valuation
-    // - Performance analytics
-    // - Risk assessment
-    // - Rebalancing suggestions
-    // - Tax optimization tips
-    ```
-    
-    **Portfolio Features:**
-    - Real-time valuation tracking
-    - Performance analytics
-    - Risk assessment and management
-    - Automated rebalancing suggestions
-    - Tax optimization strategies
-    
-  </AccordionItem>
+<AccordionGroup>
+<Accordion title="Transaction Operations">
+```typescript
+// Example user queries the AI can handle:
+
+"Send 0.5 SOL to 9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+"Check my SOL balance"
+"What tokens do I own?"
+"Swap 1 SOL for USDC"
+"Show me my transaction history"
+
+// The AI automatically:
+// 1. Parses the user intent
+// 2. Constructs appropriate transactions
+// 3. Requests user approval
+// 4. Executes the operation
+// 5. Provides confirmation and details
+```
+
+**Available Operations:**
+- Send SOL and SPL tokens
+- Check balances and portfolios
+- View transaction history
+- Sign messages and transactions
+- Multi-transaction operations
 </Accordion>
+
+<Accordion title="DeFi Operations">
+```typescript
+// Advanced DeFi queries:
+
+"Create a new token with 1M supply"
+"Add liquidity to SOL/USDC pool"
+"Stake my SOL for rewards"
+"Check my DeFi positions"
+"Find the best swap rate for 100 USDC to SOL"
+
+// Integration with other modules:
+// - Token creation via Pump.fun or Raydium
+// - Liquidity operations via Meteora
+// - NFT operations via Tensor
+// - Cross-DEX arbitrage opportunities
+```
+
+**DeFi Capabilities:**
+- Token creation and management
+- Liquidity provision and farming
+- Staking and delegation
+- Cross-protocol interactions
+- Yield optimization suggestions
+</Accordion>
+
+<Accordion title="Portfolio Management">
+```typescript
+// Portfolio analysis queries:
+
+"Analyze my portfolio performance"
+"What's my total portfolio value?"
+"Show me my biggest gains and losses"
+"Suggest portfolio rebalancing"
+"Track my token allocations"
+
+// AI provides:
+// - Real-time portfolio valuation
+// - Performance analytics
+// - Risk assessment
+// - Rebalancing suggestions
+// - Tax optimization tips
+```
+
+**Portfolio Features:**
+- Real-time valuation tracking
+- Performance analytics
+- Risk assessment and management
+- Automated rebalancing suggestions
+- Tax optimization strategies
+</Accordion>
+</AccordionGroup>
 
 ## Quick Start Examples
 
@@ -498,77 +492,74 @@ function CustomSolanaOperations() {
 
 The module provides comprehensive chat management capabilities:
 
-<Accordion>
-  <AccordionItem title="Chat Persistence">
-    
-    ```typescript
-    import { 
-      saveChat, 
-      fetchChat, 
-      fetchChats, 
-      deleteChat 
-    } from '@/modules/solana-agent-kit';
-    
-    // Save chat to backend
-    const chatData = {
-      id: generateUUID(),
-      title: 'Portfolio Analysis Session',
-      messages: messages,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    await saveChat(chatData);
-    
-    // Fetch specific chat
-    const chat = await fetchChat(chatId);
-    
-    // Fetch all user chats
-    const userChats = await fetchChats();
-    
-    // Delete chat
-    await deleteChat(chatId);
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="Message Management">
-    
-    ```typescript
-    import { 
-      saveMessages, 
-      fetchMessages, 
-      standardizeMessageFormat 
-    } from '@/modules/solana-agent-kit';
-    
-    // Save messages with standardized format
-    const formattedMessages = messages.map(standardizeMessageFormat);
-    await saveMessages(chatId, formattedMessages);
-    
-    // Fetch messages for a chat
-    const chatMessages = await fetchMessages(chatId);
-    
-    // Convert for UI display
-    const uiMessages = convertToUIMessages(chatMessages);
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="User Management">
-    
-    ```typescript
-    import { createOrUpdateUser } from '@/modules/solana-agent-kit';
-    
-    // Create or update user profile
-    await createOrUpdateUser({
-      walletAddress: wallet.address,
-      preferences: {
-        aiModel: 'gpt-4o',
-        language: 'en',
-        notifications: true
-      },
-      lastActive: new Date().toISOString()
-    });
-    ```
-  </AccordionItem>
+<AccordionGroup>
+<Accordion title="Chat Persistence">
+```typescript
+import { 
+  saveChat, 
+  fetchChat, 
+  fetchChats, 
+  deleteChat 
+} from '@/modules/solana-agent-kit';
+
+// Save chat to backend
+const chatData = {
+  id: generateUUID(),
+  title: 'Portfolio Analysis Session',
+  messages: messages,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
+await saveChat(chatData);
+
+// Fetch specific chat
+const chat = await fetchChat(chatId);
+
+// Fetch all user chats
+const userChats = await fetchChats();
+
+// Delete chat
+await deleteChat(chatId);
+```
 </Accordion>
+
+<Accordion title="Message Management">
+```typescript
+import { 
+  saveMessages, 
+  fetchMessages, 
+  standardizeMessageFormat 
+} from '@/modules/solana-agent-kit';
+
+// Save messages with standardized format
+const formattedMessages = messages.map(standardizeMessageFormat);
+await saveMessages(chatId, formattedMessages);
+
+// Fetch messages for a chat
+const chatMessages = await fetchMessages(chatId);
+
+// Convert for UI display
+const uiMessages = convertToUIMessages(chatMessages);
+```
+</Accordion>
+
+<Accordion title="User Management">
+```typescript
+import { createOrUpdateUser } from '@/modules/solana-agent-kit';
+
+// Create or update user profile
+await createOrUpdateUser({
+  walletAddress: wallet.address,
+  preferences: {
+    aiModel: 'gpt-4o',
+    language: 'en',
+    notifications: true
+  },
+  lastActive: new Date().toISOString()
+});
+```
+</Accordion>
+</AccordionGroup>
 
 ## Advanced AI Features
 
@@ -810,29 +801,27 @@ function SecureAITransactions() {
 ## Error Handling & Troubleshooting
 
 <AccordionGroup>
-  <Accordion title="Common Issues">
-    
-    **OpenAI API Issues**
-    - Invalid or missing API key
-    - Rate limit exceeded
-    - Model availability problems
-    
-    **Wallet Connection Issues**
-    - Wallet not connected when AI tries to execute
-    - Transaction signing failures
-    - Network connectivity problems
-    
-    **Backend Communication**
-    - Chat persistence server unreachable
-    - Message formatting errors
-    - Authentication failures
-    
-    **AI Understanding Issues**
-    - Ambiguous user queries
-    - Unsupported operations
-    - Context confusion in long conversations
-    
-  </Accordion>
+<Accordion title="Common Issues">
+**OpenAI API Issues**
+- Invalid or missing API key
+- Rate limit exceeded
+- Model availability problems
+
+**Wallet Connection Issues**
+- Wallet not connected when AI tries to execute
+- Transaction signing failures
+- Network connectivity problems
+
+**Backend Communication**
+- Chat persistence server unreachable
+- Message formatting errors
+- Authentication failures
+
+**AI Understanding Issues**
+- Ambiguous user queries
+- Unsupported operations
+- Context confusion in long conversations
+</Accordion>
 </AccordionGroup>
 
 ## Performance Considerations

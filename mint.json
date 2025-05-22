@@ -2,11 +2,11 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Solana App Kit",
   "logo": {
-    "light": "/public/logo/light.svg",
-    "dark": "/public/logo/dark.svg"
+    "light": "/docs/assets/light.svg",
+    "dark": "/docs/assets/dark.svg"
   },
   "layout": "sidenav",
-  "favicon": "/favicon.svg",
+  "favicon": "/docs/assets/favicon.svg",
   "sidebar": {
     "items": "border"
   },
@@ -29,8 +29,7 @@
     {
       "group": "Introduction",
       "pages": [
-        "docs/introduction",
-        "docs/setup"
+        "docs/introduction"
       ]
     },
     {
