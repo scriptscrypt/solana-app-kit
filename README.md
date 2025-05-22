@@ -10,11 +10,11 @@
 
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SendArcade/solana-app-kit)
-![NPM Downloads](https://img.shields.io/npm/dm/start-solana-app)
+[![NPM Downloads](https://img.shields.io/npm/dm/start-solana-app?style=for-the-badge)](https://www.npmjs.com/package/start-solana-app?activeTab=readme)
 ![GitHub forks](https://img.shields.io/github/forks/sendarcade/solana-app-kit)
 
 ![GitHub License](https://img.shields.io/github/license/sendarcade/solana-app-kit)
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)](https://x.com/solanaappkit)
 
 
 <p> Anyone — whether a seasoned React Native developer or a Solana developer — can build mobile apps faster with 10+ protocol integrations. </div>
@@ -104,7 +104,7 @@ npx start-solana-app
     <tr>
       <td align="center"><a href="https://reactnative.dev/" target="_blank" rel="noopener noreferrer"><img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="60" height="60" alt="React Native" /><br /><b>React Native</b></a></td>
       <td align="center"><a href="https://expo.dev/" target="_blank" rel="noopener noreferrer"><img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="60" height="60" alt="Expo" /><br /><b>Expo</b></a></td>
-      <td align="center"><a href="https://web3js.org/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/web3/web3.js/refs/heads/4.x/assets/logo/web3js.jpg" width="60" height="60" alt="Web3 Js" /><br /><b>web3.js</b></a></td>
+      <td align="center"><a href="https://solana-labs.github.io/solana-web3.js/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/solana-labs/solana/master/web3.js/img/logo.png" width="60" height="60" alt="Solana Web3.js" /><br /><b>Solana web3.js</b></a></td>
       <td align="center"><a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="60" height="60" alt="TypeScript" /><br /><b>TypeScript</b></a></td>
       <td align="center"><a href="https://www.postgresql.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="60" height="60" alt="PostgreSQL" /><br /><b>PostgreSQL</b></a></td>
     </tr>
@@ -119,7 +119,7 @@ npx start-solana-app
 - Node.js >= 18
 - pnpm or yarn or npm
 - iOS: XCode and CocoaPods
-- Android: Android Studio and Android SDK
+- Android: Android Studio, Android SDK, and JDK
 - [Expo CLI](https://docs.expo.dev/get-started/installation/)
 - PostgreSQL database (for the server)
 
@@ -555,7 +555,7 @@ Join our community to get help, share your projects, and contribute:
 
 [telegram_badge]: https://img.shields.io/badge/telegram-❤️-252850?style=plastic&logo=telegram
 [telegram_link]: https://t.me/solanaappkit
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)](https://x.com/solanaappkit)
 
 
 ---
