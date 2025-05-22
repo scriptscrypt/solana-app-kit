@@ -22,14 +22,14 @@ import { AppHeader } from '@/core/shared-ui';
 import Icons from '@/assets/svgs';
 
 // Import our new components and hook
-import { 
-  ProviderSelector, 
-  PumpSwapControls, 
-  TokenRow, 
-  SwapInfo, 
-  StatusDisplay, 
+import {
+  ProviderSelector,
+  PumpSwapControls,
+  TokenRow,
+  SwapInfo,
+  StatusDisplay,
   Keypad,
-  androidStyles 
+  androidStyles
 } from '@/modules/swap/components/SwapComponents';
 import { useSwapLogic, SwapRouteParams } from '@/modules/swap/hooks/useSwapLogic';
 import { SwapProvider } from '@/modules/swap/services/tradeService';
@@ -65,7 +65,7 @@ export default function SwapScreen() {
     outputToken,
     currentBalance,
     currentTokenPrice,
-    
+
     // UI state
     inputValue,
     estimatedOutputAmount,
@@ -79,17 +79,17 @@ export default function SwapScreen() {
     resultMsg,
     errorMsg,
     solscanTxSig,
-    
+
     // Computed values
     conversionRate,
-    
+
     // State updaters
     setActiveProvider,
     setShowSelectTokenModal,
     setSelectingWhichSide,
     setPoolAddress,
     setSlippage,
-    
+
     // Action handlers
     handleTokenSelected,
     handleMaxButtonClick,
@@ -127,7 +127,7 @@ export default function SwapScreen() {
 
           <AppHeader
             title="Swap Via"
-            showBackButton={navigation.canGoBack()}
+            showBackButton={route.params?.showBackButton || false}
             onBackPress={handleBack}
             style={Platform.OS === 'android' ? androidStyles.headerContainer : undefined}
           />
@@ -140,7 +140,7 @@ export default function SwapScreen() {
               contentContainerStyle={{ paddingBottom: 250 }} // Extra padding for keypad
             >
               {/* Swap Providers */}
-              <ProviderSelector 
+              <ProviderSelector
                 providers={swapProviders}
                 activeProvider={activeProvider}
                 setActiveProvider={setActiveProvider}
@@ -236,7 +236,8 @@ export default function SwapScreen() {
             <TouchableOpacity
               style={[
                 styles.swapActionButton,
-                !isSwapButtonEnabled() && { opacity: 0.6 }
+                !isSwapButtonEnabled() && { opacity: 0.6 },
+                Platform.OS === 'android' && androidStyles.swapActionButton
               ]}
               onPress={handleSwap}
               disabled={!isSwapButtonEnabled()}

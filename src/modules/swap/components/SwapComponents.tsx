@@ -23,16 +23,16 @@ import { SwapProvider } from '../services/tradeService';
 const { width } = Dimensions.get('window');
 
 // Enhanced Shimmer effect component for loading states
-export const Shimmer = ({ 
-  width: componentWidth, 
-  height, 
-  style, 
-  borderRadius = 4 
-}: { 
-  width: number | string, 
-  height: number | string, 
+export const Shimmer = ({
+  width: componentWidth,
+  height,
+  style,
+  borderRadius = 4
+}: {
+  width: number | string,
+  height: number | string,
   style?: any,
-  borderRadius?: number 
+  borderRadius?: number
 }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const actualWidth = typeof componentWidth === 'number' ? componentWidth : 100;
@@ -46,9 +46,9 @@ export const Shimmer = ({
         useNativeDriver: false
       })
     );
-    
+
     shimmerAnimation.start();
-    
+
     return () => {
       shimmerAnimation.stop();
       animatedValue.setValue(0);
@@ -60,7 +60,7 @@ export const Shimmer = ({
     inputRange: [0, 0.3, 0.6, 1],
     outputRange: [0.1, 0.2, 0.1, 0.1]
   });
-  
+
   // Create a smoother horizontal movement
   const translateX = animatedValue.interpolate({
     inputRange: [0, 1],
@@ -68,11 +68,11 @@ export const Shimmer = ({
   });
 
   return (
-    <View 
+    <View
       style={[
-        { 
-          width: componentWidth, 
-          height, 
+        {
+          width: componentWidth,
+          height,
           backgroundColor: COLORS.darkerBackground,
           overflow: 'hidden',
           borderRadius: borderRadius
@@ -101,41 +101,41 @@ const TokenRowSkeleton = ({ isInput = true }: { isInput?: boolean }) => (
   <View style={styles.tokenRow}>
     {/* Token icon placeholder */}
     <Shimmer width={36} height={36} borderRadius={18} />
-    
+
     <View style={styles.tokenInfo}>
       {/* Token symbol placeholder */}
-      <Shimmer 
-        width={80} 
-        height={20} 
-        borderRadius={8} 
-        style={{ marginBottom: 8, marginLeft: 8 }} 
+      <Shimmer
+        width={80}
+        height={20}
+        borderRadius={8}
+        style={{ marginBottom: 8, marginLeft: 8 }}
       />
-      
+
       {/* Balance placeholder - only show for input token */}
       {isInput && (
-        <Shimmer 
-          width={120} 
-          height={14} 
+        <Shimmer
+          width={120}
+          height={14}
           borderRadius={8}
           style={{ marginLeft: 8 }}
         />
       )}
     </View>
-    
+
     <View style={styles.valueContainer}>
       {/* Value label placeholder */}
       <Text style={styles.valueLabel}>{isInput ? 'You Pay' : 'You Receive'}</Text>
-      
+
       {/* Token value placeholder - made smaller */}
-      <Shimmer 
+      <Shimmer
         width={90}
         height={22}
-        borderRadius={8} 
-        style={{ marginVertical: 4 }} 
+        borderRadius={8}
+        style={{ marginVertical: 4 }}
       />
-      
+
       {/* Fiat value placeholder - made smaller */}
-      <Shimmer 
+      <Shimmer
         width={60}
         height={12}
         borderRadius={8}
@@ -145,11 +145,11 @@ const TokenRowSkeleton = ({ isInput = true }: { isInput?: boolean }) => (
 );
 
 // Provider Selection Component
-export const ProviderSelector = ({ 
-  providers, 
-  activeProvider, 
-  setActiveProvider, 
-  isProviderAvailable 
+export const ProviderSelector = ({
+  providers,
+  activeProvider,
+  setActiveProvider,
+  isProviderAvailable
 }: {
   providers: SwapProvider[];
   activeProvider: SwapProvider;
@@ -252,12 +252,12 @@ export const PumpSwapControls = ({
 );
 
 // Token Selection Row Component (memoized to prevent re-renders)
-export const TokenRow = memo(({ 
-  token, 
-  balance, 
-  isInput, 
-  value, 
-  fiatValue, 
+export const TokenRow = memo(({
+  token,
+  balance,
+  isInput,
+  value,
+  fiatValue,
   onPress,
   connected,
   isLoading = false
@@ -277,7 +277,7 @@ export const TokenRow = memo(({
       <TokenRowSkeleton isInput={isInput} />
     );
   }
-  
+
   // Render the full content when loaded
   return (
     <TouchableOpacity style={styles.tokenRow} onPress={onPress}>
@@ -461,5 +461,8 @@ export const androidStyles = StyleSheet.create({
   },
   headerContainer: {
     paddingTop: 8, // Additional padding for Android camera hole
+  },
+  swapActionButton: {
+    marginBottom: 80, // Increased bottom margin for Android to avoid overlap with navigation bar
   }
 }); 

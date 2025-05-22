@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     androidSafeArea: {
-        paddingTop: 30,
+        paddingTop: 50,
     },
     headerContainer: {
         alignItems: 'center',

@@ -70,6 +70,7 @@ export type RootStackParamList = {
     };
     inputAmount?: string;
     shouldInitialize?: boolean;
+    showBackButton?: boolean;
   };
 };
 

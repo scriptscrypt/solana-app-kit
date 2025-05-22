@@ -445,7 +445,10 @@ export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
             </View>
           )}
 
-          <View style={styles.searchContainer}>
+          <View style={[
+            styles.searchContainer,
+            Platform.OS === 'android' && androidStyles.searchContainer
+          ]}>
             <View style={styles.searchIcon}>
               <SearchIcon size={20} color={COLORS.greyMid} />
             </View>
@@ -765,6 +768,9 @@ const androidStyles = StyleSheet.create({
   header: {
     paddingTop: 16,
     paddingBottom: 15,
+  },
+  searchContainer: {
+    marginTop: -24, // Reduce space between header and search bar on Android
   },
   // Add any other Android-specific style overrides here
 });

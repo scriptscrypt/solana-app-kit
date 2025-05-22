@@ -13,6 +13,8 @@ import {
   Platform,
   ImageStyle,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { styles } from './buyCard.style';
 import Icons from '@/assets/svgs/index';
 import { DEFAULT_IMAGES } from '@/shared/config/constants';
@@ -32,6 +34,11 @@ import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
 import { AssetItem } from '@/modules/data-module/types/assetTypes';
 import NFTCollectionDrawer from '@/core/shared-ui/NFTCollectionDrawer/NFTCollectionDrawer';
+import { DEFAULT_SOL_TOKEN, TokenInfo } from '@/modules/data-module';
+import { RootStackParamList } from '@/shared/navigation/RootNavigator';
+
+// Define navigation prop type
+type BuyCardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SwapScreen'>;
 
 /**
  * Define props for the BuyCard
@@ -271,6 +278,9 @@ const BuyCard: React.FC<BuyCardProps> = ({
   const [nftLoading, setNftLoading] = useState(false);
   const [nftStatusMsg, setNftStatusMsg] = useState('');
 
+  // Initialize navigation hook
+  const navigation = useNavigation<BuyCardNavigationProp>();
+
   // States for NFT collection search and selection
   const [collectionName, setCollectionName] = useState('');
   const [searchResults, setSearchResults] = useState<CollectionResult[]>([]);
@@ -442,8 +452,6 @@ const BuyCard: React.FC<BuyCardProps> = ({
 
   // Handle selection of an NFT collection
   const handleSelectCollection = (collection: CollectionResult) => {
-    console.log('Collection selected:', collection);
-
     // Create the asset item
     const assetItem = {
       mint: collection.collId,
@@ -458,32 +466,52 @@ const BuyCard: React.FC<BuyCardProps> = ({
       }
     } as unknown as AssetItem;
 
-    // Set the pending asset and close the modal
-    setPendingAssetSelection(assetItem);
+    // For Android, directly call onSelectAsset before closing the modal
+    if (Platform.OS === 'android' && onSelectAsset) {
+      onSelectAsset(assetItem);
+    } else {
+      // For iOS, use the pending selection approach
+      setPendingAssetSelection(assetItem);
+    }
+
+    // Close the modal
     setShowPortfolioModal(false);
-    // onSelectAsset will be called in handlePortfolioModalDismiss
   };
 
   const handleActionPress = () => {
-    console.log('Action button pressed');
+    console.log('Action button pressed, determinedAssetType:', determinedAssetType);
 
-    // Reset modals
-    setShowTradeModal(false);
+    // Reset modals that might have been open from other flows
     setShowTokenDetailsDrawer(false);
     setShowNftCollectionDrawer(false);
 
-    // Open the appropriate modal/drawer based on asset type
-    // Slight delay to ensure any closing modals have time to close
-    setTimeout(() => {
-      if (isToken) {
-        console.log('Opening trade modal');
-        setShowTradeModal(true);
-      } else {
-        // For both NFTs and Collections, open the NFTCollectionDrawer
-        console.log('Opening NFT collection drawer');
+    if (isToken) {
+      console.log('Token action: Navigating to SwapScreen');
+      const outputTokenInfo: TokenInfo = {
+        address: tokenMint || '',
+        symbol: tokenName.startsWith('$') ? tokenName.substring(1) : tokenName,
+        name: description || tokenName,
+        decimals: 6, // Assuming 6 decimals for now, ideally this comes from token metadata
+        logoURI: typeof tokenImage === 'string' ? fixImageUrl(tokenImage) : '',
+      };
+
+      navigation.navigate('SwapScreen', {
+        inputToken: DEFAULT_SOL_TOKEN, // Default input to SOL
+        outputToken: outputTokenInfo,
+        // inputAmount: '1', // Optionally set a default input amount
+        shouldInitialize: true, // Flag for SwapScreen to use these params
+        showBackButton: true, // Flag to show back button in the header
+      });
+    } else if (isNftOrCollection) {
+      // For both NFTs and Collections, open the NFTCollectionDrawer
+      console.log('NFT/Collection action: Opening NFT collection drawer');
+      // Slight delay to ensure any closing modals have time to close
+      setTimeout(() => {
         setShowNftCollectionDrawer(true);
-      }
-    }, 100);
+      }, 100);
+    } else {
+      console.warn('BuyCard: Unhandled asset type for action press:', determinedAssetType);
+    }
   };
 
   const handleArrowPress = () => {
@@ -498,15 +526,16 @@ const BuyCard: React.FC<BuyCardProps> = ({
   };
 
   const handleSelectAsset = (asset: AssetItem) => {
-    console.log('Asset selected:', asset);
+    // For Android, directly call onSelectAsset before closing the modal
+    if (Platform.OS === 'android' && onSelectAsset) {
+      onSelectAsset(asset);
+    } else {
+      // For iOS, use the pending selection approach
+      setPendingAssetSelection(asset);
+    }
 
-    // Close the modal first
+    // Close the modal
     setShowPortfolioModal(false);
-
-    // Set the pending asset and close the modal
-    setPendingAssetSelection(asset);
-    setShowPortfolioModal(false);
-    // onSelectAsset will be called in handlePortfolioModalDismiss
   };
 
   // Handle click on token image or name to view details
@@ -567,16 +596,13 @@ const BuyCard: React.FC<BuyCardProps> = ({
 
   // Add the handler function for modal dismissal
   const handlePortfolioModalDismiss = () => {
-    console.log('Portfolio modal dismissed/hidden. Pending action:', pendingAssetSelection?.assetType);
     if (pendingAssetSelection) {
       // Check the type explicitly for the marker
       if (pendingAssetSelection.assetType === 'remove-token') {
         if (onRemoveToken) {
-          console.log('Calling onRemoveToken after modal dismiss');
           onRemoveToken();
         }
       } else if (onSelectAsset) {
-        console.log('Calling onSelectAsset after modal dismiss with:', pendingAssetSelection);
         onSelectAsset(pendingAssetSelection);
       }
       // Clear the pending action once processed
@@ -687,7 +713,13 @@ const BuyCard: React.FC<BuyCardProps> = ({
         visible={showPortfolioModal}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setShowPortfolioModal(false)}
+        onRequestClose={() => {
+          // On Android, ensure we process any pending selection when manually closing
+          if (Platform.OS === 'android' && pendingAssetSelection) {
+            handlePortfolioModalDismiss();
+          }
+          setShowPortfolioModal(false);
+        }}
         // Use onDismiss for both platforms - it triggers after the modal is fully hidden
         onDismiss={handlePortfolioModalDismiss}
       >
@@ -699,7 +731,13 @@ const BuyCard: React.FC<BuyCardProps> = ({
               </Text>
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => setShowPortfolioModal(false)}
+                onPress={() => {
+                  // On Android, ensure we process any pending selection when manually closing
+                  if (Platform.OS === 'android' && pendingAssetSelection) {
+                    handlePortfolioModalDismiss();
+                  }
+                  setShowPortfolioModal(false);
+                }}
               >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
@@ -714,12 +752,16 @@ const BuyCard: React.FC<BuyCardProps> = ({
                 <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => {
-                    console.log('Remove token requested');
+                    // For Android, directly call onRemoveToken before closing the modal
+                    if (Platform.OS === 'android' && onRemoveToken) {
+                      onRemoveToken();
+                    } else {
+                      // For iOS, use the pending selection approach
+                      setPendingAssetSelection({ assetType: 'remove-token' } as any);
+                    }
 
-                    // Close the modal first
+                    // Close the modal
                     setShowPortfolioModal(false);
-                    // Trigger remove logic after modal closes
-                    setPendingAssetSelection({ assetType: 'remove-token' } as any);
                   }}
                 >
                   <Text style={styles.removeButtonText}>Remove Pin</Text>
