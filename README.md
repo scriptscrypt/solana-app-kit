@@ -100,26 +100,13 @@ npx start-solana-app
 <div align="center">
   <table>
     <tr>
-      <td align="center"><img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="60" height="60" alt="React Native" /><br /><b>React Native</b></td>
-      <td align="center"><img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="60" height="60" alt="Expo" /><br /><b>Expo</b></td>
-      <td align="center"><img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" width="60" height="60" alt="Solana" /><br /><b>Solana</b></td>
-      <td align="center"><img src="https://avatars.githubusercontent.com/u/81824329?s=200&v=4" width="60" height="60" alt="Privy" /><br /><b>Privy</b></td>
-      <td align="center"><img src="https://cdn.worldvectorlogo.com/logos/redux.svg" width="60" height="60" alt="Redux" /><br /><b>Redux</b></td>
+      <td align="center"><a href="https://reactnative.dev/" target="_blank" rel="noopener noreferrer"><img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="60" height="60" alt="React Native" /><br /><b>React Native</b></a></td>
+      <td align="center"><a href="https://expo.dev/" target="_blank" rel="noopener noreferrer"><img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="60" height="60" alt="Expo" /><br /><b>Expo</b></a></td>
+      <td align="center"><a href="https://web3js.org/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/web3/web3.js/refs/heads/4.x/assets/logo/web3js.jpg" width="60" height="60" alt="Web3 Js" /><br /><b>web3.js</b></a></td>
+      <td align="center"><a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="60" height="60" alt="TypeScript" /><br /><b>TypeScript</b></a></td>
+      <td align="center"><a href="https://www.postgresql.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="60" height="60" alt="PostgreSQL" /><br /><b>PostgreSQL</b></a></td>
     </tr>
     <tr>
-      <td align="center"><img src="https://reactnavigation.org/img/spiro.svg" width="60" height="60" alt="React Navigation" /><br /><b>React Nav</b></td>
-      <td align="center"><img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="60" height="60" alt="TypeScript" /><br /><b>TypeScript</b></td>
-      <td align="center"><img src="https://avatars.githubusercontent.com/u/104513330?s=200&v=4" width="60" height="60" alt="Turnkey" /><br /><b>Turnkey</b></td>
-      <td align="center"><img src="https://avatars.githubusercontent.com/u/96269716?s=200&v=4" width="60" height="60" alt="Dynamic" /><br /><b>Dynamic</b></td>
-      <td align="center"><img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="60" height="60" alt="Image Picker" /><br /><b>Image Picker</b></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="https://expressjs.com/images/favicon.png" width="60" height="60" alt="Express" style="background-color: white; border-radius: 10px; padding: 5px;" /><br /><b>Express</b></td>
-      <td align="center"><img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="60" height="60" alt="PostgreSQL" /><br /><b>PostgreSQL</b></td>
-      <td align="center"><img src="https://avatars.githubusercontent.com/u/82165905?s=48&v=4" width="60" height="60" alt="TokenMill" /><br /><b>TokenMill</b></td>
-      <td align="center"><img src="https://avatars.githubusercontent.com/u/43088506?s=200&v=4" width="60" height="60" alt="Pinata" /><br /><b>Pinata</b></td>
-      <td align="center"><img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-icon.svg" width="60" height="60" alt="Google Cloud" /><br /><b>GCP Storage</b></td>
-    </tr>
   </table>
 </div>
 
