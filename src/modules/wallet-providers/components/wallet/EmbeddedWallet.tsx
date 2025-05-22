@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, Platform } from 'react-native';
 import Icons from '@/assets/svgs';
 import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
-import styles from '@/screens/common/login-screen/LoginScreen.styles';
+import styles from '@/screens/Common/login-screen/LoginScreen.styles';
 import { useCustomization } from '@/shared/config/CustomizationProvider';
 import { useAppNavigation } from '@/shared/hooks/useAppNavigation';
 import { useAppDispatch } from '@/shared/hooks/useReduxHooks';

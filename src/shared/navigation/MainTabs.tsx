@@ -14,7 +14,7 @@ import FeedScreen from '@/screens/sample-ui/Threads/feed-screen/FeedScreen';
 import SwapScreen from '@/modules/swap/screens/SwapScreen';
 
 import { ChatListScreen } from '@/screens/sample-ui/chat';
-import ModuleScreen from '@/screens/common/launch-modules-screen/LaunchModules';
+import ModuleScreen from '@/screens/Common/launch-modules-screen/LaunchModules';
 
 
 
