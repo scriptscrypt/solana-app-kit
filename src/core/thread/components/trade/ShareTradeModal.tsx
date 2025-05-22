@@ -13,6 +13,7 @@ import {
   Animated,
   Easing,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import {
   ThreadUser,
@@ -127,7 +128,7 @@ interface UpdatedTradeModalProps {
 const SkeletonSwapItem = ({ index = 0 }) => {
   // Create animated value for shimmer effect
   const shimmerAnim = useRef(new Animated.Value(-1)).current;
-  
+
   // Start the shimmer animation when component mounts
   useEffect(() => {
     const startShimmerAnimation = () => {
@@ -140,17 +141,17 @@ const SkeletonSwapItem = ({ index = 0 }) => {
         })
       ).start();
     };
-    
+
     startShimmerAnimation();
     return () => shimmerAnim.stopAnimation();
   }, [shimmerAnim]);
-  
+
   // Interpolate the animated value for the shimmer gradient
   const shimmerTranslate = shimmerAnim.interpolate({
     inputRange: [-1, 1],
     outputRange: [-300, 300],
   });
-  
+
   return (
     <View style={styles.skeletonContainer}>
       <View style={styles.skeletonSwapItem}>
@@ -164,12 +165,12 @@ const SkeletonSwapItem = ({ index = 0 }) => {
               <View style={styles.skeletonTextShort} />
             </View>
           </View>
-          
+
           {/* Arrow with inner circle for better appearance */}
           <View style={styles.skeletonArrow}>
             <View style={styles.skeletonArrowInner} />
           </View>
-          
+
           {/* To token */}
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <View style={styles.skeletonTokenBox} />
@@ -179,12 +180,12 @@ const SkeletonSwapItem = ({ index = 0 }) => {
             </View>
           </View>
         </View>
-        
+
         {/* Date/timestamp line */}
         <View style={{ alignItems: 'flex-end', marginTop: 8 }}>
           <View style={styles.skeletonDateText} />
         </View>
-        
+
         {/* Shimmer overlay - contained within this skeleton item */}
         <Animated.View
           style={[
@@ -217,7 +218,7 @@ const SkeletonSwapList = ({ count = 5 }) => {
         <View style={[styles.skeletonTextShort, { width: 120, marginBottom: 8 }]} />
         <View style={styles.swapsListDivider} />
       </View>
-      
+
       {/* Skeleton items */}
       {Array.from({ length: count }).map((_, index) => (
         <SkeletonSwapItem key={`skeleton-${index}`} index={index} />
@@ -262,6 +263,9 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
   const [errorMsg, setErrorMsg] = useState('');
   const [solscanTxSig, setSolscanTxSig] = useState('');
 
+  // Add state for message text input
+  const [messageText, setMessageText] = useState('');
+
   // State for selected past swap
   const [selectedPastSwap, setSelectedPastSwap] = useState<EnhancedSwapTransaction | null>(null);
 
@@ -286,7 +290,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
     userPublicKey ? userPublicKey.toString() : null,
     [userPublicKey]
   );
-  
+
   // Check if API key is available
   const hasBirdeyeApiKey = useMemo(() => {
     if (!BIRDEYE_API_KEY) {
@@ -426,6 +430,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
     setSelectedPastSwap(null);
     setSwaps([]);
     setInitialLoading(true);
+    setMessageText(''); // Reset message text when closing
     hasLoadedInitialDataRef.current = false;
     onClose();
   }, [onClose, initialActiveTab]);
@@ -670,7 +675,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
     if (isMounted.current) {
       setApiError(null);
     }
-    
+
     // Check if wallet is connected
     if (!walletAddress) {
       if (isMounted.current) {
@@ -680,7 +685,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
       }
       return;
     }
-    
+
     // Check if API key is available
     if (!hasBirdeyeApiKey) {
       if (isMounted.current) {
@@ -690,7 +695,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
       }
       return;
     }
-    
+
     // Prevent concurrent refreshes
     if (isRefreshingRef.current) {
       console.log('[TradeModal] Refresh already in progress, skipping');
@@ -720,11 +725,11 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
       }
     } catch (err: any) {
       console.error('Error fetching past swaps:', err);
-      
+
       if (isMounted.current) {
         // Set a user-friendly error message
         setApiError(err.message || "Failed to fetch swap history");
-        
+
         // Keep any existing swaps in the UI rather than clearing them
         if (swaps.length === 0) {
           // Only show error alert if we have no data to display
@@ -844,6 +849,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
         outputQuantity: outputQty.toFixed(4),
         outputUsdValue,
         executionTimestamp: timestampMs,
+        message: messageText.trim() || undefined, // Include message if provided
       };
 
       console.log('[ShareTradeModal] Sharing trade with data:', JSON.stringify(tradeData, null, 2));
@@ -851,6 +857,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
       // CRITICAL FIX: Actually call the parent's onShare handler and await its completion
       // Do not close modal until the parent component has processed the data
       if (onShare) {
+        // Pass the trade data with the message included
         await onShare(tradeData);
       } else {
         console.error('[ShareTradeModal] No onShare handler provided');
@@ -895,7 +902,7 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
         setLoading(false);
       }
     }
-  }, [selectedPastSwap, onShare, handleClose, estimateTokenUsdValue]);
+  }, [selectedPastSwap, onShare, handleClose, estimateTokenUsdValue, messageText]);
 
   // Render content based on loading state
   const renderSwapsList = () => {
@@ -1082,13 +1089,34 @@ export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalP
                         </View>
 
                         {selectedPastSwap && !loading && !initialLoading && !refreshing && (
-                          <TouchableOpacity
-                            style={styles.swapButton}
-                            onPress={handleSharePastSwap}>
-                            <Text style={styles.swapButtonText}>
-                              Share Selected Swap
-                            </Text>
-                          </TouchableOpacity>
+                          <>
+                            {/* Message input field */}
+                            <View style={styles.messageInputContainer}>
+                              <TextInput
+                                style={styles.messageInput}
+                                placeholder="Add a message to your trade (optional)"
+                                placeholderTextColor={COLORS.accessoryDarkColor}
+                                value={messageText}
+                                onChangeText={setMessageText}
+                                multiline
+                                maxLength={280}
+                                returnKeyType="done"
+                              />
+                              {messageText.length > 0 && (
+                                <Text style={styles.characterCount}>
+                                  {messageText.length}/280
+                                </Text>
+                              )}
+                            </View>
+
+                            <TouchableOpacity
+                              style={styles.swapButton}
+                              onPress={handleSharePastSwap}>
+                              <Text style={styles.swapButtonText}>
+                                Share Selected Swap
+                              </Text>
+                            </TouchableOpacity>
+                          </>
                         )}
                       </>
                     ) : (

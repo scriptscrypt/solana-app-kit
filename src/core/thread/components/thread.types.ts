@@ -40,6 +40,7 @@ export interface TradeData {
   inputAmountLamports?: string;
   outputAmountLamports?: string;
   executionTimestamp?: number; // Add timestamp for when the trade was executed
+  message?: string; // Optional message to display with the trade
 }
 
 

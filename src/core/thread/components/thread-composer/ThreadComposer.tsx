@@ -579,6 +579,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
               id: 'section-' + Math.random().toString(36).substr(2, 9),
               type: 'TEXT_TRADE',
               tradeData,
+              text: tradeData.message, // Add the message as text
             };
 
             // Dispatch action to create post with trade data
@@ -610,6 +611,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
                 id: 'section-' + Math.random().toString(36).substr(2, 9),
                 type: 'TEXT_TRADE',
                 tradeData,
+                text: tradeData.message, // Add the message as text
               }],
               createdAt: new Date().toISOString(),
               parentId: undefined,
