@@ -165,7 +165,7 @@ const NFTCollectionDrawer: React.FC<NFTCollectionDrawerProps> = ({
                             <View style={styles.infoContainer}>
                                 <Text style={styles.collectionName}>{collection.name}</Text>
                                 {collection.description && (
-                                    <Text style={styles.description}>{collection.description}</Text>
+                                    <Text style={styles.description} numberOfLines={3}>{collection.description}</Text>
                                 )}
                             </View>
                         </View>

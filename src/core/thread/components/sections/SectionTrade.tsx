@@ -230,6 +230,7 @@ function arePropsEqual(
   if (p.inputAmountLamports !== n.inputAmountLamports) return false;
   if (p.outputAmountLamports !== n.outputAmountLamports) return false;
   if (p.executionTimestamp !== n.executionTimestamp) return false;
+  if (p.message !== n.message) return false;
 
   return true;
 }

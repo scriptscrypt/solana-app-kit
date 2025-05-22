@@ -704,4 +704,35 @@ export default StyleSheet.create({
     width: '40%',
     marginTop: 8,
   },
+  
+  // Message input styles
+  messageInputContainer: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    padding: 16,
+    position: 'relative',
+  },
+  messageInput: {
+    minHeight: 80,
+    maxHeight: 120,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingBottom: 14,
+    fontSize: TYPOGRAPHY.size.md,
+    color: COLORS.white,
+    backgroundColor: COLORS.lighterBackground,
+    textAlignVertical: 'top',
+  },
+  characterCount: {
+    position: 'absolute',
+    bottom: 26,
+    right: 28,
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.accessoryDarkColor,
+  },
 });
