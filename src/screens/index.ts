@@ -2,7 +2,7 @@
 // It re-exports all screens for easy importing throughout the app.
 
 // Common Screens
-export * from './common';
+export * from './Common';
 
 // Sample UI Screens
 export * from './sample-ui'; 
