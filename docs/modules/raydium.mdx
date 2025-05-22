@@ -4,18 +4,7 @@ description: "Professional token launching and swapping with Raydium's advanced 
 icon: "waves"
 ---
 
-# Raydium Module
-
 The Raydium module provides comprehensive integration with Raydium's platform, featuring professional token launching through their Launchpad and sophisticated swapping capabilities via their AMM infrastructure.
-
-<Card>
-  <CardHeader>
-    <CardTitle>🌊 Professional Token Launching</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Launch tokens with advanced configurations including bonding curves, vesting schedules, and pool migration options on Solana's premier DEX
-  </CardContent>
-</Card>
 
 ## Core Functionalities
 
@@ -260,8 +249,8 @@ src/modules/raydium/
 
 The `raydiumService.ts` provides comprehensive Raydium platform integration:
 
-<Accordion>
-  <AccordionItem title="Token Launching">
+<ResponseField name="raydium_service" type="object">
+<Expandable title="Token Launching">
     
     ```typescript
     import { raydiumService } from '@/modules/raydium';
@@ -314,9 +303,9 @@ The `raydiumService.ts` provides comprehensive Raydium platform integration:
     - Status callbacks for real-time updates
     - Error handling and validation
     
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="Token Swapping">
+<Expandable title="Token Swapping">
     
     ```typescript
     // Execute token swap via Raydium
@@ -337,8 +326,8 @@ The `raydiumService.ts` provides comprehensive Raydium platform integration:
     - Real-time quotes
     - Transaction status tracking
     
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Quick Start Examples
 
@@ -555,8 +544,8 @@ function RaydiumSwapInterface() {
 
 The `AdvancedOptionsSectionUtils.tsx` provides comprehensive utilities for token launch configuration:
 
-<Accordion>
-  <AccordionItem title="Validation Functions">
+<ResponseField name="advanced_configuration" type="object">
+<Expandable title="Validation Functions">
     
     ```typescript
     import { 
@@ -579,9 +568,9 @@ The `AdvancedOptionsSectionUtils.tsx` provides comprehensive utilities for token
     const poolMigration = calculatePoolMigrationPercentage(65, 20);
     // Returns: 15% (100% - 65% bonding - 20% vesting)
     ```
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="Calculation Functions">
+<Expandable title="Calculation Functions">
     
     ```typescript
     import { 
@@ -607,9 +596,9 @@ The `AdvancedOptionsSectionUtils.tsx` provides comprehensive utilities for token
     // Parse numeric strings
     const parsed = parseNumericString('1,000.50'); // Returns: 1000.5
     ```
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="Constants & Options">
+<Expandable title="Constants & Options">
     
     ```typescript
     import { 
@@ -630,8 +619,8 @@ The `AdvancedOptionsSectionUtils.tsx` provides comprehensive utilities for token
     console.log(SAMPLE_TOKENS);
     // Array of sample token configurations
     ```
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Bonding Curve Visualization
 
@@ -751,8 +740,8 @@ function ProfessionalTokenPlatform() {
 
 ## Error Handling & Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="Common Issues">
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Issues">
     
     **Backend Connection Issues**
     - Verify `SERVER_URL` is correctly configured
@@ -777,8 +766,8 @@ function ProfessionalTokenPlatform() {
     - Token not available on Raydium
     - Network congestion issues
     
-  </Accordion>
-</AccordionGroup>
+</Expandable>
+</ResponseField>
 
 ```typescript
 function RobustRaydiumOperations() {

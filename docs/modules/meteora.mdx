@@ -4,18 +4,7 @@ description: "Dynamic Liquidity Markets (DLMM) integration with token creation, 
 icon: "meteor"
 ---
 
-# Meteora Module
-
 The Meteora module integrates Meteora's Dynamic Liquidity Markets (DLMM) and advanced token creation functionalities. It provides sophisticated tools for token swapping, liquidity management, and creating tokens with customizable bonding curves.
-
-<Card>
-  <CardHeader>
-    <CardTitle>⚡ Dynamic Liquidity Markets</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Meteora's DLMM technology provides efficient price discovery and capital utilization through dynamic bonding curves and concentrated liquidity
-  </CardContent>
-</Card>
 
 ## Core Functionalities
 
@@ -198,111 +187,115 @@ src/modules/meteora/
 
 The `meteoraService.ts` provides a complete API client for Meteora backend operations:
 
-<Accordion>
-  <AccordionItem title="Token Creation & Configuration">
-    
-    ```typescript
-    import { meteoraService } from '@/modules/meteora';
-    
-    // Create token configuration
-    const config = await meteoraService.createConfig(
-      configParams, 
-      connection, 
-      wallet, 
-      onStatusUpdate
-    );
-    
-    // Build bonding curve by market cap
-    const curve = await meteoraService.buildCurveByMarketCap(
-      curveParams, 
-      connection, 
-      wallet, 
-      onStatusUpdate
-    );
-    
-    // Complete token creation with curve
-    const token = await meteoraService.createTokenWithCurve(
-      tokenParams, 
-      connection, 
-      wallet, 
-      onStatusUpdate
-    );
-    ```
-    
-    **Available Functions:**
-    - `createConfig()` - Create DBC configuration
-    - `buildCurveByMarketCap()` - Build bonding curve
-    - `createPool()` - Create liquidity pool
-    - `uploadTokenMetadata()` - Upload to IPFS
-    - `createTokenWithCurve()` - Complete token launch
-    - `createPoolAndBuy()` - Create pool + initial purchase
-    
-  </AccordionItem>
-  
-  <AccordionItem title="Swapping & Trading">
-    
-    ```typescript
-    // Get swap quote
-    const quote = await meteoraService.fetchSwapQuote(
-      inputToken,
-      outputToken,
-      amount,
-      slippage,
-      poolAddress
-    );
-    
-    // Execute trade
-    const result = await meteoraService.executeTrade(
-      tradeParams,
-      poolAddress,
-      wallet,
-      onStatusUpdate
-    );
-    ```
-    
-    **Available Functions:**
-    - `fetchSwapQuote()` - Get trading quotes
-    - `executeTrade()` - Execute swaps
-    - `fetchMeteoraPools()` - Get available pools
-    
-  </AccordionItem>
-  
-  <AccordionItem title="Liquidity Management">
-    
-    ```typescript
-    // Fetch user positions
-    const positions = await meteoraService.fetchUserLiquidityPositions(
-      walletAddress
-    );
-    
-    // Add liquidity
-    const result = await meteoraService.addLiquidity(
-      poolAddress,
-      tokenAAmount,
-      tokenBAmount,
-      slippage,
-      connection,
-      wallet,
-      onStatusUpdate
-    );
-    
-    // Remove liquidity
-    const removal = await meteoraService.removeLiquidity(
-      positionId,
-      percentage,
-      connection,
-      wallet,
-      onStatusUpdate
-    );
-    ```
-    
-    **Available Functions:**
-    - `fetchUserLiquidityPositions()` - Get user positions
-    - `addLiquidity()` - Add to pools
-    - `removeLiquidity()` - Remove from pools
-    
-  </AccordionItem>
-</Accordion>
+<ResponseField name="token_creation_config" type="object">
+<Expandable title="Token Creation & Configuration">
+
+```typescript
+import { meteoraService } from '@/modules/meteora';
+
+// Create token configuration
+const config = await meteoraService.createConfig(
+  configParams, 
+  connection, 
+  wallet, 
+  onStatusUpdate
+);
+
+// Build bonding curve by market cap
+const curve = await meteoraService.buildCurveByMarketCap(
+  curveParams, 
+  connection, 
+  wallet, 
+  onStatusUpdate
+);
+
+// Complete token creation with curve
+const token = await meteoraService.createTokenWithCurve(
+  tokenParams, 
+  connection, 
+  wallet, 
+  onStatusUpdate
+);
+```
+
+**Available Functions:**
+- `createConfig()` - Create DBC configuration
+- `buildCurveByMarketCap()` - Build bonding curve
+- `createPool()` - Create liquidity pool
+- `uploadTokenMetadata()` - Upload to IPFS
+- `createTokenWithCurve()` - Complete token launch
+- `createPoolAndBuy()` - Create pool + initial purchase
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="swapping_trading" type="object">
+<Expandable title="Swapping & Trading">
+
+```typescript
+// Get swap quote
+const quote = await meteoraService.fetchSwapQuote(
+  inputToken,
+  outputToken,
+  amount,
+  slippage,
+  poolAddress
+);
+
+// Execute trade
+const result = await meteoraService.executeTrade(
+  tradeParams,
+  poolAddress,
+  wallet,
+  onStatusUpdate
+);
+```
+
+**Available Functions:**
+- `fetchSwapQuote()` - Get trading quotes
+- `executeTrade()` - Execute swaps
+- `fetchMeteoraPools()` - Get available pools
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="liquidity_management" type="object">
+<Expandable title="Liquidity Management">
+
+```typescript
+// Fetch user positions
+const positions = await meteoraService.fetchUserLiquidityPositions(
+  walletAddress
+);
+
+// Add liquidity
+const result = await meteoraService.addLiquidity(
+  poolAddress,
+  tokenAAmount,
+  tokenBAmount,
+  slippage,
+  connection,
+  wallet,
+  onStatusUpdate
+);
+
+// Remove liquidity
+const removal = await meteoraService.removeLiquidity(
+  positionId,
+  percentage,
+  connection,
+  wallet,
+  onStatusUpdate
+);
+```
+
+**Available Functions:**
+- `fetchUserLiquidityPositions()` - Get user positions
+- `addLiquidity()` - Add to pools
+- `removeLiquidity()` - Remove from pools
+
+</Expandable>
+</ResponseField>
 
 ## Quick Start Example
 
@@ -688,26 +681,26 @@ function MeteoraBased() {
 
 ## Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="Common Issues">
-    
-    **Backend Connection Issues**
-    - Verify `SERVER_URL` is correctly configured
-    - Ensure backend service is running and accessible
-    - Check network connectivity and firewall settings
-    
-    **Transaction Failures**
-    - Insufficient SOL for transaction fees
-    - Wallet connection issues
-    - Network congestion or RPC rate limits
-    
-    **Bonding Curve Configuration**
-    - Invalid market cap ratios (migration must be > initial)
-    - Supply parameters don't match curve expectations
-    - Fee configurations exceed maximum allowed values
-    
-  </Accordion>
-</AccordionGroup>
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Issues">
+
+**Backend Connection Issues**
+- Verify `SERVER_URL` is correctly configured
+- Ensure backend service is running and accessible
+- Check network connectivity and firewall settings
+
+**Transaction Failures**
+- Insufficient SOL for transaction fees
+- Wallet connection issues
+- Network congestion or RPC rate limits
+
+**Bonding Curve Configuration**
+- Invalid market cap ratios (migration must be > initial)
+- Supply parameters don't match curve expectations
+- Fee configurations exceed maximum allowed values
+
+</Expandable>
+</ResponseField>
 
 ## Performance Considerations
 

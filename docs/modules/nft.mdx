@@ -4,18 +4,7 @@ description: "Complete NFT functionality for buying, selling, and managing digit
 icon: "image"
 ---
 
-# NFT Module
-
 The NFT module provides comprehensive functionality for interacting with Non-Fungible Tokens (NFTs) on the Solana blockchain. It integrates with the Tensor API for fetching NFT data, collection information, and performing buy/sell operations.
-
-<Card>
-  <CardHeader>
-    <CardTitle>🎨 Complete NFT Marketplace</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Full-featured NFT trading platform with collection browsing, floor price discovery, and seamless buying/selling through Tensor integration
-  </CardContent>
-</Card>
 
 ## Core Functionalities
 
@@ -255,8 +244,8 @@ function UserNFTPortfolio() {
 
 The `nftService.ts` provides comprehensive Tensor API integration:
 
-<Accordion>
-  <AccordionItem title="Data Fetching">
+<ResponseField name="nft_service" type="object">
+<Expandable title="Data Fetching">
     
     ```typescript
     import { nftService } from '@/modules/nft';
@@ -284,9 +273,9 @@ The `nftService.ts` provides comprehensive Tensor API integration:
     - `searchCollections(query)` - Search collections by name
     - `fetchActiveListings(walletAddress)` - User's active listings
     
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="NFT Trading">
+<Expandable title="NFT Trading">
     
     ```typescript
     // Buy a specific NFT
@@ -333,8 +322,8 @@ The `nftService.ts` provides comprehensive Tensor API integration:
     - `listNftForSale()` - Create new listing
     - `delistNft()` - Remove existing listing
     
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Quick Start Examples
 
@@ -533,8 +522,8 @@ function CustomNFTTrading() {
 
 The module includes specialized utilities for handling NFT data:
 
-<Accordion>
-  <AccordionItem title="Image Utilities">
+<ResponseField name="nft_utilities" type="object">
+<Expandable title="Image Utilities">
     **`imageUtils.ts`** - NFT image handling and formatting
     
     ```typescript
@@ -551,8 +540,8 @@ The module includes specialized utilities for handling NFT data:
     const formattedPrice = formatSolPrice(1500000000, true); // true = lamports
     // Returns: "1.5 SOL"
     ```
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Advanced Features
 
@@ -715,8 +704,8 @@ function useBatchNFTOperations() {
 
 ## Error Handling & Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="Common Issues">
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Issues">
     
     **NFT Images Not Loading**
     - IPFS gateway timeouts or failures
@@ -733,8 +722,8 @@ function useBatchNFTOperations() {
     - Missing or invalid API key
     - Temporary service unavailability
     
-  </Accordion>
-</AccordionGroup>
+</Expandable>
+</ResponseField>
 
 ```typescript
 function RobustNFTOperation() {

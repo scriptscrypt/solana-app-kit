@@ -4,18 +4,7 @@ description: "Unified wallet integration supporting Privy, Dynamic, Turnkey, and
 icon: "wallet"
 ---
 
-# Wallet Providers Module
-
 The Wallet Providers module provides a comprehensive, unified interface for multiple wallet solutions in React Native Solana applications. It abstracts away the complexity of different wallet providers while maintaining their unique features and security standards.
-
-<Card>
-  <CardHeader>
-    <CardTitle>🔐 Universal Wallet Integration</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Seamlessly integrate multiple wallet providers with a single, consistent API while preserving each provider's unique security and feature advantages
-  </CardContent>
-</Card>
 
 ## Core Features
 
@@ -740,8 +729,8 @@ function ProviderSpecificFeatures() {
 
 ## Error Handling & Recovery
 
-<AccordionGroup>
-  <Accordion title="Common Wallet Issues">
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Wallet Issues">
     
     **Connection Failures**
     - Network connectivity issues
@@ -761,8 +750,8 @@ function ProviderSpecificFeatures() {
     - Invalid credentials
     - Biometric authentication failures
     
-  </Accordion>
-</AccordionGroup>
+</Expandable>
+</ResponseField>
 
 ```typescript
 function RobustWalletErrorHandling() {

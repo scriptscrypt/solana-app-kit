@@ -1,21 +1,10 @@
 ---
-title: "Pump.fun Module"
+title: "Pump.fun & Swap Module"
 description: "Complete meme token ecosystem with token launching, trading, and automated market making via Pump.fun and PumpSwap"
 icon: "rocket"
 ---
 
-# Pump.fun & PumpSwap Module
-
 The Pump.fun module provides comprehensive integration with the Pump.fun platform and PumpSwap AMM, enabling users to launch meme tokens, trade on bonding curves, and participate in automated market making.
-
-<Card>
-  <CardHeader>
-    <CardTitle>🚀 Meme Token Ecosystem</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Complete toolkit for meme token creation, trading, and community building with integrated bonding curves and AMM functionality
-  </CardContent>
-</Card>
 
 ## Core Functionalities
 
@@ -667,8 +656,8 @@ function useSocialTokenLaunch() {
 
 ## Utility Functions
 
-<Accordion>
-  <AccordionItem title="Pump.fun Utilities">
+<ResponseField name="utility_functions" type="object">
+<Expandable title="Pump.fun Utilities">
     **`pumpfunUtils.ts`** - Pump.fun specific helpers
     
     ```typescript
@@ -691,9 +680,9 @@ function useSocialTokenLaunch() {
     // Get swap quote
     const quote = await getSwapQuote(inputToken, outputToken, amount);
     ```
-  </AccordionItem>
-  
-  <AccordionItem title="PumpSwap Utilities">
+</Expandable>
+
+<Expandable title="PumpSwap Utilities">
     **`pumpSwapUtils.ts`** - AMM calculations and formatting
     
     ```typescript
@@ -712,9 +701,9 @@ function useSocialTokenLaunch() {
     // Calculate pool fees
     const fees = calculateFees(amount, feeBps);
     ```
-  </AccordionItem>
-  
-  <AccordionItem title="Mobile Wallet Patch">
+</Expandable>
+
+<Expandable title="Mobile Wallet Patch">
     **`anchorMobilePatch.ts`** - React Native wallet compatibility
     
     ```typescript
@@ -723,8 +712,8 @@ function useSocialTokenLaunch() {
     // Use instead of NodeWallet for React Native compatibility
     const mobileWallet = new MobileWallet(wallet);
     ```
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Integration with Other Modules
 
@@ -800,8 +789,8 @@ function IntegratedMemeplatform() {
 
 ## Error Handling & Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="Common Issues">
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Issues">
     
     **Backend Connection Failures**
     - Verify `SERVER_URL` is correctly configured
@@ -826,8 +815,8 @@ function IntegratedMemeplatform() {
     - Price impact too high
     - Invalid token addresses
     
-  </Accordion>
-</AccordionGroup>
+</Expandable>
+</ResponseField>
 
 ```typescript
 function RobustPumpfunOperations() {

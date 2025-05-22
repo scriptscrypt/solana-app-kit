@@ -4,18 +4,8 @@ description: "Seamless fiat on-ramp integration for purchasing cryptocurrency wi
 icon: "credit-card"
 ---
 
-# MoonPay Module
-
 The MoonPay module provides seamless cryptocurrency purchasing capabilities directly within your app. Users can buy crypto using credit cards, debit cards, Apple Pay, and other payment methods through MoonPay's trusted platform.
 
-<Card>
-  <CardHeader>
-    <CardTitle>💳 Fiat-to-Crypto Bridge</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Integrate MoonPay's robust payment infrastructure to let users easily convert fiat currency into cryptocurrency with a few taps
-  </CardContent>
-</Card>
 
 ## Core Functionalities
 
@@ -336,45 +326,55 @@ const widgetUrl = moonPayService.getWidgetUrl({
 
 ## Utility Functions
 
-<Accordion>
-  <AccordionItem title="Address Formatting">
-    **`formatWalletAddress(address)`** - Shortens wallet addresses for display
-    
-    ```typescript
-    import { formatWalletAddress } from '@/modules/moonpay/utils';
-    
-    const address = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
-    const formatted = formatWalletAddress(address);
-    // Returns: "9WzD...AWWM"
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="Error Handling">
-    **`parseErrorMessage(error)`** - Converts raw errors to user-friendly messages
-    
-    ```typescript
-    import { parseErrorMessage } from '@/modules/moonpay/utils';
-    
-    try {
-      // MoonPay operation
-    } catch (error) {
-      const userMessage = parseErrorMessage(error);
-      Alert.alert('Purchase Failed', userMessage);
-    }
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="Environment Detection">
-    **`getEnvironmentFromConfig(apiKey)`** - Automatically detects sandbox vs production
-    
-    ```typescript
-    import { getEnvironmentFromConfig } from '@/modules/moonpay/utils';
-    
-    const environment = getEnvironmentFromConfig(process.env.MOONPAY_API_KEY);
-    // Returns: 'sandbox' for pk_test_ keys, 'production' for pk_live_ keys
-    ```
-  </AccordionItem>
-</Accordion>
+<ResponseField name="address_formatting" type="object">
+<Expandable title="Address Formatting">
+
+**`formatWalletAddress(address)`** - Shortens wallet addresses for display
+
+```typescript
+import { formatWalletAddress } from '@/modules/moonpay/utils';
+
+const address = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
+const formatted = formatWalletAddress(address);
+// Returns: "9WzD...AWWM"
+```
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="error_handling" type="object">
+<Expandable title="Error Handling">
+
+**`parseErrorMessage(error)`** - Converts raw errors to user-friendly messages
+
+```typescript
+import { parseErrorMessage } from '@/modules/moonpay/utils';
+
+try {
+  // MoonPay operation
+} catch (error) {
+  const userMessage = parseErrorMessage(error);
+  Alert.alert('Purchase Failed', userMessage);
+}
+```
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="environment_detection" type="object">
+<Expandable title="Environment Detection">
+
+**`getEnvironmentFromConfig(apiKey)`** - Automatically detects sandbox vs production
+
+```typescript
+import { getEnvironmentFromConfig } from '@/modules/moonpay/utils';
+
+const environment = getEnvironmentFromConfig(process.env.MOONPAY_API_KEY);
+// Returns: 'sandbox' for pk_test_ keys, 'production' for pk_live_ keys
+```
+
+</Expandable>
+</ResponseField>
 
 ## Advanced Usage Patterns
 
@@ -589,27 +589,27 @@ function BuyAndSwapFlow() {
 
 ## Error Handling & Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="Common Issues">
-    
-    **Widget Not Loading**
-    - Verify `MOONPAY_API_KEY` is correctly set
-    - Check internet connectivity
-    - Ensure API key has proper permissions
-    
-    **Payment Failures**
-    - Card verification issues
-    - Insufficient funds
-    - Geographic restrictions
-    - KYC requirements not met
-    
-    **Network Errors**
-    - Backend connectivity issues
-    - Solana network congestion
-    - Invalid wallet addresses
-    
-  </Accordion>
-</AccordionGroup>
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Issues">
+
+**Widget Not Loading**
+- Verify `MOONPAY_API_KEY` is correctly set
+- Check internet connectivity
+- Ensure API key has proper permissions
+
+**Payment Failures**
+- Card verification issues
+- Insufficient funds
+- Geographic restrictions
+- KYC requirements not met
+
+**Network Errors**
+- Backend connectivity issues
+- Solana network congestion
+- Invalid wallet addresses
+
+</Expandable>
+</ResponseField>
 
 ```typescript
 function RobustMoonPayWidget() {

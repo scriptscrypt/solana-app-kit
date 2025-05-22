@@ -4,18 +4,7 @@ description: "Comprehensive blockchain data fetching and management for Solana a
 icon: "database"
 ---
 
-# Data Module
-
 The Data Module is your central hub for fetching, processing, and managing on-chain and off-chain data related to Solana assets. It provides seamless integration with multiple data sources including Helius, Birdeye, and CoinGecko.
-
-<Card>
-  <CardHeader>
-    <CardTitle>🎯 What This Module Provides</CardTitle>
-  </CardHeader>
-  <CardContent>
-    A unified interface for accessing token metadata, NFT portfolios, market data, and trading history across the Solana ecosystem
-  </CardContent>
-</Card>
 
 ## Core Functionalities
 
@@ -370,37 +359,47 @@ function TokenDetailModal({ tokenAddress, visible }) {
 
 ## Utility Functions
 
-<Accordion>
-  <AccordionItem title="Token Utilities">
-    **`tokenUtils.ts`** - Token formatting and display helpers
-    
-    ```typescript
-    formatTokenAmount(amount, decimals)
-    getTokenLogo(tokenAddress)
-    formatUsdValue(value)
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="Fetch Utilities">
-    **`fetch.ts`** - Robust API calling with retry logic
-    
-    ```typescript
-    fetchWithRetries(url, options, retries)
-    fetchUserAssets(walletAddress)
-    fetchSolBalance(walletAddress)
-    ```
-  </AccordionItem>
-  
-  <AccordionItem title="Display Formatters">
-    **`tokenDetailsFormatters.ts`** - UI formatting functions
-    
-    ```typescript
-    formatPrice(price)
-    formatPriceChange(change)
-    formatNumber(number)
-    ```
-  </AccordionItem>
-</Accordion>
+<ResponseField name="token_utilities" type="object">
+<Expandable title="Token Utilities">
+
+**`tokenUtils.ts`** - Token formatting and display helpers
+
+```typescript
+formatTokenAmount(amount, decimals)
+getTokenLogo(tokenAddress)
+formatUsdValue(value)
+```
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="fetch_utilities" type="object">
+<Expandable title="Fetch Utilities">
+
+**`fetch.ts`** - Robust API calling with retry logic
+
+```typescript
+fetchWithRetries(url, options, retries)
+fetchUserAssets(walletAddress)
+fetchSolBalance(walletAddress)
+```
+
+</Expandable>
+</ResponseField>
+
+<ResponseField name="display_formatters" type="object">
+<Expandable title="Display Formatters">
+
+**`tokenDetailsFormatters.ts`** - UI formatting functions
+
+```typescript
+formatPrice(price)
+formatPriceChange(change)
+formatNumber(number)
+```
+
+</Expandable>
+</ResponseField>
 
 ## Data Sources Integration
 
@@ -564,23 +563,23 @@ function TokenSwapInterface() {
 
 ## Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="Common Issues">
-    
-    **API Key Issues**
-    - Ensure all required API keys are set in environment variables
-    - Check API key permissions and rate limits
-    
-    **Network Timeouts**
-    - The module includes retry logic, but network issues may still occur
-    - Implement proper loading states and error boundaries
-    
-    **Token Not Found**
-    - Some tokens may not be available in all data sources
-    - Implement fallback mechanisms when token data is unavailable
-    
-  </Accordion>
-</AccordionGroup>
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Issues">
+
+**API Key Issues**
+- Ensure all required API keys are set in environment variables
+- Check API key permissions and rate limits
+
+**Network Timeouts**
+- The module includes retry logic, but network issues may still occur
+- Implement proper loading states and error boundaries
+
+**Token Not Found**
+- Some tokens may not be available in all data sources
+- Implement fallback mechanisms when token data is unavailable
+
+</Expandable>
+</ResponseField>
 
 ## API Reference
 
