@@ -208,8 +208,9 @@ The module uses advanced AI models through custom providers:
 
 The AI agent can perform various Solana operations through natural language:
 
-<AccordionGroup>
-<Accordion title="Transaction Operations">
+<ResponseField name="transaction_operations" type="object">
+<Expandable title="Transaction Operations">
+
 ```typescript
 // Example user queries the AI can handle:
 
@@ -233,9 +234,13 @@ The AI agent can perform various Solana operations through natural language:
 - View transaction history
 - Sign messages and transactions
 - Multi-transaction operations
-</Accordion>
 
-<Accordion title="DeFi Operations">
+</Expandable>
+</ResponseField>
+
+<ResponseField name="defi_operations" type="object">
+<Expandable title="DeFi Operations">
+
 ```typescript
 // Advanced DeFi queries:
 
@@ -258,9 +263,13 @@ The AI agent can perform various Solana operations through natural language:
 - Staking and delegation
 - Cross-protocol interactions
 - Yield optimization suggestions
-</Accordion>
 
-<Accordion title="Portfolio Management">
+</Expandable>
+</ResponseField>
+
+<ResponseField name="portfolio_management" type="object">
+<Expandable title="Portfolio Management">
+
 ```typescript
 // Portfolio analysis queries:
 
@@ -284,8 +293,9 @@ The AI agent can perform various Solana operations through natural language:
 - Risk assessment and management
 - Automated rebalancing suggestions
 - Tax optimization strategies
-</Accordion>
-</AccordionGroup>
+
+</Expandable>
+</ResponseField>
 
 ## Quick Start Examples
 
@@ -492,8 +502,9 @@ function CustomSolanaOperations() {
 
 The module provides comprehensive chat management capabilities:
 
-<AccordionGroup>
-<Accordion title="Chat Persistence">
+<ResponseField name="chat_persistence" type="object">
+<Expandable title="Chat Persistence">
+
 ```typescript
 import { 
   saveChat, 
@@ -521,9 +532,13 @@ const userChats = await fetchChats();
 // Delete chat
 await deleteChat(chatId);
 ```
-</Accordion>
 
-<Accordion title="Message Management">
+</Expandable>
+</ResponseField>
+
+<ResponseField name="message_management" type="object">
+<Expandable title="Message Management">
+
 ```typescript
 import { 
   saveMessages, 
@@ -541,9 +556,13 @@ const chatMessages = await fetchMessages(chatId);
 // Convert for UI display
 const uiMessages = convertToUIMessages(chatMessages);
 ```
-</Accordion>
 
-<Accordion title="User Management">
+</Expandable>
+</ResponseField>
+
+<ResponseField name="user_management" type="object">
+<Expandable title="User Management">
+
 ```typescript
 import { createOrUpdateUser } from '@/modules/solana-agent-kit';
 
@@ -558,8 +577,9 @@ await createOrUpdateUser({
   lastActive: new Date().toISOString()
 });
 ```
-</Accordion>
-</AccordionGroup>
+
+</Expandable>
+</ResponseField>
 
 ## Advanced AI Features
 
@@ -800,8 +820,9 @@ function SecureAITransactions() {
 
 ## Error Handling & Troubleshooting
 
-<AccordionGroup>
-<Accordion title="Common Issues">
+<ResponseField name="common_issues" type="object">
+<Expandable title="Common Issues">
+
 **OpenAI API Issues**
 - Invalid or missing API key
 - Rate limit exceeded
@@ -821,8 +842,9 @@ function SecureAITransactions() {
 - Ambiguous user queries
 - Unsupported operations
 - Context confusion in long conversations
-</Accordion>
-</AccordionGroup>
+
+</Expandable>
+</ResponseField>
 
 ## Performance Considerations
 
