@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Platform,
   FlatList,
   Animated,
+  Easing,
   Dimensions,
 } from 'react-native';
 import {
@@ -44,6 +45,14 @@ import { BIRDEYE_API_KEY } from '@env';
 
 // Get screen dimensions
 const { height } = Dimensions.get('window');
+
+/**
+ * Ref handle for the ShareTradeModal component
+ * @interface ShareTradeModalRef
+ */
+export interface ShareTradeModalRef {
+  forceRefresh: () => void;
+}
 
 /**
  * Available tab options in the TradeModal
@@ -114,6 +123,109 @@ interface UpdatedTradeModalProps {
   initialActiveTab?: TabOption;
 }
 
+// Simple skeleton component with shimmer effect for loading states
+const SkeletonSwapItem = ({ index = 0 }) => {
+  // Create animated value for shimmer effect
+  const shimmerAnim = useRef(new Animated.Value(-1)).current;
+  
+  // Start the shimmer animation when component mounts
+  useEffect(() => {
+    const startShimmerAnimation = () => {
+      Animated.loop(
+        Animated.timing(shimmerAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        })
+      ).start();
+    };
+    
+    startShimmerAnimation();
+    return () => shimmerAnim.stopAnimation();
+  }, [shimmerAnim]);
+  
+  // Interpolate the animated value for the shimmer gradient
+  const shimmerTranslate = shimmerAnim.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [-300, 300],
+  });
+  
+  return (
+    <View style={styles.skeletonContainer}>
+      <View style={styles.skeletonSwapItem}>
+        {/* Token swap info row with shimmer effect */}
+        <View style={styles.skeletonRow}>
+          {/* From token */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <View style={styles.skeletonTokenBox} />
+            <View style={styles.skeletonMiddleContent}>
+              <View style={styles.skeletonTextLong} />
+              <View style={styles.skeletonTextShort} />
+            </View>
+          </View>
+          
+          {/* Arrow with inner circle for better appearance */}
+          <View style={styles.skeletonArrow}>
+            <View style={styles.skeletonArrowInner} />
+          </View>
+          
+          {/* To token */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <View style={styles.skeletonTokenBox} />
+            <View style={styles.skeletonMiddleContent}>
+              <View style={styles.skeletonTextLong} />
+              <View style={styles.skeletonTextShort} />
+            </View>
+          </View>
+        </View>
+        
+        {/* Date/timestamp line */}
+        <View style={{ alignItems: 'flex-end', marginTop: 8 }}>
+          <View style={styles.skeletonDateText} />
+        </View>
+        
+        {/* Shimmer overlay - contained within this skeleton item */}
+        <Animated.View
+          style={[
+            styles.shimmerOverlay,
+            {
+              backgroundColor: 'white',
+              // Create a gradient effect using linear gradient
+              // Since we can't use LinearGradient directly, simulate with a skewed view
+              width: 120,
+              left: -60,
+              opacity: 0.15,
+              transform: [
+                { translateX: shimmerTranslate },
+                { skewX: '-30deg' }
+              ],
+            }
+          ]}
+        />
+      </View>
+    </View>
+  );
+};
+
+// Create a list of skeleton items
+const SkeletonSwapList = ({ count = 5 }) => {
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Skeleton header that mimics the real list header */}
+      <View style={styles.listHeaderContainer}>
+        <View style={[styles.skeletonTextShort, { width: 120, marginBottom: 8 }]} />
+        <View style={styles.swapsListDivider} />
+      </View>
+      
+      {/* Skeleton items */}
+      {Array.from({ length: count }).map((_, index) => (
+        <SkeletonSwapItem key={`skeleton-${index}`} index={index} />
+      ))}
+    </View>
+  );
+};
+
 /**
  * A modal component for sharing trade history on the feed.
  *
@@ -121,7 +233,7 @@ interface UpdatedTradeModalProps {
  * 1. Pick an existing Tx signature & share it
  * 2. Select from past swaps & share them
  */
-export default function TradeModal({
+export const ShareTradeModal = forwardRef<ShareTradeModalRef, UpdatedTradeModalProps>(({
   visible,
   onClose,
   currentUser,
@@ -130,7 +242,7 @@ export default function TradeModal({
   initialOutputToken,
   disableTabs,
   initialActiveTab,
-}: UpdatedTradeModalProps) {
+}, ref) => {
   const dispatch = useAppDispatch();
   // Use our wallet hook
   const { publicKey: userPublicKey, connected } = useWallet();
@@ -157,6 +269,7 @@ export default function TradeModal({
   const [swaps, setSwaps] = useState<EnhancedSwapTransaction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Ref to prevent multiple refreshes
   const isRefreshingRef = useRef(false);
@@ -173,6 +286,15 @@ export default function TradeModal({
     userPublicKey ? userPublicKey.toString() : null,
     [userPublicKey]
   );
+  
+  // Check if API key is available
+  const hasBirdeyeApiKey = useMemo(() => {
+    if (!BIRDEYE_API_KEY) {
+      console.error('[TradeModal] Birdeye API key is missing - please check .env file');
+      return false;
+    }
+    return true;
+  }, []);
 
   // Create animated value for slide-up animation
   const slideAnimation = useRef(new Animated.Value(0)).current;
@@ -348,13 +470,22 @@ export default function TradeModal({
       throw new Error('Wallet address is required');
     }
 
-    try {
-      // Calculate time range (last 30 days)
-      const now = Math.floor(Date.now() / 1000);
-      const thirtyDaysAgo = now - (30 * 24 * 60 * 60);
+    if (!BIRDEYE_API_KEY) {
+      console.error('[TradeModal] Birdeye API key is missing');
+      throw new Error('Birdeye API key is missing. Please check your environment variables.');
+    }
 
-      // Construct the Birdeye API URL
-      const url = `https://public-api.birdeye.so/defi/v3/txs?offset=0&limit=50&sort_by=block_unix_time&sort_type=desc&tx_type=swap&owner=${ownerAddress}&after_time=${thirtyDaysAgo}`;
+    try {
+      // Calculate time range - use 28 days to ensure we're safely within the API's "last 30 days" requirement
+      const now = Math.floor(Date.now() / 1000); // Current time in seconds
+      const daysToFetch = 28; // Use 28 days instead of 30 to be safe
+      const startTime = now - (daysToFetch * 24 * 60 * 60);
+
+      // Log the API request details for debugging
+      console.log(`[TradeModal] Fetching swaps for address: ${ownerAddress} from ${startTime} to ${now}`);
+
+      // Construct the Birdeye API URL - be explicit with parameters
+      const url = `https://public-api.birdeye.so/defi/v3/txs?offset=0&limit=50&sort_by=block_unix_time&sort_type=desc&tx_type=swap&owner=${ownerAddress}&after_time=${startTime}`;
 
       // Make the API request
       const response = await fetch(url, {
@@ -367,6 +498,9 @@ export default function TradeModal({
       });
 
       if (!response.ok) {
+        console.error(`[TradeModal] Birdeye API error: ${response.status} ${response.statusText}`);
+        const errorBody = await response.text();
+        console.error(`[TradeModal] Birdeye API error body: ${errorBody}`);
         throw new Error(`Birdeye API error: ${response.status} ${response.statusText}`);
       }
 
@@ -532,8 +666,36 @@ export default function TradeModal({
    * Handle refresh for past swaps using Birdeye API
    */
   const handleRefresh = useCallback(async () => {
+    // Clear any previous API errors
+    if (isMounted.current) {
+      setApiError(null);
+    }
+    
+    // Check if wallet is connected
+    if (!walletAddress) {
+      if (isMounted.current) {
+        setInitialLoading(false);
+        setRefreshing(false);
+        setApiError("Please connect your wallet to view your swap history");
+      }
+      return;
+    }
+    
+    // Check if API key is available
+    if (!hasBirdeyeApiKey) {
+      if (isMounted.current) {
+        setInitialLoading(false);
+        setRefreshing(false);
+        setApiError("API configuration error. Please contact support.");
+      }
+      return;
+    }
+    
     // Prevent concurrent refreshes
-    if (!walletAddress || isRefreshingRef.current) return;
+    if (isRefreshingRef.current) {
+      console.log('[TradeModal] Refresh already in progress, skipping');
+      return;
+    }
 
     isRefreshingRef.current = true;
 
@@ -558,6 +720,20 @@ export default function TradeModal({
       }
     } catch (err: any) {
       console.error('Error fetching past swaps:', err);
+      
+      if (isMounted.current) {
+        // Set a user-friendly error message
+        setApiError(err.message || "Failed to fetch swap history");
+        
+        // Keep any existing swaps in the UI rather than clearing them
+        if (swaps.length === 0) {
+          // Only show error alert if we have no data to display
+          Alert.alert(
+            "Error Loading Swaps",
+            "There was a problem loading your swap history. Please try again later."
+          );
+        }
+      }
     } finally {
       if (isMounted.current) {
         setRefreshing(false);
@@ -566,7 +742,7 @@ export default function TradeModal({
       isRefreshingRef.current = false;
       hasLoadedInitialDataRef.current = true;
     }
-  }, [walletAddress, selectedPastSwap, fetchSwapsWithBirdeye, groupRelatedSwaps]);
+  }, [walletAddress, selectedPastSwap, fetchSwapsWithBirdeye, groupRelatedSwaps, hasBirdeyeApiKey, swaps.length]);
 
   /**
    * Handle refresh explicitly with a forced update
@@ -582,9 +758,19 @@ export default function TradeModal({
     // Reset refresh state to ensure we're starting fresh
     isRefreshingRef.current = false;
 
+    // Set loading states for animation
+    if (isMounted.current) {
+      setRefreshing(true);
+    }
+
     // Call the refresh function
     await handleRefresh();
   }, [walletAddress, handleRefresh]);
+
+  // Expose the forceRefresh method via ref
+  useImperativeHandle(ref, () => ({
+    forceRefresh,
+  }));
 
   // Fetch past swaps when modal becomes visible - only once
   useEffect(() => {
@@ -711,6 +897,127 @@ export default function TradeModal({
     }
   }, [selectedPastSwap, onShare, handleClose, estimateTokenUsdValue]);
 
+  // Render content based on loading state
+  const renderSwapsList = () => {
+    if (initialLoading) {
+      return <SkeletonSwapList count={7} />;
+    }
+
+    if (refreshing) {
+      return <SkeletonSwapList count={7} />;
+    }
+
+    // Show API error state
+    if (apiError && swaps.length === 0) {
+      return (
+        <View style={styles.emptySwapsList}>
+          <View style={[styles.emptySwapsIcon, { backgroundColor: COLORS.errorRed }]}>
+            <FontAwesome5 name="exclamation-triangle" size={24} color={COLORS.white} />
+          </View>
+          <Text style={styles.emptySwapsText}>Error Loading Swaps</Text>
+          <Text style={styles.emptySwapsSubtext}>
+            {apiError}
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyStateRefreshButton}
+            onPress={forceRefresh}
+            disabled={refreshing}>
+            <FontAwesome5 name="sync-alt" size={12} color={COLORS.white} />
+            <Text style={styles.emptyStateRefreshText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (swaps.length === 0) {
+      return (
+        <View style={styles.emptySwapsList}>
+          <View style={styles.emptySwapsIcon}>
+            <FontAwesome5 name="exchange-alt" size={24} color={COLORS.white} />
+          </View>
+          <Text style={styles.emptySwapsText}>No Swap History</Text>
+          <Text style={styles.emptySwapsSubtext}>
+            Complete a token swap to see it here
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyStateRefreshButton}
+            onPress={forceRefresh}
+            disabled={refreshing}>
+            <FontAwesome5 name="sync-alt" size={12} color={COLORS.white} />
+            <Text style={styles.emptyStateRefreshText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={swaps}
+        renderItem={({ item }) => {
+          // Helper function to get token logo URL with fallbacks
+          const getTokenLogoUrl = (token: any) => {
+            // Try the properties we know about
+            if (token.logoURI) return token.logoURI;
+            if (token.image) return token.image;
+
+            // Fallbacks for common tokens
+            if (token.symbol === 'SOL' || token.mint === 'So11111111111111111111111111111111111111112') {
+              return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
+            }
+
+            if (token.symbol === 'USDC' || token.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
+              return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png';
+            }
+
+            // Add SEND token logo
+            if (token.symbol === 'SEND') {
+              return 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/SEDDd5UrYYCpvi9ajsuhbahTFbmQGCwinRcxpHtZoAd/logo.png';
+            }
+
+            // No logo found
+            return null;
+          };
+
+          // Create a prop object without isMultiHop and hopCount
+          const pastSwapProps = {
+            swap: item,
+            onSelect: handlePastSwapSelected,
+            selected: selectedPastSwap?.uniqueId === item.uniqueId,
+            inputTokenLogoURI: getTokenLogoUrl(item.inputToken),
+            outputTokenLogoURI: getTokenLogoUrl(item.outputToken)
+          };
+
+          return (
+            <TouchableOpacity
+              style={styles.swapItemContainer}
+              onPress={() => handlePastSwapSelected(item)}
+              activeOpacity={0.7}
+            >
+              <PastSwapItem
+                {...pastSwapProps}
+              />
+            </TouchableOpacity>
+          );
+        }}
+        keyExtractor={(item) => item.uniqueId || `${item.signature}-${Math.random()}`}
+        contentContainerStyle={styles.swapsList}
+        showsVerticalScrollIndicator={true}
+        initialNumToRender={5}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+        ListHeaderComponent={
+          <View style={styles.listHeaderContainer}>
+            <Text style={styles.swapsCountText}>
+              {swaps.length} {swaps.length === 1 ? 'swap' : 'swaps'} found
+              {apiError ? ' (Error loading more)' : ''}
+            </Text>
+            <View style={styles.swapsListDivider} />
+          </View>
+        }
+      />
+    );
+  };
+
   return (
     <Modal
       visible={visible}
@@ -771,103 +1078,10 @@ export default function TradeModal({
                     {walletAddress ? (
                       <>
                         <View style={styles.pastSwapsContent}>
-                          {initialLoading ? (
-                            <View style={styles.loadingContainer}>
-                              <ActivityIndicator size="large" color={COLORS.brandBlue} />
-                              <Text style={styles.loadingText}>
-                                Loading your transaction history...
-                              </Text>
-                            </View>
-                          ) : refreshing ? (
-                            <View style={styles.refreshingOverlay}>
-                              <ActivityIndicator size="large" color={COLORS.brandBlue} />
-                              <Text style={styles.loadingText}>Refreshing...</Text>
-                            </View>
-                          ) : swaps.length === 0 ? (
-                            <View style={styles.emptySwapsList}>
-                              <View style={styles.emptySwapsIcon}>
-                                <FontAwesome5 name="exchange-alt" size={24} color={COLORS.white} />
-                              </View>
-                              <Text style={styles.emptySwapsText}>No Swap History</Text>
-                              <Text style={styles.emptySwapsSubtext}>
-                                Complete a token swap to see it here
-                              </Text>
-                              <TouchableOpacity
-                                style={styles.emptyStateRefreshButton}
-                                onPress={forceRefresh}
-                                disabled={refreshing}>
-                                <FontAwesome5 name="sync-alt" size={12} color={COLORS.white} />
-                                <Text style={styles.emptyStateRefreshText}>Refresh</Text>
-                              </TouchableOpacity>
-                            </View>
-                          ) : (
-                            <FlatList
-                              data={swaps}
-                              renderItem={({ item }) => {
-                                // Helper function to get token logo URL with fallbacks
-                                const getTokenLogoUrl = (token: any) => {
-                                  // Try the properties we know about
-                                  if (token.logoURI) return token.logoURI;
-                                  if (token.image) return token.image;
-
-                                  // Fallbacks for common tokens
-                                  if (token.symbol === 'SOL' || token.mint === 'So11111111111111111111111111111111111111112') {
-                                    return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png';
-                                  }
-
-                                  if (token.symbol === 'USDC' || token.mint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v') {
-                                    return 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png';
-                                  }
-
-                                  // Add SEND token logo
-                                  if (token.symbol === 'SEND') {
-                                    return 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/SEDDd5UrYYCpvi9ajsuhbahTFbmQGCwinRcxpHtZoAd/logo.png';
-                                  }
-
-                                  // No logo found
-                                  return null;
-                                };
-
-                                // Create a prop object without isMultiHop and hopCount
-                                const pastSwapProps = {
-                                  swap: item,
-                                  onSelect: handlePastSwapSelected,
-                                  selected: selectedPastSwap?.uniqueId === item.uniqueId,
-                                  inputTokenLogoURI: getTokenLogoUrl(item.inputToken),
-                                  outputTokenLogoURI: getTokenLogoUrl(item.outputToken)
-                                };
-
-                                return (
-                                  <TouchableOpacity
-                                    style={styles.swapItemContainer}
-                                    onPress={() => handlePastSwapSelected(item)}
-                                    activeOpacity={0.7}
-                                  >
-                                    <PastSwapItem
-                                      {...pastSwapProps}
-                                    />
-                                  </TouchableOpacity>
-                                );
-                              }}
-                              keyExtractor={(item) => item.uniqueId || `${item.signature}-${Math.random()}`}
-                              contentContainerStyle={styles.swapsList}
-                              showsVerticalScrollIndicator={true}
-                              initialNumToRender={5}
-                              onRefresh={handleRefresh}
-                              refreshing={refreshing}
-                              ListHeaderComponent={
-                                <View style={styles.listHeaderContainer}>
-                                  <Text style={styles.swapsCountText}>
-                                    {swaps.length} {swaps.length === 1 ? 'swap' : 'swaps'} found
-                                  </Text>
-                                  <View style={styles.swapsListDivider} />
-                                </View>
-                              }
-                            />
-                          )}
+                          {renderSwapsList()}
                         </View>
 
-                        {selectedPastSwap && !loading && !initialLoading && (
+                        {selectedPastSwap && !loading && !initialLoading && !refreshing && (
                           <TouchableOpacity
                             style={styles.swapButton}
                             onPress={handleSharePastSwap}>
@@ -908,4 +1122,7 @@ export default function TradeModal({
       </View>
     </Modal>
   );
-}
+});
+
+// Also export as default for backward compatibility
+export default ShareTradeModal;

@@ -34,7 +34,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { TENSOR_API_KEY } from '@env';
 import { useWallet } from '../../../../modules/wallet-providers/hooks/useWallet';
-import TradeModal from '../trade/ShareTradeModal';
+import TradeModal, { ShareTradeModalRef } from '../trade/ShareTradeModal';
 import { DEFAULT_IMAGES } from '@/shared/config/constants';
 import { NftListingModal, useFetchNFTs, NftItem } from '../../../../modules/nft';
 import { uploadThreadImage } from '../../services/threadImageService';
@@ -105,6 +105,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
   const dispatch = useAppDispatch();
   const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
   const inputRef = useRef<TextInput>(null);
+  const tradeModalRef = useRef<ShareTradeModalRef>(null);
 
   // Expose focus method via ref
   useImperativeHandle(ref, () => ({
@@ -402,6 +403,12 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
     setShowListingModal(false);
   };
 
+  const handleTradeSharePress = async () => {
+    if (tradeModalRef.current) {
+      await tradeModalRef.current.forceRefresh();
+    }
+    setShowTradeModal(true);
+  };
 
   // Add debug logging for Android IPFS image handling
   if (Platform.OS === 'android' && storedProfilePic) {
@@ -491,7 +498,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => setShowTradeModal(true)}
+                onPress={handleTradeSharePress}
                 style={styles.iconButton}>
                 <Icons.TradeShare width={22} height={22} />
               </TouchableOpacity>
@@ -560,6 +567,7 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
 
       {/* Trade Modal */}
       <TradeModal
+        ref={tradeModalRef}
         visible={showTradeModal}
         onClose={() => setShowTradeModal(false)}
         onShare={async (tradeData) => {
