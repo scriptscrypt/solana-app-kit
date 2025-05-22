@@ -84,7 +84,8 @@ import DevModeStatusBar from './src/core/dev-mode/DevModeStatusBar';
 import { DevModeProvider, useDevMode } from '@/shared/context/DevModeContext';
 import { DefaultCustomizationConfig } from '@/shared/config';
 import { CustomizationProvider } from '@/shared/config/CustomizationProvider';
-import { EnvErrorProvider } from '@/shared/context/EnvErrorContext';
+import { EnvErrorProvider, useEnvError } from '@/shared/context/EnvErrorContext';
+import { EnvWarningDrawer } from './src/core/dev-mode';
 
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {
@@ -97,6 +98,19 @@ const DevModeComponents = () => {
       <DevModeStatusBar />
       <DevDrawer />
     </>
+  );
+};
+
+// Component that conditionally renders standard mode warnings
+const StandardModeComponents = () => {
+  const { isDevMode } = useDevMode();
+  const { hasMissingEnvVars } = useEnvError();
+
+  // Only render in standard mode (not dev mode) when there are missing env vars
+  if (isDevMode || !hasMissingEnvVars) return null;
+
+  return (
+    <EnvWarningDrawer />
   );
 };
 
@@ -208,6 +222,9 @@ export default function App() {
 
                   {/* DevMode components will only render in dev mode */}
                   <DevModeComponents />
+
+                  {/* Standard mode warnings will only render in standard mode */}
+                  <StandardModeComponents />
                 </View>
               </EnvErrorProvider>
             </DevModeProvider>

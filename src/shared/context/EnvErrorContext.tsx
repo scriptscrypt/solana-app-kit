@@ -13,7 +13,6 @@ import {
     HELIUS_RPC_CLUSTER,
     SERVER_URL,
     TENSOR_API_KEY,
-    PARA_API_KEY,
     COINGECKO_API_KEY,
     BIRDEYE_API_KEY,
     HELIUS_STAKED_URL,
@@ -44,9 +43,13 @@ export function EnvErrorProvider({ children }: EnvErrorProviderProps) {
     const { isDevMode } = useDevMode();
 
     useEffect(() => {
-        if (isDevMode) {
-            checkMissingEnvVars();
-        }
+        // Always check for missing env vars, regardless of dev mode
+        checkMissingEnvVars();
+        
+        console.log('[EnvErrorContext] Provider initialized:', {
+            isDevMode,
+            checkingEnvVars: true
+        });
     }, [isDevMode]);
 
     const checkMissingEnvVars = () => {
@@ -64,7 +67,6 @@ export function EnvErrorProvider({ children }: EnvErrorProviderProps) {
             HELIUS_RPC_CLUSTER,
             SERVER_URL,
             TENSOR_API_KEY,
-            PARA_API_KEY,
             COINGECKO_API_KEY,
             BIRDEYE_API_KEY,
             HELIUS_STAKED_URL,
@@ -81,9 +83,15 @@ export function EnvErrorProvider({ children }: EnvErrorProviderProps) {
         }
 
         setMissingEnvVars(missing);
+        
+        console.log('[EnvErrorContext] Environment check result:', {
+            missingVarsCount: missing.length,
+            missingVarsList: missing.slice(0, 3),
+            hasMore: missing.length > 3
+        });
 
-        // Show the modal on initial load if there are missing variables
-        if (missing.length > 0) {
+        // Show the modal on initial load if there are missing variables and in dev mode
+        if (missing.length > 0 && isDevMode) {
             setShowErrorModal(true);
         }
     };
