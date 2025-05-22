@@ -9,6 +9,7 @@
 ![githubReadme](https://github.com/user-attachments/assets/2976e07f-adf5-4909-94b3-489ad0604fd0)
 
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SendArcade/solana-app-kit)
 [![Downloads](https://img.shields.io/github/downloads/SendArcade/solana-app-kit/total?label=Downloads&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/releases)
 [![Forks](https://img.shields.io/github/forks/SendArcade/solana-app-kit?label=Forks&color=blue&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/network/members)
 [![License](https://img.shields.io/github/license/SendArcade/solana-app-kit?label=License&color=brightgreen&style=for-the-badge)](https://github.com/SendArcade/solana-app-kit/blob/main/LICENSE)
