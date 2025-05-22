@@ -163,7 +163,10 @@ const styles = StyleSheet.create({
 // Android specific styles
 const androidStyles = StyleSheet.create({
   safeArea: {
-    paddingTop: 30,
+    paddingTop: 45,
+  },
+  headerContainer: {
+    paddingTop: 12,
   },
 });
 
@@ -241,6 +244,7 @@ export default function ModuleScreen() {
         title="Launchpads"
         showBackButton={true}
         onBackPress={handleBack}
+        style={Platform.OS === 'android' ? androidStyles.headerContainer : undefined}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

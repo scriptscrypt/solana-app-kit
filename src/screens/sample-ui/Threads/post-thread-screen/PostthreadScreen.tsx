@@ -20,6 +20,7 @@ import PostBody from '@/core/thread/components/post/PostBody';
 import PostFooter from '@/core/thread/components/post/PostFooter';
 import PostCTA from '@/core/thread/components/post/PostCTA';
 import ThreadComposer from '@/core/thread/components/thread-composer/ThreadComposer';
+import { AppHeader } from '@/core/shared-ui';
 
 import {
   ThreadPost,
@@ -453,15 +454,12 @@ export default function PostThreadScreen() {
       <SafeAreaView
         style={[styles.container, Platform.OS === 'android' && { paddingTop: 30 }]}>
         {/* Screen Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thread</Text>
-          <View style={styles.spacerView} />
-        </View>
+        <AppHeader
+          title="Thread"
+          showBackButton={true}
+          onBackPress={() => navigation.goBack()}
+          style={Platform.OS === 'android' ? { paddingTop: 30 } : undefined}
+        />
 
         <ScrollView
           ref={scrollViewRef}
