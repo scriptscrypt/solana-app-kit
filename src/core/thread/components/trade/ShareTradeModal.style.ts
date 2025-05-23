@@ -30,7 +30,7 @@ export default StyleSheet.create({
     borderTopRightRadius: 20,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 30 : 24,
-    height: Platform.OS === 'ios' ? height * 0.7 : height * 0.75,
+    height: Platform.OS === 'ios' ? height * 0.85 : height * 0.88,
     display: 'flex',
     flexDirection: 'column',
     ...Platform.select({
@@ -87,6 +87,17 @@ export default StyleSheet.create({
     lineHeight: 18,
   },
   refreshIcon: {
+    position: 'absolute',
+    left: 20,
+    top: 0,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: COLORS.lighterBackground,
+  },
+  headerBackButton: {
     position: 'absolute',
     left: 20,
     top: 0,
@@ -267,6 +278,112 @@ export default StyleSheet.create({
     marginVertical: 16,
   },
 
+  // Bottom Action Bar - Much cleaner than floating button
+  bottomActionBar: {
+    backgroundColor: COLORS.lightBackground,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderDarkColor,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: -2},
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  bottomActionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  selectedSwapSummary: {
+    flex: 1,
+    marginRight: 16,
+  },
+  selectedSwapTokens: {
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
+    marginBottom: 2,
+  },
+  selectedSwapTimestamp: {
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.accessoryDarkColor,
+  },
+  continueButton: {
+    backgroundColor: COLORS.brandBlue,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0, 171, 228, 0.5)',
+        shadowOffset: {width: 0, height: 3},
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  continueButtonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+    marginLeft: 6,
+  },
+
+  // Enhanced swap item styling for better selection feedback
+  swapItemWrapper: {
+    marginHorizontal: 20,
+    marginVertical: 6,
+  },
+  swapItemSelected: {
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: COLORS.brandBlue,
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0, 171, 228, 0.3)',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  swapItemUnselected: {
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+  },
+  swapItemCheckmark: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.brandBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+
   /** Result & error messages */
   resultText: {
     color: '#10B981',
@@ -426,6 +543,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   walletNotConnected: {
     flex: 1,
     alignItems: 'center',
@@ -705,34 +823,151 @@ export default StyleSheet.create({
     marginTop: 8,
   },
   
-  // Message input styles
-  messageInputContainer: {
+  // Message input screen styles
+  messageScreenContainer: {
+    flex: 1,
+    backgroundColor: COLORS.lightBackground,
+  },
+  selectedSwapPreview: {
     marginHorizontal: 20,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 16,
     backgroundColor: COLORS.background,
     borderRadius: 16,
     padding: 16,
-    position: 'relative',
+    borderWidth: 2,
+    borderColor: COLORS.brandBlue,
+  },
+  selectedSwapHeader: {
+    fontSize: TYPOGRAPHY.size.sm,
+    color: COLORS.brandBlue,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    marginBottom: 8,
+  },
+  messageInputContainer: {
+    flex: 1,
+    marginHorizontal: 20,
+    marginBottom: 16,
+  },
+  messageInputLabel: {
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    color: COLORS.white,
+    marginBottom: 12,
   },
   messageInput: {
-    minHeight: 80,
-    maxHeight: 120,
+    flex: 1,
     borderWidth: 1,
     borderColor: COLORS.borderDarkColor,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    paddingBottom: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     fontSize: TYPOGRAPHY.size.md,
     color: COLORS.white,
     backgroundColor: COLORS.lighterBackground,
     textAlignVertical: 'top',
+    minHeight: 120,
+    maxHeight: 200,
   },
   characterCount: {
     position: 'absolute',
-    bottom: 26,
-    right: 28,
+    bottom: 12,
+    right: 16,
     fontSize: TYPOGRAPHY.size.xs,
     color: COLORS.accessoryDarkColor,
+    backgroundColor: COLORS.lighterBackground,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
+  },
+  messageInputBottomSection: {
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 16,
+    backgroundColor: COLORS.lightBackground,
+  },
+  shareButton: {
+    backgroundColor: COLORS.brandBlue,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0, 171, 228, 0.5)',
+        shadowOffset: {width: 0, height: 3},
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  shareButtonText: {
+    color: COLORS.white,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
+  },
+  skipMessageButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  skipMessageButtonText: {
+    color: COLORS.accessoryDarkColor,
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+  },
+
+  // Smooth transition styles
+  slideInUp: {
+    transform: [{ translateY: 300 }],
+  },
+  slideInUpActive: {
+    transform: [{ translateY: 0 }],
+  },
+  fadeIn: {
+    opacity: 0,
+  },
+  fadeInActive: {
+    opacity: 1,
+  },
+
+  // Quick share button for immediate sharing without message
+  quickShareButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.brandBlue,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  quickShareButtonText: {
+    color: COLORS.brandBlue,
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    marginLeft: 4,
+  },
+
+  // Loading states
+  bottomActionLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  loadingSpinner: {
+    marginRight: 8,
   },
 });
