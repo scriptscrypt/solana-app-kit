@@ -55,7 +55,7 @@ export default function FeedScreen() {
   useEffect(() => {
     const initialFetchPosts = async () => {
       try {
-        await dispatch(fetchAllPosts()).unwrap();
+        await dispatch(fetchAllPosts(userWallet || undefined)).unwrap();
       } catch (error) {
         console.error("Failed to fetch initial posts:", error);
       } finally {
@@ -63,7 +63,7 @@ export default function FeedScreen() {
       }
     };
     initialFetchPosts();
-  }, [dispatch]);
+  }, [dispatch, userWallet]);
 
   // Once we have userWallet, fetch DB profile info (username, profile pic)
   // Only fetch when properly authenticated with isLoggedIn true
@@ -103,9 +103,9 @@ export default function FeedScreen() {
   // Pull-to-refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await dispatch(fetchAllPosts());
+    await dispatch(fetchAllPosts(userWallet || undefined));
     setRefreshing(false);
-  }, [dispatch]);
+  }, [dispatch, userWallet]);
 
   // Example CTA buttons (completely optional)
   const ctaButtons: ThreadCTAButton[] = [

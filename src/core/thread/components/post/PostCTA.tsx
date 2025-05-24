@@ -148,7 +148,7 @@ export default function PostCTA({
   const userPublicKey = address || null;
 
   const storedProfilePic = useAppSelector(state => state.auth.profilePicUrl);
-  
+
   const currentUser: ThreadUser = {
     id: userPublicKey || 'anonymous-user',
     username: userName || 'Anonymous',
@@ -198,7 +198,7 @@ export default function PostCTA({
       Alert.alert('Error', 'No trade data available for this post.');
       return;
     }
-    
+
     // Create a more complete TokenInfo object for the input token
     const inputTokenInfo: TokenInfo = {
       address: tradeData.inputMint,
@@ -207,7 +207,7 @@ export default function PostCTA({
       decimals: 9, // Default to 9 decimals (SOL)
       logoURI: '', // Leave empty, the SwapScreen will fetch this
     };
-    
+
     // Create a more complete output token object with image if available
     const outputTokenInfo = {
       address: tradeData.outputMint, // Pass the output token mint address
@@ -217,19 +217,20 @@ export default function PostCTA({
       logoURI: (tradeData as any).outputLogoURI || '', // Add logo URL if available using type assertion
       name: tradeData.outputSymbol || 'Unknown Token', // Add name for display purposes
     };
-    
+
     console.log('[PostCTA] Copying trade with tokens:', {
       input: inputTokenInfo.symbol,
       output: outputTokenInfo.symbol,
       amount: tradeData.inputQuantity
     });
-    
+
     // Navigate to the SwapScreen with the trade parameters instead of showing the modal
     navigation.navigate('SwapScreen', {
       inputToken: inputTokenInfo,
       outputToken: outputTokenInfo,
       inputAmount: tradeData.inputQuantity || '1', // Pass the original trade amount or default to 1
-      shouldInitialize: true // Flag to initialize the swap with our parameters
+      shouldInitialize: true, // Flag to initialize the swap with our parameters
+      showBackButton: true // 
     });
   };
 
@@ -267,14 +268,14 @@ export default function PostCTA({
         userPublicKey,
         mint,
         listingPriceSol,
-        owner, 
+        owner,
         sendTransaction,
         status => setNftStatusMsg(status)
       );
 
       setNftConfirmationMsg('NFT purchased successfully!');
       setNftConfirmationVisible(true);
-      
+
       // Show success notification
       TransactionService.showSuccess(signature, 'nft');
     } catch (err: any) {
@@ -315,7 +316,7 @@ export default function PostCTA({
 
       setNftConfirmationMsg(`Successfully purchased floor NFT from ${collectionData.name} collection!`);
       setNftConfirmationVisible(true);
-      
+
       // Show success notification
       TransactionService.showSuccess(signature, 'nft');
     } catch (err: any) {
@@ -328,22 +329,22 @@ export default function PostCTA({
   };
 
   // Logic to determine CTA label, action, and disabled state
-  let ctaLabel = 'Default CTA'; 
-  let onCtaPress = () => {}; 
-  let isDisabled = false; 
+  let ctaLabel = 'Default CTA';
+  let onCtaPress = () => { };
+  let isDisabled = false;
 
   if (sectionType === 'trade') {
     ctaLabel = 'Copy Trade';
     onCtaPress = handleOpenTradeModal;
-    isDisabled = !tradeData; 
+    isDisabled = !tradeData;
   } else if (sectionType === 'nft') {
     ctaLabel = 'Buy NFT';
     onCtaPress = handleBuyListedNft;
-    isDisabled = nftLoading; 
+    isDisabled = nftLoading;
   } else if (sectionType === 'collection') {
     ctaLabel = loadingFloor ? 'Finding Floor...' : `Buy Floor @ ${collectionData?.name || 'Collection'}`;
     onCtaPress = handleBuyCollectionFloor;
-    isDisabled = loadingFloor || !collectionData; 
+    isDisabled = loadingFloor || !collectionData;
   }
 
   if (!sectionType) return null; // Return null if no relevant section type
@@ -355,7 +356,7 @@ export default function PostCTA({
           styles.threadPostCTAButton,
           styleOverrides?.button,
           userStyleSheet?.button,
-          isDisabled && { opacity: 0.5 } 
+          isDisabled && { opacity: 0.5 }
         ]}
         onPress={onCtaPress}
         disabled={isDisabled}
@@ -376,7 +377,7 @@ export default function PostCTA({
         transparent
         animationType="fade"
         onRequestClose={() => { /* Prevent closing while loading */ }}>
-        <View style={styles.progressOverlay}> 
+        <View style={styles.progressOverlay}>
           <View style={styles.progressContainer}>
             <ActivityIndicator size="large" color="#1d9bf0" />
             {!!nftStatusMsg && (
