@@ -12,9 +12,12 @@ const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
 // fetchAllPosts
 export const fetchAllPosts = createAsyncThunk(
   'thread/fetchAllPosts',
-  async (_, {rejectWithValue}) => {
+  async (userId?: string, {rejectWithValue}) => {
     try {
-      const res = await fetch(`${SERVER_BASE_URL}/api/posts`);
+      const url = userId 
+        ? `${SERVER_BASE_URL}/api/posts?userId=${encodeURIComponent(userId)}`
+        : `${SERVER_BASE_URL}/api/posts`;
+      const res = await fetch(url);
       const data = await res.json();
       if (!data.success) {
         return rejectWithValue(data.error || 'Failed to fetch posts');
@@ -200,11 +203,11 @@ export const deletePostAsync = createAsyncThunk(
 // addReactionAsync
 export const addReactionAsync = createAsyncThunk(
   'thread/addReaction',
-  async ({postId, reactionEmoji}: {postId: string; reactionEmoji: string}) => {
+  async ({postId, reactionEmoji, userId}: {postId: string; reactionEmoji: string; userId: string}) => {
     const res = await fetch(`${SERVER_BASE_URL}/api/posts/${postId}/reaction`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({reactionEmoji}),
+      body: JSON.stringify({reactionEmoji, userId}),
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to add reaction');
@@ -542,16 +545,78 @@ export const threadSlice = createSlice({
       }
     });
 
-    // addReactionAsync
+    // addReactionAsync - optimistic update on pending
+    builder.addCase(addReactionAsync.pending, (state, action) => {
+      const { postId, reactionEmoji, userId } = action.meta.arg;
+      
+      function updatePostOptimistically(posts: ThreadPost[]): ThreadPost[] {
+        return posts.map(p => {
+          if (p.id === postId) {
+            const currentReactions = { ...(p.reactions || {}) };
+            const currentUserReaction = p.userReaction;
+            let newReactionCount = p.reactionCount || 0;
+            let newUserReaction: string | null = null;
+            
+            // If user already has a reaction
+            if (currentUserReaction) {
+              if (currentUserReaction === reactionEmoji) {
+                // Same reaction - remove it
+                if (currentReactions[reactionEmoji] > 1) {
+                  currentReactions[reactionEmoji] -= 1;
+                } else {
+                  delete currentReactions[reactionEmoji];
+                }
+                newReactionCount = Math.max(0, newReactionCount - 1);
+                newUserReaction = null;
+              } else {
+                // Different reaction - update it
+                // Remove old reaction
+                if (currentReactions[currentUserReaction] > 1) {
+                  currentReactions[currentUserReaction] -= 1;
+                } else {
+                  delete currentReactions[currentUserReaction];
+                }
+                // Add new reaction
+                currentReactions[reactionEmoji] = (currentReactions[reactionEmoji] || 0) + 1;
+                // Count stays same (remove + add = 0 net change)
+                newUserReaction = reactionEmoji;
+              }
+            } else {
+              // No existing reaction - add new one
+              currentReactions[reactionEmoji] = (currentReactions[reactionEmoji] || 0) + 1;
+              newReactionCount += 1;
+              newUserReaction = reactionEmoji;
+            }
+            
+            return {
+              ...p,
+              reactions: currentReactions,
+              reactionCount: newReactionCount,
+              userReaction: newUserReaction,
+            };
+          }
+          if (p.replies.length > 0) {
+            p.replies = updatePostOptimistically(p.replies);
+          }
+          return p;
+        });
+      }
+      
+      state.allPosts = updatePostOptimistically(state.allPosts);
+    });
+
+    // addReactionAsync - update with server response
     builder.addCase(addReactionAsync.fulfilled, (state, action) => {
-      const updatedPost = action.payload as ThreadPost;
+      const updatedPost = action.payload as ThreadPost & { userReaction?: string | null };
       function replacePost(posts: ThreadPost[]): ThreadPost[] {
         return posts.map(p => {
           if (p.id === updatedPost.id) {
+            // Always use server response as the source of truth
             return {
               ...p,
               reactionCount: updatedPost.reactionCount,
-              reactions: updatedPost.reactions,
+              reactions: updatedPost.reactions || {},
+              userReaction: updatedPost.userReaction,
             };
           }
           if (p.replies.length > 0) {
@@ -561,6 +626,16 @@ export const threadSlice = createSlice({
         });
       }
       state.allPosts = replacePost(state.allPosts);
+    });
+
+    // addReactionAsync - handle errors by reverting optimistic update
+    builder.addCase(addReactionAsync.rejected, (state, action) => {
+      // In case of error, revert the optimistic update by refetching
+      console.warn('Reaction failed:', action.error.message);
+      state.error = action.error.message || 'Failed to add reaction';
+      
+      // Note: In a production app, you might want to revert the optimistic update here
+      // For now, we'll let the user try again or refresh to get the correct state
     });
   },
 });

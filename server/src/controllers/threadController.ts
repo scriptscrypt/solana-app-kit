@@ -98,6 +98,10 @@ export async function getAllPosts(
   next: NextFunction,
 ) {
   try {
+    const {userId} = req.query; // Optional userId to get user-specific reaction data
+
+    console.log(`[getAllPosts] Called with userId: ${userId}`);
+
     const rows = await knex<DBPostRow>('posts')
       .select(
         'posts.*',
@@ -110,11 +114,32 @@ export async function getAllPosts(
 
     const partialPosts = rows.map(mapPostRowToClientShape);
 
-    // fill retweetOf
+    console.log(`[getAllPosts] Found ${partialPosts.length} posts. Sample reactions:`, 
+      partialPosts.slice(0, 2).map(p => ({ id: p.id, reactions: p.reactions, reactionCount: p.reactionCount })));
+
+    // If userId is provided, get user's reactions for all posts
+    let userReactions: Record<string, string> = {};
+    if (userId) {
+      const reactions = await knex('user_reactions')
+        .select('post_id', 'reaction_emoji')
+        .where({user_id: userId});
+      
+      userReactions = reactions.reduce((acc: Record<string, string>, reaction: any) => {
+        acc[reaction.post_id] = reaction.reaction_emoji;
+        return acc;
+      }, {});
+    }
+
+    // fill retweetOf and add user reactions
     for (const p of partialPosts) {
       if (p.retweetOf) {
         const retweetData = await fetchRetweetOf(p.retweetOf);
         p.retweetOf = retweetData;
+      }
+      // Add user's reaction if available
+      if (userId && userReactions[p.id]) {
+        p.userReaction = userReactions[p.id];
+        console.log(`[getAllPosts] Added userReaction ${userReactions[p.id]} to post ${p.id}`);
       }
     }
 
@@ -313,7 +338,7 @@ export async function deletePost(req: Request, res: Response) {
 
 /**
  * PATCH /api/posts/:postId/reaction
- * Body: { reactionEmoji }
+ * Body: { reactionEmoji, userId }
  */
 export const addReaction = async (
   req: Request,
@@ -321,12 +346,12 @@ export const addReaction = async (
 ): Promise<void> => {
   try {
     const {postId} = req.params;
-    const {reactionEmoji} = req.body;
+    const {reactionEmoji, userId} = req.body;
 
-    if (!postId || !reactionEmoji) {
+    if (!postId || !reactionEmoji || !userId) {
       res.status(400).json({
         success: false,
-        error: 'Missing postId or reactionEmoji',
+        error: 'Missing postId, reactionEmoji, or userId',
       });
       return;
     }
@@ -337,34 +362,93 @@ export const addReaction = async (
       return;
     }
 
-    let reactionsObj = post.reactions || {};
-    if (typeof reactionsObj === 'string') {
-      reactionsObj = JSON.parse(reactionsObj);
-    }
+    // Check if user already has a reaction on this post
+    const existingReaction = await knex('user_reactions')
+      .where({post_id: postId, user_id: userId})
+      .first();
 
-    if (!reactionsObj[reactionEmoji]) {
-      reactionsObj[reactionEmoji] = 1;
+    if (existingReaction) {
+      if (existingReaction.reaction_emoji === reactionEmoji) {
+        // Same reaction - remove it
+        await knex('user_reactions')
+          .where({post_id: postId, user_id: userId})
+          .del();
+      } else {
+        // Different reaction - update it
+        await knex('user_reactions')
+          .where({post_id: postId, user_id: userId})
+          .update({reaction_emoji: reactionEmoji});
+      }
     } else {
-      reactionsObj[reactionEmoji] += 1;
+      // No existing reaction - add new one
+      await knex('user_reactions').insert({
+        post_id: postId,
+        user_id: userId,
+        reaction_emoji: reactionEmoji,
+      });
     }
 
+    // Recalculate reaction counts from user_reactions table
+    const reactionCounts = await knex('user_reactions')
+      .select('reaction_emoji')
+      .count('* as count')
+      .where({post_id: postId})
+      .groupBy('reaction_emoji');
+
+    const reactionsObj: Record<string, number> = {};
     let totalReactions = 0;
-    Object.values(reactionsObj).forEach((val: any) => {
-      totalReactions += val;
+
+    reactionCounts.forEach((row: any) => {
+      const count = parseInt(row.count);
+      reactionsObj[row.reaction_emoji] = count;
+      totalReactions += count;
     });
 
+    console.log(`[addReaction] Post ${postId}: Calculated reactions:`, reactionsObj, 'Total:', totalReactions);
+
+    // Update the post with new reaction counts
     await knex('posts').where({id: postId}).update({
       reactions: reactionsObj,
       reaction_count: totalReactions,
     });
 
-    const updatedPost = {
-      ...post,
-      reactions: reactionsObj,
-      reaction_count: totalReactions,
-    };
+    console.log(`[addReaction] Post ${postId}: Updated database with reactions`);
 
-    res.json({success: true, data: updatedPost});
+    // Get user's current reaction (if any)
+    const userReaction = await knex('user_reactions')
+      .where({post_id: postId, user_id: userId})
+      .first();
+
+    // Get the updated post with user info for proper mapping
+    const updatedPostRow = await knex<DBPostRow>('posts')
+      .select(
+        'posts.*',
+        'users.username',
+        'users.handle',
+        'users.profile_picture_url',
+      )
+      .leftJoin('users', 'users.id', 'posts.user_id')
+      .where('posts.id', postId)
+      .first();
+
+    if (!updatedPostRow) {
+      res.status(404).json({success: false, error: 'Post not found after update'});
+      return;
+    }
+
+    // Map to client shape and add user reaction
+    const mappedPost = mapPostRowToClientShape(updatedPostRow);
+    if (mappedPost) {
+      mappedPost.userReaction = userReaction?.reaction_emoji || null;
+    }
+
+    console.log(`[addReaction] Post ${postId}: Returning response:`, {
+      reactionCount: mappedPost?.reactionCount,
+      reactions: mappedPost?.reactions,
+      userReaction: mappedPost?.userReaction
+    });
+
+    res.json({success: true, data: mappedPost});
   } catch (error: any) {
     console.error('[addReaction] Error:', error);
     res.status(500).json({success: false, error: error.message});
