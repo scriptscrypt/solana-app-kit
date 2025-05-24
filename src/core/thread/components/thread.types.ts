@@ -81,6 +81,7 @@ export interface ThreadPost {
   quoteCount: number;
   reactions?: { [key: string]: number };
   retweetOf?: ThreadPost | null;
+  userReaction?: string | null; // Current user's reaction to this post
 }
 
 export interface ThreadCTAButton {

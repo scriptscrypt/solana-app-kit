@@ -297,6 +297,13 @@ export default function PostFooter({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const [commentPressed, setCommentPressed] = useState(false);
+  const [isReactionProcessing, setIsReactionProcessing] = useState(false);
+
+  // Animation refs for reactions
+  const reactionButtonScale = useRef(new Animated.Value(1)).current;
+  const reactionCountScale = useRef(new Animated.Value(1)).current;
+  const newReactionScale = useRef(new Animated.Value(0)).current;
+  const reactionPillsOpacity = useRef(new Animated.Value(1)).current;
 
   // Memoize styles (no theme needed)
   const styles = useMemo(() => createPostFooterStyles(styleOverrides), [
@@ -359,6 +366,25 @@ export default function PostFooter({
       state.thread.allPosts.find(p => p.id === post.id),
     ) || post;
 
+  // Animate when reactions change
+  useEffect(() => {
+    if (updatedPost.reactionCount !== post.reactionCount) {
+      // Trigger a subtle animation when reaction count changes
+      Animated.sequence([
+        Animated.timing(reactionPillsOpacity, {
+          toValue: 0.7,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(reactionPillsOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [updatedPost.reactionCount, updatedPost.reactions, post.reactionCount, reactionPillsOpacity]);
+
   const closeReactionBubble = () => {
     Animated.timing(scaleAnim, {
       toValue: 0,
@@ -387,24 +413,100 @@ export default function PostFooter({
       );
       return;
     }
+
+    if (!address) {
+      Alert.alert(
+        'Authentication required',
+        'Please connect your wallet to react to posts.',
+      );
+      return;
+    }
+
+    // Prevent rapid clicking
+    if (isReactionProcessing) {
+      return;
+    }
+
+    setIsReactionProcessing(true);
+
+    // Close reaction bubble immediately for better UX
+    setShowReactions(false);
     Animated.timing(scaleAnim, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
-    }).start(() => {
-      setShowReactions(false);
-      dispatch(addReactionAsync({ postId: post.id, reactionEmoji: emoji }));
+    }).start();
+
+    // Animate reaction button press
+    Animated.sequence([
+      Animated.timing(reactionButtonScale, {
+        toValue: 1.3,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(reactionButtonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animate reaction count change
+    Animated.sequence([
+      Animated.timing(reactionCountScale, {
+        toValue: 1.2,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(reactionCountScale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Animate new reaction pill appearance
+    Animated.sequence([
+      Animated.timing(newReactionScale, {
+        toValue: 1.2,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(newReactionScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Dispatch the reaction update
+    dispatch(addReactionAsync({
+      postId: post.id,
+      reactionEmoji: emoji,
+      userId: address
+    })).finally(() => {
+      // Reset processing state after reaction is complete
+      setTimeout(() => {
+        setIsReactionProcessing(false);
+      }, 500); // Small delay to prevent rapid clicking
     });
   };
 
   const handleShowReactions = () => {
     setShowReactions(true);
-    // Animate in
-    Animated.timing(scaleAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
+    // Animate in with a bounce effect
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 1.1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   const handleOpenRetweetDrawer = () => {
@@ -419,20 +521,80 @@ export default function PostFooter({
     ) {
       return null;
     }
+
+    const reactionEntries = Object.entries(updatedPost.reactions || {});
+    const userReaction = updatedPost.userReaction;
+    const totalReactions = Object.values(updatedPost.reactions || {}).reduce((a: number, b) => a + (typeof b === 'number' ? b : 0), 0);
+
+    // If there are many reactions, show a compact summary
+    if (reactionEntries.length > 3) {
+      return (
+        <Animated.View style={[
+          reactionStyles.existingReactionsContainer,
+          { opacity: reactionPillsOpacity }
+        ]}>
+          <Animated.View style={{ transform: [{ scale: userReaction ? newReactionScale : 1 }] }}>
+            <TouchableOpacity
+              style={[
+                reactionStyles.compactReactionPill,
+                userReaction && reactionStyles.userReactionPill
+              ]}
+              onPress={() => handleShowReactions()}
+              activeOpacity={0.7}
+            >
+              <View style={reactionStyles.compactEmojiContainer}>
+                {reactionEntries.slice(0, 3).map(([emoji], index) => (
+                  <Text
+                    key={emoji}
+                    style={[
+                      reactionStyles.compactEmoji,
+                      { marginLeft: index > 0 ? -2 : 0 }
+                    ]}
+                  >
+                    {emoji}
+                  </Text>
+                ))}
+                {reactionEntries.length > 3 && (
+                  <Text style={reactionStyles.moreIndicator}>+</Text>
+                )}
+              </View>
+              <Text style={[
+                reactionStyles.reactionCount,
+                userReaction && reactionStyles.userReactionCount
+              ]}>
+                {totalReactions}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </Animated.View>
+      );
+    }
+
+    // For 3 or fewer reactions, show individual pills
     return (
       <View style={reactionStyles.existingReactionsContainer}>
-        {Object.entries(updatedPost.reactions || {}).map(([emoji, count], index) => (
-          <View key={emoji} style={reactionStyles.reactionPill}>
-            <View style={reactionStyles.emojiCircle}>
+        {reactionEntries.map(([emoji, count]) => {
+          const isUserReaction = userReaction === emoji;
+          return (
+            <TouchableOpacity
+              key={emoji}
+              style={[
+                reactionStyles.reactionPill,
+                isUserReaction && reactionStyles.userReactionPill
+              ]}
+              onPress={() => handleSelectReaction(emoji)}
+              activeOpacity={0.7}
+            >
               <Text style={reactionStyles.reactionEmoji}>{emoji}</Text>
-            </View>
-            {index === Object.entries(updatedPost.reactions || {}).length - 1 && (
-              <Text style={reactionStyles.totalCount}>
-                {Object.values(updatedPost.reactions || {}).reduce((a: number, b) => a + (typeof b === 'number' ? b : 0), 0)}
+              <Text style={[
+                reactionStyles.reactionCount,
+                isUserReaction && reactionStyles.userReactionCount
+              ]}>
+                {count}
               </Text>
-            )}
-          </View>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     );
   };
@@ -532,9 +694,6 @@ export default function PostFooter({
         </TouchableWithoutFeedback>
       )}
 
-      {/* Display existing reactions */}
-      {renderExistingReactions()}
-
       <View style={styles.itemIconsRow}>
         <View style={{ flexDirection: 'row', gap: 16 }}>
           {/* Comment icon */}
@@ -542,7 +701,7 @@ export default function PostFooter({
             style={[
               styles.itemLeftIcons,
               commentPressed && {
-                backgroundColor: COLORS.brandPurpleBg,
+                backgroundColor: COLORS.darkerBackground,
                 borderRadius: 16,
                 padding: 4,
                 transform: [{ scale: 1.1 }]
@@ -583,12 +742,36 @@ export default function PostFooter({
 
           {/* Reaction icon */}
           <View style={styles.itemLeftIcons}>
-            <TouchableOpacity onPress={handleShowReactions}>
-              <Icons.ReactionIdle width={20} height={20} />
-            </TouchableOpacity>
-            <Text style={styles.iconText}>
+            <Animated.View style={{ transform: [{ scale: reactionButtonScale }] }}>
+              <TouchableOpacity
+                onPress={handleShowReactions}
+                style={[
+                  reactionStyles.reactionButton,
+                  updatedPost.userReaction && reactionStyles.userReactionButton,
+                  isReactionProcessing && reactionStyles.processingReactionButton
+                ]}
+                disabled={isReactionProcessing}
+              >
+                {updatedPost.userReaction ? (
+                  <Text style={reactionStyles.userReactionIcon}>
+                    {updatedPost.userReaction}
+                  </Text>
+                ) : (
+                  <Icons.ReactionIdle
+                    width={20}
+                    height={20}
+                    color={updatedPost.userReaction ? COLORS.brandBlue : undefined}
+                  />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+            <Animated.Text style={[
+              styles.iconText,
+              updatedPost.userReaction && { color: COLORS.brandBlue },
+              { transform: [{ scale: reactionCountScale }] }
+            ]}>
               {updatedPost.reactionCount || 0}
-            </Text>
+            </Animated.Text>
 
             {/* Reaction bubble */}
             {showReactions && (
@@ -601,14 +784,37 @@ export default function PostFooter({
                   },
                 ]}>
                 <View style={reactionStyles.emojiRow}>
-                  {['👍', '🚀', '❤️', '😂'].map(emoji => (
-                    <TouchableOpacity
-                      key={emoji}
-                      style={reactionStyles.emojiButton}
-                      onPress={() => handleSelectReaction(emoji)}>
-                      <Text style={reactionStyles.emojiText}>{emoji}</Text>
-                    </TouchableOpacity>
-                  ))}
+                  {['👍', '🚀', '❤️', '😂'].map((emoji, index) => {
+                    const isSelected = updatedPost.userReaction === emoji;
+                    return (
+                      <TouchableOpacity
+                        key={emoji}
+                        style={[
+                          reactionStyles.emojiButton,
+                          isSelected && reactionStyles.selectedEmojiButton
+                        ]}
+                        onPress={() => handleSelectReaction(emoji)}>
+                        <Animated.Text style={[
+                          reactionStyles.emojiText,
+                          isSelected && reactionStyles.selectedEmojiText,
+                          {
+                            transform: [{
+                              translateY: scaleAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [10, 0],
+                              })
+                            }],
+                            opacity: scaleAnim.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [0, 0.8, 1],
+                            })
+                          }
+                        ]}>
+                          {emoji}
+                        </Animated.Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
                 <View style={reactionStyles.bubbleArrow} />
               </Animated.View>
@@ -616,17 +822,8 @@ export default function PostFooter({
           </View>
         </View>
 
-        {/* Right side icons */}
-        <View style={styles.itemRightIcons}>
-          {/* <Icons.GridIcon width={20} height={20} /> */}
-          <TouchableOpacity onPress={toggleBookmark}>
-            {isBookmarked ? (
-              <Icons.BookmarkActive width={20} height={20} />
-            ) : (
-              <Icons.BookmarkIdle width={20} height={20} />
-            )}
-          </TouchableOpacity>
-        </View>
+        {/* Right side - Display existing reactions inline */}
+        {renderExistingReactions()}
       </View>
 
       {/* Use our inline SimpleRetweetDrawer component */}
@@ -690,38 +887,109 @@ const reactionStyles = StyleSheet.create({
   emojiButton: {
     paddingHorizontal: 6,
     paddingVertical: 4,
+    borderRadius: 12,
+  },
+  selectedEmojiButton: {
+    backgroundColor: COLORS.darkerBackground,
   },
   emojiText: {
     fontSize: TYPOGRAPHY.size.lg,
   },
+  selectedEmojiText: {
+    transform: [{ scale: 1.1 }],
+  },
+  reactionButton: {
+    padding: 4,
+    borderRadius: 12,
+  },
+  userReactionButton: {
+    backgroundColor: COLORS.darkerBackground,
+  },
+  userReactionIcon: {
+    fontSize: 18,
+  },
+  processingReactionButton: {
+    opacity: 0.6,
+  },
+  processingReactionPill: {
+    opacity: 0.6,
+  },
   existingReactionsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     alignItems: 'center',
-    marginLeft: 38,
-    marginBottom: 4,
+    gap: 3,
+    flex: 1,
+    justifyContent: 'flex-end',
+    maxWidth: '50%',
   },
   reactionPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.darkerBackground,
-    borderRadius: 16,
-    height: 26,
-    paddingRight: 8,
+    borderRadius: 12,
+    height: 24,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    gap: 3,
+  },
+  compactReactionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.darkerBackground,
+    borderRadius: 12,
+    height: 24,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: COLORS.borderDarkColor,
+    maxWidth: 60,
+  },
+  userReactionPill: {
+    backgroundColor: COLORS.darkerBackground,
+    borderColor: COLORS.greyMid,
+    borderWidth: 2,
+  },
+  compactEmojiContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginRight: 4,
-    overflow: 'hidden',
+  },
+  compactEmoji: {
+    fontSize: 10,
+  },
+  moreIndicator: {
+    fontSize: 8,
+    color: COLORS.greyMid,
+    marginLeft: 1,
   },
   emojiCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 4,
   },
+  userEmojiCircle: {
+    backgroundColor: COLORS.brandBlue,
+  },
   reactionEmoji: {
-    fontSize: TYPOGRAPHY.size.md,
+    fontSize: 14,
+  },
+  reactionCount: {
+    fontSize: 10,
+    color: COLORS.accessoryDarkColor,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.medium),
+    fontFamily: TYPOGRAPHY.fontFamily,
+    minWidth: 10,
+    textAlign: 'center',
+  },
+  userReactionCount: {
+    color: COLORS.brandBlue,
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
   },
   totalCount: {
     fontSize: TYPOGRAPHY.size.xs,
@@ -812,7 +1080,7 @@ const drawerStyles = StyleSheet.create({
     color: COLORS.white,
     minHeight: 100,
     textAlignVertical: 'top',
-    backgroundColor: COLORS.lightBackground,
+    backgroundColor: COLORS.darkerBackground,
     fontFamily: TYPOGRAPHY.fontFamily,
   },
   quoteButtons: {
@@ -845,7 +1113,7 @@ const drawerStyles = StyleSheet.create({
     fontFamily: TYPOGRAPHY.fontFamily,
   },
   disabledButton: {
-    backgroundColor: COLORS.lightBackground,
+    backgroundColor: COLORS.darkerBackground,
   },
   disabledText: {
     color: COLORS.greyMid,

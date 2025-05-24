@@ -1,6 +1,5 @@
 import * as path from 'path';
-import { Knex } from 'knex'; // Reverted import
-// import Knex from 'knex'; // Try default import
+import type { Knex } from 'knex';
 import dotenv from 'dotenv';
 dotenv.config();
 
