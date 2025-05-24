@@ -11,9 +11,9 @@ type Overflow = 'visible' | 'hidden' | 'scroll';
 export function getMessageBaseStyles() {
   return StyleSheet.create({
     messageContainer: {
-      marginBottom: 2,
-      marginHorizontal: 10,
-      maxWidth: '90%',
+      marginBottom: 8,
+      marginHorizontal: 12,
+      maxWidth: '85%',
     },
     currentUserMessageContainer: {
       alignSelf: 'flex-end',
@@ -25,44 +25,50 @@ export function getMessageBaseStyles() {
     headerContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 2,
+      marginBottom: 6,
+      paddingHorizontal: 4,
     },
     headerLeft: {
       flexDirection: 'row',
       alignItems: 'center',
     },
     avatar: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      marginRight: 8,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      marginRight: 10,
+      borderWidth: 2,
+      borderColor: 'rgba(50, 212, 222, 0.3)',
     },
     username: {
-      fontSize: TYPOGRAPHY.size.sm,
-      fontWeight: '600',
-      color: COLORS.greyLight,
+      fontSize: TYPOGRAPHY.size.md,
+      fontWeight: '700',
+      color: COLORS.white,
+      fontFamily: TYPOGRAPHY.fontFamily,
     },
     userInfoContainer: {
       flexDirection: 'column',
     },
     headerTimestamp: {
-      fontSize: 10,
+      fontSize: 11,
       color: COLORS.greyMid,
-      marginTop: 0,
+      marginTop: 2,
+      fontFamily: TYPOGRAPHY.fontFamily,
     },
     // Footer styles
     footerContainer: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       alignItems: 'center',
-      marginTop: 0,
+      marginTop: 4,
     },
     timestamp: {
       fontSize: 10,
       color: COLORS.greyMid,
+      fontFamily: TYPOGRAPHY.fontFamily,
     },
     currentUserTimestamp: {
-      color: COLORS.greyLight,
+      color: 'rgba(255, 255, 255, 0.7)',
     },
     readStatus: {
       marginLeft: 4,
@@ -72,31 +78,42 @@ export function getMessageBaseStyles() {
 
 export const messageBubbleStyles = StyleSheet.create({
   container: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-    marginVertical: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    marginVertical: 2,
     maxWidth: '100%',
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   currentUser: {
     backgroundColor: COLORS.brandBlue,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
     alignSelf: 'flex-end',
     minWidth: 80,
+    shadowColor: COLORS.brandBlue,
+    shadowOpacity: 0.3,
   },
   otherUser: {
     backgroundColor: COLORS.lighterBackground,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 6,
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   text: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.md,
     fontFamily: TYPOGRAPHY.fontFamily,
-    lineHeight: 18,
+    lineHeight: 20,
+    fontWeight: '400',
   },
   currentUserText: {
-    textAlign: 'right',
+    textAlign: 'left',
+    color: COLORS.white,
   },
   otherUserText: {
     color: COLORS.white,
@@ -104,11 +121,12 @@ export const messageBubbleStyles = StyleSheet.create({
   timestamp: {
     fontSize: 10,
     color: COLORS.greyMid,
-    marginTop: 2,
+    marginTop: 4,
     alignSelf: 'flex-end',
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   sectionContainer: {
-    marginTop: 6,
+    marginTop: 8,
     width: '100%',
   },
   messageContent: {
@@ -116,48 +134,142 @@ export const messageBubbleStyles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   imageContainer: {
-    marginTop: 6,
+    marginTop: 8,
     width: '100%',
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   messageImage: {
-    width: 240,
-    height: 180,
-    borderRadius: 12,
+    width: 260,
+    height: 200,
+    borderRadius: 16,
   },
   imageCaption: {
-    marginTop: 6,
+    marginTop: 8,
     fontSize: 14,
     color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
+    lineHeight: 18,
   },
   retweetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 6,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   retweetText: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.greyMid,
     marginLeft: 6,
     fontWeight: '500',
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  // Media container styles
+  mediaContainer: {
+    marginTop: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  mediaImage: {
+    width: 240,
+    height: 180,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  // Retweet styles
+  retweetContainer: {
+    backgroundColor: COLORS.lighterBackground,
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  quoteContent: {
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  originalPostContainer: {
+    backgroundColor: COLORS.darkerBackground,
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  originalPostHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  originalPostAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  originalPostUsername: {
+    fontSize: TYPOGRAPHY.size.sm,
+    fontWeight: '600',
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  originalPostHandle: {
+    fontSize: TYPOGRAPHY.size.xs,
+    color: COLORS.greyMid,
+    marginTop: 2,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
 });
 
-export const messageHeaderStyles = StyleSheet.create<{
-  container: ViewStyle;
-  left: ViewStyle;
-  avatar: ImageStyle;
-  username: TextStyle;
-  userInfoContainer: ViewStyle;
-  headerTimestamp: TextStyle;
-}>({
-  container: getMessageBaseStyles().headerContainer as ViewStyle,
-  left: getMessageBaseStyles().headerLeft as ViewStyle,
-  avatar: getMessageBaseStyles().avatar as ImageStyle,
-  username: getMessageBaseStyles().username as TextStyle,
-  userInfoContainer: getMessageBaseStyles().userInfoContainer as ViewStyle,
-  headerTimestamp: getMessageBaseStyles().headerTimestamp as TextStyle,
+export const messageHeaderStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  left: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(50, 212, 222, 0.2)',
+    shadowColor: COLORS.brandBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  userInfoContainer: {
+    flexDirection: 'column',
+    flex: 1,
+  },
+  username: {
+    fontSize: TYPOGRAPHY.size.md,
+    fontWeight: '700',
+    color: COLORS.white,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
+  headerTimestamp: {
+    fontSize: 11,
+    color: COLORS.greyMid,
+    marginTop: 2,
+    fontFamily: TYPOGRAPHY.fontFamily,
+  },
 });
 
 export const messageFooterStyles = StyleSheet.create<{

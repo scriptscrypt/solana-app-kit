@@ -182,68 +182,86 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: COLORS.lighterBackground,
-    borderTopLeftRadius: 12, // Slightly smaller radius
-    borderTopRightRadius: 12,
-    padding: 16, // Reduced padding
+    borderTopLeftRadius: 20, // Larger radius for modern look
+    borderTopRightRadius: 20,
+    padding: 20, // Increased padding
     paddingBottom: 0,
     borderTopWidth: 1,
-    borderTopColor: COLORS.borderDarkColor,
+    borderTopColor: 'rgba(50, 212, 222, 0.2)',
     shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: -2 }, // Smaller shadow
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 8,
+    shadowOffset: { width: 0, height: -6 }, // Larger shadow
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 12,
   },
   editDrawerHeader: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
-    marginBottom: 12, // Reduced margin
+    marginBottom: 16, // Increased margin
   },
   editDrawerTitle: {
     color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.md, // Smaller title
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontSize: TYPOGRAPHY.size.lg, // Larger title
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     fontFamily: TYPOGRAPHY.fontFamily,
   },
   closeButton: {
-    padding: 4, // Smaller padding
+    padding: 8, // Larger padding
+    borderRadius: 20,
+    backgroundColor: COLORS.darkerBackground,
+    width: 36,
+    height: 36,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   editInput: {
     backgroundColor: COLORS.background,
-    borderRadius: 6, // Smaller radius
+    borderRadius: 12, // Larger radius
     color: COLORS.white,
-    paddingHorizontal: 12, // Reduced padding
-    paddingVertical: 10, // Reduced padding
-    fontSize: TYPOGRAPHY.size.sm, // Smaller font
+    paddingHorizontal: 16, // Increased padding
+    paddingVertical: 14, // Increased padding
+    fontSize: TYPOGRAPHY.size.md, // Larger font
     fontFamily: TYPOGRAPHY.fontFamily,
-    minHeight: 60, // Reduced min height
+    minHeight: 80, // Increased min height
     textAlignVertical: 'top' as const,
-    marginBottom: 12, // Reduced margin
+    marginBottom: 16, // Increased margin
     borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   editButtons: {
     flexDirection: 'row' as const,
     justifyContent: 'flex-end' as const,
-    marginBottom: 8, // Reduced margin
+    marginBottom: 12, // Increased margin
   },
   editCancelButton: {
-    paddingVertical: 8, // Reduced padding
-    paddingHorizontal: 14, // Reduced padding
-    borderRadius: 6,
-    marginRight: 8,
-    backgroundColor: COLORS.lightBackground,
+    paddingVertical: 10, // Increased padding
+    paddingHorizontal: 18, // Increased padding
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: COLORS.darkerBackground,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   editSaveButton: {
-    paddingVertical: 8, // Reduced padding
-    paddingHorizontal: 16, // Reduced padding
-    borderRadius: 6,
+    paddingVertical: 10, // Increased padding
+    paddingHorizontal: 20, // Increased padding
+    borderRadius: 12,
     backgroundColor: COLORS.brandBlue,
+    shadowColor: COLORS.brandBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   buttonText: {
     color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.sm, // Smaller font
+    fontSize: TYPOGRAPHY.size.md, // Larger font
     fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
     fontFamily: TYPOGRAPHY.fontFamily,
   },
@@ -254,69 +272,94 @@ const additionalStyles = {
   messageHeader: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    marginBottom: 4,
-    paddingHorizontal: 8,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
   avatarContainer: {
-    marginRight: 8,
+    marginRight: 12,
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: 'rgba(50, 212, 222, 0.3)',
+    shadowColor: COLORS.brandBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   username: {
     color: COLORS.white,
-    fontSize: 14,
-    fontWeight: '600' as const,
+    fontSize: 15,
+    fontWeight: '700' as const,
+    fontFamily: TYPOGRAPHY.fontFamily,
   },
   nftContainer: {
     width: '90%' as any, // Use any to bypass type checking for width
-    marginVertical: 6,
+    marginVertical: 8,
     backgroundColor: COLORS.lighterBackground,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden' as const,
     borderWidth: 1,
-    borderColor: COLORS.borderDarkColor,
+    borderColor: 'rgba(50, 212, 222, 0.2)',
     alignSelf: 'flex-start' as const,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
   currentUserNftContainer: {
     alignSelf: 'flex-end' as const,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
   },
   otherUserNftContainer: {
     alignSelf: 'flex-start' as const,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 6,
   },
   buyButton: {
     backgroundColor: COLORS.brandBlue,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     width: '90%' as any, // Use any to bypass type checking for width
     alignItems: 'center' as const,
-    marginTop: 8,
-    marginBottom: 10,
+    marginTop: 12,
+    marginBottom: 16,
     alignSelf: 'center' as const,
+    shadowColor: COLORS.brandBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   floorButton: {
     backgroundColor: COLORS.brandGreen,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     width: '90%' as any, // Use any to bypass type checking for width
     alignItems: 'center' as const,
-    marginTop: 8,
-    marginBottom: 10,
+    marginTop: 12,
+    marginBottom: 16,
     alignSelf: 'center' as const,
+    shadowColor: COLORS.brandGreen,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.6,
+    shadowOpacity: 0.1,
   },
   buyButtonText: {
     color: COLORS.white,
     fontSize: TYPOGRAPHY.size.md,
-    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.semiBold),
+    fontWeight: TYPOGRAPHY.fontWeightToString(TYPOGRAPHY.bold),
     fontFamily: TYPOGRAPHY.fontFamily,
   },
 };
@@ -329,48 +372,54 @@ const messageActionStyles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Darker overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Darker overlay
     zIndex: 1000,
   },
   popup: {
     position: 'absolute',
-    minWidth: 180, // Give it a minimum width
-    maxWidth: '60%',
+    minWidth: 200, // Give it a minimum width
+    maxWidth: '65%',
     backgroundColor: COLORS.lighterBackground, // Use theme color
-    borderRadius: 8,
-    paddingVertical: 8, // Reduce vertical padding
-    paddingHorizontal: 12,
+    borderRadius: 16,
+    paddingVertical: 12, // Reduce vertical padding
+    paddingHorizontal: 16,
     shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
     zIndex: 1001,
+    borderWidth: 1,
+    borderColor: 'rgba(50, 212, 222, 0.2)',
   },
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10, // Adjust padding
+    paddingVertical: 12, // Adjust padding
+    paddingHorizontal: 4,
   },
   actionText: {
     color: COLORS.white,
-    fontSize: TYPOGRAPHY.size.sm, // Use typography size
+    fontSize: TYPOGRAPHY.size.md, // Use typography size
     fontFamily: TYPOGRAPHY.fontFamily,
     marginLeft: 12,
+    fontWeight: '600',
   },
   actionTextDelete: {
     color: COLORS.errorRed, // Use error color for delete
-    fontSize: TYPOGRAPHY.size.sm,
+    fontSize: TYPOGRAPHY.size.md,
     fontFamily: TYPOGRAPHY.fontFamily,
     marginLeft: 12,
+    fontWeight: '600',
   },
   actionDivider: {
     height: 1,
-    backgroundColor: COLORS.borderDarkColor, // Use theme border color
-    marginVertical: 4, // Reduce divider margin
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Use theme border color
+    marginVertical: 6, // Reduce divider margin
+    marginHorizontal: 4,
   },
   iconContainer: {
-    width: 20,
+    width: 24,
     alignItems: 'center',
   }
 });
