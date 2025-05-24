@@ -13,7 +13,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import styles from './TradeCard.style';
-import { useCoingecko, Timeframe } from '@/modules/data-module/hooks/useCoingecko';
+import { useBirdeye, Timeframe } from '@/modules/data-module/hooks/useBirdeye';
 import LineGraph from './LineGraph';
 import TokenDetailsDrawer from '@/core/shared-ui/TokenDetailsDrawer/TokenDetailsDrawer';
 import { fetchJupiterTokenData } from '@/modules/data-module/utils/tokenUtils';
@@ -103,7 +103,7 @@ function TradeCard({
   });
 
   // --------------------------------------------------
-  // Coingecko hook
+  // Birdeye hook
   // --------------------------------------------------
   const {
     timeframe,
@@ -112,10 +112,10 @@ function TradeCard({
     timestamps,
     timeframePrice,
     coinError,
-    refreshCoinData,
+    refreshTokenData,
     loadingOHLC,
-    setSelectedCoinId,
-  } = useCoingecko();
+    setSelectedTokenAddress,
+  } = useBirdeye();
 
   // Keep track of timeframe changes
   const prevTimeframeRef = useRef<Timeframe>(timeframe);
@@ -154,9 +154,9 @@ function TradeCard({
         };
         setMetaFetchFinished(true);
 
-        // If user wants a chart & there's a coingeckoId => set it & fetch data immediately
-        if (showGraphForOutputToken && outMeta?.extensions?.coingeckoId) {
-          setSelectedCoinId(outMeta.extensions.coingeckoId.toLowerCase());
+        // If user wants a chart => set the token address & fetch data immediately
+        if (showGraphForOutputToken) {
+          setSelectedTokenAddress(tradeData.outputMint);
         }
 
         // If we found coingecko IDs in metadata, attempt to fetch prices
@@ -171,7 +171,7 @@ function TradeCard({
     return () => {
       canceled = true;
     };
-  }, [tradeData.outputMint, tradeData.inputMint, showGraphForOutputToken, setSelectedCoinId, metaFetchFinished]);
+  }, [tradeData.outputMint, tradeData.inputMint, showGraphForOutputToken, setSelectedTokenAddress, metaFetchFinished]);
 
   // --------------------------------------------------
   // 2) Fetch token prices from CoinGecko
@@ -276,27 +276,25 @@ function TradeCard({
   // --------------------------------------------------
   useEffect(() => {
     if (!showGraphForOutputToken) return;
-    const coinId = outputTokenMeta?.extensions?.coingeckoId;
-    if (!coinId) return;
+    if (!tradeData.outputMint) return;
 
     // Only refresh if timeframe actually changed
     if (timeframe !== prevTimeframeRef.current) {
       prevTimeframeRef.current = timeframe;
-      refreshCoinData();
+      refreshTokenData();
     }
-  }, [timeframe, showGraphForOutputToken, outputTokenMeta, refreshCoinData]);
+  }, [timeframe, showGraphForOutputToken, tradeData.outputMint, refreshTokenData]);
 
   // --------------------------------------------------
   // 3) Handle external refresh triggers - OPTIMIZED
   // --------------------------------------------------
   useEffect(() => {
     if (!showGraphForOutputToken) return;
-    const coinId = outputTokenMeta?.extensions?.coingeckoId;
-    if (!coinId) return;
+    if (!tradeData.outputMint) return;
 
     if (externalRefreshTrigger !== prevRefreshTriggerRef.current) {
       prevRefreshTriggerRef.current = externalRefreshTrigger;
-      refreshCoinData();
+      refreshTokenData();
 
       // Also refresh token prices when external trigger changes
       fetchTokenPrices(inputTokenMeta, outputTokenMeta);
@@ -304,9 +302,9 @@ function TradeCard({
   }, [
     externalRefreshTrigger,
     showGraphForOutputToken,
-    outputTokenMeta,
+    tradeData.outputMint,
     inputTokenMeta,
-    refreshCoinData,
+    refreshTokenData,
     fetchTokenPrices,
   ]);
 
@@ -432,9 +430,9 @@ function TradeCard({
 
   // Memoize the refresh handler to prevent unnecessary re-renders
   const handleRefresh = useCallback(() => {
-    refreshCoinData();
+    refreshTokenData();
     fetchTokenPrices(inputTokenMeta, outputTokenMeta);
-  }, [refreshCoinData, fetchTokenPrices, inputTokenMeta, outputTokenMeta]);
+  }, [refreshTokenData, fetchTokenPrices, inputTokenMeta, outputTokenMeta]);
 
   // --------------------------------------------------
   // Handlers for Token Detail Drawer

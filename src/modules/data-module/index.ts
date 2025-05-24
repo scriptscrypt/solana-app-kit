@@ -51,6 +51,7 @@ export {
 // Export hooks
 export * from './hooks/useFetchTokens';
 export * from './hooks/useCoingecko';
+export * from './hooks/useBirdeye';
 export * from './hooks/useTokenDetails';
 export { useTokenSearch } from './hooks/useTokenSearch';
 
