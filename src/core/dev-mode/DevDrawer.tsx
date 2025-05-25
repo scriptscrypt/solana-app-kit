@@ -10,6 +10,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/shared/state/store';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
+import NotificationTestPanel from './NotificationTestPanel';
 // Import specific environment variables needed for the frontend
 import {
     PRIVY_APP_ID,
@@ -566,6 +567,13 @@ const DevDrawer = () => {
 
                     <View style={styles.divider} />
 
+                    {/* Notification Test Panel */}
+                    <View style={styles.notificationPanelContainer}>
+                        <NotificationTestPanel />
+                    </View>
+
+                    <View style={styles.divider} />
+
                     <Text style={styles.sectionTitle}>Developer Info</Text>
 
                     <View style={styles.infoCard}>
@@ -922,6 +930,10 @@ const styles = StyleSheet.create({
         fontSize: TYPOGRAPHY.size.xs,
         color: COLORS.white,
         fontWeight: TYPOGRAPHY.weights.medium,
+    },
+    notificationPanelContainer: {
+        marginBottom: 24,
+        minHeight: 500, // Ensure minimum height for the notification panel
     },
 });
 
