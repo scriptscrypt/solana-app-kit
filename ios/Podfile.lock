@@ -11,6 +11,8 @@ PODS:
   - EXJSONUtils (0.14.0)
   - EXManifests (0.15.8):
     - ExpoModulesCore
+  - EXNotifications (0.29.14):
+    - ExpoModulesCore
   - Expo (52.0.46):
     - ExpoModulesCore
   - expo-dev-client (5.0.20):
@@ -230,6 +232,8 @@ PODS:
   - ExpoClipboard (7.0.1):
     - ExpoModulesCore
   - ExpoCrypto (14.0.2):
+    - ExpoModulesCore
+  - ExpoDevice (7.0.3):
     - ExpoModulesCore
   - ExpoFileSystem (18.0.12):
     - ExpoModulesCore
@@ -2109,6 +2113,7 @@ DEPENDENCIES:
   - "EXImageLoader (from `../node_modules/.pnpm/expo-image-loader@5.0.0_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babe_0417e916d2c5febe828e5a9a7324a537/node_modules/expo-image-loader/ios`)"
   - "EXJSONUtils (from `../node_modules/.pnpm/expo-json-utils@0.14.0/node_modules/expo-json-utils/ios`)"
   - "EXManifests (from `../node_modules/.pnpm/expo-manifests@0.15.8_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+_424974814f3b27777a6a99a8b0d4c236/node_modules/expo-manifests/ios`)"
+  - "EXNotifications (from `../node_modules/.pnpm/expo-notifications@0.29.14_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@b_757d701a88f889894bade7d1fd200782/node_modules/expo-notifications/ios`)"
   - "Expo (from `../node_modules/.pnpm/expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core@7.26.10__@expo+me_c9525af77d4d5210aed789ba014e8c0b/node_modules/expo`)"
   - "expo-dev-client (from `../node_modules/.pnpm/expo-dev-client@5.0.20_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel_b7474c38c13806d4c7a07d073fda730c/node_modules/expo-dev-client/ios`)"
   - "expo-dev-launcher (from `../node_modules/.pnpm/expo-dev-launcher@5.0.35_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@bab_19e022f903f631991b681f6391a0a39a/node_modules/expo-dev-launcher`)"
@@ -2119,6 +2124,7 @@ DEPENDENCIES:
   - "ExpoBlur (from `../node_modules/.pnpm/expo-blur@14.0.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core@_144d3912f71ff29f5fe55390bfc7ec3e/node_modules/expo-blur/ios`)"
   - "ExpoClipboard (from `../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+c_68e69ee753a7cb13d5cb1235193cad61/node_modules/expo-clipboard/ios`)"
   - "ExpoCrypto (from `../node_modules/.pnpm/expo-crypto@14.0.2_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+cor_492ce37dc5b1e02dcbf7087cb65ff9ab/node_modules/expo-crypto/ios`)"
+  - "ExpoDevice (from `../node_modules/.pnpm/expo-device@7.0.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core_c1ab0e629b48f275c36071f5718f8ad6/node_modules/expo-device/ios`)"
   - "ExpoFileSystem (from `../node_modules/.pnpm/expo-file-system@18.0.12_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@bab_bdd0dd0304e664c5eac22b542dfb326e/node_modules/expo-file-system/ios`)"
   - "ExpoFont (from `../node_modules/.pnpm/expo-font@13.0.4_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core@_36bdced69db0e6d95e99856f55e6df07/node_modules/expo-font/ios`)"
   - "ExpoImageManipulator (from `../node_modules/.pnpm/expo-image-manipulator@13.0.6_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_c394d2dac0d285d2e2140ac570d48173/node_modules/expo-image-manipulator/ios`)"
@@ -2232,6 +2238,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-json-utils@0.14.0/node_modules/expo-json-utils/ios"
   EXManifests:
     :path: "../node_modules/.pnpm/expo-manifests@0.15.8_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+_424974814f3b27777a6a99a8b0d4c236/node_modules/expo-manifests/ios"
+  EXNotifications:
+    :path: "../node_modules/.pnpm/expo-notifications@0.29.14_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@b_757d701a88f889894bade7d1fd200782/node_modules/expo-notifications/ios"
   Expo:
     :path: "../node_modules/.pnpm/expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core@7.26.10__@expo+me_c9525af77d4d5210aed789ba014e8c0b/node_modules/expo"
   expo-dev-client:
@@ -2252,6 +2260,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-clipboard@7.0.1_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+c_68e69ee753a7cb13d5cb1235193cad61/node_modules/expo-clipboard/ios"
   ExpoCrypto:
     :path: "../node_modules/.pnpm/expo-crypto@14.0.2_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+cor_492ce37dc5b1e02dcbf7087cb65ff9ab/node_modules/expo-crypto/ios"
+  ExpoDevice:
+    :path: "../node_modules/.pnpm/expo-device@7.0.3_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@babel+core_c1ab0e629b48f275c36071f5718f8ad6/node_modules/expo-device/ios"
   ExpoFileSystem:
     :path: "../node_modules/.pnpm/expo-file-system@18.0.12_expo@52.0.46_@babel+core@7.26.10_@babel+preset-env@7.26.9_@bab_bdd0dd0304e664c5eac22b542dfb326e/node_modules/expo-file-system/ios"
   ExpoFont:
@@ -2438,6 +2448,7 @@ SPEC CHECKSUMS:
   EXImageLoader: e5da974e25b13585c196b658a440720c075482d5
   EXJSONUtils: 01fc7492b66c234e395dcffdd5f53439c5c29c93
   EXManifests: a19d50504b8826546a4782770317bc83fffec87d
+  EXNotifications: 9d3d17e52c95f377750d4a2ae553a716313dd4aa
   Expo: a6ff273c618506b12129a0d06f2a08201bfbcf43
   expo-dev-client: db44302cdbe0ec55b0ef1849c9a23a76dec6dbac
   expo-dev-launcher: c67c6a87f8a8ff54abda104abdc057ee4565a3f4
@@ -2448,6 +2459,7 @@ SPEC CHECKSUMS:
   ExpoBlur: 392c1207f71d0ecf22371621c1fbd44ba84d9742
   ExpoClipboard: 44fd1c8959ee8f6175d059dc011b154c9709a969
   ExpoCrypto: e97e864c8d7b9ce4a000bca45dddb93544a1b2b4
+  ExpoDevice: d36ab4186b6799a28fd449bb9a1c77455f23fd1a
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655
   ExpoFont: f354e926f8feae5e831ec8087f36652b44a0b188
   ExpoImageManipulator: 4aca9cc1d84e31f62a7e8075c19026d3ad62f852
