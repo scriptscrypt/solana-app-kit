@@ -367,12 +367,8 @@ class NotificationService {
     
     console.log('📨 Received notification:', { title, body, data });
     
-    // Show an alert for foreground notifications
-    Alert.alert(
-      title || 'Notification',
-      body || 'You received a notification',
-      [{ text: 'OK' }]
-    );
+    // Just log the notification, don't show an alert
+    // The notification will be handled by the system's notification display
   }
 
   /**
