@@ -6,7 +6,7 @@
 
 <p> From AI to Social, Launchpads to Wallets, and Trading — build mobile apps in under 15 minutes. </p>
 
-![githubReadme](https://github.com/user-attachments/assets/2976e07f-adf5-4909-94b3-489ad0604fd0)
+![SolanaAppKit](https://github.com/user-attachments/assets/8b7bcdd9-3752-40ff-a45f-ed1fbb7feddb)
 
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SendArcade/solana-app-kit)
