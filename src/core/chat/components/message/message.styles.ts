@@ -235,6 +235,7 @@ export const messageHeaderStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
     paddingHorizontal: 4,
+    width: '100%',
   },
   left: {
     flexDirection: 'row',
@@ -257,18 +258,21 @@ export const messageHeaderStyles = StyleSheet.create({
   userInfoContainer: {
     flexDirection: 'column',
     flex: 1,
+    minWidth: 0,
   },
   username: {
     fontSize: TYPOGRAPHY.size.md,
     fontWeight: '700',
     color: COLORS.white,
     fontFamily: TYPOGRAPHY.fontFamily,
+    flexShrink: 1,
   },
   headerTimestamp: {
     fontSize: 11,
     color: COLORS.greyMid,
     marginTop: 2,
     fontFamily: TYPOGRAPHY.fontFamily,
+    flexShrink: 1,
   },
 });
 

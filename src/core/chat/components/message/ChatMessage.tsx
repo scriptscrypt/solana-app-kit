@@ -134,50 +134,64 @@ function ChatMessage({
   };
 
   return (
-    <View style={containerStyle}>
-      {/* Only show header for messages from other users */}
+    <View style={{ marginBottom: 8, marginHorizontal: 12 }}>
+      {/* Header takes full width available */}
       {shouldShowHeader && (
-        <MessageHeader
-          message={message}
-          showAvatar={true}
-          onPressUser={user => console.log('User pressed:', user.id)}
-        />
+        <View style={{ width: '100%', marginBottom: 6 }}>
+          <MessageHeader
+            message={message}
+            showAvatar={true}
+            onPressUser={user => console.log('User pressed:', user.id)}
+          />
+        </View>
       )}
 
-      {/* Use Pressable for better touch handling */}
-      <Pressable
-        onPress={() => onPressMessage && onPressMessage(message)}
-        onLongPress={onLongPress} // Use the passed onLongPress handler
-        delayLongPress={500} // Consistent delay
-        disabled={!onPressMessage && !onLongPress} // Disable if no handlers
-        style={({ pressed }) => [{
-          // Allow text messages to fit their content with small max width
-          maxWidth: contentType === 'text' ? '75%' : contentType === 'media' ? '80%' : '100%',
-          opacity: pressed ? 0.7 : 1,
-        }]}
-      >
-        <View style={{ position: 'relative' }}>
-          <MessageBubble
-            {...messageBubbleProps}
-          />
+      {/* Message bubble with width constraints */}
+      <View style={[
+        {
+          maxWidth: '85%',
+        },
+        isCurrentUser
+          ? { alignSelf: 'flex-end' }
+          : { alignSelf: 'flex-start' }
+      ]}>
+        {/* Use Pressable for better touch handling */}
+        <Pressable
+          onPress={() => onPressMessage && onPressMessage(message)}
+          onLongPress={onLongPress} // Use the passed onLongPress handler
+          delayLongPress={500} // Consistent delay
+          disabled={!onPressMessage && !onLongPress} // Disable if no handlers
+          style={({ pressed }) => [{
+            // Allow text messages to fit their content with small max width
+            maxWidth: contentType === 'text' ? '75%' : contentType === 'media' ? '80%' : '100%',
+            opacity: pressed ? 0.7 : 1,
+            // Align the message bubble properly based on user
+            alignSelf: isCurrentUser ? 'flex-end' : 'flex-start',
+          }]}
+        >
+          <View style={{ position: 'relative' }}>
+            <MessageBubble
+              {...messageBubbleProps}
+            />
 
-          {/* Timestamp inside the message bubble - Only for current user */}
-          {isCurrentUser && (
-            <Text style={{
-              position: 'absolute',
-              bottom: 6,
-              right: 10,
-              fontSize: 10,
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontFamily: fontFamily,
-              paddingTop: 2,
-              paddingRight: 2,
-            }}>
-              {formatTime(timestamp)}
-            </Text>
-          )}
-        </View>
-      </Pressable>
+            {/* Timestamp inside the message bubble - Only for current user */}
+            {isCurrentUser && (
+              <Text style={{
+                position: 'absolute',
+                bottom: 6,
+                right: 10,
+                fontSize: 10,
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontFamily: fontFamily,
+                paddingTop: 2,
+                paddingRight: 2,
+              }}>
+                {formatTime(timestamp)}
+              </Text>
+            )}
+          </View>
+        </Pressable>
+      </View>
     </View>
   );
 }

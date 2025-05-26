@@ -44,6 +44,7 @@ function mapPostRowToClientShape(postRow: DBPostRow & DBUserRow) {
     quoteCount: postRow.quote_count,
     reactions: postRow.reactions || {},
     retweetOf: postRow.retweet_of,
+    userReaction: null as string | null,
   };
 }
 
@@ -458,7 +459,7 @@ export const addReaction = async (
 /**
  * POST /api/posts/retweet
  * Body: { retweetOf, userId, sections? }
- * - Increments the retweetOf post’s retweet_count
+ * - Increments the retweetOf post's retweet_count
  */
 export async function createRetweet(req: Request, res: Response) {
   try {
