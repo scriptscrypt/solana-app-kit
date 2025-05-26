@@ -23,6 +23,8 @@ import { updatePostAsync } from '@/shared/state/thread/reducer';
 import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '@/assets/typography';
 import Icons from '@/assets/svgs';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -280,10 +282,11 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                             renderTextEditor("Edit image caption...")}
                         {section.imageUrl && (
                             <View style={styles.mediaPreviewContainer}>
-                                <Image
-                                    source={typeof section.imageUrl === 'string' ? { uri: section.imageUrl } : section.imageUrl}
+                                <IPFSAwareImage
+                                    source={getValidImageSource(section.imageUrl)}
                                     style={styles.imagePreview}
-                                    resizeMode="cover"
+                                    defaultSource={DEFAULT_IMAGES.user}
+                                    key={Platform.OS === 'android' ? `edit-image-${Date.now()}` : 'edit-image'}
                                 />
                                 <Text style={styles.helperText}>
                                     Image cannot be changed
@@ -336,7 +339,12 @@ const EditPostModal = ({ isVisible, onClose, post }: EditPostModalProps) => {
                     <View style={[styles.sectionContainer, styles.nonEditableSection]}>
                         <Text style={styles.sectionTitle}>NFT Listing</Text>
                         {nftInfo.imageUrl && (
-                            <Image source={{ uri: nftInfo.imageUrl }} style={styles.nftPreview} resizeMode="contain" />
+                            <IPFSAwareImage
+                                source={getValidImageSource(nftInfo.imageUrl)}
+                                style={styles.nftPreview}
+                                defaultSource={DEFAULT_IMAGES.user}
+                                key={Platform.OS === 'android' ? `nft-edit-${Date.now()}` : 'nft-edit'}
+                            />
                         )}
                         <Text style={styles.helperTextBold}>
                             NFT listing data cannot be edited

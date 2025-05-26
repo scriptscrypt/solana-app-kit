@@ -1,6 +1,8 @@
 // FILE: src/components/thread/sections/SectionTextImage.tsx
 import React, { useState } from 'react';
-import { View, Text, Image, ImageSourcePropType, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { View, Text, ImageSourcePropType, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Dimensions, Platform } from 'react-native';
+import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { DEFAULT_IMAGES } from '@/shared/config/constants';
 
 /**
  * Props for the SectionTextImage component
@@ -31,6 +33,7 @@ interface SectionTextImageProps {
  * - Rounded corners for images
  * - Full-screen image view on tap
  * - Loading indicator while image loads
+ * - Android-optimized image loading with IPFS support
  * 
  * @example
  * ```tsx
@@ -48,22 +51,26 @@ export default function SectionTextImage({
   const [fullScreenVisible, setFullScreenVisible] = useState(false);
   const windowWidth = Dimensions.get('window').width;
 
+  // Process the image source to ensure it works on both platforms
+  const processedImageSource = imageUrl ? getValidImageSource(imageUrl) : null;
+
   return (
     <View style={styles.container}>
       {!!text && <Text style={styles.text}>{text}</Text>}
-      {imageUrl && (
+      {processedImageSource && (
         <>
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => setFullScreenVisible(true)}
             style={styles.imageContainer}
           >
-            <Image
-              source={imageUrl}
+            <IPFSAwareImage
+              source={processedImageSource}
               style={styles.image}
-              onLoadStart={() => setIsImageLoading(true)}
-              onLoadEnd={() => setIsImageLoading(false)}
-              resizeMode="cover"
+              onLoad={() => setIsImageLoading(false)}
+              onError={() => setIsImageLoading(false)}
+              defaultSource={DEFAULT_IMAGES.user}
+              key={Platform.OS === 'android' ? `section-image-${Date.now()}` : 'section-image'}
             />
             {isImageLoading && (
               <View style={styles.loaderContainer}>
@@ -85,13 +92,14 @@ export default function SectionTextImage({
               >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
-              <Image
-                source={imageUrl}
+              <IPFSAwareImage
+                source={processedImageSource}
                 style={{
                   width: windowWidth,
                   height: windowWidth,
-                  resizeMode: 'contain'
                 }}
+                defaultSource={DEFAULT_IMAGES.user}
+                key={Platform.OS === 'android' ? `modal-image-${Date.now()}` : 'modal-image'}
               />
             </View>
           </Modal>
