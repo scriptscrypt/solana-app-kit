@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { notificationController } from '../../controllers/notificationController';
+import { adminAuthMiddleware } from '../auth/adminAuthRoutes';
 
 const router = Router();
 
@@ -12,16 +13,16 @@ router.post('/register-token', notificationController.registerPushToken.bind(not
 
 /**
  * @route POST /api/notifications/broadcast
- * @desc Broadcast notification to all users or filtered by platform
+ * @desc Broadcast notification to all users or filtered by platform (ADMIN ONLY)
  * @body { title: string, body: string, data?: object, targetType?: 'all'|'ios'|'android', sound?: string, badge?: number, priority?: string }
  */
-router.post('/broadcast', notificationController.broadcastNotification.bind(notificationController));
+router.post('/broadcast', adminAuthMiddleware, notificationController.broadcastNotification.bind(notificationController));
 
 /**
  * @route GET /api/notifications/stats
- * @desc Get push token statistics
+ * @desc Get push token statistics (ADMIN ONLY)
  */
-router.get('/stats', notificationController.getTokenStats.bind(notificationController));
+router.get('/stats', adminAuthMiddleware, notificationController.getTokenStats.bind(notificationController));
 
 /**
  * @route DELETE /api/notifications/remove-token
