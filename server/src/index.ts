@@ -18,6 +18,7 @@ import { threadRouter } from './routes/feed/threadRoutes';
 import profileImageRouter from './routes/user/userRoutes';
 import { pumpSwapRouter } from './routes/pumpfun/pumpSwapRoutes';
 import turnkeyAuthRouter from './routes/auth/turnkeyAuthRoutes';
+import adminAuthRouter from './routes/auth/adminAuthRoutes';
 import auraRouter from './routes/aura';
 import { chatRouter } from './routes/chat/chatRoutes';
 import { setupGlobalChat } from './controllers/chatController';
@@ -177,6 +178,7 @@ app.use('/api/thread/images', threadImageRouter);
 app.use('/api/pump-swap', pumpSwapRouter);
 app.use('/api', tokenMillRouter);
 app.use('/api/auth', turnkeyAuthRouter);
+app.use('/api/auth', adminAuthRouter);
 app.use('/api/aura', auraRouter);
 app.use('/api/chat', chatRouter); // Add the chat routes
 app.use('/api/meteora', meteoraDBCRouter);
