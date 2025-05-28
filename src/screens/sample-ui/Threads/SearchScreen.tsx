@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,8 @@ import { SERVER_URL, BIRDEYE_API_KEY } from '@env';
 import TokenDetailsSheet from '../../../core/shared-ui/TrendingTokenDetails/TokenDetailsSheet';
 import { RiskLevel } from '../../../shared/services/rugCheckService';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
-import COLORS from '../../../assets/colors';
+import { AutoAvatar } from '@/shared/components/AutoAvatar';
+import COLORS from '@/assets/colors';
 import TYPOGRAPHY from '../../../assets/typography';
 
 const { width } = Dimensions.get('window');
@@ -204,54 +205,22 @@ export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
     setIsTokenDetailsVisible(true);
   };
 
-  // PROFILE TAB COMPONENTS
-  const renderUserItem = ({ item }: { item: User }) => {
-    // Handle profile picture URL for Android - transform IPFS URLs to avoid 403/429 errors
-    const getProfileImageSource = () => {
-      // Default fallback image
-      if (!item.profile_picture_url) {
-        return require('../../../assets/images/User.png');
-      }
-
-      // On iOS, use the original URL directly - no transformations needed
-      if (Platform.OS === 'ios') {
-        return { uri: item.profile_picture_url };
-      }
-
-      // ANDROID ONLY - Transform IPFS URLs to avoid loading issues
-      const profileUrl = String(item.profile_picture_url);
-
-      // Handle ipfs.io URLs
-      if (profileUrl.includes('ipfs.io/ipfs/')) {
-        const parts = profileUrl.split('/ipfs/');
-        if (parts.length > 1) {
-          const ipfsHash = parts[1].split('?')[0]?.split('#')[0];
-          if (ipfsHash) {
-            return { uri: `https://nftstorage.link/ipfs/${ipfsHash}` };
-          }
-        }
-      }
-      // Handle ipfs:// protocol
-      else if (profileUrl.startsWith('ipfs://')) {
-        const ipfsHash = profileUrl.slice(7).split('?')[0]?.split('#')[0];
-        if (ipfsHash) {
-          return { uri: `https://nftstorage.link/ipfs/${ipfsHash}` };
-        }
-      }
-
-      // Not an IPFS URL or couldn't extract hash, use original
-      return { uri: profileUrl };
-    };
-
+  // Memoized UserItem component to prevent re-renders
+  const UserItem = React.memo(({ item, onPress }: { item: User; onPress: (user: User) => void }) => {
     return (
       <TouchableOpacity
         style={styles.userItem}
-        onPress={() => handleUserPress(item)}
+        onPress={() => onPress(item)}
         activeOpacity={0.7}
       >
-        <Image
-          source={getProfileImageSource()}
+        <AutoAvatar
+          userId={item.id}
+          profilePicUrl={item.profile_picture_url}
+          username={item.username}
+          size={50}
           style={styles.avatar}
+          showInitials={true}
+          autoGenerate={true}
         />
         <View style={styles.userInfo}>
           <Text style={styles.username}>{item.username}</Text>
@@ -262,7 +231,19 @@ export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
         </View>
       </TouchableOpacity>
     );
-  };
+  });
+
+  UserItem.displayName = 'UserItem';
+
+  const renderUserItem = useCallback(({ item }: { item: User }) => {
+    return <UserItem item={item} onPress={handleUserPress} />;
+  }, [handleUserPress]);
+
+  // Memoized key extractor for better performance
+  const keyExtractor = useCallback((item: User) => item.id, []);
+
+  // Memoized filtered users to prevent unnecessary re-calculations
+  const memoizedFilteredUsers = useMemo(() => filteredUsers, [filteredUsers]);
 
   // TOKEN TAB COMPONENTS
   const renderTokenItem = ({ item }: { item: Token }) => {
@@ -347,9 +328,9 @@ export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
         </View>
       ) : (
         <FlatList
-          data={filteredUsers}
+          data={memoizedFilteredUsers}
           renderItem={renderUserItem}
-          keyExtractor={item => item.id}
+          keyExtractor={keyExtractor}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
