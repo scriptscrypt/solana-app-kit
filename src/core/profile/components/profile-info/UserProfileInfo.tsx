@@ -23,6 +23,7 @@ import { tokenModalStyles } from './profileInfoTokenModal.style';
 import COLORS from '../../../../assets/colors';
 import TYPOGRAPHY from '../../../../assets/typography';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { AutoAvatar } from '@/shared/components/AutoAvatar';
 import { UserProfileInfoProps } from '../../types/index';
 // Using require as a fallback strategy for component import issues
 const ProfileEditDrawerComponent = require('../profile-edit-drawer/ProfileEditDrawer').default;
@@ -33,12 +34,12 @@ import { useAuth } from '@/modules/wallet-providers/hooks/useAuth';
  */
 function getInitials(username: string): string {
   if (!username) return '?';
-  
+
   // If username already appears to be wallet-derived (6 chars), use first 2 chars
   if (username.length === 6 && /^[a-zA-Z0-9]+$/.test(username)) {
     return username.substring(0, 2).toUpperCase();
   }
-  
+
   // Otherwise get initials from words
   const words = username.split(' ');
   if (words.length === 1) {
@@ -52,7 +53,7 @@ function getInitials(username: string): string {
  */
 const InitialsProfilePic = memo(({ initials, size = 80 }: { initials: string, size?: number }) => {
   return (
-    <View 
+    <View
       style={{
         width: size,
         height: size,
@@ -62,9 +63,9 @@ const InitialsProfilePic = memo(({ initials, size = 80 }: { initials: string, si
         alignItems: 'center',
       }}
     >
-      <Text 
+      <Text
         style={{
-          color: COLORS.white, 
+          color: COLORS.white,
           fontSize: size / 3,
           fontWeight: 'bold',
           textAlign: 'center',
@@ -208,7 +209,7 @@ const EditButton = memo(({ onPress, onTransferBalance, onLogout }: { onPress?: (
         <Text style={styles.editProfileBtnText}>Transfer Balance</Text>
       </TouchableOpacity>
     </View>
-    
+
     {/* {onLogout && (
       <TouchableOpacity
         style={[styles.editProfileBtn, { backgroundColor: COLORS.errorRed }]}
@@ -292,6 +293,7 @@ const ProfileHeader = memo(({
   showFollowsYou,
   isOwnProfile,
   onAvatarPress,
+  userWallet,
 }: {
   profilePicUrl: string;
   username: string;
@@ -299,28 +301,25 @@ const ProfileHeader = memo(({
   showFollowsYou: boolean;
   isOwnProfile: boolean;
   onAvatarPress?: () => void;
+  userWallet?: string;
 }) => {
-  // Get initials for default profile pic
-  const initials = useMemo(() => getInitials(username), [username]);
-
   console.log('[ProfileHeader] profilePicUrl:', profilePicUrl);
-  
+
   return (
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
       <TouchableOpacity
         style={[styles.profImgContainer, { backgroundColor: COLORS.background }]}
         onPress={onAvatarPress}
         disabled={!isOwnProfile}>
-        {profilePicUrl ? (
-          <IPFSAwareImage
-            style={styles.profImg}
-            source={getValidImageSource(profilePicUrl)}
-            defaultSource={require('../../../../assets/images/User.png')}
-            key={Platform.OS === 'android' ? `profile-${Date.now()}` : 'profile'}
-          />
-        ) : (
-          <InitialsProfilePic initials={initials} />
-        )}
+        <AutoAvatar
+          userId={userWallet}
+          profilePicUrl={profilePicUrl}
+          username={username}
+          size={72}
+          style={styles.profImg}
+          showInitials={true}
+          autoGenerate={true}
+        />
       </TouchableOpacity>
 
       <View>
@@ -380,7 +379,7 @@ function UserProfileInfo({
   const [localProfilePic, setLocalProfilePic] = useState(profilePicUrl);
   const [localUsername, setLocalUsername] = useState(username);
   const [localBioText, setLocalBioText] = useState(bioText);
-  
+
   // Transfer balance state
   const [showTransferModal, setShowTransferModal] = useState(false);
 
@@ -436,7 +435,7 @@ function UserProfileInfo({
 
   // Profile edit drawer state
   const [showEditProfileDrawer, setShowEditProfileDrawer] = useState(false);
-  
+
   // Memoize profile data to prevent unnecessary re-renders of child components
   const memoizedProfileData = useMemo(() => ({
     userId: userWallet,
@@ -641,6 +640,7 @@ function UserProfileInfo({
         showFollowsYou={canShowFollowsYou}
         isOwnProfile={isOwnProfile}
         onAvatarPress={handleEditProfilePress}
+        userWallet={userWallet}
       />
 
       {/* Short bio */}
@@ -666,8 +666,8 @@ function UserProfileInfo({
       )}
 
       {/* Edit profile button (for own profile) */}
-      {isOwnProfile && <EditButton 
-        onPress={handleEditProfilePress} 
+      {isOwnProfile && <EditButton
+        onPress={handleEditProfilePress}
         onTransferBalance={handleTransferBalance}
         onLogout={handleLogout}
       />}
@@ -680,7 +680,7 @@ function UserProfileInfo({
             showCustomWalletInput
             buttonLabel="Transfer Balance"
             recipientAddress=""
-            onSendToWallet={() => {}}
+            onSendToWallet={() => { }}
             externalModalVisible={showTransferModal}
             externalSetModalVisible={setShowTransferModal}
           />
