@@ -88,3 +88,10 @@ yarn-error.log
 app.json
 eas.json
 create-solana-app/
+
+# Notification admin dashboard - do not track
+notification-admin-dashboard/
+
+# Firebase credentials - do not commit sensitive data
+google-services.json
+*firebase-adminsdk*.json

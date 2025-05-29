@@ -30,7 +30,7 @@ import { useAppSelector, useAppDispatch } from '@/shared/hooks/useReduxHooks';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
 import { fetchUserChats, ChatRoom, updateUserOnlineStatus, receiveMessage, incrementUnreadCount, setSelectedChat } from '@/shared/state/chat/slice';
 import socketService from '@/shared/services/socketService';
-import { ProfileAvatarView } from '@/core/thread/components/post/PostHeader';
+import { AutoAvatar } from '@/shared/components/AutoAvatar';
 import { AppHeader } from '@/core/shared-ui';
 import ChatListItemSkeleton from '@/core/chat/components/ChatListItemSkeleton';
 
@@ -68,7 +68,7 @@ const formatRelativeTime = (dateString: string) => {
 const AI_AGENT = {
   id: 'ai-agent',
   name: 'AI Assistant',
-  avatar: DEFAULT_IMAGES.user, // Use default user image instead of SVG
+  avatar: null, // We'll handle this specially in the AutoAvatar component
   initialMessage: "Hey! I'm your AI assistant. I can help you with various tasks like buying/selling tokens, swapping tokens, or providing information about your wallet. How can I assist you today?"
 };
 
@@ -439,7 +439,8 @@ const ChatListScreen: React.FC = () => {
           id: otherParticipant.id,
           username: otherParticipant.username,
           handle: otherParticipant.username,
-          avatar: getValidImageSource(otherParticipant.profile_picture_url || DEFAULT_IMAGES.user),
+          // Don't provide fallback avatar - let AutoAvatar generate DiceBear avatar if needed
+          avatar: otherParticipant.profile_picture_url || null,
           verified: false,
         };
       }
@@ -451,7 +452,7 @@ const ChatListScreen: React.FC = () => {
         id: AI_AGENT.id,
         username: AI_AGENT.name,
         handle: 'ai-assistant',
-        avatar: getValidImageSource(AI_AGENT.avatar),
+        avatar: null, // Special handling for AI
         verified: true,
       };
     }
@@ -461,7 +462,7 @@ const ChatListScreen: React.FC = () => {
         id: item.id,
         username: item.name,
         handle: 'group-chat',
-        avatar: getValidImageSource(item.avatar || DEFAULT_IMAGES.groupChat), // Use item avatar if available
+        avatar: item.avatar || null, // Don't provide fallback - let AutoAvatar handle it
         verified: false,
       };
     }
@@ -470,7 +471,7 @@ const ChatListScreen: React.FC = () => {
       id: item.id,
       username: item.name,
       handle: 'unknown',
-      avatar: getValidImageSource(DEFAULT_IMAGES.user),
+      avatar: null, // Don't provide fallback - let AutoAvatar handle it
       verified: false,
     };
 
@@ -481,11 +482,22 @@ const ChatListScreen: React.FC = () => {
         onPress={() => handleChatPress(item)}
       >
         <View style={styles.avatarContainer}>
-          <ProfileAvatarView
-            user={displayUser}
-            style={styles.avatar}
-            size={styles.avatar.width}
-          />
+          {isAI ? (
+            // Special AI avatar with SVG icon
+            <View style={[styles.avatar, { backgroundColor: COLORS.brandBlue, justifyContent: 'center', alignItems: 'center' }]}>
+              <Icons.RocketIcon width={24} height={24} color={COLORS.white} />
+            </View>
+          ) : (
+            <AutoAvatar
+              userId={displayUser.id}
+              profilePicUrl={displayUser.avatar}
+              username={displayUser.username}
+              size={50}
+              style={styles.avatar}
+              showInitials={true}
+              autoGenerate={true}
+            />
+          )}
           {!isDirect && !isAI ? (
             <View style={styles.groupIndicator}>
               <Icons.ProfilePlusIcon width={12} height={12} color={COLORS.white} />

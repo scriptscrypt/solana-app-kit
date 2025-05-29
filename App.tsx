@@ -87,6 +87,9 @@ import { CustomizationProvider } from '@/shared/config/CustomizationProvider';
 import { EnvErrorProvider, useEnvError } from '@/shared/context/EnvErrorContext';
 import { EnvWarningDrawer } from './src/core/dev-mode';
 
+// Import notification service
+import notificationService from './src/shared/services/notificationService';
+
 // Component that conditionally renders dev tools
 const DevModeComponents = () => {
   const { isDevMode } = useDevMode();
@@ -145,6 +148,25 @@ export default function App() {
       }
     }
   }, [config.auth.provider]);
+
+  // Initialize notification service
+  useEffect(() => {
+    const initNotifications = async () => {
+      try {
+        await notificationService.initialize();
+        console.log('🔔 Notification service ready');
+      } catch (error) {
+        console.error('❌ Failed to initialize notifications:', error);
+      }
+    };
+
+    initNotifications();
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.cleanup();
+    };
+  }, []);
 
   // Get Dynamic client after initialization is complete
   const getDynamicWebView = () => {

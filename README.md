@@ -8,14 +8,12 @@
 
 ![SolanaAppKit](https://github.com/user-attachments/assets/8b7bcdd9-3752-40ff-a45f-ed1fbb7feddb)
 
-
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SendArcade/solana-app-kit)
 [![NPM Downloads](https://img.shields.io/npm/dm/start-solana-app?style=for-the-badge)](https://www.npmjs.com/package/start-solana-app?activeTab=readme)
 ![GitHub forks](https://img.shields.io/github/forks/sendarcade/solana-app-kit)
 
 ![GitHub License](https://img.shields.io/github/license/sendarcade/solana-app-kit)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)](https://x.com/solanaappkit)
-
 
 <p> Anyone — whether a seasoned React Native developer or a Solana developer — can build mobile apps faster with 10+ protocol integrations. </div>
 
@@ -147,7 +145,7 @@ npx start-solana-app
    ```sh
    # Run with development tools enabled
    pnpm dev
-   
+
    # Or with the standard npm command
    npm run dev
    ```
@@ -343,6 +341,7 @@ The configuration in `eas.json` specifies the `.env.local` file for each build p
 The app can run in two modes:
 
 1. **Standard Mode** (Default):
+
    - Regular production-like environment
    - Missing environment variables will show warnings but limit functionality
 
@@ -374,10 +373,12 @@ pnpm start --dev
 #### Missing Environment Variables
 
 If you're missing environment variables:
+
 - In standard mode: A warning banner will appear on the login screen alerting you
 - In dev mode: A detailed drawer will show all missing variables, and you can bypass authentication
 
 To enable dev mode from standard mode when env vars are missing:
+
 1. A warning will appear with an "Enable Dev Mode" button
 2. After enabling, restart the app
 3. You'll see a green "DEV MODE" indicator at the bottom of the screen
@@ -414,6 +415,25 @@ yarn android
 # or
 npm run android
 ```
+
+##### Android SDK Setup
+
+If you encounter Android SDK location errors, you need to set up your Android environment variables. Add the following to your shell configuration file (`.zshrc`, `.bashrc`, or `.bash_profile`):
+
+```sh
+# Android SDK setup (macOS)
+export ANDROID_HOME=~/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+```
+
+For temporary setup in your current terminal session:
+
+```sh
+export ANDROID_HOME=~/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+```
+
+**Note:** Make sure you have Android Studio installed and the Android SDK is located at `~/Library/Android/sdk` (macOS) or adjust the path accordingly for your system.
 
 ---
 
@@ -555,8 +575,8 @@ Join our community to get help, share your projects, and contribute:
 
 [telegram_badge]: https://img.shields.io/badge/telegram-❤️-252850?style=plastic&logo=telegram
 [telegram_link]: https://t.me/solanaappkit
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)](https://x.com/solanaappkit)
 
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)](https://x.com/solanaappkit)
 
 ---
 
