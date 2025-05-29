@@ -8,14 +8,24 @@
 
 ![SolanaAppKit](https://github.com/user-attachments/assets/8b7bcdd9-3752-40ff-a45f-ed1fbb7feddb)
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SendArcade/solana-app-kit)
-[![NPM Downloads](https://img.shields.io/npm/dm/start-solana-app?style=for-the-badge)](https://www.npmjs.com/package/start-solana-app?activeTab=readme)
-![GitHub forks](https://img.shields.io/github/forks/sendarcade/solana-app-kit)
+<p align="center">
+  <a href="https://deepwiki.com/SendArcade/solana-app-kit">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" />
+  </a>
+  <a href="https://www.npmjs.com/package/start-solana-app?activeTab=readme">
+    <img src="https://img.shields.io/npm/dm/start-solana-app?style=for-the-badge&color=4CAF50" alt="NPM Downloads" />
+  </a>
+  <img src="https://img.shields.io/github/forks/sendarcade/solana-app-kit?style=for-the-badge&color=blue" alt="GitHub Forks" />
+</p>
 
-![GitHub License](https://img.shields.io/github/license/sendarcade/solana-app-kit)
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)](https://x.com/solanaappkit)
+<p align="center">
+  <img src="https://img.shields.io/github/license/sendarcade/solana-app-kit?style=for-the-badge&color=orange" alt="GitHub License" />
+  <a href="https://x.com/solanaappkit">
+    <img src="https://img.shields.io/twitter/follow/solanaappkit?style=for-the-badge&color=1DA1F2" alt="X (formerly Twitter) Follow" />
+  </a>
+</p>
 
-<p> Anyone — whether a seasoned React Native developer or a Solana developer — can build mobile apps faster with 10+ protocol integrations. </div>
+<p> Anyone — whether a seasoned React Native developer or a Solana developer — can build mobile apps faster with 19+ protocol integrations. </div>
 
 ## Key Protocol Integrations
 
@@ -102,7 +112,7 @@ npx start-solana-app
     <tr>
       <td align="center"><a href="https://reactnative.dev/" target="_blank" rel="noopener noreferrer"><img src="https://d33wubrfki0l68.cloudfront.net/554c3b0e09cf167f0281fda839a5433f2040b349/ecfc9/img/header_logo.svg" width="60" height="60" alt="React Native" /><br /><b>React Native</b></a></td>
       <td align="center"><a href="https://expo.dev/" target="_blank" rel="noopener noreferrer"><img src="https://www.vectorlogo.zone/logos/expoio/expoio-icon.svg" width="60" height="60" alt="Expo" /><br /><b>Expo</b></a></td>
-      <td align="center"><a href="https://solana.com/docs/clients/javascript" target="_blank" rel="noopener noreferrer"><img src="https://cdn.jsdelivr.net/gh/trustwallet/assets@master/blockchains/solana/info/logo.png" width="60" height="60" alt="Solana Web3.js" /><br /><b>Solana web3.js</b></a></td>
+      <td align="center"><a href="https://solana.com/docs/clients/javascript" target="_blank" rel="noopener noreferrer"><img src="https://cdn.jsdelivr.net/gh/trustwallet/assets@master/blockchains/solana/info/logo.png" width="60" height="60" alt="Solana Web3.js" /><br /><b>Solana Kit</b></a></td>
       <td align="center"><a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="60" height="60" alt="TypeScript" /><br /><b>TypeScript</b></a></td>
       <td align="center"><a href="https://www.postgresql.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="60" height="60" alt="PostgreSQL" /><br /><b>PostgreSQL</b></a></td>
     </tr>
@@ -521,7 +531,6 @@ The Solana App Kit provides several modular features that can be used independen
 | Module                  | Capabilities                                                                                                                                                                                                                                                                     |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 🔐 **wallet-providers** | • Multiple wallet connection methods (Privy, Dynamic, Mobile Wallet Adapter)<br>• Standardized wallet interface<br>• Transaction handling across providers<br>• Support for embedded wallets, social login, and external wallets                                                 |
-| 🪙 **token-mill**       | • Token creation with configurable parameters<br>• Bonding curve configuration for token pricing<br>• Token swapping (buy/sell) functionality<br>• Staking tokens for rewards<br>• Creating and releasing vesting plans<br>• Fund management for users and markets               |
 | 📊 **data-module**      | • Fetching on-chain data with optimized RPC calls<br>• Token balance tracking<br>• Transaction history display<br>• Real-time data synchronization                                                                                                                               |
 | 🖼️ **nft**              | • NFT display, management, and trading<br>• Collection viewing with floor prices<br>• Compressed NFT support<br>• Integration with threads and posts                                                                                                                             |
 | 💱 **swap**             | • Token swapping using multiple DEX SDKs<br>• Liquidity pool creation with custom token pairs<br>• Liquidity management (add and remove liquidity)<br>• Pool creation with custom parameters<br>• Real-time quotes and price impact estimates<br>• Transaction status monitoring |
@@ -530,6 +539,7 @@ The Solana App Kit provides several modular features that can be used independen
 | 🌊 **meteora**          | • Meteora protocol integration<br>• Token launching capabilities<br>• Pool and liquidity management                                                                                                                                                                              |
 | 💸 **moonpay**          | • Fiat on-ramp integration<br>• Buy crypto with credit cards and Apple Pay<br>• Seamless payment flow                                                                                                                                                                            |
 | 🤖 **solana-agent-kit** | • AI agent integration for Solana interactions<br>• Automated workflows and actions<br>• Enhanced user assistance                                                                                                                                                                |
+| 🪙 **token-mill**       | • Token creation with configurable parameters<br>• Bonding curve configuration for token pricing<br>• Token swapping (buy/sell) functionality<br>• Staking tokens for rewards<br>• Creating and releasing vesting plans                                                          |
 
 ---
 
