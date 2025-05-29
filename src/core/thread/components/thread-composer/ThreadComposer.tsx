@@ -43,6 +43,7 @@ import {
   getValidImageSource,
   fixAllImageUrls,
 } from '@/shared/utils/IPFSImage';
+import { AutoAvatar } from '@/shared/components/AutoAvatar';
 import COLORS from '@/assets/colors';
 import Svg, { Path } from 'react-native-svg';
 
@@ -419,16 +420,14 @@ export const ThreadComposer = forwardRef<{ focus: () => void }, ThreadComposerPr
     <View>
       <View style={styles.composerContainer}>
         <View style={[styles.composerAvatarContainer, { backgroundColor: COLORS.background }]}>
-          <IPFSAwareImage
-            source={
-              storedProfilePic
-                ? getValidImageSource(storedProfilePic)
-                : currentUser.avatar
-                  ? getValidImageSource(currentUser.avatar)
-                  : DEFAULT_IMAGES.user
-            }
+          <AutoAvatar
+            userId={currentUser.id}
+            profilePicUrl={storedProfilePic || currentUser.avatar}
+            username={currentUser.username}
+            size={40}
             style={styles.composerAvatar}
-            defaultSource={DEFAULT_IMAGES.user}
+            showInitials={true}
+            autoGenerate={true}
           />
         </View>
 

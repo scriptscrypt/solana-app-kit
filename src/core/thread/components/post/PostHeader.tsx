@@ -18,6 +18,7 @@ import { ThreadPost, ThreadUser } from '../thread.types';
 import { DEFAULT_IMAGES } from '../../../../config/constants';
 import { useWallet } from '../../../../modules/wallet-providers/hooks/useWallet';
 import { IPFSAwareImage, getValidImageSource } from '@/shared/utils/IPFSImage';
+import { AutoAvatar } from '@/shared/components/AutoAvatar';
 import COLORS from '@/assets/colors';
 
 // Always available direct reference to an image in the bundle
@@ -36,7 +37,7 @@ function getAvatarColor(username: string): string {
   return `hsl(${hue}, 60%, 80%)`;
 }
 
-// The ProfileAvatarView component - simplified to rely on our improved IPFSAwareImage
+// The ProfileAvatarView component - now using AutoAvatar for automatic DiceBear generation
 export function ProfileAvatarView({
   user,
   style,
@@ -46,57 +47,21 @@ export function ProfileAvatarView({
   style?: any,
   size?: number
 }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  // Get user initials for the placeholder
-  const initials = user?.username
-    ? user.username.charAt(0).toUpperCase()
-    : user?.handle ? user.handle.charAt(0).toUpperCase() : '?';
-
-  // Get consistent background color based on username
-  const backgroundColor = getAvatarColor(user?.username || user?.handle || '?');
+  // Extract avatar URL from user object
+  const avatarUrl = typeof user?.avatar === 'string'
+    ? user.avatar
+    : user?.avatar?.uri || null;
 
   return (
-    <View style={[
-      {
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: backgroundColor, // Always show background color
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden', // Ensure image stays within bounds
-      },
-      style
-    ]}>
-      {/* Initials Text - show only if image hasn't loaded */}
-      {!imageLoaded && (
-        <Text style={{
-          fontSize: size * 0.45,
-          fontWeight: '700',
-          color: '#333',
-          textAlign: 'center',
-        }}>
-          {initials}
-        </Text>
-      )}
-
-      {/* Use our improved IPFSAwareImage */}
-      {user?.avatar && (
-        <IPFSAwareImage
-          source={getValidImageSource(user.avatar)}
-          defaultSource={DEFAULT_AVATAR}
-          style={{
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            position: 'absolute', // Overlay on top of the background/initials
-          }}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageLoaded(false)}
-        />
-      )}
-    </View>
+    <AutoAvatar
+      userId={user?.id}
+      profilePicUrl={avatarUrl}
+      username={user?.username || user?.handle}
+      size={size}
+      style={style}
+      showInitials={true}
+      autoGenerate={true}
+    />
   );
 }
 
