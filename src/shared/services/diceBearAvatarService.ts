@@ -112,34 +112,58 @@ function getPixelArtVariation(seed: string): {
  * @returns DiceBear pixel art avatar URL with unique variations
  */
 export function generateDiceBearAvatarUrl(seed: string): string {
-  const baseUrl = 'https://api.dicebear.com/9.x';
-  const variation = getPixelArtVariation(seed);
-  
-  // Use the user's seed so each user gets a different pixel art character
-  // All will be pixel art style, but different characters
-  
-  // Build URL with pixel art style and variation parameters
-  const params = new URLSearchParams({
-    seed: seed, // Use user's seed for different pixel art characters
-    size: '256',
-    backgroundColor: variation.backgroundColor,
-    flip: variation.flip.toString(),
-    rotate: variation.rotate.toString(),
-    scale: variation.scale.toString(),
-    radius: variation.radius.toString(),
-  });
-  
-  // Use PNG format for React Native Image component compatibility
-  const avatarUrl = `${baseUrl}/pixel-art/png?${params.toString()}`;
-  
-  // Debug logging
-  console.log('[DiceBearService] Generated PNG avatar URL:', {
-    seed: seed.substring(0, 8) + '...',
-    url: avatarUrl,
-    variation: variation
-  });
-  
-  return avatarUrl;
+  try {
+    // Validate input
+    if (!seed || typeof seed !== 'string' || seed.trim() === '') {
+      throw new Error('Invalid seed provided for avatar generation');
+    }
+
+    // Clean the seed to ensure it's URL-safe
+    const cleanSeed = seed.trim();
+    
+    const baseUrl = 'https://api.dicebear.com/9.x';
+    const variation = getPixelArtVariation(cleanSeed);
+    
+    // Use the user's seed so each user gets a different pixel art character
+    // All will be pixel art style, but different characters
+    
+    // Build URL with pixel art style and variation parameters
+    const params = new URLSearchParams({
+      seed: cleanSeed, // Use cleaned seed for different pixel art characters
+      size: '256',
+      backgroundColor: variation.backgroundColor,
+      flip: variation.flip.toString(),
+      rotate: variation.rotate.toString(),
+      scale: variation.scale.toString(),
+      radius: variation.radius.toString(),
+    });
+    
+    // Use PNG format for React Native Image component compatibility
+    const avatarUrl = `${baseUrl}/pixel-art/png?${params.toString()}`;
+    
+    // Validate the generated URL
+    if (!avatarUrl.includes('dicebear.com') || !avatarUrl.includes('pixel-art')) {
+      throw new Error('Generated URL validation failed');
+    }
+    
+    // Debug logging
+    console.log('[DiceBearService] Generated PNG avatar URL:', {
+      seed: cleanSeed.substring(0, 8) + '...',
+      url: avatarUrl,
+      variation: variation
+    });
+    
+    return avatarUrl;
+  } catch (error) {
+    console.error('[DiceBearService] Error generating DiceBear URL:', error);
+    
+    // Fallback to minimal URL that should always work
+    const safeSeed = typeof seed === 'string' ? seed.trim() : 'fallback';
+    const fallbackUrl = `https://api.dicebear.com/9.x/pixel-art/png?seed=${encodeURIComponent(safeSeed)}&size=256`;
+    
+    console.warn('[DiceBearService] Using fallback URL:', fallbackUrl);
+    return fallbackUrl;
+  }
 }
 
 /**
@@ -190,6 +214,10 @@ export async function generateAndStoreAvatar(
       forceRegenerate
     });
 
+    if (!userId || userId.trim() === '') {
+      throw new Error('Invalid user ID provided');
+    }
+
     // Check and clear old cache if version changed
     await checkAndClearOldCache();
     
@@ -198,27 +226,71 @@ export async function generateAndStoreAvatar(
       const cachedUrl = await getCachedAvatarUrl(userId);
       if (cachedUrl) {
         console.log('[DiceBearService] Using cached avatar:', cachedUrl);
-        return cachedUrl;
+        
+        // Validate the cached URL format
+        if (cachedUrl.includes('dicebear.com') && cachedUrl.includes(userId)) {
+          return cachedUrl;
+        } else {
+          console.warn('[DiceBearService] Cached URL appears invalid, regenerating...');
+        }
       }
     }
 
-    // Generate new pixel art avatar URL
-    const avatarUrl = generateDiceBearAvatarUrl(userId);
+    // Generate new pixel art avatar URL with retry logic
+    let avatarUrl: string;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-    // Cache the avatar URL locally
-    await setCachedAvatarUrl(userId, avatarUrl);
+    while (attempts < maxAttempts) {
+      try {
+        avatarUrl = generateDiceBearAvatarUrl(userId);
+        
+        // Validate the generated URL
+        if (!avatarUrl || !avatarUrl.includes('dicebear.com')) {
+          throw new Error('Generated URL is invalid');
+        }
+        
+        break; // Success, exit retry loop
+      } catch (urlError) {
+        attempts++;
+        console.warn(`[DiceBearService] Avatar URL generation attempt ${attempts} failed:`, urlError);
+        
+        if (attempts >= maxAttempts) {
+          // Last attempt failed, create a very simple fallback URL
+          console.error('[DiceBearService] All generation attempts failed, using simple fallback');
+          avatarUrl = `https://api.dicebear.com/9.x/pixel-art/png?seed=${encodeURIComponent(userId)}&size=256`;
+        }
+      }
+    }
+
+    // Cache the avatar URL locally with error handling
+    try {
+      await setCachedAvatarUrl(userId, avatarUrl!);
+    } catch (cacheError) {
+      console.warn('[DiceBearService] Failed to cache avatar URL:', cacheError);
+      // Don't fail the whole operation for cache errors
+    }
 
     console.log('[DiceBearService] Generated and cached avatar for user:', {
       userId: userId.substring(0, 8) + '...',
-      avatarUrl
+      avatarUrl: avatarUrl!
     });
 
-    return avatarUrl;
+    return avatarUrl!;
   } catch (error) {
     console.error('[DiceBearService] Error generating avatar:', error);
-    // Fallback to a simple pixel art avatar
-    const fallbackUrl = generateDiceBearAvatarUrl(userId);
-    console.log('[DiceBearService] Using fallback avatar:', fallbackUrl);
+    
+    // Ultimate fallback: create a minimal URL that should always work
+    const fallbackUrl = `https://api.dicebear.com/9.x/pixel-art/png?seed=${encodeURIComponent(userId)}&size=256`;
+    console.log('[DiceBearService] Using ultimate fallback avatar:', fallbackUrl);
+    
+    // Try to cache the fallback too
+    try {
+      await setCachedAvatarUrl(userId, fallbackUrl);
+    } catch (cacheError) {
+      console.warn('[DiceBearService] Failed to cache fallback avatar:', cacheError);
+    }
+    
     return fallbackUrl;
   }
 }
@@ -234,13 +306,38 @@ export async function getAvatarUrl(
   userId: string, 
   existingProfilePic?: string | null
 ): Promise<string> {
-  // If user already has a profile picture, use it
-  if (existingProfilePic && existingProfilePic.trim() !== '') {
-    return existingProfilePic;
-  }
+  try {
+    // Validate inputs
+    if (!userId || userId.trim() === '') {
+      throw new Error('Invalid user ID provided to getAvatarUrl');
+    }
 
-  // If no profile picture, generate/get DiceBear pixel art avatar
-  return await generateAndStoreAvatar(userId);
+    // If user already has a profile picture, validate and use it
+    if (existingProfilePic && existingProfilePic.trim() !== '') {
+      // Basic URL validation
+      if (existingProfilePic.startsWith('http://') || existingProfilePic.startsWith('https://')) {
+        return existingProfilePic;
+      } else {
+        console.warn('[DiceBearService] Invalid profile picture URL format:', existingProfilePic);
+        // Continue to generate avatar instead of failing
+      }
+    }
+
+    // If no profile picture or invalid profile picture, generate/get DiceBear pixel art avatar
+    return await generateAndStoreAvatar(userId);
+  } catch (error) {
+    console.error('[DiceBearService] Error in getAvatarUrl:', error);
+    
+    // Fallback: try to generate a simple avatar directly
+    try {
+      return generateDiceBearAvatarUrl(userId);
+    } catch (fallbackError) {
+      console.error('[DiceBearService] Even fallback avatar generation failed:', fallbackError);
+      
+      // Ultimate fallback
+      return `https://api.dicebear.com/9.x/pixel-art/png?seed=${encodeURIComponent(userId)}&size=256`;
+    }
+  }
 }
 
 /**
