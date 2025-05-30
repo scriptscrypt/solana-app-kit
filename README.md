@@ -95,15 +95,12 @@ You can view the full documentation of the kit at: [http://docs.solanaappkit.com
 
 ```sh
 npx start-solana-app
-npx start-solana-app
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-<div align="center">
-  <table>
 <div align="center">
   <table>
     <tr>
@@ -113,13 +110,9 @@ npx start-solana-app
       <td align="center"><a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="60" height="60" alt="TypeScript" /><br /><b>TypeScript</b></a></td>
       <td align="center"><a href="https://www.postgresql.org/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.worldvectorlogo.com/logos/postgresql.svg" width="60" height="60" alt="PostgreSQL" /><br /><b>PostgreSQL</b></a></td>
     </tr>
-    <tr>
   </table>
 </div>
 
----
-
-## ✅ Prerequisites
 ---
 
 ## ✅ Prerequisites
@@ -128,13 +121,9 @@ npx start-solana-app
 - pnpm or yarn or npm
 - iOS: XCode and CocoaPods
 - Android: Android Studio, Android SDK, and JDK
-- Android: Android Studio, Android SDK, and JDK
 - [Expo CLI](https://docs.expo.dev/get-started/installation/)
 - PostgreSQL database (for the server)
 
----
-
-## 🚀 Quick Start
 ---
 
 ## 🚀 Quick Start
@@ -155,9 +144,6 @@ npx start-solana-app
 3. Create a `.env.local` file with your environment variables (see Environment Variables section)
 
 4. Run the app in development mode with dev tools enabled:
-3. Create a `.env.local` file with your environment variables (see Environment Variables section)
-
-4. Run the app in development mode with dev tools enabled:
 
    ```sh
    # Run with development tools enabled
@@ -165,14 +151,8 @@ npx start-solana-app
 
    # Or with the standard npm command
    npm run dev
-   # Run with development tools enabled
-   pnpm dev
-
-   # Or with the standard npm command
-   npm run dev
    ```
 
-5. Run on a specific platform:
 5. Run on a specific platform:
 
    ```sh
@@ -209,26 +189,6 @@ npm start --dev
 ---
 
 ## ⌨️ Hotkeys
-### Development vs Standard Mode
-
-Solana App Kit supports two running modes:
-
-- **Standard Mode**: Default production-like experience
-- **Development Mode**: Enhanced with developer tools, navigation helpers, and error handling
-
-To run in development mode, use the `--dev` flag or the `dev` script:
-
-```sh
-# Using npm script
-npm run dev
-
-# Or with the start script flag
-npm start --dev
-```
-
----
-
-## ⌨️ Hotkeys
 
 When running the Expo development server:
 
@@ -242,25 +202,11 @@ When running the Expo development server:
 | `d` | Open developer tools     |
 
 ---
-| Key | Action                   |
-| --- | ------------------------ |
-| `i` | Open on iOS simulator    |
-| `a` | Open on Android emulator |
-| `w` | Open in web browser      |
-| `r` | Reload the app           |
-| `m` | Toggle the menu          |
-| `d` | Open developer tools     |
 
----
-
-## 🧪 Development Mode Guide
 ## 🧪 Development Mode Guide
 
 For details on running the app in development mode, including environment variable handling and troubleshooting, please refer to the [Development Mode Guide](docs/DEV_MODE.md).
 
----
-
-## 🏁 Getting Started
 ---
 
 ## 🏁 Getting Started
@@ -317,8 +263,6 @@ This project consists of two main parts:
    COIN_MARKE_CAPAPI_KEY=your_coinmarketcap_api_key
    OPENAI_API_KEY=your_openai_api_key
    COMMISSION_WALLET=your_commission_wallet_address
-   OPENAI_API_KEY=your_openai_api_key
-   COMMISSION_WALLET=your_commission_wallet_address
    ```
 
 ### Server Installation
@@ -350,7 +294,6 @@ This project consists of two main parts:
    TOKEN_MILL_CONFIG_PDA=your_token_mill_config_pda
    SWAP_AUTHORITY_KEY=your_swap_authority_key
    COMMISSION_WALLET=your_commission_wallet_address
-   COMMISSION_WALLET=your_commission_wallet_address
 
    # Pinata for IPFS
    PINATA_JWT=your_pinata_jwt
@@ -368,10 +311,6 @@ This project consists of two main parts:
    TURNKEY_ORGANIZATION_ID=your_turnkey_organization_id
    TURNKEY_API_PUBLIC_KEY=your_turnkey_api_public_key
    TURNKEY_API_PRIVATE_KEY=your_turnkey_api_private_key
-
-   # Supabase
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_ANON_KEY=your_supabase_anon_key
 
    # Supabase
    SUPABASE_URL=your_supabase_url
@@ -419,54 +358,12 @@ The app can run in two modes:
 #### Starting the App
 
 To start the app:
-#### Standard vs Development Mode
-
-The app can run in two modes:
-
-1. **Standard Mode** (Default):
-
-   - Regular production-like environment
-   - Missing environment variables will show warnings but limit functionality
-
-2. **Development Mode**:
-   - Enhanced developer tools and diagnostics
-   - Visual indicator showing "DEV MODE" at the bottom of the screen
-   - Access to developer drawer with navigation shortcuts and environment variable status
-   - Ability to bypass authentication for testing
-   - Missing environment variables are clearly displayed with options to fix
-
-#### Starting the App
-
-To start the app:
 
 ```sh
-# Standard mode
 # Standard mode
 pnpm start
 # or
 npm start
-
-# Development mode
-pnpm dev
-# or
-npm run dev
-# or
-pnpm start --dev
-```
-
-#### Missing Environment Variables
-
-If you're missing environment variables:
-
-- In standard mode: A warning banner will appear on the login screen alerting you
-- In dev mode: A detailed drawer will show all missing variables, and you can bypass authentication
-
-To enable dev mode from standard mode when env vars are missing:
-
-1. A warning will appear with an "Enable Dev Mode" button
-2. After enabling, restart the app
-3. You'll see a green "DEV MODE" indicator at the bottom of the screen
-4. Tap it to access developer tools
 
 # Development mode
 pnpm dev
@@ -544,28 +441,6 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 ---
 
 ## 📂 Project Structure
-##### Android SDK Setup
-
-If you encounter Android SDK location errors, you need to set up your Android environment variables. Add the following to your shell configuration file (`.zshrc`, `.bashrc`, or `.bash_profile`):
-
-```sh
-# Android SDK setup (macOS)
-export ANDROID_HOME=~/Library/Android/sdk
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-```
-
-For temporary setup in your current terminal session:
-
-```sh
-export ANDROID_HOME=~/Library/Android/sdk
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-```
-
-**Note:** Make sure you have Android Studio installed and the Android SDK is located at `~/Library/Android/sdk` (macOS) or adjust the path accordingly for your system.
-
----
-
-## 📂 Project Structure
 
 ```
 solana-app-kit/
@@ -581,20 +456,7 @@ solana-app-kit/
 │   │   ├── profile/    # User profile related components
 │   │   ├── shared-ui/  # Common UI components
 │   │   └── thread/     # Thread-related components
-│   │   ├── images/     # Image assets for the app
-│   │   ├── svgs/       # SVG graphic files
-│   │   ├── colors.ts   # Color definitions
-│   │   └── typography.ts # Typography definitions
-│   ├── core/           # Core application components
-│   │   ├── chat/       # Chat functionality components
-│   │   ├── dev-mode/   # Development mode utilities
-│   │   ├── profile/    # User profile related components
-│   │   ├── shared-ui/  # Common UI components
-│   │   └── thread/     # Thread-related components
 │   ├── modules/        # Feature modules (core functionality)
-│   │   ├── data-module/ # Data management module
-│   │   ├── meteora/    # Meteora integration
-│   │   ├── moonpay/    # Moonpay integration
 │   │   ├── data-module/ # Data management module
 │   │   ├── meteora/    # Meteora integration
 │   │   ├── moonpay/    # Moonpay integration
@@ -605,37 +467,7 @@ solana-app-kit/
 │   │   ├── swap/       # Swap functionality
 │   │   ├── token-mill/ # Token creation and management
 │   │   └── wallet-providers/ # Wallet connection adapters
-│   │   ├── pump-fun/   # Pump.fun integration
-│   │   ├── raydium/    # Raydium integration
-│   │   ├── solana-agent-kit/ # Solana agent kit integration
-│   │   ├── swap/       # Swap functionality
-│   │   ├── token-mill/ # Token creation and management
-│   │   └── wallet-providers/ # Wallet connection adapters
 │   ├── screens/        # App screens and UI flows
-│   │   ├── common/     # Common screen components
-│   │   ├── sample-ui/  # Sample UI screens
-│   │   └── index.ts    # Screen exports
-│   ├── server/         # Server-related functionality
-│   │   └── meteora/    # Meteora server integration
-│   └── shared/         # Shared utilities and components
-│       ├── config/     # Configuration files
-│       ├── context/    # React context providers
-│       ├── hooks/      # Custom React hooks
-│       ├── mocks/      # Mock data for testing
-│       ├── navigation/ # Navigation configuration
-│       ├── services/   # API integrations and business logic
-│       ├── state/      # Redux store and slices
-│       │   ├── auth/   # Authentication state management
-│       │   ├── chat/   # Chat state management
-│       │   ├── notification/ # Notification state management
-│       │   ├── profile/ # Profile state management
-│       │   ├── thread/ # Thread state management
-│       │   ├── transaction/ # Transaction state management
-│       │   ├── users/  # User state management
-│       │   └── store.ts # Redux store configuration
-│       ├── types/      # TypeScript type definitions
-│       └── utils/      # Utility functions and helpers
-│           └── common/ # Common utility functions
 │   │   ├── common/     # Common screen components
 │   │   ├── sample-ui/  # Sample UI screens
 │   │   └── index.ts    # Screen exports
@@ -677,14 +509,8 @@ solana-app-kit/
 ├── babel.config.js     # Babel configuration
 ├── metro.config.js     # Metro bundler configuration
 ├── tsconfig.json       # TypeScript configuration
-├── app.config.js       # Expo configuration
-├── app.json            # App configuration
-├── babel.config.js     # Babel configuration
-├── metro.config.js     # Metro bundler configuration
-├── tsconfig.json       # TypeScript configuration
 ├── docs/               # Documentation files
 ├── CONTRIBUTING.md     # Contribution guidelines
-├── LICENSE             # License information
 ├── LICENSE             # License information
 └── package.json        # Dependencies and scripts
 ```
@@ -716,7 +542,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 For detailed guidelines on how to contribute to this project, see our [Contributing Guide](CONTRIBUTING.md).
 
-## 👥 Contributors
+---
+
 ## 👥 Contributors
 
 <div align="center">
@@ -728,15 +555,9 @@ For detailed guidelines on how to contribute to this project, see our [Contribut
 ---
 
 ## 🔒 Security
----
-
-## 🔒 Security
 
 This toolkit handles transaction generation, signing and sending, using provided wallets. Always ensure you're using it in a secure environment and never share your private keys.
 
----
-
-## ❓ Troubleshooting
 ---
 
 ## ❓ Troubleshooting
@@ -750,15 +571,7 @@ Common issues and their solutions:
 | **iOS simulator issues**     | Try resetting the simulator or running `pod install` in the iOS directory                   |
 
 ---
-| Issue                        | Solution                                                                                    |
-| ---------------------------- | ------------------------------------------------------------------------------------------- |
-| **Expo build errors**        | Clear your cache with `expo start --clear`                                                  |
-| **Wallet connection issues** | Ensure you're using the correct provider and have properly configured environment variables |
-| **iOS simulator issues**     | Try resetting the simulator or running `pod install` in the iOS directory                   |
 
----
-
-## 🌐 Community
 ## 🌐 Community
 
 Join our community to get help, share your projects, and contribute:
@@ -773,29 +586,13 @@ Join our community to get help, share your projects, and contribute:
 ---
 
 ## 📄 License
-[![telegram_badge]][telegram_link]
 
-[telegram_badge]: https://img.shields.io/badge/telegram-❤️-252850?style=plastic&logo=telegram
-[telegram_link]: https://t.me/solanaappkit
-
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/solanaappkit)](https://x.com/solanaappkit)
-
----
-
-## 📄 License
-
-This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
 This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
 
-<div align="center">
-
-Built with ❤️ for the Solana ecosystem by SendAI and Send Arcade.
-
-</div>
 Built with ❤️ for the Solana ecosystem by SendAI and Send Arcade.
 
 </div>
