@@ -6,7 +6,7 @@
     "dark": "/docs/assets/dark.svg"
   },
   "layout": "sidenav",
-  "favicon": "/docs/assets/favicon.svg",
+  "favicon": "/docs/assets/favicon.png",
   "sidebar": {
     "items": "border"
   },
