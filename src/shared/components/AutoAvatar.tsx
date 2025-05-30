@@ -4,10 +4,18 @@
  * A smart avatar component that automatically generates DiceBear avatars for users
  * who don't have profile images. This component can be used as a drop-in replacement
  * for regular Image components in avatar contexts.
+ * 
+ * Features:
+ * - Automatic DiceBear avatar generation for users without profile pictures
+ * - Shimmer loading skeleton animation while loading (enabled by default)
+ * - Fallback to initials if no image is available
+ * - IPFS-aware image loading
+ * - Consistent color generation based on user ID
+ * - Fully customizable styling and behavior
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle, Platform } from 'react-native';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ViewStyle, TextStyle, ImageStyle, Animated, Easing, Platform } from 'react-native';
 import { IPFSAwareImage, getValidImageSource } from '../utils/IPFSImage';
 import { useAutoAvatar } from '../hooks/useAutoAvatar';
 import { DEFAULT_IMAGES } from '../config/constants';
@@ -23,7 +31,7 @@ interface AutoAvatarProps {
     /** Custom style for the avatar container */
     style?: ViewStyle;
     /** Custom style for the avatar image */
-    imageStyle?: ViewStyle;
+    imageStyle?: ImageStyle;
     /** Whether to show initials as fallback */
     showInitials?: boolean;
     /** Username for generating initials */
@@ -38,7 +46,58 @@ interface AutoAvatarProps {
     onLoad?: () => void;
     /** Callback when avatar fails to load */
     onError?: () => void;
+    /** Whether to show shimmer loading animation */
+    showShimmer?: boolean;
 }
+
+/**
+ * Shimmer Component for loading state
+ */
+const ShimmerAvatar: React.FC<{ size: number; style?: ViewStyle }> = ({ size, style }) => {
+    const shimmerAnimatedValue = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const shimmerAnimation = Animated.loop(
+            Animated.timing(shimmerAnimatedValue, {
+                toValue: 1,
+                duration: 1200,
+                easing: Easing.inOut(Easing.ease),
+                useNativeDriver: true,
+            }),
+        );
+        shimmerAnimation.start();
+        return () => shimmerAnimation.stop();
+    }, [shimmerAnimatedValue]);
+
+    const translateX = shimmerAnimatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-size * 2, size * 2],
+    });
+
+    const shimmerStyle: ViewStyle = useMemo(() => ({
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: COLORS.lighterBackground,
+        overflow: 'hidden',
+        ...style,
+    }), [size, style]);
+
+    return (
+        <View style={shimmerStyle}>
+            <Animated.View
+                style={[
+                    StyleSheet.absoluteFill,
+                    {
+                        backgroundColor: COLORS.darkerBackground,
+                        opacity: 0.6,
+                        transform: [{ translateX }],
+                    },
+                ]}
+            />
+        </View>
+    );
+};
 
 /**
  * Generate initials from username
@@ -92,6 +151,7 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
     autoGenerate = true,
     onLoad,
     onError,
+    showShimmer = true,
 }) => {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -130,7 +190,7 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
     }), [size, backgroundColor, style]);
 
     // Image styles with memoization
-    const finalImageStyle: ViewStyle = useMemo(() => ({
+    const finalImageStyle: ImageStyle = useMemo(() => ({
         width: size,
         height: size,
         borderRadius: size / 2,
@@ -160,20 +220,35 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
         onError?.();
     }, [onError]);
 
+    // Show shimmer if loading and no avatar URL yet
+    const shouldShowShimmer = showShimmer && isLoading && !finalAvatarUrl;
+
+    // Show custom loading component if provided and loading
+    const shouldShowCustomLoading = showLoading && isLoading && !finalAvatarUrl && loadingComponent;
+
+    // Show initials if we should and no image is loaded/loading
+    const shouldShowInitials = showInitials && (!imageLoaded || imageError) && !shouldShowShimmer && !shouldShowCustomLoading;
+
     return (
         <View style={containerStyle}>
-            {/* Show initials if no image loaded or as fallback */}
-            {showInitials && (!imageLoaded || imageError) && (
-                <Text style={textStyle}>{initials}</Text>
+            {/* Show shimmer loading skeleton */}
+            {shouldShowShimmer && (
+                <ShimmerAvatar size={size} style={style} />
             )}
 
-            {/* Show loading indicator if requested */}
-            {showLoading && isLoading && !finalAvatarUrl && (
-                loadingComponent || (
-                    <View style={[containerStyle, { backgroundColor: COLORS.greyLight }]}>
-                        <Text style={[textStyle, { color: COLORS.greyDark }]}>...</Text>
-                    </View>
-                )
+            {/* Show custom loading component if provided */}
+            {shouldShowCustomLoading && loadingComponent}
+
+            {/* Show default loading indicator if requested and no custom component */}
+            {showLoading && isLoading && !finalAvatarUrl && !loadingComponent && !showShimmer && (
+                <View style={[containerStyle, { backgroundColor: COLORS.greyLight }]}>
+                    <Text style={[textStyle, { color: COLORS.greyDark }]}>...</Text>
+                </View>
+            )}
+
+            {/* Show initials if no image loaded or as fallback */}
+            {shouldShowInitials && (
+                <Text style={textStyle}>{initials}</Text>
             )}
 
             {/* Show avatar image if available - using IPFSAwareImage for proper IPFS and cross-platform handling */}
@@ -203,7 +278,8 @@ export const SimpleAutoAvatar: React.FC<{
     username?: string;
     size?: number;
     style?: ViewStyle;
-}> = ({ userId, profilePicUrl, username, size = 40, style }) => {
+    showShimmer?: boolean;
+}> = ({ userId, profilePicUrl, username, size = 40, style, showShimmer = true }) => {
     return (
         <AutoAvatar
             userId={userId}
@@ -213,6 +289,7 @@ export const SimpleAutoAvatar: React.FC<{
             style={style}
             showInitials={true}
             autoGenerate={true}
+            showShimmer={showShimmer}
         />
     );
 };
