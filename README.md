@@ -9,20 +9,14 @@
 ![SolanaAppKit](https://github.com/user-attachments/assets/8b7bcdd9-3752-40ff-a45f-ed1fbb7feddb)
 
 <p align="center">
-  <a href="https://deepwiki.com/SendArcade/solana-app-kit">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" />
-  </a>
-  <a href="https://www.npmjs.com/package/start-solana-app?activeTab=readme">
-    <img src="https://img.shields.io/npm/dm/start-solana-app?style=for-the-badge&color=4CAF50" alt="NPM Downloads" />
-  </a>
-  <img src="https://img.shields.io/github/forks/sendarcade/solana-app-kit?style=for-the-badge&color=blue" alt="GitHub Forks" />
+  <a href="https://www.npmjs.com/package/start-solana-app?activeTab=readme"><img src="https://img.shields.io/npm/dm/start-solana-app?style=for-the-badge&color=4CAF50" alt="NPM Downloads" /></a>
+  <a href="https://github.com/SendArcade/solana-app-kit/network/members"><img src="https://img.shields.io/github/forks/sendarcade/solana-app-kit?style=for-the-badge&color=blue" alt="GitHub Forks" /></a>
+  <a href="https://github.com/SendArcade/solana-app-kit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/sendarcade/solana-app-kit?style=for-the-badge&color=orange" alt="GitHub License" /></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/license/sendarcade/solana-app-kit?style=for-the-badge&color=orange" alt="GitHub License" />
-  <a href="https://x.com/solanaappkit">
-    <img src="https://img.shields.io/twitter/follow/solanaappkit?style=for-the-badge&color=1DA1F2" alt="X (formerly Twitter) Follow" />
-  </a>
+  <a href="https://deepwiki.com/SendArcade/solana-app-kit"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" /></a>
+  <a href="https://x.com/solanaappkit"><img src="https://img.shields.io/twitter/follow/solanaappkit?style=flat&color=1DA1F2" alt="X (formerly Twitter) Follow" /></a>
 </p>
 
 <p> Anyone — whether a seasoned React Native developer or a Solana developer — can build mobile apps faster with 19+ protocol integrations. </div>
@@ -530,7 +524,7 @@ The Solana App Kit provides several modular features that can be used independen
 
 | Module                  | Capabilities                                                                                                                                                                                                                                                                     |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🔐 **wallet-providers** | • Multiple wallet connection methods (Privy, Dynamic, Mobile Wallet Adapter)<br>• Standardized wallet interface<br>• Transaction handling across providers<br>• Support for embedded wallets, social login, and external wallets                                                 |
+| 🔐 **embedded-wallet-providers** | • Multiple wallet connection methods (Privy, Dynamic, Mobile Wallet Adapter)<br>• Standardized wallet interface<br>• Transaction handling across providers<br>• Support for embedded wallets, social login, and external wallets                                                 |
 | 📊 **data-module**      | • Fetching on-chain data with optimized RPC calls<br>• Token balance tracking<br>• Transaction history display<br>• Real-time data synchronization                                                                                                                               |
 | 🖼️ **nft**              | • NFT display, management, and trading<br>• Collection viewing with floor prices<br>• Compressed NFT support<br>• Integration with threads and posts                                                                                                                             |
 | 💱 **swap**             | • Token swapping using multiple DEX SDKs<br>• Liquidity pool creation with custom token pairs<br>• Liquidity management (add and remove liquidity)<br>• Pool creation with custom parameters<br>• Real-time quotes and price impact estimates<br>• Transaction status monitoring |
