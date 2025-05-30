@@ -1,6 +1,6 @@
 ---
 title: "Server Overview"
-description: "Comprehensive backend server for the Solana App Kit, providing token management, social features, and various API endpoints for interacting with the Solana blockchain."
+description: "Comprehensive backend server for the Solana App Kit, providing token management, social features, real-time messaging, and various API endpoints for interacting with the Solana blockchain."
 icon: "server"
 ---
 
@@ -9,11 +9,12 @@ icon: "server"
   <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Express.js-404D59?style=for-the-badge" alt="Express.js" />
   <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/WebSocket-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="WebSocket" />
 </div>
 
 ## Overview
 
-This backend server is built with Express.js and TypeScript, offering a robust API for Solana blockchain interactions, social features, and token management. It serves as the backbone for the Solana App Kit, handling all server-side operations and blockchain interactions.
+This backend server is built with Express.js and TypeScript, offering a robust API for Solana blockchain interactions, social features, real-time messaging, and comprehensive token management. It serves as the core backend for the Solana App Kit, providing modular, reusable, and easily customizable components for developers.
 
 ## Features
 
@@ -22,20 +23,39 @@ This backend server is built with Express.js and TypeScript, offering a robust A
     - Token creation via TokenMill
     - Market creation and management
     - Setting bonding curves
-    - Token swapping
+    - Token swapping (buy/sell)
     - Staking and vesting
+    - Market graduation and funding
+  </Card>
+  
+  <Card title="DEX Integrations" icon="exchange">
+    - Jupiter DEX swapping
+    - Raydium swap integration
+    - Meteora DBC (Dynamic Bonding Curve)
+    - PumpFun token launches
+    - Cross-platform swap quotes
   </Card>
   
   <Card title="Social Features" icon="users">
     - Thread creation and management
-    - User profiles
-    - Image management
-    - Community interactions
+    - User profiles and authentication
+    - Follow system and user interactions
+    - Image upload and management
+    - User reactions and engagement
   </Card>
   
+  <Card title="Real-time Features" icon="bolt">
+    - WebSocket-based chat system
+    - Global chat functionality
+    - Real-time message delivery
+    - Chat image support
+    - Push notifications via Expo
+  </Card>
+
   <Card title="Storage Solutions" icon="database">
     - IPFS integration via Pinata
-    - Google Cloud Storage integration
+    - Google Cloud Storage
+    - Image processing and optimization
     - Metadata management
     - File upload handling
   </Card>
@@ -44,7 +64,20 @@ This backend server is built with Express.js and TypeScript, offering a robust A
     - Turnkey API integration
     - Secure wallet management
     - Transaction signing
-    - Authentication systems
+    - Admin authentication system
+    - Multi-signature support
+  </Card>
+
+  <Card title="NFT Operations" icon="image">
+    - NFT minting and management
+    - Metadata handling
+    - Collection management
+  </Card>
+
+  <Card title="Aura System" icon="sparkles">
+    - Aura-based interactions
+    - User reputation management
+    - Community engagement tracking
   </Card>
 </CardGroup>
 
@@ -53,19 +86,20 @@ This backend server is built with Express.js and TypeScript, offering a robust A
 <AccordionGroup>
   <Accordion title="System Requirements">
     - **Node.js**: v16 or higher
-    - **Package Manager**: Yarn (latest version)
+    - **Package Manager**: pnpm (latest version)
     - **Database**: PostgreSQL (latest version)
   </Accordion>
   
   <Accordion title="Blockchain Requirements">
     - **Solana Wallet**: With SOL for transactions
-    - **RPC Endpoint**: Access to Solana RPC
+    - **RPC Endpoint**: Access to Solana RPC (Helius recommended)
   </Accordion>
   
   <Accordion title="External Services">
     - **Google Cloud Storage**: Account with bucket setup
     - **Pinata**: Account for IPFS storage
     - **Turnkey**: API access for wallet management
+    - **Expo**: For push notifications
   </Accordion>
 </AccordionGroup>
 
@@ -81,7 +115,7 @@ This backend server is built with Express.js and TypeScript, offering a robust A
   
   <Step title="Install Dependencies">
     ```bash
-    yarn install
+    pnpm install
     ```
   </Step>
   
@@ -97,28 +131,33 @@ This backend server is built with Express.js and TypeScript, offering a robust A
   
   <Step title="Start Development Server">
     ```bash
-    yarn dev
+    pnpm dev
     ```
     
     <Info>
-      The server will start on port 8080 (or the port specified in your environment variables).
+      The server will start on port 8080 (or the port specified in your environment variables) with WebSocket support enabled.
     </Info>
   </Step>
 </Steps>
 
 ## Architecture Overview
 
-The server follows a modular architecture with clear separation of concerns:
+The server follows a modular, service-oriented architecture:
 
 ```
-server/
-├── src/
-│   ├── controllers/     # Request handling logic
-│   ├── routes/         # API endpoint definitions
-│   ├── services/       # Business logic implementation
-│   ├── db/            # Database configuration
-│   ├── types/         # TypeScript definitions
-│   └── utils/         # Helper functions
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Controllers   │◄──►│    Services     │◄──►│   External APIs │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         ▲                        ▲                        ▲
+         │                        │                        │
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│     Routes      │    │   Utilities     │    │   Blockchain    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         ▲                        ▲                        ▲
+         │                        │                        │
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Express App    │◄──►│   Database      │    │   WebSockets    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ## Core Services
@@ -131,7 +170,7 @@ server/
     - Token swapping with optimal rates
     - Staking mechanisms for rewards
     - Vesting schedules for token distribution
-    - Market funding and liquidity management
+    - Market graduation and funding
     
     **Key Features:**
     - Integration with Solana programs
@@ -139,17 +178,18 @@ server/
     - Transaction optimization
   </Tab>
   
-  <Tab title="Database Service">
-    **Technology Stack:**
-    - PostgreSQL with Knex.js ORM
-    - Migration management system
-    - Connection pooling
+  <Tab title="WebSocket Service">
+    **Features:**
+    - Socket.IO integration
+    - Global chat functionality
+    - Real-time message delivery
+    - Connection management
+    - Transport optimization
     
-    **Data Management:**
-    - User profiles and authentication
-    - Thread and social content storage
-    - Transaction history tracking
-    - Relationship management
+    **Implementation:**
+    - Cross-platform compatibility
+    - Health monitoring
+    - Debugging endpoints
   </Tab>
   
   <Tab title="Storage Service">
@@ -160,7 +200,7 @@ server/
     
     **Cloud Storage:**
     - Google Cloud Storage for images
-    - Scalable file management
+    - Image processing and optimization
     - CDN integration
   </Tab>
   
@@ -175,6 +215,18 @@ server/
     - Transaction signing
     - Address management
   </Tab>
+
+  <Tab title="Notification Service">
+    **Push Notifications:**
+    - Expo integration
+    - Real-time delivery
+    - User targeting
+    
+    **Features:**
+    - Notification scheduling
+    - Custom payload support
+    - Delivery tracking
+  </Tab>
 </Tabs>
 
 ## API Endpoints Overview
@@ -184,27 +236,31 @@ server/
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/config` | POST | Create TokenMill configuration |
+| `/api/quote-token-badge` | POST | Get token badge quote |
 | `/api/markets` | POST | Create token market |
+| `/api/free-market` | POST | Free market from restrictions |
 | `/api/tokens` | POST | Create new token |
 | `/api/swap` | POST | Execute token swap |
 | `/api/stake` | POST | Create staking position |
 | `/api/vesting` | POST | Create vesting schedule |
 
-### Social Features
+### DEX Integration Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/jupiter/*` | Various | Jupiter DEX integration |
+| `/api/raydium/swap/*` | Various | Raydium swap operations |
+| `/api/meteora/*` | Various | Meteora DBC operations |
+| `/api/pump-swap/*` | Various | PumpSwap functionality |
+
+### Social & Real-time Features
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/thread` | Various | Thread management |
 | `/api/profile` | Various | User profiles |
-| `/api/thread/images` | Various | Image handling |
-
-### Swap Integration
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/jupiter` | Various | Jupiter DEX integration |
-| `/api/pump-swap` | Various | PumpSwap functionality |
-| `/api/pumpfun` | Various | PumpFun launches |
+| `/api/chat` | Various | Real-time messaging |
+| `/api/notifications` | Various | Push notifications |
 
 <Tip>
   For detailed API documentation, see the [API Reference](/docs/server/endpoints/tokenmill) section.
@@ -218,7 +274,9 @@ server/
   - All transactions require proper signature verification
   - Environment variables store sensitive credentials
   - Database queries use parameterized statements
-  - Error messages are sanitized to prevent information leakage
+  - Error messages are sanitized
+  - CORS configuration for API access
+  - WebSocket connection validation
 </Warning>
 
 ## Development Workflow
@@ -226,26 +284,26 @@ server/
 <CodeGroup>
   ```bash Development
   # Start with auto-reload
-  yarn dev
+  pnpm dev
   
   # Run with specific port
-  PORT=3000 yarn dev
+  PORT=3000 pnpm dev
   ```
   
   ```bash Production Build
   # Build for production
-  yarn build
+  pnpm build
   
   # Start production server
-  yarn start
+  pnpm start
   ```
   
   ```bash Database Operations
   # Run migrations
-  yarn migrate
+  pnpm migrate
   
   # Seed database
-  yarn seed
+  pnpm seed
   ```
 </CodeGroup>
 
@@ -256,7 +314,7 @@ server/
     Complete setup instructions with detailed environment configuration
   </Card>
   
-  <Card title="API Documentation" icon="cable" href="/docs/server/endpoints/tokenmill">
+  <Card title="API Documentation" icon="server" href="/docs/server/endpoints/tokenmill">
     Comprehensive API reference with examples and responses
   </Card>
   

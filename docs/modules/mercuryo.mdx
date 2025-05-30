@@ -1,0 +1,216 @@
+---
+title: "Mercuryo Module"
+description: "Fiat-to-crypto on-ramp and crypto-to-fiat off-ramp functionality through Mercuryo's payment gateway, offering seamless crypto purchases with multiple payment methods."
+---
+
+## Overview
+
+The Mercuryo module integrates with Mercuryo's payment infrastructure to provide fiat gateway functionality. It enables seamless conversion between fiat currencies and cryptocurrencies through an intuitive interface with real-time exchange rates.
+
+<CardGroup cols={2}>
+  <Card title="On-Ramp (Buy Crypto)" icon="arrow-up-right">
+    - Fiat to crypto conversion
+    - Multiple currencies (USD, EUR, GBP)
+    - Real-time rates & transparent fees
+    - Instant & bank transfer options
+  </Card>
+  
+  <Card title="Off-Ramp (Sell Crypto)" icon="arrow-down-left">
+    - Crypto to fiat conversion
+    - Fast settlement times
+    - Competitive exchange rates
+    - Multiple withdrawal options
+  </Card>
+  
+  <Card title="Payment Methods" icon="credit-card">
+    - Credit/Debit Cards (Visa, Mastercard, Amex)
+    - Apple Pay (iOS)
+    - Bank transfers
+    - 3D Secure authentication
+  </Card>
+  
+  <Card title="User Experience" icon="mobile">
+    - Tab-based interface
+    - Real-time calculations
+    - Platform-optimized design
+    - Transaction summaries
+  </Card>
+</CardGroup>
+
+## Module Structure
+
+```
+src/modules/mercuryo/
+├── index.ts                    # Main exports
+├── screens/
+│   └── MercuryoScreen.tsx     # Main Mercuryo interface
+└── README.md                   # Documentation
+```
+
+## Payment Methods & Fees
+
+<Tabs>
+  <Tab title="Payment Methods">
+    | Method | Platforms | Fee | Processing Time |
+    |--------|-----------|-----|-----------------|
+    | **Credit/Debit Card** | iOS, Android | 2.5% | Instant |
+    | **Apple Pay** | iOS only | 1.8% | Instant |
+    | **Bank Transfer** | iOS, Android | 1.0% | 1-3 business days |
+  </Tab>
+  
+  <Tab title="Platform Support">
+    ```typescript
+    const filteredPaymentMethods = paymentMethods.filter(method =>
+      !(method.appleOnly && Platform.OS !== 'ios')
+    );
+    ```
+  </Tab>
+</Tabs>
+
+## Supported Assets
+
+<Expandable title="Fiat Currencies">
+  | Currency | Symbol | Region |
+  |----------|--------|--------|
+  | **USD** | $ | United States Dollar |
+  | **EUR** | € | Euro |
+  | **GBP** | £ | British Pound Sterling |
+</Expandable>
+
+<Expandable title="Cryptocurrencies">
+  | Token | Symbol | Description |
+  |-------|--------|-------------|
+  | **SOL** | SOL | Native Solana token |
+  | **USDC** | USDC | USD Coin on Solana |
+  | **BONK** | BONK | Solana meme token |
+</Expandable>
+
+## Transaction Flow
+
+### On-Ramp (Buy)
+
+<Steps>
+  <Step title="Enter Amount">
+    Input desired fiat amount for purchase
+  </Step>
+  
+  <Step title="Select Currencies">
+    Choose fiat and crypto currencies
+  </Step>
+  
+  <Step title="Payment Method">
+    Select preferred payment option
+  </Step>
+  
+  <Step title="Review & Pay">
+    Confirm transaction details and complete payment
+  </Step>
+</Steps>
+
+### Off-Ramp (Sell)
+
+<Steps>
+  <Step title="Enter Amount">
+    Input crypto amount to sell
+  </Step>
+  
+  <Step title="Select Currencies">
+    Choose crypto and fiat currencies
+  </Step>
+  
+  <Step title="Bank Details">
+    Enter withdrawal bank information
+  </Step>
+  
+  <Step title="Confirm">
+    Review and confirm withdrawal
+  </Step>
+</Steps>
+
+## Usage Examples
+
+<CodeGroup>
+  ```typescript Basic Integration
+  import { MercuroScreen } from '@/modules/mercuryo';
+  
+  function App() {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen 
+            name="Mercuryo" 
+            component={MercuroScreen}
+            options={{ headerShown: false }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
+  ```
+  
+  ```typescript Navigation
+  const navigation = useNavigation();
+  
+  const openMercuryo = () => {
+    navigation.navigate('Mercuryo');
+  };
+  ```
+  
+  ```typescript Custom Assets
+  const cryptos = [
+    { code: 'SOL', name: 'Solana', logo: require('./assets/sol.png') },
+    { code: 'USDC', name: 'USD Coin', logo: require('./assets/usdc.png') },
+  ];
+  ```
+</CodeGroup>
+
+## Configuration
+
+### Environment Variables
+
+```bash
+MERCURYO_API_KEY=your_mercuryo_api_key
+MERCURYO_ENVIRONMENT=sandbox # or production
+MERCURYO_WIDGET_ID=your_widget_id
+```
+
+<Warning>
+Never commit your actual API keys to version control. Use environment variables or secure key management.
+</Warning>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Dual Mode" icon="arrows-rotate">
+    On-ramp and off-ramp functionality for complete fiat-crypto conversion
+  </Card>
+  
+  <Card title="Multi-Payment" icon="credit-card">
+    Support for cards, Apple Pay, and bank transfers with platform-specific optimizations
+  </Card>
+  
+  <Card title="Real-time Rates" icon="chart-line">
+    Live exchange calculations and transparent fee structure
+  </Card>
+  
+  <Card title="Security" icon="shield-check">
+    3D Secure authentication and KYC/AML compliance built-in
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Info>
+**Implementation Tips:**
+- Test thoroughly in sandbox environment
+- Handle platform-specific payment methods appropriately
+- Implement proper error handling for network issues
+- Display clear fee breakdowns
+- Cache exchange rates for better UX
+</Info>
+
+---
+
+<div className="text-center text-sm text-gray-500 mt-8">
+  Built with ❤️ for seamless fiat-crypto conversions - Powered by Mercuryo
+</div>

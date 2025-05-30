@@ -1,0 +1,300 @@
+---
+title: "Solana Service"
+description: "Comprehensive transaction handling service for the Solana blockchain, featuring Jito bundles and priority fee mechanisms for optimized transaction processing."
+---
+
+<div className="flex items-center gap-2 mb-6">
+  <img src="https://img.shields.io/badge/Solana-black?style=for-the-badge&logo=solana" alt="Solana" />
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+</div>
+
+## Overview
+
+The Solana service provides a unified interface for handling Solana blockchain transactions with support for:
+- **Priority Fee Transactions**: Enhanced processing with configurable fee tiers
+- **Jito Bundle Transactions**: MEV-protected transactions through Jito's block engine
+- **Automated Commission System**: Built-in 0.5% commission handling
+- **Mobile Wallet Adapter Support**: Native mobile wallet integration
+
+<CardGroup cols={2}>
+  <Card title="Transaction Processing" icon="bolt">
+    - Priority fee management (4 tiers)
+    - Jito bundle support
+    - SOL and Token transfers
+    - Mobile Wallet Adapter (MWA)
+    - Versioned transactions
+  </Card>
+  
+  <Card title="Priority Fee System" icon="money-bill">
+    - Low, Medium, High, Very-High tiers
+    - Dynamic calculation
+    - Compute unit optimization
+    - Real-time tier selection
+  </Card>
+  
+  <Card title="Jito Integration" icon="shield">
+    - MEV-protected transactions
+    - Bundle submission
+    - Status tracking
+    - Block engine communication
+  </Card>
+  
+  <Card title="Error Handling" icon="bug">
+    - Comprehensive error parsing
+    - Retry mechanisms
+    - Confirmation validation
+    - Status callbacks
+  </Card>
+</CardGroup>
+
+## Module Structure
+
+```
+src/shared/services/transactions/
+├── index.ts                    # Main exports
+├── methods/                    # Transaction execution methods
+│   ├── sendSOL.ts             # SOL transfers
+│   ├── sendToken.ts           # Token transfers
+│   ├── priority.ts            # Priority fee transactions
+│   └── jito.ts               # Jito bundle transactions
+├── core/                      # Core utilities and configurations
+│   ├── types.ts              # TypeScript interfaces
+│   ├── constants.ts          # Configuration constants
+│   ├── commission.ts         # Commission utilities
+│   ├── helpers.ts            # Transaction helpers
+│   └── errorParser.ts        # Error handling
+└── README.md                  # Documentation
+```
+
+## Priority Fee System
+
+<Tabs>
+  <Tab title="Fee Tiers">
+    | Tier | MicroLamports | Use Case |
+    |------|---------------|----------|
+    | **Low** | 1,000 | Standard transactions |
+    | **Medium** | 10,000 | Normal priority |
+    | **High** | 100,000 | High priority |
+    | **Very-High** | 1,000,000 | Critical transactions |
+  </Tab>
+  
+  <Tab title="Configuration">
+    ```typescript
+    export const DEFAULT_FEE_MAPPING: FeeMapping = {
+      'low': 1_000,
+      'medium': 10_000,
+      'high': 100_000,
+      'very-high': 1_000_000,
+    };
+    ```
+  </Tab>
+  
+  <Tab title="Auto Instructions">
+    - Compute Unit Limit: 2,000,000 units
+    - Compute Unit Price: Based on selected tier
+    - Dynamic Selection: Retrieved from Redux state
+  </Tab>
+</Tabs>
+
+## Jito Bundle Integration
+
+<Expandable title="Benefits & Features">
+  | Feature | Description |
+  |---------|-------------|
+  | **Bundle Submission** | Groups transactions for atomic execution |
+  | **MEV Protection** | Prevents front-running and sandwich attacks |
+  | **Guaranteed Inclusion** | Higher success rate for critical transactions |
+  | **Status Tracking** | Real-time bundle monitoring |
+  | **Block Engine** | Direct integration with Jito's block engine |
+</Expandable>
+
+<Expandable title="Configuration & Setup">
+  ```typescript
+  // Jito Bundle Configuration
+  export const JITO_BUNDLE_URL = ENDPOINTS.jito?.blockEngine || '';
+  
+  interface JitoBundleResponse {
+    jsonrpc: string;
+    result: string;
+    id: number;
+  }
+  
+  interface JitoBundleConfig {
+    maxRetries: number;
+    retryInterval: number;
+    timeout: number;
+  }
+  ```
+</Expandable>
+
+<Expandable title="Usage Guidelines">
+  | Scenario | Recommendation |
+  |----------|---------------|
+  | **High-Value Trades** | Always use Jito bundles |
+  | **Token Launches** | Bundle multiple setup transactions |
+  | **Arbitrage** | Protect against frontrunning |
+  | **Concurrent Txs** | Group related transactions |
+</Expandable>
+
+## Transaction Methods
+
+### Core Functions
+
+<CodeGroup>
+  ```typescript sendSOL
+  // Sends SOL with optional commission and priority fees
+  const signature = await sendSOL({
+    wallet: connectedWallet,
+    recipientAddress: 'recipient_address',
+    amountSol: 0.1,
+    connection: solanaConnection,
+    includeCommission: true,
+    onStatusUpdate: (status) => console.log(status)
+  });
+  ```
+  
+  ```typescript sendToken
+  // Sends SPL tokens with automatic account creation
+  const signature = await sendToken({
+    wallet: connectedWallet,
+    recipientAddress: 'recipient_address',
+    amount: tokenAmount,
+    mint: tokenMint,
+    connection: solanaConnection,
+    includeCommission: true,
+    onStatusUpdate: (status) => console.log(status)
+  });
+  ```
+  
+  ```typescript priorityFee
+  // Executes transactions with configurable priority fees
+  const signature = await sendTransactionWithPriorityFee({
+    wallet: connectedWallet,
+    instructions: transactionInstructions,
+    connection: solanaConnection,
+    shouldUsePriorityFee: true,
+    includeCommission: true,
+    onStatusUpdate: (status) => console.log(status)
+  });
+  ```
+  
+  ```typescript jitoBundle
+  // Executes MEV-protected transactions
+  const signature = await sendJitoBundleTransaction({
+    provider: walletProvider,
+    instructions: transactionInstructions,
+    walletPublicKey: userPublicKey,
+    connection: solanaConnection,
+    onStatusUpdate: (status) => console.log(status)
+  });
+  ```
+</CodeGroup>
+
+### Commission System
+
+<Info>
+The service includes an automated 0.5% commission system for all transactions.
+</Info>
+
+```typescript
+// Commission calculation utilities
+interface CommissionUtils {
+  calculateCommissionLamports(transactionLamports: number): number;
+  createCommissionInstruction(fromPubkey: PublicKey, transactionLamports: number): TransactionInstruction;
+  calculateTransferAmountAfterCommission(totalLamports: number): {
+    transferLamports: number;
+    commissionLamports: number;
+  };
+}
+```
+
+### Error Handling & Retries
+
+```typescript
+export const TRANSACTION_RETRIES = {
+  maxAttempts: 6,
+  interval: 1500,
+  confirmationAttempts: 3,
+  confirmationInterval: 1000,
+  blockhashAttempts: 3,
+  blockhashInterval: 500,
+};
+```
+
+<Warning>
+Error types include:
+- Confirmation failures
+- Network issues
+- Wallet errors
+- Insufficient funds
+</Warning>
+
+## Mobile Wallet Adapter Support
+
+<CodeGroup>
+  ```typescript Android
+  // Android-specific transaction handling
+  if (Platform.OS === 'android') {
+    const signature = await sendPriorityTransactionMWA(
+      connection,
+      recipientAddress,
+      lamportsAmount,
+      feeMapping,
+      (status) => console.log(status)
+    );
+  }
+  ```
+</CodeGroup>
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# Commission wallet address
+COMMISSION_WALLET=your_commission_wallet_address
+
+# Jito configuration
+JITO_BUNDLE_URL=https://your-jito-endpoint
+
+# Solana cluster
+CLUSTER=mainnet-beta
+```
+
+### Redux Integration
+
+```typescript
+// Get current settings from Redux state
+const transactionMode = getCurrentTransactionMode(); // 'jito' | 'priority'
+const feeTier = getCurrentFeeTier(); // 'low' | 'medium' | 'high' | 'very-high'
+const feeAmount = getCurrentFeeMicroLamports();
+
+export type TransactionType = 'swap' | 'transfer' | 'stake' | 'nft' | 'token';
+export type TransactionMode = 'jito' | 'priority';
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Mode Selection" icon="code-branch">
+    Use Jito for MEV-sensitive transactions, Priority fees for speed
+  </Card>
+  
+  <Card title="Fee Tiers" icon="money-bill-trend-up">
+    Match tier to transaction urgency and importance
+  </Card>
+  
+  <Card title="Error Handling" icon="shield-check">
+    Implement comprehensive error handling with status callbacks
+  </Card>
+  
+  <Card title="Platform Support" icon="mobile">
+    Check MWA compatibility for Android devices
+  </Card>
+</CardGroup>
+
+---
+
+<Info>
+For detailed API documentation and examples, see the [API Reference](/docs/server/endpoints/solana) section.
+</Info>

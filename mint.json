@@ -55,22 +55,24 @@
       "group": "Modules",
       "pages": [
         "docs/modules/overview",
+        "docs/modules/wallet-providers",
         "docs/modules/data-module",
+        "docs/modules/swap",
+        "docs/modules/nft",
         "docs/modules/meteora",
         "docs/modules/pumpfun",
         "docs/modules/moonpay",
-        "docs/modules/nft",
         "docs/modules/raydium",
         "docs/modules/solana-agent-kit",
-        "docs/modules/swap",
         "docs/modules/tokenmill",
-        "docs/modules/wallet-providers"
+        "docs/modules/mercuryo"
       ]
     },
     {
       "group": "Server",
       "pages": [
-        "docs/server/overview"
+        "docs/server/overview",
+        "docs/server/services/solana"
       ]
     }
   ],
