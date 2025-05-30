@@ -398,42 +398,42 @@ graph TD
 
 Understanding the structure helps with common development tasks:
 
-<Accordion>
-  <AccordionItem title="🔧 Adding New Features">
+<ResponseField name="development_workflow" type="object">
+<Expandable title="🔧 Adding New Features">
     1. **Create or extend modules** in `src/modules/` for protocol integrations
     2. **Add components** within the relevant module's `components/` directory
     3. **Create hooks** for business logic in the module's `hooks/` directory
     4. **Update module exports** in `index.ts` to expose new functionality
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="🎨 UI Changes">
+<Expandable title="🎨 UI Changes">
     1. **Modify components** within relevant modules for feature-specific UI
     2. **Update shared components** in `src/core/shared-ui/` for common elements
     3. **Adjust styles** using the design system in `src/assets/`
     4. **Test across platforms** to ensure consistent appearance
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="📱 New Screens">
+<Expandable title="📱 New Screens">
     1. **Add screens** to `src/screens/` organized by feature area
     2. **Update navigation** configuration in `src/shared/navigation/`
     3. **Add routing** for deep linking and navigation flows
     4. **Test navigation** on both iOS and Android platforms
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="🔌 API Integration">
+<Expandable title="🔌 API Integration">
     1. **Extend services** in modules for protocol-specific integrations
     2. **Add shared services** in `src/shared/services/` for common APIs
     3. **Update types** to include new API response interfaces
     4. **Add error handling** and status management
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="🏪 State Changes">
+<Expandable title="🏪 State Changes">
     1. **Update Redux slices** in `src/shared/state/` for global state
     2. **Add module-specific state** using local hooks when appropriate
     3. **Implement persistence** for important user data
     4. **Test state synchronization** across components
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Best Practices
 

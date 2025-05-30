@@ -234,8 +234,8 @@ function AIAssistantScreen() {
 
 Use specific components for granular integration:
 
-<Accordion>
-  <AccordionItem title="🔄 Swap Components">
+<ResponseField name="components" type="object">
+<Expandable title="🔄 Swap Components">
     ```javascript
     import { SwapCard, TokenSelector } from 'solana-app-kit';
 
@@ -260,9 +260,9 @@ Use specific components for granular integration:
       );
     }
     ```
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="👛 Wallet Components">
+<Expandable title="👛 Wallet Components">
     ```javascript
     import { WalletButton, WalletInfo } from 'solana-app-kit';
 
@@ -287,9 +287,9 @@ Use specific components for granular integration:
       );
     }
     ```
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="🎨 NFT Components">
+<Expandable title="🎨 NFT Components">
     ```javascript
     import { NFTCard, NFTGrid } from 'solana-app-kit';
 
@@ -312,8 +312,8 @@ Use specific components for granular integration:
       );
     }
     ```
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Theme Customization
 

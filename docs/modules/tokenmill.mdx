@@ -274,9 +274,8 @@ src/modules/token-mill/
 
 For detailed service functions, see the [TokenMill Functions documentation](/docs/functions/tokenmill). Here's a quick overview:
 
-<Accordion>
-  <AccordionItem title="Market Operations">
-    
+<ResponseField name="services" type="object">
+<Expandable title="Market Operations">
     ```typescript
     import { createMarket, fundMarket } from '@/modules/token-mill';
     
@@ -305,10 +304,9 @@ For detailed service functions, see the [TokenMill Functions documentation](/doc
       solanaWallet: wallet
     });
     ```
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="Bonding Curve Configuration">
-    
+<Expandable title="Bonding Curve Configuration">
     ```typescript
     import { setBondingCurve } from '@/modules/token-mill';
     
@@ -332,10 +330,9 @@ For detailed service functions, see the [TokenMill Functions documentation](/doc
       solanaWallet: wallet
     });
     ```
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="Token Operations">
-    
+<Expandable title="Token Operations">
     ```typescript
     import { swapTokens, stakeTokens, createVesting } from '@/modules/token-mill';
     
@@ -372,8 +369,8 @@ For detailed service functions, see the [TokenMill Functions documentation](/doc
       solanaWallet: wallet
     });
     ```
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Quick Start Examples
 

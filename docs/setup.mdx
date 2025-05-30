@@ -16,10 +16,10 @@ Before you begin, ensure you have the following installed:
       <Card title="Node.js >= 18.0.0" icon="node-js">
         Download from [nodejs.org](https://nodejs.org/) - LTS version recommended
       </Card>
-      <Card title="Package Manager" icon="package">
+      <Card title="Package Manager" icon="package-2">
         **pnpm** (recommended), npm, or yarn - we recommend pnpm for better performance
       </Card>
-      <Card title="Git" icon="git-branch">
+      <Card title="Git" icon="git-graph">
         Version control system - download from [git-scm.com](https://git-scm.com/)
       </Card>
     </CardGroup>
@@ -51,7 +51,7 @@ Before you begin, ensure you have the following installed:
       <Card title="Android Emulator" icon="mobile">
         **Or physical Android device** - for testing your applications
       </Card>
-      <Card title="Java Development Kit (JDK)" icon="coffee">
+      <Card title="Java Development Kit (JDK)" icon="vault">
         **Version 11 or newer** - required for Android builds
       </Card>
     </CardGroup>
@@ -387,34 +387,34 @@ When the Expo server is running, use these keyboard shortcuts:
 
 The app includes a special development mode for easier debugging:
 
-<Accordion>
-  <AccordionItem title="🔧 Enabling Dev Mode">
+<ResponseField name="dev_mode" type="object">
+<Expandable title="🔧 Enabling Dev Mode">
     1. **Shake your device** or press `Cmd+D` (iOS) / `Cmd+M` (Android)
     2. **Select "Dev Mode"** from the developer menu
     3. **Access debugging tools** and mock data
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="🛠️ Dev Mode Features">
+<Expandable title="🛠️ Dev Mode Features">
     - **Mock wallet connections** for testing without real wallets
     - **Sample data** for UI development and testing
     - **Network request logging** for debugging API calls
     - **State inspection tools** for Redux state debugging
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Troubleshooting
 
-<AccordionGroup>
-  <Accordion title="🔄 Metro Bundler Issues">
+<ResponseField name="troubleshooting" type="object">
+<Expandable title="🔄 Metro Bundler Issues">
     **Clear cache and restart:**
     ```bash
     pnpm start --reset-cache
     # or
     expo start --clear
     ```
-  </Accordion>
+</Expandable>
   
-  <Accordion title="🍎 iOS Build Issues">
+<Expandable title="🍎 iOS Build Issues">
     **Update iOS dependencies:**
     ```bash
     cd ios
@@ -426,9 +426,9 @@ The app includes a special development mode for easier debugging:
     - Ensure Xcode is updated to latest version
     - Clear Xcode derived data
     - Reset iOS Simulator
-  </Accordion>
+</Expandable>
   
-  <Accordion title="🤖 Android Build Issues">
+<Expandable title="🤖 Android Build Issues">
     **Clean Android build:**
     ```bash
     cd android
@@ -440,16 +440,16 @@ The app includes a special development mode for easier debugging:
     - Update Android Studio and SDK tools
     - Check Java version (should be 11+)
     - Clear Android cache and data
-  </Accordion>
+</Expandable>
   
-  <Accordion title="🔑 Environment Variable Issues">
+<Expandable title="🔑 Environment Variable Issues">
     **Checklist:**
     - ✅ Ensure `.env.local` file exists in root directory
     - ✅ Restart development server after changing variables
     - ✅ Check that all required variables are set
     - ✅ Verify API key format and permissions
-  </Accordion>
-</AccordionGroup>
+</Expandable>
+</ResponseField>
 
 <Note>
   **Need Help?** Join our [Telegram community](https://t.me/solanaappkit) for real-time support from developers and maintainers.

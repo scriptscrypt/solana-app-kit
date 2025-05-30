@@ -263,8 +263,8 @@ function PumpfunTradingComponent() {
 
 ## Services Overview
 
-<Accordion>
-  <AccordionItem title="Pump.fun Service">
+<ResponseField name="services" type="object">
+<Expandable title="Pump.fun Service">
     **`pumpfunService.ts`** - Direct Pump.fun platform integration
     
     ```typescript
@@ -305,9 +305,9 @@ function PumpfunTradingComponent() {
     - Bonding curve interaction
     - Commission handling
     - Status update callbacks
-  </AccordionItem>
+</Expandable>
   
-  <AccordionItem title="PumpSwap Service">
+<Expandable title="PumpSwap Service">
     **`pumpSwapService.ts`** - AMM operations via backend SDK wrapper
     
     ```typescript
@@ -352,8 +352,8 @@ function PumpfunTradingComponent() {
     - Token swapping with quotes
     - Real-time pricing data
     - Slippage protection
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Quick Start Examples
 
