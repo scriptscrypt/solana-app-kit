@@ -95,3 +95,4 @@ notification-admin-dashboard/
 # Firebase credentials - do not commit sensitive data
 google-services.json
 *firebase-adminsdk*.json
+credentials.json
