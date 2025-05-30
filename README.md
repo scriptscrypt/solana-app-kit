@@ -42,7 +42,7 @@
    [SendAI](https://sendai.fun/) for AI chat integration to take Solana actions
 
 7. **On/Off-Ramps:**  
-   Buy/sell crypto using cards or Apple Pay with [MoonPay](https://www.moonpay.com/)
+   Buy/sell crypto using cards or Apple Pay with [MoonPay](https://www.moonpay.com/) and [Mercuryo](https://mercuryo.io/) *(work in progress)*
 
 8. **Miscellaneous Tools:**  
    [Jito Bundles](https://www.jito.network/) and [Helius](https://www.helius.dev/) for transaction landing
@@ -196,7 +196,6 @@ When running the Expo development server:
 | --- | ------------------------ |
 | `i` | Open on iOS simulator    |
 | `a` | Open on Android emulator |
-| `w` | Open in web browser      |
 | `r` | Reload the app           |
 | `m` | Toggle the menu          |
 | `d` | Open developer tools     |
@@ -531,6 +530,7 @@ The Solana App Kit provides several modular features that can be used independen
 | 💹 **raydium**          | • Raydium DEX integration<br>• Token launching and trading<br>• Pool creation and management                                                                                                                                                                                     |
 | 🌊 **meteora**          | • Meteora protocol integration<br>• Token launching capabilities<br>• Pool and liquidity management                                                                                                                                                                              |
 | 💸 **moonpay**          | • Fiat on-ramp integration<br>• Buy crypto with credit cards and Apple Pay<br>• Seamless payment flow                                                                                                                                                                            |
+| 🏦 **mercuryo**         | • Fiat gateway integration *(work in progress)*<br>• On-ramp functionality<br>• Multiple payment methods support<br>• Real-time exchange rates                                                                                                                      |
 | 🤖 **solana-agent-kit** | • AI agent integration for Solana interactions<br>• Automated workflows and actions<br>• Enhanced user assistance                                                                                                                                                                |
 | 🪙 **token-mill**       | • Token creation with configurable parameters<br>• Bonding curve configuration for token pricing<br>• Token swapping (buy/sell) functionality<br>• Staking tokens for rewards<br>• Creating and releasing vesting plans                                                          |
 
