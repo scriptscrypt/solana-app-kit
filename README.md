@@ -6,7 +6,7 @@
 
 <p> From AI to Social, Launchpads to Wallets, and Trading — build mobile apps in under 15 minutes. </p>
 
-![SolanaAppKit](https://github.com/user-attachments/assets/8b7bcdd9-3752-40ff-a45f-ed1fbb7feddb)
+![SolanaAppKit](https://github.com/user-attachments/assets/b4a6dbbd-1073-412a-a5b9-4c2e41e39964)
 
 <p align="center">
   <a href="https://www.npmjs.com/package/start-solana-app?activeTab=readme"><img src="https://img.shields.io/npm/dm/start-solana-app?style=for-the-badge&color=4CAF50" alt="NPM Downloads" /></a>
