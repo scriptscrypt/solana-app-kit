@@ -1,10 +1,3 @@
-/**
- * useAutoAvatar Hook
- * 
- * Automatically manages DiceBear avatars for users who don't have profile images.
- * This hook handles the generation, caching, and updating of avatars seamlessly.
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from './useReduxHooks';
 import { updateProfilePic } from '../state/auth/reducer';
@@ -12,7 +5,8 @@ import {
   getAvatarUrl, 
   generateAndStoreAvatar, 
   clearCachedAvatar,
-  preloadAvatar 
+  preloadAvatar,
+  generateDiceBearAvatarUrl
 } from '../services/diceBearAvatarService';
 
 interface UseAutoAvatarOptions {
@@ -69,16 +63,17 @@ export function useAutoAvatar(
   const targetProfilePic = existingProfilePic !== undefined ? existingProfilePic : currentUserProfilePic;
   
   // Local state
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(targetProfilePic);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDiceBearAvatar, setIsDiceBearAvatar] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   
   // Ref to track if generation is in progress to prevent multiple calls
   const isGeneratingRef = useRef(false);
 
   /**
-   * Generate or get avatar for the user
+   * Generate or get avatar for the user with improved error handling
    */
   const generateAvatar = useCallback(async (forceRegenerate: boolean = false) => {
     if (!targetUserId) {
@@ -86,11 +81,50 @@ export function useAutoAvatar(
       return;
     }
 
+    if (isGeneratingRef.current) {
+      console.log('[useAutoAvatar] Generation already in progress, skipping...');
+      return;
+    }
+
+    isGeneratingRef.current = true;
     setIsLoading(true);
     setError(null);
 
+    // Set up a timeout to prevent indefinite loading
+    const timeoutId = setTimeout(() => {
+      if (isGeneratingRef.current) {
+        console.warn('[useAutoAvatar] Avatar generation timeout, using fallback');
+        setError('Avatar generation timeout');
+        isGeneratingRef.current = false;
+        setIsLoading(false);
+        
+        // Set a simple fallback avatar
+        try {
+          const timeoutFallbackUrl = generateDiceBearAvatarUrl(targetUserId);
+          setAvatarUrl(timeoutFallbackUrl);
+          setIsDiceBearAvatar(true);
+        } catch (timeoutError) {
+          console.error('[useAutoAvatar] Timeout fallback failed:', timeoutError);
+        }
+        
+        setHasInitialized(true);
+      }
+    }, 10000); // 10 second timeout
+
     try {
-      const newAvatarUrl = await getAvatarUrl(targetUserId, targetProfilePic);
+      let newAvatarUrl: string;
+      
+      try {
+        // Try to get the avatar URL (which handles both existing profile pics and generation)
+        newAvatarUrl = await getAvatarUrl(targetUserId, targetProfilePic);
+      } catch (primaryError) {
+        console.warn('[useAutoAvatar] Primary avatar generation failed, using fallback:', primaryError);
+        // Fallback: Generate a simple DiceBear avatar directly
+        newAvatarUrl = generateDiceBearAvatarUrl(targetUserId);
+      }
+      
+      // Clear the timeout since we succeeded
+      clearTimeout(timeoutId);
       
       // Check if this is a DiceBear avatar (contains dicebear.com)
       const isDiceBear = newAvatarUrl.includes('dicebear.com');
@@ -100,7 +134,12 @@ export function useAutoAvatar(
 
       // Preload the avatar if requested
       if (preload) {
-        preloadAvatar(newAvatarUrl);
+        try {
+          preloadAvatar(newAvatarUrl);
+        } catch (preloadError) {
+          console.warn('[useAutoAvatar] Avatar preload failed:', preloadError);
+          // Don't fail the whole process for preload errors
+        }
       }
 
       // Update Redux state if this is for the current user and updateRedux is enabled
@@ -108,10 +147,25 @@ export function useAutoAvatar(
         dispatch(updateProfilePic(newAvatarUrl));
       }
     } catch (err: any) {
+      // Clear the timeout
+      clearTimeout(timeoutId);
+      
       console.error('[useAutoAvatar] Error generating avatar:', err);
       setError(err.message || 'Failed to generate avatar');
+      
+      // Last resort fallback: generate a simple avatar URL directly
+      try {
+        const fallbackUrl = generateDiceBearAvatarUrl(targetUserId);
+        setAvatarUrl(fallbackUrl);
+        setIsDiceBearAvatar(true);
+        console.log('[useAutoAvatar] Using emergency fallback avatar:', fallbackUrl);
+      } catch (fallbackError) {
+        console.error('[useAutoAvatar] Even fallback avatar generation failed:', fallbackError);
+      }
     } finally {
       setIsLoading(false);
+      isGeneratingRef.current = false;
+      setHasInitialized(true);
     }
   }, [targetUserId, targetProfilePic, preload, updateRedux, currentUserId, dispatch]);
 
@@ -122,13 +176,19 @@ export function useAutoAvatar(
     if (!targetUserId) return;
     
     setIsLoading(true);
+    setError(null);
+    
     try {
       const newAvatarUrl = await generateAndStoreAvatar(targetUserId, true);
       setAvatarUrl(newAvatarUrl);
       setIsDiceBearAvatar(true);
       
       if (preload) {
-        preloadAvatar(newAvatarUrl);
+        try {
+          preloadAvatar(newAvatarUrl);
+        } catch (preloadError) {
+          console.warn('[useAutoAvatar] Regenerated avatar preload failed:', preloadError);
+        }
       }
 
       // Update Redux if this is for the current user
@@ -138,6 +198,15 @@ export function useAutoAvatar(
     } catch (err: any) {
       console.error('[useAutoAvatar] Error regenerating avatar:', err);
       setError(err.message || 'Failed to regenerate avatar');
+      
+      // Fallback for regeneration too
+      try {
+        const fallbackUrl = generateDiceBearAvatarUrl(targetUserId);
+        setAvatarUrl(fallbackUrl);
+        setIsDiceBearAvatar(true);
+      } catch (fallbackError) {
+        console.error('[useAutoAvatar] Regeneration fallback failed:', fallbackError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -157,60 +226,46 @@ export function useAutoAvatar(
     }
   }, [targetUserId]);
 
-  // Effect to generate avatar when component mounts or dependencies change
+  // Effect to initialize avatar when component mounts or dependencies change
   useEffect(() => {
-    if (autoGenerate && targetUserId && !targetProfilePic && !avatarUrl) {
-      // Only generate if we don't already have an avatar URL
-      // Call generateAvatar directly without including it in dependencies
-      const generateAvatarForUser = async () => {
-        if (isGeneratingRef.current) return; // Prevent multiple simultaneous calls
-        
-        isGeneratingRef.current = true;
-        setIsLoading(true);
-        setError(null);
-
-        try {
-          const newAvatarUrl = await getAvatarUrl(targetUserId, targetProfilePic);
-          
-          // Check if this is a DiceBear avatar (contains dicebear.com)
-          const isDiceBear = newAvatarUrl.includes('dicebear.com');
-          setIsDiceBearAvatar(isDiceBear);
-          
-          setAvatarUrl(newAvatarUrl);
-
-          // Preload the avatar if requested
-          if (preload) {
-            preloadAvatar(newAvatarUrl);
-          }
-
-          // Update Redux state if this is for the current user and updateRedux is enabled
-          if (updateRedux && targetUserId === currentUserId && isDiceBear && !targetProfilePic) {
-            dispatch(updateProfilePic(newAvatarUrl));
-          }
-        } catch (err: any) {
-          console.error('[useAutoAvatar] Error generating avatar:', err);
-          setError(err.message || 'Failed to generate avatar');
-        } finally {
-          setIsLoading(false);
-          isGeneratingRef.current = false;
-        }
-      };
-
-      generateAvatarForUser();
-    } else if (targetProfilePic) {
+    // Reset initialization state when key dependencies change
+    setHasInitialized(false);
+    
+    if (targetProfilePic) {
       // User has an existing profile picture
       setAvatarUrl(targetProfilePic);
       setIsDiceBearAvatar(false);
-    }
-  }, [autoGenerate, targetUserId, targetProfilePic, preload, updateRedux, currentUserId, dispatch, avatarUrl]);
-
-  // Update avatar URL when targetProfilePic changes
-  useEffect(() => {
-    if (targetProfilePic) {
-      setAvatarUrl(targetProfilePic);
+      setIsLoading(false);
+      setHasInitialized(true);
+    } else if (autoGenerate && targetUserId) {
+      // No profile picture, need to generate one
+      generateAvatar(false);
+    } else {
+      // No user ID or auto-generation disabled
+      setAvatarUrl(null);
       setIsDiceBearAvatar(false);
+      setIsLoading(false);
+      setHasInitialized(true);
     }
-  }, [targetProfilePic]);
+  }, [targetUserId, targetProfilePic, autoGenerate]);
+
+  // Additional effect to ensure we always have an avatar URL for valid users
+  useEffect(() => {
+    // If we have a user ID, auto-generation is enabled, no profile pic, no avatar URL, 
+    // not currently loading, and we've initialized, try to generate again
+    if (
+      targetUserId && 
+      autoGenerate && 
+      !targetProfilePic && 
+      !avatarUrl && 
+      !isLoading && 
+      hasInitialized &&
+      !isGeneratingRef.current
+    ) {
+      console.log('[useAutoAvatar] Detected missing avatar after initialization, generating...');
+      generateAvatar(false);
+    }
+  }, [targetUserId, autoGenerate, targetProfilePic, avatarUrl, isLoading, hasInitialized, generateAvatar]);
 
   return {
     avatarUrl,

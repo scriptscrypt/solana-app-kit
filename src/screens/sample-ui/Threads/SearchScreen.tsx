@@ -221,6 +221,11 @@ export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
           style={styles.avatar}
           showInitials={true}
           autoGenerate={true}
+          showShimmer={true}
+          showLoading={false}
+          onError={() => {
+            console.warn('[SearchScreen] Avatar load error for user:', item.id);
+          }}
         />
         <View style={styles.userInfo}>
           <Text style={styles.username}>{item.username}</Text>

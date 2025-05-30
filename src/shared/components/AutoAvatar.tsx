@@ -1,13 +1,5 @@
-/**
- * AutoAvatar Component
- * 
- * A smart avatar component that automatically generates DiceBear avatars for users
- * who don't have profile images. This component can be used as a drop-in replacement
- * for regular Image components in avatar contexts.
- */
-
-import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle, Platform } from 'react-native';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ViewStyle, TextStyle, ImageStyle, Animated, Easing, Platform } from 'react-native';
 import { IPFSAwareImage, getValidImageSource } from '../utils/IPFSImage';
 import { useAutoAvatar } from '../hooks/useAutoAvatar';
 import { DEFAULT_IMAGES } from '../config/constants';
@@ -23,7 +15,7 @@ interface AutoAvatarProps {
     /** Custom style for the avatar container */
     style?: ViewStyle;
     /** Custom style for the avatar image */
-    imageStyle?: ViewStyle;
+    imageStyle?: ImageStyle;
     /** Whether to show initials as fallback */
     showInitials?: boolean;
     /** Username for generating initials */
@@ -38,25 +30,90 @@ interface AutoAvatarProps {
     onLoad?: () => void;
     /** Callback when avatar fails to load */
     onError?: () => void;
+    /** Whether to show shimmer loading animation */
+    showShimmer?: boolean;
 }
+
+/**
+ * Shimmer Component for loading state
+ */
+const ShimmerAvatar: React.FC<{ size: number; style?: ViewStyle }> = ({ size, style }) => {
+    const shimmerAnimatedValue = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const shimmerAnimation = Animated.loop(
+            Animated.timing(shimmerAnimatedValue, {
+                toValue: 1,
+                duration: 1200,
+                easing: Easing.inOut(Easing.ease),
+                useNativeDriver: true,
+            }),
+        );
+        shimmerAnimation.start();
+        return () => shimmerAnimation.stop();
+    }, [shimmerAnimatedValue]);
+
+    const translateX = shimmerAnimatedValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-size * 2, size * 2],
+    });
+
+    const shimmerStyle: ViewStyle = useMemo(() => ({
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: COLORS.lighterBackground,
+        overflow: 'hidden',
+        ...style,
+    }), [size, style]);
+
+    return (
+        <View style={shimmerStyle}>
+            <Animated.View
+                style={[
+                    StyleSheet.absoluteFill,
+                    {
+                        backgroundColor: COLORS.darkerBackground,
+                        opacity: 0.6,
+                        transform: [{ translateX }],
+                    },
+                ]}
+            />
+        </View>
+    );
+};
 
 /**
  * Generate initials from username
  */
 function getInitials(username?: string): string {
-    if (!username) return '?';
+    if (!username || username.trim() === '') return '?';
+
+    const cleanUsername = username.trim();
 
     // If username appears to be wallet-derived (6 chars), use first 2 chars
-    if (username.length === 6 && /^[a-zA-Z0-9]+$/.test(username)) {
-        return username.substring(0, 2).toUpperCase();
+    if (cleanUsername.length === 6 && /^[a-zA-Z0-9]+$/.test(cleanUsername)) {
+        return cleanUsername.substring(0, 2).toUpperCase();
+    }
+
+    // If username is very short, just use what we have
+    if (cleanUsername.length <= 2) {
+        return cleanUsername.toUpperCase();
     }
 
     // Otherwise get initials from words
-    const words = username.split(' ');
-    if (words.length === 1) {
+    const words = cleanUsername.split(/\s+/).filter(word => word.length > 0);
+    
+    if (words.length === 0) {
+        // If no valid words, use first 2 characters
+        return cleanUsername.substring(0, 2).toUpperCase();
+    } else if (words.length === 1) {
+        // Single word, use first 2 characters
         return words[0].substring(0, 2).toUpperCase();
+    } else {
+        // Multiple words, use first letter of first and last word
+        return (words[0][0] + words[words.length - 1][0]).toUpperCase();
     }
-    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
 /**
@@ -92,9 +149,11 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
     autoGenerate = true,
     onLoad,
     onError,
+    showShimmer = true,
 }) => {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const [imageAttempted, setImageAttempted] = useState(false);
 
     // Memoize hook options to prevent unnecessary re-renders
     const hookOptions = useMemo(() => ({
@@ -104,7 +163,7 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
     }), [autoGenerate, userId]);
 
     // Use the auto avatar hook
-    const { avatarUrl, isLoading, isDiceBearAvatar } = useAutoAvatar(
+    const { avatarUrl, isLoading, isDiceBearAvatar, error } = useAutoAvatar(
         userId,
         profilePicUrl,
         hookOptions
@@ -130,7 +189,7 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
     }), [size, backgroundColor, style]);
 
     // Image styles with memoization
-    const finalImageStyle: ViewStyle = useMemo(() => ({
+    const finalImageStyle: ImageStyle = useMemo(() => ({
         width: size,
         height: size,
         borderRadius: size / 2,
@@ -150,6 +209,7 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
     const handleImageLoad = useCallback(() => {
         setImageLoaded(true);
         setImageError(false);
+        setImageAttempted(true);
         onLoad?.();
     }, [onLoad]);
 
@@ -157,27 +217,86 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
     const handleImageError = useCallback(() => {
         setImageLoaded(false);
         setImageError(true);
+        setImageAttempted(true);
         onError?.();
     }, [onError]);
 
+    // Reset image state when avatar URL changes
+    useEffect(() => {
+        if (finalAvatarUrl) {
+            setImageLoaded(false);
+            setImageError(false);
+            setImageAttempted(false);
+        }
+    }, [finalAvatarUrl]);
+
+    // Determine what to show based on current state
+    const shouldShowShimmer = useMemo(() => {
+        // Show shimmer if:
+        // 1. Shimmer is enabled AND
+        // 2. (Hook is loading OR we have a URL but haven't attempted to load it yet) AND
+        // 3. We don't have a custom loading component
+        return showShimmer && 
+               (isLoading || (finalAvatarUrl && !imageAttempted)) && 
+               !loadingComponent;
+    }, [showShimmer, isLoading, finalAvatarUrl, imageAttempted, loadingComponent]);
+
+    const shouldShowCustomLoading = useMemo(() => {
+        // Show custom loading if provided and we're in a loading state
+        return showLoading && 
+               (isLoading || (finalAvatarUrl && !imageAttempted)) && 
+               loadingComponent;
+    }, [showLoading, isLoading, finalAvatarUrl, imageAttempted, loadingComponent]);
+
+    const shouldShowDefaultLoading = useMemo(() => {
+        // Show default loading if requested and no custom component and shimmer is disabled
+        return showLoading && 
+               (isLoading || (finalAvatarUrl && !imageAttempted)) && 
+               !loadingComponent && 
+               !showShimmer;
+    }, [showLoading, isLoading, finalAvatarUrl, imageAttempted, loadingComponent, showShimmer]);
+
+    const shouldShowInitials = useMemo(() => {
+        // Show initials if:
+        // 1. Initials are enabled AND
+        // 2. We're not showing any loading state AND
+        // 3. Either no image or image failed to load
+        return showInitials && 
+               !shouldShowShimmer && 
+               !shouldShowCustomLoading && 
+               !shouldShowDefaultLoading &&
+               (!finalAvatarUrl || imageError || (!imageLoaded && imageAttempted));
+    }, [showInitials, shouldShowShimmer, shouldShowCustomLoading, shouldShowDefaultLoading, finalAvatarUrl, imageError, imageLoaded, imageAttempted]);
+
+    const shouldShowImage = useMemo(() => {
+        // Show image if we have a URL and it's not in an error state
+        return finalAvatarUrl && !imageError;
+    }, [finalAvatarUrl, imageError]);
+
     return (
         <View style={containerStyle}>
-            {/* Show initials if no image loaded or as fallback */}
-            {showInitials && (!imageLoaded || imageError) && (
+            {/* Show shimmer loading skeleton */}
+            {shouldShowShimmer && (
+                <ShimmerAvatar size={size} style={style} />
+            )}
+
+            {/* Show custom loading component if provided */}
+            {shouldShowCustomLoading && loadingComponent}
+
+            {/* Show default loading indicator if requested and no custom component */}
+            {shouldShowDefaultLoading && (
+                <View style={[containerStyle, { backgroundColor: COLORS.greyLight }]}>
+                    <Text style={[textStyle, { color: COLORS.greyDark }]}>...</Text>
+                </View>
+            )}
+
+            {/* Show initials if appropriate */}
+            {shouldShowInitials && (
                 <Text style={textStyle}>{initials}</Text>
             )}
 
-            {/* Show loading indicator if requested */}
-            {showLoading && isLoading && !finalAvatarUrl && (
-                loadingComponent || (
-                    <View style={[containerStyle, { backgroundColor: COLORS.greyLight }]}>
-                        <Text style={[textStyle, { color: COLORS.greyDark }]}>...</Text>
-                    </View>
-                )
-            )}
-
-            {/* Show avatar image if available - using IPFSAwareImage for proper IPFS and cross-platform handling */}
-            {finalAvatarUrl && (
+            {/* Show avatar image if available */}
+            {shouldShowImage && (
                 <IPFSAwareImage
                     source={getValidImageSource(finalAvatarUrl)}
                     defaultSource={DEFAULT_IMAGES.user}
@@ -187,6 +306,19 @@ export const AutoAvatar: React.FC<AutoAvatarProps> = React.memo(({
                     // Use stable key for consistent rendering
                     key={`avatar-${userId}-${finalAvatarUrl}`}
                 />
+            )}
+            
+            {/* Debug overlay for development - remove in production */}
+            {__DEV__ && error && (
+                <View style={{
+                    position: 'absolute',
+                    top: -5,
+                    right: -5,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: 'red',
+                }} />
             )}
         </View>
     );
@@ -203,7 +335,8 @@ export const SimpleAutoAvatar: React.FC<{
     username?: string;
     size?: number;
     style?: ViewStyle;
-}> = ({ userId, profilePicUrl, username, size = 40, style }) => {
+    showShimmer?: boolean;
+}> = ({ userId, profilePicUrl, username, size = 40, style, showShimmer = true }) => {
     return (
         <AutoAvatar
             userId={userId}
@@ -213,6 +346,7 @@ export const SimpleAutoAvatar: React.FC<{
             style={style}
             showInitials={true}
             autoGenerate={true}
+            showShimmer={showShimmer}
         />
     );
 };
