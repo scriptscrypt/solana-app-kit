@@ -11,9 +11,9 @@
     "items": "border"
   },
   "colors": {
-    "primary": "#00ffff",
-    "light": "#14F195",
-    "dark": "#00ffff"
+    "primary": "#4079ED",
+    "light": "#64C6FF",
+    "dark": "#4079ED"
   },
   "background": {
     "style": "windows"

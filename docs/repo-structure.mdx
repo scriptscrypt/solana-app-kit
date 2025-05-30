@@ -216,8 +216,8 @@ The mobile application is organized into several key directories, each serving a
 
 The backend server provides essential API endpoints and services:
 
-<Accordion>
-  <AccordionItem title="🗄️ Server Directory Structure">
+<ResponseField name="server_structure" type="object">
+<Expandable title="🗄️ Server Directory Structure">
     ```
     server/
     ├── src/
@@ -232,8 +232,8 @@ The backend server provides essential API endpoints and services:
     ```
     
     **Purpose**: The server handles blockchain operations, data persistence, external API integrations, and provides enhanced functionality for the mobile app.
-  </AccordionItem>
-</Accordion>
+</Expandable>
+</ResponseField>
 
 ## Platform-Specific Directories
 
@@ -283,7 +283,7 @@ Key configuration files in the root directory:
   <Card title="App.tsx" icon="react">
     **Main React Native component** and app initialization entry point
   </Card>
-  <Card title="package.json" icon="package">
+  <Card title="package.json" icon="package-x">
     **Project dependencies**, scripts, and metadata configuration
   </Card>
   <Card title="app.config.js" icon="gear">
@@ -292,10 +292,10 @@ Key configuration files in the root directory:
   <Card title="babel.config.js" icon="code">
     **JavaScript compilation** configuration and plugin setup
   </Card>
-  <Card title="metro.config.js" icon="subway">
+  <Card title="metro.config.js" icon="train-front">
     **Metro bundler** configuration for React Native builds
   </Card>
-  <Card title="tsconfig.json" icon="typescript">
+  <Card title="tsconfig.json" icon="check-check">
     **TypeScript compiler** configuration and type checking rules
   </Card>
   <Card title=".env.local" icon="key">
@@ -336,7 +336,7 @@ export type { ExampleType } from './types';
 This pattern ensures:
 
 <CardGroup cols={2}>
-  <Card title="Consistency" icon="check-circle">
+  <Card title="Consistency" icon="check-line">
     **Similar organization** across all modules makes navigation predictable
   </Card>
   <Card title="Encapsulation" icon="box">
@@ -438,7 +438,7 @@ Understanding the structure helps with common development tasks:
 ## Best Practices
 
 <CardGroup cols={2}>
-  <Card title="Module Independence" icon="unlink">
+  <Card title="Module Independence" icon="puzzle">
     **Keep modules loosely coupled** to maintain modularity and testability
   </Card>
   
