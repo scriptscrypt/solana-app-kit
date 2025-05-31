@@ -1,0 +1,93 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Solana App Kit",
+  "colors": {
+    "primary": "#4079ED",
+    "light": "#64C6FF",
+    "dark": "#4079ED"
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude"
+    ]
+  },
+  "search": {
+    "prompt": "Search for anything in the Solana App Kit docs"
+  },
+  "favicon": "/docs/assets/favicon.png",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Introduction",
+        "pages": [
+          "docs/introduction"
+        ]
+      },
+      {
+        "group": "Getting Started",
+        "pages": [
+          "docs/setup",
+          "docs/repo-structure",
+          "docs/use"
+        ]
+      },
+      {
+        "group": "Modules",
+        "pages": [
+          "docs/modules/overview",
+          "docs/modules/wallet-providers",
+          "docs/modules/data-module",
+          "docs/modules/swap",
+          "docs/modules/nft",
+          "docs/modules/meteora",
+          "docs/modules/pumpfun",
+          "docs/modules/moonpay",
+          "docs/modules/raydium",
+          "docs/modules/solana-agent-kit",
+          "docs/modules/tokenmill",
+          "docs/modules/mercuryo"
+        ]
+      },
+      {
+        "group": "Server",
+        "pages": [
+          "docs/server/overview",
+          "docs/server/services/solana"
+        ]
+      }
+    ]
+  },
+  "styling": {
+    "codeblocks": "system"
+  },
+  "logo": {
+    "light": "/docs/assets/light.svg",
+    "dark": "/docs/assets/dark.svg"
+  },
+  "background": {
+    "decoration": "windows"
+  },
+  "seo": {
+    "metatags": {
+      "og:image": "/docs/assets/dark.svg",
+      "og:type": "website",
+      "og:site_name": "Solana App Kit"
+    },
+    "indexing": "navigable"
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/SendArcade/solana-app-kit"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/docs/introduction"
+    }
+  ]
+}
