@@ -31,8 +31,13 @@
         "group": "Getting Started",
         "pages": [
           "docs/setup",
-          "docs/repo-structure",
-          "docs/use"
+          "docs/repo-structure"
+        ]
+      },
+      {
+        "group": "Using LLMs",
+        "pages": [
+          "docs/using-llms/cursor-setup"
         ]
       },
       {

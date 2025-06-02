@@ -1,0 +1,108 @@
+---
+title: 'Vibe Coding setup'
+description: 'Using Docs in Cursor - Learn how to set up Cursor IDE and MCP with Solana App Kit documentation'
+---
+
+# Setting Up LLM Integrations with Solana App Kit
+
+This guide covers two powerful ways to integrate Solana App Kit with LLMs: Cursor IDE integration and Model Context Protocol (MCP) setup.
+
+## Cursor IDE Setup
+
+### Prerequisites
+
+- [Cursor IDE](https://cursor.sh) installed on your machine
+- Basic familiarity with Cursor's interface
+
+### Configuration Steps
+
+1. Open Cursor IDE
+2. Navigate to **Settings** > **Features** > **Docs**
+3. Click on **Add new doc**
+4. In the URL field, paste the following URL:
+
+```bash
+https://docs.solanaappkit.com/llms-full.txt
+```
+
+### Using Solana App Kit Documentation in Cursor
+
+Once configured, you can access Solana App Kit's documentation directly within Cursor using the following methods:
+
+#### Method 1: Using @docs Command
+
+Type `@docs` followed by "Solana App Kit" to reference the documentation in your code. For example:
+
+```typescript
+// @docs -> Solana App Kit: How to initialize a wallet connection
+```
+
+#### Method 2: Local Docs MCP Setup
+
+You can also ask questions about Solana App Kit directly in comments, and Cursor will use the documentation to provide relevant answers and code suggestions.
+
+![Using Local Docs MCP in Cursor](/assets/using-llms/cursormcp.png)
+
+## Model Context Protocol (MCP) Setup
+
+### Overview
+
+The Model Context Protocol (MCP) connects Solana App Kit's functions to LLMs and AI applications, enabling AI-powered interactions with the toolkit. With MCP, you can leverage Solana App Kit's documentation and APIs directly in your AI applications.
+
+### Quick Setup
+
+Install the Solana App Kit Docs MCP server using the following command:
+
+```bash
+npx mint-mcp add docs.solanaappkit.com
+```
+
+### Authentication (optional)
+
+When running the command, you'll need to provide:
+- External Admin Key
+- Assistant API Key
+
+These API keys can be found in your Mintlify Dashboard under Settings > API Keys.
+
+### Configuration Steps
+
+1. After running the installation command, you'll be prompted to select which MCP clients to enable
+2. Choose the clients that best suit your development needs
+3. The terminal will provide you with the final configuration and usage instructions
+
+### Default Features
+
+- **Documentation Search**: Query across all Solana App Kit documentation
+- **API Integration**: Access to documented API endpoints
+- **Context-Aware Responses**: Get relevant code examples and documentation snippets
+
+### Using MCP in Your Project
+
+Once configured, you can use the MCP server to:
+- Query Solana App Kit documentation programmatically
+- Access API endpoints with AI-powered context
+- Get intelligent suggestions based on the documentation
+
+## Benefits
+
+- **Contextual Help**: Get immediate access to Solana App Kit documentation while coding
+- **Smart Completions**: Both Cursor and MCP use the documentation context to provide accurate suggestions
+- **Faster Development**: Reduce time spent switching between documentation and code
+- **AI-Powered Integration**: Leverage LLMs to interact with Solana App Kit more effectively
+
+## Troubleshooting
+
+If you encounter any issues:
+
+1. Verify that all URLs and API keys are correctly entered
+2. Ensure necessary permissions are granted for both Cursor and MCP
+3. Check your network connection and firewall settings
+4. Try refreshing or reinstalling the tools if issues persist
+
+## Next Steps
+
+After setting up both Cursor and MCP:
+1. Explore the various modules and features available in Solana App Kit
+2. Test the AI-powered documentation queries in your development workflow
+3. Start building your Solana application with enhanced AI assistance
